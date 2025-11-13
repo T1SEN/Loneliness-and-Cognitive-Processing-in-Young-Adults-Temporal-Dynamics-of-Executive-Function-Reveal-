@@ -1,0 +1,14 @@
+hypothesis,description,status,term,nobs,estimate,p_value,conf_low,conf_high
+Hα1-1,PRP 병목 ~ Loneliness,estimated,z_ucla,77.0,-16.90804167327175,0.5178603409520406,-68.79312617844424,34.97704283190075
+Hα1-2,PRP 병목 ~ DASS-Anxiety,estimated,z_dass_anx,77.0,-10.543593729203335,0.6715357138981257,-59.92566060212052,38.83847314371385
+Hα2,Stroop 비일치-중립 차이 지표 부재,데이터 부족,,,,,,
+Hα3-1,WCST PR% ~ 고외로움,estimated,high_loneliness,74.0,0.4141487428609718,0.8394084439583397,-3.6492013274754997,4.477498813197443
+Hα3-2,WCST CL% ~ 고외로움,estimated,high_loneliness,74.0,0.7281622128688792,0.8669284038817398,-7.912569030800569,9.368893456538327
+Hα4,PRP slope ~ Loneliness,estimated,z_ucla,76.0,-0.010744202664115864,0.6492656733901323,-0.057678075753553895,0.036189670425322173
+Hα5,PRP 병목 ~ Loneliness×성별,estimated,z_ucla:C(gender)[T.male],77.0,34.09263215908263,0.33210751355877544,-35.539604503645286,103.72486882181056
+Hα6-1,WCST perseverative errors ~ Loneliness,estimated,z_ucla,74.0,0.9684484755981897,0.39121614145716777,-1.2714484555264045,3.208345406722784
+Hα6-2,WCST non-perseverative errors ~ Loneliness,estimated,z_ucla,74.0,1.603102965952684,0.3257121449977899,-1.6288644035721858,4.835070335477554
+Hα7,WCST total errors ~ Loneliness×Stress,estimated,z_ucla:z_dass_stress,74.0,-0.520755795834206,0.7462195081895108,-3.720038615910607,2.6785270242421952
+Hα8,PRP 연습 정확도 자료 부재,데이터 부족,,,,,,
+Hα9,Stroop RT 변동성 자료 부재,데이터 부족,,,,,,
+Hα10,Meta-control ~ PRP*WCST*Loneliness,prp_bottleneck:wcsT_nonpersev_errors:z_ucla 계수 없음,,,,,,

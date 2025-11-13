@@ -1,0 +1,62 @@
+======================================================================
+FINAL INTEGRATED ANALYSIS SUMMARY
+======================================================================
+
+Sample Size: N = 70
+
+MAIN FINDINGS:
+----------------------------------------------------------------------
+
+1. BAYESIAN REGRESSION RESULTS (controlling for DASS):
+
+   Stroop Interference:
+     Beta (UCLA): 0.134, 95% HDI: [-0.237, 0.514]
+     P(beta > 0): 76%
+     CONCLUSION: No clear evidence
+
+   PRP Bottleneck:
+     Beta (UCLA): -0.032, 95% HDI: [-0.409, 0.339]
+     P(beta > 0): 44%
+     CONCLUSION: No clear evidence
+
+   WCST Perseveration:
+     Beta (UCLA): 0.126, 95% HDI: [-0.258, 0.501]
+     P(beta > 0): 75.2%
+     CONCLUSION: No clear evidence
+
+2. EXTREME GROUP COMPARISONS (Q1 vs Q4):
+
+   Stroop Interference:
+     Low: 0.022, High: 0.025
+     t = 0.042, p = 0.9664 ns
+     Cohen's d = 0.014
+
+   PRP Bottleneck (s):
+     Low: 0.652, High: 0.644
+     t = -0.148, p = 0.8832 ns
+     Cohen's d = -0.049
+
+   WCST Perseveration:
+     Low: 0.104, High: 0.099
+     t = -0.542, p = 0.5916 ns
+     Cohen's d = -0.179
+
+   WCST Switch Cost (ms):
+     Low: -378.806, High: -354.397
+     t = 0.118, p = 0.9069 ns
+     Cohen's d = 0.039
+
+
+======================================================================
+OVERALL CONCLUSION
+======================================================================
+
+Current sample (N=77) shows:
+- Strong PRP bottleneck effect (670ms) confirmed
+- No clear loneliness -> EF relationship in Bayesian models
+- Extreme group analysis may show patterns
+
+Recommendations:
+1. Increase sample to N=150-200 for adequate power
+2. Consider measurement paper for null results
+3. Explore non-linear relationships

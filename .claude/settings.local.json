@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir)",
+      "Bash(dir:*)",
+      "Bash(venv\\Scripts\\pip.exe list:*)",
+      "Bash(./venv/Scripts/pip.exe list)",
+      "Bash(./venv/Scripts/python.exe export_alldata.py:*)",
+      "Bash(./venv/Scripts/python.exe -c \"import pandas as pd; import os; files = [f for f in os.listdir(''results'') if f.endswith(''.csv'')]; print(''\\n=== CSV 파일별 데이터 행 수 ===''); [print(f''{f}: {len(pd.read_csv(os.path.join(\"\"results\"\", f)))} rows'') for f in sorted(files)]\")",
+      "Bash(PYTHONIOENCODING=utf-8 ./venv/Scripts/python.exe export_alldata.py)",
+      "Bash(./venv/Scripts/python.exe -c \"import pandas as pd; import os; files = sorted([f for f in os.listdir(''results'') if f.endswith(''.csv'')]); [print(f''{f}: {len(pd.read_csv(os.path.join(\"\"results\"\", f)))} rows'') for f in files]\")",
+      "Bash(./venv/Scripts/python.exe:*)",
+      "Bash(PYTHONIOENCODING=utf-8 ./venv/Scripts/python.exe:*)",
+      "Bash(./venv/Scripts/pip.exe install:*)",
+      "Bash(results/analysis_outputs/analysis_log.txt)",
+      "Bash(chcp:*)",
+      "Bash(nul)",
+      "Bash(venv\\Scripts\\python.exe:*)",
+      "Bash(python:*)",
+      "Bash(.\\venv\\Scripts\\python.exe:*)",
+      "Bash(git init:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
