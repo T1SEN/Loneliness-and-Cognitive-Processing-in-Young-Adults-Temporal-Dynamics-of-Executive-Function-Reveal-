@@ -113,7 +113,15 @@ def ancova_table(df: pd.DataFrame, group_type: str) -> pd.DataFrame:
                 "adj_mean_high": means.get("high", np.nan),
             }
         )
-    return pd.DataFrame(rows)
+    out = pd.DataFrame(rows)
+    # FDR q-values across the group effects within this table
+    try:
+        from statsmodels.stats.multitest import multipletests
+        if "p_value" in out.columns:
+            out["q_value"] = multipletests(out["p_value"].astype(float).values, method="fdr_bh")[1]
+    except Exception:
+        pass
+    return out
 
 
 def save_plots(df: pd.DataFrame, prefix: str):

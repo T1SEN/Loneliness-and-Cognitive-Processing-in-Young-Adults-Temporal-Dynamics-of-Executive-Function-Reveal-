@@ -9,6 +9,8 @@ IRB 계획에 따른 핵심 가설 검증:
 3. 외로움이 이 공통 요인을 예측하는가?
 """
 
+import ast
+import sys
 import pandas as pd
 import numpy as np
 from pathlib import Path
@@ -17,6 +19,9 @@ from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 import warnings
 warnings.filterwarnings('ignore')
+
+if sys.platform.startswith("win") and hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding='utf-8')
 
 # ============================================================================
 # 0. 경로 설정 및 데이터 로드
@@ -71,10 +76,18 @@ stroop_pivot['stroop_interference'] = (
 # ─────────────────────────────────────────────────────────────────────────
 # 1.2 WCST 보속 오류 비율
 # ─────────────────────────────────────────────────────────────────────────
+def _parse_wcst_extra(extra_str):
+    if not isinstance(extra_str, str):
+        return {}
+    try:
+        return ast.literal_eval(extra_str)
+    except (ValueError, SyntaxError):
+        return {}
+
 wcst_summary = wcst_trials.groupby('participant_id').agg(
     total_trials=('trial_index', 'count'),
     perseverative_errors=('extra', lambda x: sum(
-        pd.Series(x).apply(lambda y: eval(y).get('isPE', False) if isinstance(y, str) else False)
+        pd.Series(x, dtype=object).apply(lambda y: _parse_wcst_extra(y).get('isPE', False))
     )),
     total_errors=('correct', lambda x: (~x).sum())
 ).reset_index()
@@ -116,14 +129,39 @@ prp_pivot['prp_bottleneck'] = (
 # ─────────────────────────────────────────────────────────────────────────
 # 1.4 설문 데이터 (UCLA 외로움, DASS-21)
 # ─────────────────────────────────────────────────────────────────────────
-surveys_clean = surveys[['participant_id', 'ucla_total', 'dass_depression', 'dass_anxiety', 'dass_stress']].copy()
+surveys_lower = surveys.copy()
+surveys_lower.columns = surveys_lower.columns.str.lower()
+
+ucla = (
+    surveys_lower[surveys_lower['surveyname'].str.lower() == 'ucla']
+    [['participantid', 'score']]
+    .rename(columns={'participantid': 'participant_id', 'score': 'ucla_total'})
+)
+
+dass = (
+    surveys_lower[surveys_lower['surveyname'].str.lower() == 'dass']
+    [['participantid', 'score_d', 'score_a', 'score_s']]
+    .rename(columns={
+        'participantid': 'participant_id',
+        'score_d': 'dass_depression',
+        'score_a': 'dass_anxiety',
+        'score_s': 'dass_stress',
+    })
+)
+dass['dass_total'] = dass[['dass_depression', 'dass_anxiety', 'dass_stress']].sum(axis=1)
+
+surveys_clean = ucla.merge(dass, on='participant_id', how='outer')
 
 # ============================================================================
 # 2. 마스터 데이터프레임 생성
 # ============================================================================
 print("\n[3단계] 마스터 데이터프레임 생성 중...")
 
-master = participants[['participant_id', 'age', 'gender']].copy()
+participants_lower = participants.copy()
+participants_lower.columns = participants_lower.columns.str.lower()
+participants_lower = participants_lower.rename(columns={'participantid': 'participant_id'})
+
+master = participants_lower[['participant_id', 'age', 'gender']].copy()
 master = master.merge(surveys_clean, on='participant_id', how='left')
 master = master.merge(stroop_pivot[['participant_id', 'stroop_interference']], on='participant_id', how='left')
 master = master.merge(wcst_summary[['participant_id', 'perseverative_error_rate']], on='participant_id', how='left')

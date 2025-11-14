@@ -92,9 +92,13 @@ def build_hierarchical_bottleneck_model(df):
                            sigma=sigma_t1_proc,
                            shape=n_participants)
 
-        bottleneck = pm.HalfNormal('bottleneck_delay',
-                                   sigma=mu_bottleneck,
-                                   shape=n_participants)
+        bottleneck = pm.TruncatedNormal(
+            'bottleneck_delay',
+            mu=mu_bottleneck,
+            sigma=sigma_bottleneck,
+            lower=0.0,
+            shape=n_participants,
+        )
 
         base_rt = pm.Normal('base_rt',
                            mu=mu_base_rt,

@@ -11,4 +11,4 @@ Hα6-2,WCST non-perseverative errors ~ Loneliness,estimated,z_ucla,74.0,1.603102
 Hα7,WCST total errors ~ Loneliness×Stress,estimated,z_ucla:z_dass_stress,74.0,-0.520755795834206,0.7462195081895108,-3.720038615910607,2.6785270242421952
 Hα8,PRP 연습 정확도 자료 부재,데이터 부족,,,,,,
 Hα9,Stroop RT 변동성 자료 부재,데이터 부족,,,,,,
-Hα10,Meta-control ~ PRP*WCST*Loneliness,prp_bottleneck:wcsT_nonpersev_errors:z_ucla 계수 없음,,,,,,
+Hα10,Meta-control ~ PRP*WCST*Loneliness,estimated,prp_bottleneck:wcst_nonpersev_errors:z_ucla,73.0,9.17719217938322e-06,0.9308189005844828,-0.0002013889909967169,0.00021974337535548332

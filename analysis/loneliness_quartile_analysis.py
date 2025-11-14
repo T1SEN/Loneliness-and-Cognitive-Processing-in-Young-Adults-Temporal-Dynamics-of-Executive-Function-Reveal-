@@ -59,21 +59,25 @@ def run_quartile_models(df: pd.DataFrame) -> pd.DataFrame:
         if len(data) < 20:
             print(f"Skipping {nice}: insufficient complete cases (n={len(data)}).")
             continue
-        model = smf.ols(formula=formula, data=data.rename(columns={outcome: "y"})).fit()
-        coef = (
-            model.summary2().tables[1]
-            .rename(
-                columns={
-                    "Coef.": "estimate",
-                    "Std.Err.": "std_error",
-                    "P>|t|": "p_value",
-                    "[0.025": "conf_low",
-                    "0.975]": "conf_high",
-                }
-            )
-            .reset_index()
-            .rename(columns={"index": "term"})
-        )
+        model = smf.ols(formula=formula, data=data.rename(columns={outcome: "y"})).fit(cov_type="HC3")
+        coef_raw = model.summary2().tables[1].copy()
+        coef_raw = coef_raw.rename(columns={
+            "Coef.": "estimate",
+            "Std.Err.": "std_error",
+            "[0.025": "conf_low",
+            "0.975]": "conf_high",
+        })
+        if "P>|t|" in coef_raw.columns:
+            coef_raw = coef_raw.rename(columns={"P>|t|": "p_value", "t": "stat"})
+        if "P>|z|" in coef_raw.columns:
+            coef_raw = coef_raw.rename(columns={"P>|z|": "p_value", "z": "stat"})
+        coef = coef_raw.reset_index().rename(columns={"index": "term"})
+        # Add FDR q-values within the combined coefficient table later; for now compute per-model
+        try:
+            from statsmodels.stats.multitest import multipletests
+            coef["q_value"] = multipletests(coef["p_value"].astype(float).values, method="fdr_bh")[1]
+        except Exception:
+            pass
         coef.insert(0, "outcome", nice)
         rows.append(
             {

@@ -216,6 +216,22 @@ def plot_extreme_groups(low, high, output_dir='results/analysis_outputs'):
     print(f"  Saved plot")
     plt.close()
 
+def _summarize_external_trace(nc_path: Path, var_name: str):
+    if not nc_path.exists():
+        return None
+    try:
+        trace = az.from_netcdf(nc_path)
+    except Exception:
+        return None
+    values = trace.posterior[var_name].values.flatten()
+    return {
+        "mean": values.mean(),
+        "low": np.percentile(values, 2.5),
+        "high": np.percentile(values, 97.5),
+        "prob_positive": float((values > 0).mean()),
+    }
+
+
 def comprehensive_summary(df, trace_wcst, extreme_results):
     """Generate comprehensive summary report."""
     print("\n" + "=" * 70)
@@ -236,17 +252,34 @@ def comprehensive_summary(df, trace_wcst, extreme_results):
 
         f.write("1. BAYESIAN REGRESSION RESULTS (controlling for DASS):\n\n")
 
-        # Stroop (from previous analysis)
-        f.write("   Stroop Interference:\n")
-        f.write("     Beta (UCLA): 0.134, 95% HDI: [-0.237, 0.514]\n")
-        f.write("     P(beta > 0): 76%\n")
-        f.write("     CONCLUSION: No clear evidence\n\n")
+        stroop_stats = _summarize_external_trace(
+            Path('results/analysis_outputs/loneliness_stroop_trace.nc'),
+            'beta_ucla',
+        )
+        prp_stats = _summarize_external_trace(
+            Path('results/analysis_outputs/loneliness_prp_trace.nc'),
+            'beta_ucla',
+        )
 
-        # PRP (from previous analysis)
-        f.write("   PRP Bottleneck:\n")
-        f.write("     Beta (UCLA): -0.032, 95% HDI: [-0.409, 0.339]\n")
-        f.write("     P(beta > 0): 44%\n")
-        f.write("     CONCLUSION: No clear evidence\n\n")
+        def _write_trace_block(name, stats_dict):
+            f.write(f"   {name}:\n")
+            if stats_dict is None:
+                f.write("     Trace file not found; run dedicated analysis script.\n\n")
+                return
+            f.write(
+                f"     Beta (UCLA): {stats_dict['mean']:.3f}, "
+                f"95% HDI: [{stats_dict['low']:.3f}, {stats_dict['high']:.3f}]\n"
+            )
+            f.write(f"     P(beta > 0): {stats_dict['prob_positive']:.1%}\n")
+            if stats_dict['prob_positive'] > 0.95:
+                f.write("     CONCLUSION: Positive effect supported\n\n")
+            elif stats_dict['prob_positive'] < 0.05:
+                f.write("     CONCLUSION: Negative effect supported\n\n")
+            else:
+                f.write("     CONCLUSION: No clear evidence\n\n")
+
+        _write_trace_block("Stroop Interference", stroop_stats)
+        _write_trace_block("PRP Bottleneck", prp_stats)
 
         # WCST (current)
         beta = trace_wcst.posterior['beta_ucla'].values.flatten()

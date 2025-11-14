@@ -107,7 +107,7 @@ def main():
     cols_a10 = ["meta_control", "prp_bottleneck", "wcst_nonpersev_errors"] + covars
     results.append(run_model(df, formula_a10, cols_a10, "Hα10",
                              "Meta-control ~ PRP*WCST*Loneliness",
-                             "prp_bottleneck:wcsT_nonpersev_errors:z_ucla"))
+                             "prp_bottleneck:wcst_nonpersev_errors:z_ucla"))
 
     summary = pd.DataFrame(results)
     out_path = OUTPUT_DIR / "alpha_hypothesis_summary.csv"

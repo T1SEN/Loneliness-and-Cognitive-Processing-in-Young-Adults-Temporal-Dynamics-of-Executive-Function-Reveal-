@@ -59,14 +59,19 @@ def run_model(df: pd.DataFrame, outcome: str, predictor: str, label: str) -> Dic
     if len(data) < 20:
         return {"hypothesis": label, "status": f"표본 부족 (n={len(data)})"}
     formula = f"y ~ {predictor} + z_dass_dep + z_dass_anx + z_dass_stress + age + C(gender)"
-    model = smf.ols(formula=formula, data=data.rename(columns={outcome: "y"})).fit()
-    main = model.summary2().tables[1].loc[predictor]
+    model = smf.ols(formula=formula, data=data.rename(columns={outcome: "y"})).fit(cov_type="HC3")
+    table = model.summary2().tables[1]
+    # Harmonize robust/non-robust summaries
+    p_col = "P>|t|" if "P>|t|" in table.columns else ("P>|z|" if "P>|z|" in table.columns else None)
+    if p_col is None:
+        return {"hypothesis": label, "status": "table_format_error"}
+    main = table.loc[predictor]
     return {
         "hypothesis": label,
         "status": "estimated",
         "nobs": int(model.nobs),
         "estimate": float(main["Coef."]),
-        "p_value": float(main["P>|t|"]),
+        "p_value": float(main[p_col]),
         "conf_low": float(main["[0.025"]),
         "conf_high": float(main["0.975]"]),
     }
@@ -104,6 +109,15 @@ def main():
         rows.append({"hypothesis": code, "description": reason, "status": "데이터 부족"})
 
     out_df = pd.DataFrame(rows)
+    # Add FDR q-values across estimated tests only
+    try:
+        from statsmodels.stats.multitest import multipletests
+        mask = out_df["status"].eq("estimated") & out_df["p_value"].notna()
+        if mask.any():
+            q = multipletests(out_df.loc[mask, "p_value"].astype(float).values, method="fdr_bh")[1]
+            out_df.loc[mask, "q_value"] = q
+    except Exception:
+        pass
     out_path = OUTPUT_DIR / "hypothesis_test_summary.csv"
     out_df.to_csv(out_path, index=False)
 

@@ -57,11 +57,26 @@ def main():
     df = add_meta_control(df)
     df = add_extra_terms(df)
     feature_path = Path(__file__).resolve().parent.parent / "results" / "analysis_outputs" / "trial_level_features.csv"
+    trial_feature_cols = [
+        "prp_t2_cv_all",
+        "prp_t2_cv_short",
+        "prp_t2_cv_long",
+        "prp_t2_trials",
+        "stroop_post_error_slowing",
+        "stroop_post_error_rt",
+        "stroop_post_correct_rt",
+        "stroop_incong_slope",
+        "stroop_trials",
+    ]
+
     if feature_path.exists():
         extra = pd.read_csv(feature_path)
         df = df.merge(extra, on="participant_id", how="left")
     else:
         print(f"[경고] Trial-level feature 파일을 찾을 수 없습니다: {feature_path}")
+        for col in trial_feature_cols:
+            if col not in df.columns:
+                df[col] = np.nan
 
     results: List[Dict] = []
     covars = ["z_dass_dep", "z_dass_anx", "z_dass_stress", "age", "gender"]

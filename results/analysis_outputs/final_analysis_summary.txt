@@ -11,12 +11,12 @@ MAIN FINDINGS:
 
    Stroop Interference:
      Beta (UCLA): 0.134, 95% HDI: [-0.237, 0.514]
-     P(beta > 0): 76%
+     P(beta > 0): 76.0%
      CONCLUSION: No clear evidence
 
    PRP Bottleneck:
      Beta (UCLA): -0.032, 95% HDI: [-0.409, 0.339]
-     P(beta > 0): 44%
+     P(beta > 0): 43.8%
      CONCLUSION: No clear evidence
 
    WCST Perseveration:

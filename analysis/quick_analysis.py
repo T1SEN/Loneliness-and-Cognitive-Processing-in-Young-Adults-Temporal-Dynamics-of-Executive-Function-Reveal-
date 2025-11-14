@@ -2,6 +2,7 @@
 """Quick analysis of loneliness x executive function data"""
 
 import sys
+import ast
 import pandas as pd
 import numpy as np
 from pathlib import Path
@@ -45,13 +46,14 @@ for pid, group in wcst_trials.groupby('participant_id'):
     total = len(group)
     pe_count = 0
     for extra_str in group['extra']:
-        if isinstance(extra_str, str):
-            try:
-                extra = eval(extra_str)
-                if extra.get('isPE', False):
-                    pe_count += 1
-            except:
-                pass
+        if not isinstance(extra_str, str):
+            continue
+        try:
+            extra = ast.literal_eval(extra_str)
+        except (ValueError, SyntaxError):
+            continue
+        if isinstance(extra, dict) and extra.get('isPE', False):
+            pe_count += 1
     wcst_pe.append({'participant_id': pid, 'pe_rate': pe_count / total * 100 if total > 0 else 0})
 
 wcst_summary = pd.DataFrame(wcst_pe)
@@ -70,9 +72,30 @@ if short_soas and long_soas:
 else:
     prp_summary['prp_bottleneck'] = np.nan
 
+surveys_lower = surveys.copy()
+surveys_lower.columns = surveys_lower.columns.str.lower()
+
+ucla = (
+    surveys_lower[surveys_lower['surveyname'].str.lower() == 'ucla']
+    [['participantid', 'score']]
+    .rename(columns={'participantid': 'participant_id', 'score': 'ucla_total'})
+)
+dass = (
+    surveys_lower[surveys_lower['surveyname'].str.lower() == 'dass']
+    [['participantid', 'score_d', 'score_a', 'score_s']]
+    .rename(columns={
+        'participantid': 'participant_id',
+        'score_d': 'dass_depression',
+        'score_a': 'dass_anxiety',
+        'score_s': 'dass_stress',
+    })
+)
+dass['dass_total'] = dass[['dass_depression', 'dass_anxiety', 'dass_stress']].sum(axis=1)
+survey_master = ucla.merge(dass, on='participant_id', how='outer')
+
 # Merge all data
 print("\n[Step 5] Merging datasets...")
-master = surveys[['participant_id', 'ucla_total', 'dass_depression', 'dass_anxiety', 'dass_stress']].copy()
+master = survey_master[['participant_id', 'ucla_total', 'dass_depression', 'dass_anxiety', 'dass_stress']].copy()
 master = master.merge(stroop_summary[['stroop_interference']], left_on='participant_id', right_index=True, how='left')
 master = master.merge(wcst_summary, on='participant_id', how='left')
 master = master.merge(prp_summary[['prp_bottleneck']], left_on='participant_id', right_index=True, how='left')

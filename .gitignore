@@ -1,6 +1,7 @@
 # Python Virtual Environments
 venv/
 .venv/
+.cli-venv/
 env/
 ENV/
 
@@ -67,3 +68,4 @@ Thumbs.db
 nul
 *.tmp
 *.log
+patch.diff

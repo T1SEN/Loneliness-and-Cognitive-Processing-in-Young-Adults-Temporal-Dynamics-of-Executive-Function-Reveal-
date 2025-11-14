@@ -98,6 +98,26 @@ def zscore(series: pd.Series) -> pd.Series:
     return (series - series.mean(skipna=True)) / series.std(skipna=True)
 
 
+def robust_clean_gender(series: pd.Series) -> pd.Series:
+    """Robust mapping of gender labels to 'male'/'female'.
+
+    Supports Korean labels (남/남성, 여/여성) and English (M/F, male/female),
+    case-insensitive, tolerating minor encoding artifacts.
+    """
+    s = series.fillna("").astype(str).str.strip().str.lower()
+    s_norm = s.str.replace(r"[^a-z\u3131-\u318e\uac00-\ud7a3]", "", regex=True)
+    male_mask = (
+        s_norm.str.contains("남") | s_norm.str.contains("남성") | s_norm.str.contains("male") | s_norm.eq("m")
+    )
+    female_mask = (
+        s_norm.str.contains("여") | s_norm.str.contains("여성") | s_norm.str.contains("female") | s_norm.eq("f")
+    )
+    out = pd.Series(np.nan, index=series.index, dtype="object")
+    out[male_mask] = "male"
+    out[female_mask] = "female"
+    return out
+
+
 def build_analysis_dataframe() -> pd.DataFrame:
     participants = read_csv_lower(RESULTS_DIR / "1_participants_info.csv")
     surveys = read_csv_lower(RESULTS_DIR / "2_surveys_results.csv")
@@ -190,7 +210,7 @@ def build_analysis_dataframe() -> pd.DataFrame:
         participants.loc[:, ["participant_id", "age", "gender"]]
         .assign(
             age=lambda df: pd.to_numeric(df["age"], errors="coerce"),
-            gender=lambda df: clean_gender(df["gender"]),
+            gender=lambda df: robust_clean_gender(df["gender"]),
         )
         .merge(ucla, on="participant_id", how="left")
         .merge(dass, on="participant_id", how="left")
@@ -281,13 +301,16 @@ def run_models(df: pd.DataFrame) -> List[ModelResult]:
             continue
 
         data = data.rename(columns={outcome: "y"})
-        model = smf.ols(formula=formula_template, data=data).fit()
-        coef_df = (
-            model.summary2().tables[1]
-            .rename(columns={"Coef.": "estimate", "Std.Err.": "std_error", "P>|t|": "p_value", "[0.025": "conf_low", "0.975]": "conf_high"})
-            .reset_index()
-            .rename(columns={"index": "term"})
-        )
+        model = smf.ols(formula=formula_template, data=data).fit(cov_type="HC3")
+        coef_raw = model.summary2().tables[1].copy()
+        # Harmonize column names across robust/non-robust variants
+        rename_map = {"Coef.": "estimate", "Std.Err.": "std_error", "[0.025": "conf_low", "0.975]": "conf_high"}
+        coef_raw = coef_raw.rename(columns=rename_map)
+        if "P>|t|" in coef_raw.columns:
+            coef_raw = coef_raw.rename(columns={"P>|t|": "p_value", "t": "stat"})
+        if "P>|z|" in coef_raw.columns:
+            coef_raw = coef_raw.rename(columns={"P>|z|": "p_value", "z": "stat"})
+        coef_df = coef_raw.reset_index().rename(columns={"index": "term"})
 
         results.append(
             ModelResult(
@@ -331,6 +354,13 @@ def save_outputs(results: List[ModelResult]) -> None:
         )
 
     coef_df = pd.concat(coef_rows, ignore_index=True)
+    # Add FDR (BH) q-values across all coefficients
+    try:
+        from statsmodels.stats.multitest import multipletests
+        if "p_value" in coef_df.columns:
+            coef_df["q_value"] = multipletests(coef_df["p_value"].astype(float).values, method="fdr_bh")[1]
+    except Exception:
+        pass
     fit_df = pd.DataFrame(fit_rows)
 
     coef_path = OUTPUT_DIR / "loneliness_models_coefficients_py.csv"
