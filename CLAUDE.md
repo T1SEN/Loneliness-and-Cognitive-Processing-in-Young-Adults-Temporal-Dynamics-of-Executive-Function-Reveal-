@@ -1,0 +1,168 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project Overview
+
+This is a research data analysis pipeline for a psychology/cognitive neuroscience study examining the relationship between loneliness (UCLA Loneliness Scale) and executive function (EF) performance across three cognitive tasks: Stroop (interference control), WCST (set-shifting), and PRP (dual-task coordination).
+
+The project has two main components:
+1. **Data Export**: Firebase → CSV extraction scripts
+2. **Statistical Analysis**: Multiple analysis scripts covering correlation, regression, Bayesian modeling, and machine learning approaches
+
+## Data Pipeline Architecture
+
+### Data Flow
+```
+Firebase (Firestore) → export_alldata.py → results/*.csv → analysis/*.py → results/analysis_outputs/*.csv
+```
+
+### Key Data Files (in `results/`)
+- `1_participants_info.csv` - Demographics (age, gender, education, etc.)
+- `2_surveys_results.csv` - UCLA Loneliness & DASS-21 (depression/anxiety/stress) responses
+- `3_cognitive_tests_summary.csv` - Aggregate task performance metrics
+- `4a_prp_trials.csv` - Trial-level PRP (Psychological Refractory Period) data
+- `4b_wcst_trials.csv` - Trial-level WCST (Wisconsin Card Sorting Test) data
+- `4c_stroop_trials.csv` - Trial-level Stroop task data
+
+### Executive Function Metrics
+The analysis derives three primary EF measures:
+1. **Stroop interference**: Incongruent RT - Congruent RT (inhibitory control)
+2. **WCST perseverative error rate**: % trials with perseverative errors (set-shifting)
+3. **PRP bottleneck effect**: T2 RT at short SOA - T2 RT at long SOA (dual-task coordination)
+
+## Essential Commands
+
+### Environment Setup
+```bash
+# Activate virtual environment
+.\venv\Scripts\activate
+
+# Install dependencies (if needed)
+.\venv\Scripts\pip.exe install -r requirements.txt  # Note: requirements.txt doesn't exist but packages are already installed
+```
+
+### Data Export
+```bash
+# Export all Firebase data to CSV
+# Requires serviceAccountKey.json in root directory
+PYTHONIOENCODING=utf-8 .\venv\Scripts\python.exe export_alldata.py
+
+# Export only participant info (simpler version)
+PYTHONIOENCODING=utf-8 .\venv\Scripts\python.exe export_data.py
+```
+
+### Core Analysis Scripts
+```bash
+# Main hypothesis testing pipeline (correlation + hierarchical regression + PCA)
+.\venv\Scripts\python.exe analysis\run_analysis.py
+
+# Machine learning nested CV with hyperparameter tuning
+.\venv\Scripts\python.exe analysis\ml_nested_tuned.py --task classification --features demo_dass
+.\venv\Scripts\python.exe analysis\ml_nested_tuned.py --task regression --features ef_demo_dass
+
+# Bayesian hierarchical models
+.\venv\Scripts\python.exe analysis\dass_ef_hier_bayes.py
+
+# Tree ensemble exploration (Random Forest, Gradient Boosting)
+.\venv\Scripts\python.exe analysis\tree_ensemble_exploration.py
+
+# RFE feature selection
+.\venv\Scripts\python.exe analysis\rfe_feature_selection.py
+
+# Generate trial-level features (CV, post-error slowing, RT slopes)
+.\venv\Scripts\python.exe analysis\derive_trial_features.py
+```
+
+## Critical Implementation Details
+
+### Unicode Handling (Windows-specific)
+Scripts use `PYTHONIOENCODING=utf-8` and include:
+```python
+if sys.platform.startswith("win") and hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding='utf-8')
+```
+Korean text is present in comments/prints. Always save CSVs with `encoding='utf-8-sig'` for Excel compatibility.
+
+### WCST Extra Field Parsing
+The `wcst_trials.csv` contains an `extra` column with stringified dicts that must be parsed:
+```python
+def _parse_wcst_extra(extra_str):
+    if not isinstance(extra_str, str):
+        return {}
+    try:
+        return ast.literal_eval(extra_str)
+    except (ValueError, SyntaxError):
+        return {}
+```
+This extracts `isPE` (is perseverative error) flags.
+
+### Column Naming Inconsistencies
+- Some CSVs use `participantId`, others use `participant_id`
+- Survey names may be `surveyName` or stored as lowercase `survey`
+- Always normalize column names: `.rename(columns={'participantId': 'participant_id'})` or `.columns.str.lower()`
+
+### PRP SOA Binning
+SOA (Stimulus Onset Asynchrony) values are binned consistently across scripts:
+- **short**: ≤150ms
+- **medium**: 300-600ms
+- **long**: ≥1200ms
+
+### Master Dataset Construction
+Most analysis scripts merge data using this pattern:
+1. Load participants, surveys, cognitive summaries
+2. Compute task-specific metrics from trial data
+3. Merge on `participant_id`
+4. Drop rows with missing values in key columns
+5. Check for minimum N (usually ≥20) before proceeding
+
+## Statistical Analysis Approach
+
+The codebase implements a multi-method validation strategy:
+
+1. **Frequentist**: Pearson correlations, hierarchical regression (controlling for DASS-21)
+2. **Bayesian**: PyMC models with ROPE (Region of Practical Equivalence) + LOO-CV
+3. **Machine Learning**: Nested CV with GridSearchCV, permutation importance, partial dependence plots
+4. **Dimensionality Reduction**: PCA to extract "meta-control" factor across three EF tasks
+
+Key hypothesis: UCLA loneliness predicts EF impairment beyond mood/anxiety (DASS-21 as covariates).
+
+## Output Location
+
+All analysis outputs go to `results/analysis_outputs/`:
+- CSV files with metrics, coefficients, p-values, predictions
+- PNG files for PDPs (partial dependence plots)
+- `analysis_log.txt` for some verbose outputs
+
+## Dependencies
+The virtual environment includes:
+- **Data**: pandas, numpy
+- **Stats**: scipy, statsmodels, scikit-learn
+- **Bayesian**: pymc, pytensor, arviz
+- **ML**: scikit-learn (with all estimators)
+- **Viz**: matplotlib, seaborn
+- **Firebase**: firebase-admin, google-cloud-firestore
+
+## Common Development Patterns
+
+### Adding New Analysis Scripts
+1. Load base CSVs from `RESULTS_DIR = Path("results")`
+2. Create output directory: `output_dir.mkdir(exist_ok=True)`
+3. Normalize participant IDs across dataframes
+4. Handle missing values explicitly (`.dropna()` or imputation)
+5. Save outputs to `results/analysis_outputs/` with descriptive filenames
+6. Use `encoding='utf-8-sig'` for CSV exports
+
+### Debugging Data Issues
+```bash
+# Check row counts for all CSVs
+.\venv\Scripts\python.exe -c "import pandas as pd; import os; files = sorted([f for f in os.listdir('results') if f.endswith('.csv')]); [print(f'{f}: {len(pd.read_csv(os.path.join(\"results\", f)))} rows') for f in files]"
+```
+
+## Important Notes
+
+- **Firebase credentials**: `serviceAccountKey.json` must be present but is NOT committed to git
+- **Platform**: Developed on Windows (note path separators and encoding issues)
+- **Language**: Mixed Korean/English comments; analysis outputs are primarily English
+- **Null handling**: Both `np.nan` and `pd.NA` appear; be consistent within each script
+- **Trial filtering**: Always filter timeouts (`timeout == False` or `t2_timeout == False`) and invalid RTs (`rt_ms > 0`) before analysis
