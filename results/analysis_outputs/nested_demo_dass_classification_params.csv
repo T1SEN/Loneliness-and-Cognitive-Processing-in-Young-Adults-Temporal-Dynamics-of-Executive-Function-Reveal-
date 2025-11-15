@@ -1,0 +1,6 @@
+fold,model,mdl__C,mdl__max_depth,mdl__min_samples_leaf,mdl__n_estimators
+1,logreg,0.1,,,
+2,rf,,8.0,1.0,300.0
+3,logreg,0.1,,,
+4,logreg,0.1,,,
+5,logreg,0.1,,,
