@@ -30,6 +30,11 @@ import arviz as az
 
 from dass_exec_models import build_df, add_meta_control
 
+try:
+    from pymc.sampling_jax import sample_numpyro_nuts
+except Exception:  # pragma: no cover - optional accel path
+    sample_numpyro_nuts = None
+
 
 BASE = Path(__file__).resolve().parent.parent
 RES = BASE / "results"
@@ -69,9 +74,11 @@ def build_long_df() -> pd.DataFrame:
         sub = df[needed].dropna().copy()
         if sub.empty:
             continue
-        # encode gender: female=0, male=1 (rough heuristic)
-        g = sub["gender"].astype(str)
-        g_enc = np.where(g.str.contains("남"), 1.0, 0.0)
+        # encode gender using cleaned labels from build_df(): female=0, male=1
+        g = sub['gender'].astype(str).str.strip().str.lower()
+        male = g.eq('male')
+        female = g.eq('female')
+        g_enc = np.where(male, 1.0, np.where(female, 0.0, np.nan))
 
         rows.append(
             pd.DataFrame(
@@ -149,14 +156,31 @@ def fit_model(long: pd.DataFrame) -> az.InferenceData:
 
         pm.Normal("y_obs", mu=mu, sigma=sigma[task_idx], observed=y)
 
-        idata = pm.sample(
-            draws=2000,
-            tune=2000,
-            chains=4,
+        sample_kwargs = dict(
+            draws=1000,
+            tune=1000,
+            chains=2,
             target_accept=0.9,
             random_seed=42,
-            return_inferencedata=True,
         )
+        if sample_numpyro_nuts is not None:
+            idata = sample_numpyro_nuts(
+                **sample_kwargs,
+                model=m,
+                chain_method="vectorized",
+                return_inferencedata=True,
+            )
+        else:
+            approx = pm.fit(
+                n=5000,
+                method="advi",
+                random_seed=42,
+            )
+            idata = approx.sample(
+                draws=sample_kwargs["draws"] * sample_kwargs["chains"],
+                random_seed=sample_kwargs["random_seed"],
+                return_inferencedata=True,
+            )
 
     return idata
 
@@ -231,4 +255,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

@@ -1,0 +1,84 @@
+================================================================================
+COMPREHENSIVE GENDER MODERATION ANALYSIS REPORT
+================================================================================
+
+Analysis Date: 2025
+Total Participants: 86
+  - Female: 56
+  - Male: 30
+
+================================================================================
+PHASE 1: WCST METRICS
+================================================================================
+
+Significant gender moderation effects found: 2
+
+  wcst_late_pe_rate:
+    Interaction β = 3.7124, p = 0.0304
+    Female slope: β = -0.6275, p = 0.6962
+    Male slope: β = 4.7266, p = 0.0234
+    Permutation p = 0.0090
+    Bootstrap 95% CI = [1.2228, 6.5579]
+
+  wcst_pe_rate:
+    Interaction β = 2.4826, p = 0.0346
+    Female slope: β = -0.7080, p = 0.5449
+    Male slope: β = 3.2613, p = 0.0093
+    Permutation p = 0.0080
+    Bootstrap 95% CI = [0.8034, 4.3090]
+
+================================================================================
+PHASE 2: STROOP METRICS
+================================================================================
+
+Significant gender moderation effects found: 1
+
+  stroop_rt_slope:
+    Interaction β = 0.7514, p = 0.0458
+    Permutation p = 0.0490
+
+================================================================================
+PHASE 3: PRP METRICS
+================================================================================
+
+Significant gender moderation effects found: 2
+
+  prp_long_t2_cv:
+    Interaction β = 0.0685, p = 0.0255
+    Permutation p = 0.0480
+
+  prp_short_t1_acc:
+    Interaction β = -1.6745, p = 0.0444
+    Permutation p = 0.0480
+
+================================================================================
+MULTIPLE COMPARISON CORRECTIONS
+================================================================================
+
+Total tests conducted: 25
+Bonferroni corrected α = 0.00200
+Bonferroni significant effects: 0
+FDR significant effects: 0
+
+================================================================================
+SUMMARY AND CONCLUSIONS
+================================================================================
+
+This comprehensive analysis explored gender moderation effects across
+25 executive function metrics from three cognitive tasks.
+
+Key findings:
+  - 2 WCST metrics showed uncorrected p < 0.05
+  - 1 Stroop metrics showed uncorrected p < 0.05
+  - 2 PRP metrics showed uncorrected p < 0.05
+
+After Bonferroni correction for multiple comparisons:
+  - 0 effects remain significant
+
+RECOMMENDATIONS:
+  1. Findings should be considered exploratory
+  2. Replication in larger sample (N > 150) essential
+  3. Preregistration strongly recommended
+  4. Consider sex/gender differences in study design
+
+================================================================================

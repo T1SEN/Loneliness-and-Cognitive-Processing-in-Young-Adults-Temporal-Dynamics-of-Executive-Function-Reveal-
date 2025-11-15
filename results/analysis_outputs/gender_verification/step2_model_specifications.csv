@@ -1,0 +1,5 @@
+﻿model,formula,interaction_beta,interaction_p,r2
+공변량 없음,perseverative_error_rate ~ z_ucla * C(gender_male),2.1628492261378622,0.058517933810440535,0.06631644658576719
+연령만,perseverative_error_rate ~ z_ucla * C(gender_male) + z_age,2.1339227536786054,0.06288288362625813,0.07431691926768902
+DASS만,perseverative_error_rate ~ z_ucla * C(gender_male) + z_dass_dep + z_dass_anx + z_dass_stress,2.6324295304902594,0.025732337983058066,0.10977461540046707
+전체,perseverative_error_rate ~ z_ucla * C(gender_male) + z_age + z_dass_dep + z_dass_anx + z_dass_stress,2.594371466121463,0.004240485948217536,0.1146842517078761
