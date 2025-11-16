@@ -3,6 +3,19 @@
 극단 집단 분석: 외로움 상위 vs 하위 집단 비교
 ======================================================
 고외로움 집단 vs 저외로움 집단의 집행기능 차이를 검증
+
+⚠️ WARNING: DASS-21 CONTROL MISSING ⚠️
+================================================================================
+This script does NOT control for DASS-21 (depression/anxiety/stress) as covariates.
+Results confound loneliness effects with mood/anxiety symptoms.
+
+DO NOT cite these results as evidence of "pure loneliness effects".
+
+For confirmatory analysis with proper DASS control, use:
+  - master_dass_controlled_analysis.py (hierarchical regression with covariates)
+
+This script is EXPLORATORY ONLY - shows raw group differences without confound control.
+================================================================================
 """
 
 import sys
@@ -14,6 +27,9 @@ import matplotlib
 matplotlib.use('Agg')  # Use non-interactive backend
 import matplotlib.pyplot as plt
 import seaborn as sns
+
+# Import statistical utilities for FDR correction
+from statistical_utils import apply_multiple_comparison_correction
 
 # Set style
 sns.set_style("whitegrid")
@@ -61,7 +77,7 @@ print(f"  Mean UCLA = {high_group['ucla_total'].mean():.2f} (SD = {high_group['u
 # Executive function measures to compare
 ef_measures = {
     'stroop_interference': 'Stroop Interference (ms)',
-    'pe_rate': 'WCST Perseverative Error Rate (%)',
+    'perseverative_error_rate': 'WCST Perseverative Error Rate (%)',
     'prp_bottleneck': 'PRP Bottleneck Effect (ms)'
 }
 
@@ -91,10 +107,10 @@ for measure, label in all_measures.items():
     high_mean = high_data.mean()
     high_sd = high_data.std()
 
-    # t-test
-    t_stat, p_val = stats.ttest_ind(low_data, high_data)
+    # CRITICAL FIX: Welch's t-test (does not assume equal variances)
+    t_stat, p_val = stats.ttest_ind(low_data, high_data, equal_var=False)
 
-    # Effect size (Cohen's d)
+    # Effect size (Cohen's d with pooled SD)
     pooled_sd = np.sqrt(((len(low_data) - 1) * low_sd**2 + (len(high_data) - 1) * high_sd**2) /
                          (len(low_data) + len(high_data) - 2))
     cohens_d = (high_mean - low_mean) / pooled_sd
@@ -126,10 +142,30 @@ for measure, label in all_measures.items():
     elif p_val < 0.05:
         print(f"  * p < .05")
 
-# Save results
+# CRITICAL FIX: Apply FDR correction to all 6 tests (3 EF + 3 DASS)
 results_q_df = pd.DataFrame(results_q)
+print("\n" + "-" * 80)
+print("다중비교 보정 (FDR) for Quartile Split")
+print("-" * 80)
+
+p_vals_q = results_q_df['p'].values
+reject_q_fdr, p_adj_q_fdr = apply_multiple_comparison_correction(
+    p_vals_q,
+    method='fdr_bh',
+    alpha=0.05
+)
+
+results_q_df['p_fdr_adjusted'] = p_adj_q_fdr
+results_q_df['significant_fdr'] = reject_q_fdr
+
+print(f"\n총 {len(p_vals_q)}개 검정에 FDR 보정 적용:")
+for i, row in results_q_df.iterrows():
+    sig_marker = "***" if row['p_fdr_adjusted'] < 0.001 else "**" if row['p_fdr_adjusted'] < 0.01 else "*" if row['p_fdr_adjusted'] < 0.05 else "ns"
+    print(f"  {row['Measure']:35s}: p_raw = {row['p']:.4f}, p_fdr = {row['p_fdr_adjusted']:.4f} [{sig_marker}]")
+
+# Save results
 results_q_df.to_csv(output_dir / "extreme_group_quartile_results.csv", index=False, encoding='utf-8-sig')
-print(f"\n[OK] Saved: {output_dir / 'extreme_group_quartile_results.csv'}")
+print(f"\n[OK] Saved (with FDR): {output_dir / 'extreme_group_quartile_results.csv'}")
 
 # ============================================================================
 # Method 2: Median Split (중앙값 기준)
@@ -160,7 +196,8 @@ for measure, label in all_measures.items():
     high_mean = high_data.mean()
     high_sd = high_data.std()
 
-    t_stat, p_val = stats.ttest_ind(low_data, high_data)
+    # CRITICAL FIX: Welch's t-test (does not assume equal variances)
+    t_stat, p_val = stats.ttest_ind(low_data, high_data, equal_var=False)
 
     pooled_sd = np.sqrt(((len(low_data) - 1) * low_sd**2 + (len(high_data) - 1) * high_sd**2) /
                          (len(low_data) + len(high_data) - 2))
@@ -183,14 +220,26 @@ print("\n" + "-" * 80)
 print("Results (Median Split)")
 print("-" * 80)
 
-for res in results_med:
+# CRITICAL FIX: Apply FDR correction to all 6 tests
+results_med_df = pd.DataFrame(results_med)
+p_vals_med = results_med_df['p'].values
+reject_med_fdr, p_adj_med_fdr = apply_multiple_comparison_correction(
+    p_vals_med,
+    method='fdr_bh',
+    alpha=0.05
+)
+
+results_med_df['p_fdr_adjusted'] = p_adj_med_fdr
+results_med_df['significant_fdr'] = reject_med_fdr
+
+for i, res in results_med_df.iterrows():
     if res['Measure'] in ef_measures.values():  # Only print EF measures
+        sig_marker = "*" if res['significant_fdr'] else "ns"
         print(f"\n{res['Measure']}:")
         print(f"  Low:  M = {res['Low_Mean']:7.2f}, SD = {res['Low_SD']:6.2f}")
         print(f"  High: M = {res['High_Mean']:7.2f}, SD = {res['High_SD']:6.2f}")
-        print(f"  t = {res['t']:6.2f}, p = {res['p']:.4f}, d = {res['Cohen_d']:5.2f}")
+        print(f"  t = {res['t']:6.2f}, p_raw = {res['p']:.4f}, p_fdr = {res['p_fdr_adjusted']:.4f} [{sig_marker}], d = {res['Cohen_d']:5.2f}")
 
-results_med_df = pd.DataFrame(results_med)
 results_med_df.to_csv(output_dir / "extreme_group_median_results.csv", index=False, encoding='utf-8-sig')
 
 # ============================================================================
@@ -215,7 +264,8 @@ for measure, label in ef_measures.items():
     low_data = low_group_30[measure].dropna()
     high_data = high_group_30[measure].dropna()
 
-    t_stat, p_val = stats.ttest_ind(low_data, high_data)
+    # CRITICAL FIX: Welch's t-test (does not assume equal variances)
+    t_stat, p_val = stats.ttest_ind(low_data, high_data, equal_var=False)
 
     low_mean = low_data.mean()
     high_mean = high_data.mean()
@@ -231,7 +281,29 @@ for measure, label in ef_measures.items():
         'Cohen_d': cohens_d
     })
 
-    print(f"\n{label}: t = {t_stat:.2f}, p = {p_val:.4f}, d = {cohens_d:.2f}")
+# CRITICAL FIX: Apply FDR correction to all 3 tests
+results_30_df = pd.DataFrame(results_30)
+p_vals_30 = results_30_df['p'].values
+reject_30_fdr, p_adj_30_fdr = apply_multiple_comparison_correction(
+    p_vals_30,
+    method='fdr_bh',
+    alpha=0.05
+)
+
+results_30_df['p_fdr_adjusted'] = p_adj_30_fdr
+results_30_df['significant_fdr'] = reject_30_fdr
+
+print("\n" + "-" * 80)
+print("다중비교 보정 (FDR) for Top/Bottom 30% Split")
+print("-" * 80)
+
+for i, row in results_30_df.iterrows():
+    sig_marker = "*" if row['significant_fdr'] else "ns"
+    print(f"\n{row['Measure']}: t = {row['t']:.2f}, p_raw = {row['p']:.4f}, p_fdr = {row['p_fdr_adjusted']:.4f} [{sig_marker}], d = {row['Cohen_d']:.2f}")
+
+# Save Method 3 results
+results_30_df.to_csv(output_dir / "extreme_group_30pct_results.csv", index=False, encoding='utf-8-sig')
+print(f"\n[OK] Saved (with FDR): {output_dir / 'extreme_group_30pct_results.csv'}")
 
 # ============================================================================
 # Visualization: Box plots
@@ -269,13 +341,13 @@ for idx, (measure, label) in enumerate(ef_measures.items()):
     ax.set_ylabel(label, fontsize=12)
     ax.set_title(label, fontsize=13, fontweight='bold')
 
-    # Add statistics text
+    # Add statistics text (using FDR-adjusted p-values)
     result = results_q_df[results_q_df['Measure'] == label].iloc[0]
-    stats_text = f"t = {result['t']:.2f}\np = {result['p']:.3f}\nd = {result['Cohen_d']:.2f}"
+    stats_text = f"t = {result['t']:.2f}\np_raw = {result['p']:.3f}\np_fdr = {result['p_fdr_adjusted']:.3f}\nd = {result['Cohen_d']:.2f}"
 
-    if result['p'] < 0.05:
+    if result['significant_fdr']:
         stats_text = "* " + stats_text
-        ax.set_facecolor('#ffe6e6')  # Light red background for significant
+        ax.set_facecolor('#ffe6e6')  # Light red background for FDR-significant
 
     ax.text(0.95, 0.95, stats_text, transform=ax.transAxes,
             verticalalignment='top', horizontalalignment='right',
@@ -325,9 +397,10 @@ print("SUMMARY: Quartile Split Results (Main Analysis)")
 print("=" * 80)
 
 summary = results_q_df[results_q_df['Measure'].isin(ef_measures.values())].copy()
-summary['Sig'] = summary['p'].apply(lambda x: '***' if x < 0.001 else '**' if x < 0.01 else '*' if x < 0.05 else 'ns')
+summary['Sig_raw'] = summary['p'].apply(lambda x: '***' if x < 0.001 else '**' if x < 0.01 else '*' if x < 0.05 else 'ns')
+summary['Sig_fdr'] = summary['p_fdr_adjusted'].apply(lambda x: '***' if x < 0.001 else '**' if x < 0.01 else '*' if x < 0.05 else 'ns')
 
-print("\n" + summary[['Measure', 'Low_Mean', 'High_Mean', 't', 'p', 'Cohen_d', 'Sig']].to_string(index=False))
+print("\n" + summary[['Measure', 'Low_Mean', 'High_Mean', 't', 'p', 'p_fdr_adjusted', 'Cohen_d', 'Sig_fdr']].to_string(index=False))
 
 # Effect size interpretation
 print("\n" + "=" * 80)
@@ -359,7 +432,7 @@ print("\n" + "=" * 80)
 print("INTERPRETATION & RECOMMENDATIONS")
 print("=" * 80)
 
-sig_count = (summary['p'] < 0.05).sum()
+sig_count = (summary['significant_fdr']).sum()  # Use FDR-adjusted significance
 
 if sig_count >= 2:
     print("\n[GOOD NEWS] 유의한 차이가 발견되었습니다!")

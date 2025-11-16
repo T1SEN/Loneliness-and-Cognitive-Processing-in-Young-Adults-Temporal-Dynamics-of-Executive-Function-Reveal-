@@ -1,0 +1,5 @@
+﻿hypothesis,metric,tier,claimed_value,actual_value,claimed_p,actual_p,p_match,effect_match,effect_diff_pct,sign_match,replicated
+WCST PE × Gender interaction,Interaction beta,1,2.59,2.533977883007881,0.004,0.025347850536762275,False,True,2.1630161000818022,True,False
+WCST PE × Gender: Male slope,Male UCLA→PE beta,1,2.29,0.07223381368701275,0.067,0.2311625163998766,False,False,96.84568499183351,True,False
+WCST PE × Gender: Female slope,Female UCLA→PE beta,1,-0.3,-0.09901585337840679,0.72,0.09423683016021331,False,False,66.99471554053108,True,False
+DASS Anxiety Stratification,Low Anxiety UCLA×Gender interaction,2,4.28,3.9837760912026643,0.008,0.01077535381271782,True,True,6.9211193644237365,True,True

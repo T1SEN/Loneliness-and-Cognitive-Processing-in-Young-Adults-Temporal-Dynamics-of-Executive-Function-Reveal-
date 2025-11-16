@@ -56,8 +56,38 @@ if 'participantId' in participants.columns:
     else:
         participants.rename(columns={'participantId': 'participant_id'}, inplace=True)
 
+# Load DASS data
+surveys = pd.read_csv(RESULTS_DIR / "2_surveys_results.csv", encoding='utf-8-sig')
+if 'participantId' in surveys.columns:
+    surveys = surveys.rename(columns={'participantId': 'participant_id'})
+
+dass_data = surveys[surveys['survey'].str.lower() == 'dass-21'].copy()
+dass_pivot = dass_data.pivot_table(index='participant_id', columns='item', values='response', aggfunc='first').reset_index()
+
+if len(dass_pivot.columns) > 20:
+    item_cols = [col for col in dass_pivot.columns if col != 'participant_id']
+    dass_pivot['dass_depression'] = dass_pivot[item_cols].iloc[:, [2, 4, 9, 12, 15, 16, 20]].sum(axis=1)
+    dass_pivot['dass_anxiety'] = dass_pivot[item_cols].iloc[:, [1, 3, 6, 8, 14, 18, 19]].sum(axis=1)
+    dass_pivot['dass_stress'] = dass_pivot[item_cols].iloc[:, [0, 5, 7, 10, 11, 13, 17]].sum(axis=1)
+    dass_summary = dass_pivot[['participant_id', 'dass_depression', 'dass_anxiety', 'dass_stress']]
+else:
+    # Fallback to existing columns if available
+    if all(col in master.columns for col in ['dass_depression', 'dass_anxiety', 'dass_stress']):
+        dass_summary = master[['participant_id', 'dass_depression', 'dass_anxiety', 'dass_stress']].drop_duplicates()
+    else:
+        dass_summary = pd.DataFrame({
+            'participant_id': master['participant_id'].unique(),
+            'dass_depression': 0,
+            'dass_anxiety': 0,
+            'dass_stress': 0
+        })
+
 master = master.merge(
     participants[['participant_id', 'age', 'gender']],
+    on='participant_id',
+    how='left'
+).merge(
+    dass_summary,
     on='participant_id',
     how='left'
 )
@@ -68,16 +98,22 @@ if 'gender' in master.columns:
     master.loc[master['gender'] == '남성', 'gender_male'] = 1
     master.loc[master['gender'].str.lower() == 'male', 'gender_male'] = 1
 
-# Filter complete cases
-master = master.dropna(subset=['ucla_total', 'pe_rate', 'gender_male']).copy()
+# Filter complete cases (including DASS)
+master = master.dropna(subset=['ucla_total', 'pe_rate', 'gender_male',
+                                'dass_depression', 'dass_anxiety', 'dass_stress', 'age']).copy()
 
 print(f"  N={len(master)} ({(master['gender_male']==0).sum()} Female, {(master['gender_male']==1).sum()} Male)")
+print(f"  (with complete DASS + age data for covariate control)")
 print()
 
 # Standardize
 scaler = StandardScaler()
 master['z_ucla'] = scaler.fit_transform(master[['ucla_total']])
 master['z_ucla_sq'] = master['z_ucla'] ** 2
+master['z_dass_dep'] = scaler.fit_transform(master[['dass_depression']])
+master['z_dass_anx'] = scaler.fit_transform(master[['dass_anxiety']])
+master['z_dass_str'] = scaler.fit_transform(master[['dass_stress']])
+master['z_age'] = scaler.fit_transform(master[['age']])
 
 # ============================================================================
 # ANALYSIS 1: QUADRATIC UCLA × GENDER
@@ -94,12 +130,12 @@ for outcome in outcomes:
     if outcome not in master.columns or master[outcome].notna().sum() < 40:
         continue
 
-    # Linear model
-    formula_linear = f"{outcome} ~ z_ucla * C(gender_male)"
+    # Linear model (DASS-controlled)
+    formula_linear = f"{outcome} ~ z_ucla * C(gender_male) + z_dass_dep + z_dass_anx + z_dass_str + z_age"
     model_linear = ols(formula_linear, data=master.dropna(subset=[outcome])).fit()
 
-    # Quadratic model
-    formula_quad = f"{outcome} ~ (z_ucla + z_ucla_sq) * C(gender_male)"
+    # Quadratic model (DASS-controlled)
+    formula_quad = f"{outcome} ~ (z_ucla + z_ucla_sq) * C(gender_male) + z_dass_dep + z_dass_anx + z_dass_str + z_age"
     model_quad = ols(formula_quad, data=master.dropna(subset=[outcome])).fit()
 
     # Extract coefficients
@@ -251,8 +287,8 @@ for outcome in ['pe_rate', 'wcst_accuracy']:
     if outcome not in master.columns or master[outcome].notna().sum() < 40:
         continue
 
-    # 2-way ANOVA: Tertile × Gender
-    formula = f"{outcome} ~ C(ucla_tertile) * C(gender_male)"
+    # 2-way ANOVA: Tertile × Gender (DASS-controlled)
+    formula = f"{outcome} ~ C(ucla_tertile) * C(gender_male) + z_dass_dep + z_dass_anx + z_dass_str + z_age"
     try:
         model = ols(formula, data=master.dropna(subset=[outcome])).fit()
 

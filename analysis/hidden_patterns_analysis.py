@@ -58,8 +58,36 @@ if 'participantId' in participants.columns:
     else:
         participants.rename(columns={'participantId': 'participant_id'}, inplace=True)
 
+# Load DASS data
+surveys = pd.read_csv(RESULTS_DIR / "2_surveys_results.csv", encoding='utf-8-sig')
+if 'participantId' in surveys.columns:
+    surveys = surveys.rename(columns={'participantId': 'participant_id'})
+
+# Extract DASS subscales
+dass_data = surveys[surveys['survey'].str.lower() == 'dass-21'].copy()
+dass_pivot = dass_data.pivot_table(
+    index='participant_id',
+    columns='item',
+    values='response',
+    aggfunc='first'
+).reset_index()
+
+# Calculate DASS subscales (0-indexed items)
+if len(dass_pivot.columns) > 20:  # Has 21 items
+    dass_pivot['dass_depression'] = dass_pivot.iloc[:, [3, 5, 10, 13, 16, 17, 21]].sum(axis=1)
+    dass_pivot['dass_anxiety'] = dass_pivot.iloc[:, [2, 4, 7, 9, 15, 19, 20]].sum(axis=1)
+    dass_pivot['dass_stress'] = dass_pivot.iloc[:, [1, 6, 8, 11, 12, 14, 18]].sum(axis=1)
+    dass_summary = dass_pivot[['participant_id', 'dass_depression', 'dass_anxiety', 'dass_stress']]
+else:
+    # Fallback: use existing DASS columns from master if available
+    dass_summary = master[['participant_id', 'dass_depression', 'dass_anxiety', 'dass_stress']].dropna()
+
 master = master.merge(
     participants[['participant_id', 'age', 'gender']],
+    on='participant_id',
+    how='left'
+).merge(
+    dass_summary,
     on='participant_id',
     how='left'
 )
@@ -71,18 +99,25 @@ if 'gender' in master.columns:
     master.loc[master['gender'].str.lower() == 'male', 'gender_male'] = 1
     master['gender_label'] = master['gender_male'].map({0: 'Female', 1: 'Male'})
 
-master = master.dropna(subset=['ucla_total', 'gender_male']).copy()
+master = master.dropna(subset=['ucla_total', 'gender_male',
+                                'dass_depression', 'dass_anxiety', 'dass_stress', 'age']).copy()
 
 # Load feedback sensitivity (for post-error analysis)
 feedback = pd.read_csv(Path("results/analysis_outputs/wcst_trial_dynamics/feedback_sensitivity.csv"))
-feedback = feedback.merge(master[['participant_id', 'gender_label']], on='participant_id', how='left')
+feedback = feedback.merge(master[['participant_id', 'gender_label', 'dass_depression', 'dass_anxiety', 'dass_stress', 'age']],
+                          on='participant_id', how='left')
 
 print(f"  N={len(master)} ({(master['gender_male']==0).sum()} Female, {(master['gender_male']==1).sum()} Male)")
+print(f"  (with complete DASS + age data for covariate control)")
 print()
 
-# Standardize
+# Standardize UCLA and DASS
 scaler = StandardScaler()
 master['z_ucla'] = scaler.fit_transform(master[['ucla_total']])
+master['z_dass_dep'] = scaler.fit_transform(master[['dass_depression']])
+master['z_dass_anx'] = scaler.fit_transform(master[['dass_anxiety']])
+master['z_dass_str'] = scaler.fit_transform(master[['dass_stress']])
+master['z_age'] = scaler.fit_transform(master[['age']])
 
 # ============================================================================
 # ANALYSIS 1: STROOP FEMALE VULNERABILITY (DOUBLE DISSOCIATION)
@@ -105,8 +140,8 @@ for task_name, metric in tasks_metrics.items():
     if metric not in master.columns or master[metric].notna().sum() < 40:
         continue
 
-    # Overall moderation
-    formula = f"{metric} ~ z_ucla * C(gender_male)"
+    # Overall moderation (DASS-controlled)
+    formula = f"{metric} ~ z_ucla * C(gender_male) + z_dass_dep + z_dass_anx + z_dass_str + z_age"
     model = ols(formula, data=master.dropna(subset=[metric])).fit()
 
     int_term = "z_ucla:C(gender_male)[T.1]"
@@ -116,19 +151,21 @@ for task_name, metric in tasks_metrics.items():
     else:
         int_beta, int_p = np.nan, np.nan
 
-    # Gender-stratified slopes
+    # Gender-stratified slopes (DASS-controlled)
     female_data = master[master['gender_male'] == 0].dropna(subset=[metric])
     male_data = master[master['gender_male'] == 1].dropna(subset=[metric])
 
     if len(female_data) > 15:
-        female_model = ols(f"{metric} ~ z_ucla", data=female_data).fit()
+        female_model = ols(f"{metric} ~ z_ucla + z_dass_dep + z_dass_anx + z_dass_str + z_age",
+                          data=female_data).fit()
         female_beta = female_model.params['z_ucla']
         female_p = female_model.pvalues['z_ucla']
     else:
         female_beta, female_p = np.nan, np.nan
 
     if len(male_data) > 15:
-        male_model = ols(f"{metric} ~ z_ucla", data=male_data).fit()
+        male_model = ols(f"{metric} ~ z_ucla + z_dass_dep + z_dass_anx + z_dass_str + z_age",
+                        data=male_data).fit()
         male_beta = male_model.params['z_ucla']
         male_p = male_model.pvalues['z_ucla']
     else:
@@ -237,11 +274,22 @@ for _, row in feedback.iterrows():
 impulsivity_df = pd.DataFrame(impulsivity_results)
 impulsivity_df = impulsivity_df.dropna(subset=['impulsivity_index'])
 
-# Test moderation
+# Add DASS and age from feedback
+impulsivity_df = impulsivity_df.merge(
+    feedback[['participant_id', 'dass_depression', 'dass_anxiety', 'dass_stress', 'age']].drop_duplicates(),
+    on='participant_id',
+    how='left'
+).dropna(subset=['dass_depression', 'dass_anxiety', 'dass_stress', 'age'])
+
+# Test moderation (DASS-controlled)
 scaler_imp = StandardScaler()
 impulsivity_df['z_ucla_imp'] = scaler_imp.fit_transform(impulsivity_df[['ucla_total']])
+impulsivity_df['z_dass_dep_imp'] = scaler_imp.fit_transform(impulsivity_df[['dass_depression']])
+impulsivity_df['z_dass_anx_imp'] = scaler_imp.fit_transform(impulsivity_df[['dass_anxiety']])
+impulsivity_df['z_dass_str_imp'] = scaler_imp.fit_transform(impulsivity_df[['dass_stress']])
+impulsivity_df['z_age_imp'] = scaler_imp.fit_transform(impulsivity_df[['age']])
 
-formula = "impulsivity_index ~ z_ucla_imp * C(gender_male)"
+formula = "impulsivity_index ~ z_ucla_imp * C(gender_male) + z_dass_dep_imp + z_dass_anx_imp + z_dass_str_imp + z_age_imp"
 model_imp = ols(formula, data=impulsivity_df).fit()
 
 print(f"  Impulsivity Index moderation:")
@@ -297,12 +345,23 @@ for pid in master['participant_id'].unique():
 
 prp_decomp_df = pd.DataFrame(prp_decomp_results)
 
-# Test moderation on baseline vs. bottleneck
+# Add DASS and age
+prp_decomp_df = prp_decomp_df.merge(
+    master[['participant_id', 'dass_depression', 'dass_anxiety', 'dass_stress', 'age']],
+    on='participant_id',
+    how='left'
+).dropna(subset=['dass_depression', 'dass_anxiety', 'dass_stress', 'age'])
+
+# Test moderation on baseline vs. bottleneck (DASS-controlled)
 scaler_prp = StandardScaler()
 prp_decomp_df['z_ucla_prp'] = scaler_prp.fit_transform(prp_decomp_df[['ucla_total']])
+prp_decomp_df['z_dass_dep_prp'] = scaler_prp.fit_transform(prp_decomp_df[['dass_depression']])
+prp_decomp_df['z_dass_anx_prp'] = scaler_prp.fit_transform(prp_decomp_df[['dass_anxiety']])
+prp_decomp_df['z_dass_str_prp'] = scaler_prp.fit_transform(prp_decomp_df[['dass_stress']])
+prp_decomp_df['z_age_prp'] = scaler_prp.fit_transform(prp_decomp_df[['age']])
 
 for outcome in ['baseline_t2_rt', 'bottleneck_effect']:
-    formula = f"{outcome} ~ z_ucla_prp * C(gender_male)"
+    formula = f"{outcome} ~ z_ucla_prp * C(gender_male) + z_dass_dep_prp + z_dass_anx_prp + z_dass_str_prp + z_age_prp"
     model_prp = ols(formula, data=prp_decomp_df.dropna(subset=[outcome])).fit()
 
     int_term = "z_ucla_prp:C(gender_male)[T.1]"
@@ -337,11 +396,22 @@ for _, row in master.iterrows():
 
 pe_npe_df = pd.DataFrame(pe_npe_results)
 
-# Test moderation on dissociation index
+# Add DASS and age
+pe_npe_df = pe_npe_df.merge(
+    master[['participant_id', 'dass_depression', 'dass_anxiety', 'dass_stress', 'age']],
+    on='participant_id',
+    how='left'
+).dropna(subset=['dass_depression', 'dass_anxiety', 'dass_stress', 'age'])
+
+# Test moderation on dissociation index (DASS-controlled)
 scaler_dissoc = StandardScaler()
 pe_npe_df['z_ucla_dissoc'] = scaler_dissoc.fit_transform(pe_npe_df[['ucla_total']])
+pe_npe_df['z_dass_dep_dissoc'] = scaler_dissoc.fit_transform(pe_npe_df[['dass_depression']])
+pe_npe_df['z_dass_anx_dissoc'] = scaler_dissoc.fit_transform(pe_npe_df[['dass_anxiety']])
+pe_npe_df['z_dass_str_dissoc'] = scaler_dissoc.fit_transform(pe_npe_df[['dass_stress']])
+pe_npe_df['z_age_dissoc'] = scaler_dissoc.fit_transform(pe_npe_df[['age']])
 
-formula = "pe_npe_dissociation ~ z_ucla_dissoc * C(gender_male)"
+formula = "pe_npe_dissociation ~ z_ucla_dissoc * C(gender_male) + z_dass_dep_dissoc + z_dass_anx_dissoc + z_dass_str_dissoc + z_age_dissoc"
 model_dissoc = ols(formula, data=pe_npe_df).fit()
 
 print(f"  PE-NPE Dissociation moderation:")
@@ -396,9 +466,11 @@ print("  - prp_decomposition.csv")
 print("  - pe_npe_dissociation.csv")
 print("  - pe_npe_scatter.png")
 print()
-print("KEY FINDINGS:")
+print("KEY FINDINGS (ALL DASS-ADJUSTED):")
 print("  1. Double dissociation: Males→WCST, Females→Stroop")
 print("  2. Post-error impulsivity: Low PES + Low accuracy")
 print("  3. PRP: Baseline vs. bottleneck decomposition")
 print("  4. PE/NPE: Specific perseveration, not random errors")
+print()
+print("NOTE: All analyses control for DASS-21 subscales (depression, anxiety, stress) + age")
 print()

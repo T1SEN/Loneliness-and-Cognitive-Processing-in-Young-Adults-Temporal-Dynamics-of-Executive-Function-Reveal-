@@ -5,6 +5,22 @@ Tries baseline linear and tree-ensemble regressors to predict EF outcomes
 from UCLA, DASS, age, gender. Uses repeated K-fold CV to estimate
 generalization (R^2, MAE) and permutation importance on held-out folds.
 
+⚠️ WARNING: PREDICTION MODEL, NOT CAUSAL INFERENCE ⚠️
+================================================================================
+This is a MACHINE LEARNING prediction model, not a causal analysis.
+
+Feature importance does NOT establish that UCLA has independent causal effects.
+High UCLA importance may be due to:
+  1. Collinearity with DASS (r ~ 0.5-0.7)
+  2. Joint prediction without isolating unique variance
+  3. Non-causal associations
+
+For causal inference with proper DASS control, use:
+  - master_dass_controlled_analysis.py (hierarchical regression)
+
+This script is for EXPLORATORY PREDICTION ONLY.
+================================================================================
+
 Outputs (results/analysis_outputs/):
 - tree_ensemble_cv_metrics.csv
 - tree_ensemble_perm_importance_<outcome>.csv

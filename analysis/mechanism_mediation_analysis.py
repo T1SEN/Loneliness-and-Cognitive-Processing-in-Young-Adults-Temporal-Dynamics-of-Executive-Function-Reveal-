@@ -84,20 +84,23 @@ print("[2/4] Mediation analysis (UCLA → DASS → WCST)...")
 
 def mediation_analysis(data, mediator_col, outcome_col, n_boot=5000):
     """
-    Simple mediation: UCLA → mediator → outcome
+    Mediation with age control: UCLA → mediator → outcome (controlling age)
     Returns direct, indirect, total effects with bootstrap CIs
+
+    NOTE: DASS is the MEDIATOR, so we don't control for it.
+    We control for age in all paths.
     """
-    # Path a: UCLA → Mediator
-    model_a = ols(f"{mediator_col} ~ ucla_total", data=data).fit()
+    # Path a: UCLA → Mediator (controlling age)
+    model_a = ols(f"{mediator_col} ~ ucla_total + age", data=data).fit()
     a = model_a.params['ucla_total']
 
-    # Path b & c': Mediator → Outcome (controlling UCLA)
-    model_bc = ols(f"{outcome_col} ~ {mediator_col} + ucla_total", data=data).fit()
+    # Path b & c': Mediator → Outcome (controlling UCLA + age)
+    model_bc = ols(f"{outcome_col} ~ {mediator_col} + ucla_total + age", data=data).fit()
     b = model_bc.params[mediator_col]
     c_prime = model_bc.params['ucla_total']  # Direct effect
 
-    # Total effect: UCLA → Outcome (no mediator)
-    model_c = ols(f"{outcome_col} ~ ucla_total", data=data).fit()
+    # Total effect: UCLA → Outcome (controlling age, no mediator)
+    model_c = ols(f"{outcome_col} ~ ucla_total + age", data=data).fit()
     c = model_c.params['ucla_total']  # Total effect
 
     # Indirect effect
@@ -108,8 +111,8 @@ def mediation_analysis(data, mediator_col, outcome_col, n_boot=5000):
     for _ in range(n_boot):
         boot_data = resample(data)
         try:
-            boot_a = ols(f"{mediator_col} ~ ucla_total", data=boot_data).fit().params['ucla_total']
-            boot_b = ols(f"{outcome_col} ~ {mediator_col} + ucla_total", data=boot_data).fit().params[mediator_col]
+            boot_a = ols(f"{mediator_col} ~ ucla_total + age", data=boot_data).fit().params['ucla_total']
+            boot_b = ols(f"{outcome_col} ~ {mediator_col} + ucla_total + age", data=boot_data).fit().params[mediator_col]
             boot_indirect.append(boot_a * boot_b)
         except:
             continue

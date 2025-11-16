@@ -232,9 +232,60 @@ pval_matrix = pd.DataFrame(
     columns=corr_vars
 )
 
-print("\n[p-values]")
+print("\n[p-values (raw)]")
 print(pval_matrix.round(4))
-pval_matrix.to_csv(output_dir / "correlation_pvalues.csv", encoding='utf-8-sig')
+pval_matrix.to_csv(output_dir / "correlation_pvalues_raw.csv", encoding='utf-8-sig')
+
+# CRITICAL FIX: Apply FDR correction to ALL correlation tests
+# Extract upper triangle p-values (exclude diagonal and duplicates)
+# Total unique tests: 7 variables → 7*6/2 = 21 unique correlations
+print("\n" + "-" * 70)
+print("다중비교 보정 (FDR) for Correlation Matrix")
+print("-" * 70)
+pval_upper_triangle = []
+var_pairs = []
+for i in range(len(corr_vars)):
+    for j in range(i + 1, len(corr_vars)):
+        pval_upper_triangle.append(pval_matrix.iloc[i, j])
+        var_pairs.append(f"{corr_vars[i]} vs {corr_vars[j]}")
+
+reject_corr_fdr, p_adj_corr_fdr = apply_multiple_comparison_correction(
+    np.array(pval_upper_triangle),
+    method='fdr_bh',
+    alpha=0.05
+)
+
+# Create FDR-adjusted p-value matrix (symmetric)
+pval_fdr_matrix = pval_matrix.copy()
+idx = 0
+for i in range(len(corr_vars)):
+    for j in range(i + 1, len(corr_vars)):
+        pval_fdr_matrix.iloc[i, j] = p_adj_corr_fdr[idx]
+        pval_fdr_matrix.iloc[j, i] = p_adj_corr_fdr[idx]  # Symmetric
+        idx += 1
+# Diagonal should be NaN for clarity
+for i in range(len(corr_vars)):
+    pval_fdr_matrix.iloc[i, i] = np.nan
+
+print(f"\n총 {len(pval_upper_triangle)}개 상관검정에 FDR 보정 적용")
+print("\n[p-values (FDR-adjusted)]")
+print(pval_fdr_matrix.round(4))
+pval_fdr_matrix.to_csv(output_dir / "correlation_pvalues_fdr_adjusted.csv", encoding='utf-8-sig')
+
+# Report significant correlations after FDR
+print("\n유의한 상관관계 (FDR-adjusted p < .05):")
+sig_count = 0
+idx = 0
+for i in range(len(corr_vars)):
+    for j in range(i + 1, len(corr_vars)):
+        if reject_corr_fdr[idx]:
+            r_val = corr_matrix.iloc[i, j]
+            print(f"  {var_pairs[idx]}: r = {r_val:.3f}, p_raw = {pval_upper_triangle[idx]:.4f}, p_adj = {p_adj_corr_fdr[idx]:.4f}")
+            sig_count += 1
+        idx += 1
+if sig_count == 0:
+    print("  없음 (FDR 보정 후)")
+print(f"\n✓ FDR 보정 후 유의한 상관: {sig_count}/{len(pval_upper_triangle)} ({sig_count/len(pval_upper_triangle)*100:.1f}%)")
 
 # ============================================================================
 # 5. 위계적 회귀분석 (핵심 가설 검증)
@@ -298,6 +349,29 @@ def hierarchical_regression(df, outcome, covariates, predictor):
         verbose=True
     )
 
+    # CRITICAL FIX: If assumptions violated, use robust standard errors (HC3)
+    assumptions_violated = (
+        assumption_results.get('normality', {}).get('reject', False) or
+        assumption_results.get('homoscedasticity', {}).get('reject', False)
+    )
+
+    if assumptions_violated:
+        print("\n⚠️  경고: OLS 가정 위반 감지. Robust standard errors (HC3) 사용합니다.")
+        # Use statsmodels for robust standard errors
+        import statsmodels.api as sm
+        X2_with_const = sm.add_constant(X2)
+        ols_model = sm.OLS(y, X2_with_const).fit(cov_type='HC3')
+
+        # Extract robust statistics for UCLA coefficient (last predictor)
+        ucla_coef = ols_model.params[-1]
+        ucla_se = ols_model.bse[-1]  # Robust SE
+        ucla_t = ols_model.tvalues[-1]
+        ucla_p = ols_model.pvalues[-1]
+
+        print(f"   • Robust SE for UCLA: {ucla_se:.4f} (vs OLS SE: {se_coefs[-1]:.4f})")
+    else:
+        print("\n✓ OLS 가정 충족: 표준 OLS 추정량 사용")
+
     # ΔR² 검정
     delta_r2 = r2_2 - r2_1
     n = len(df_clean)
@@ -307,18 +381,19 @@ def hierarchical_regression(df, outcome, covariates, predictor):
     delta_f = (delta_r2 / (k2 - k1)) / ((1 - r2_2) / (n - k2 - 1))
     p_value = 1 - f_dist.cdf(delta_f, k2 - k1, n - k2 - 1)
 
-    # UCLA 계수의 t 검정
-    # 잔차 표준오차
-    mse = ss_res2 / (n - k2 - 1)
-    # X'X의 역행렬
-    XtX_inv = np.linalg.inv(X2.T @ X2)
-    se_coefs = np.sqrt(np.diag(XtX_inv * mse))
+    # UCLA 계수의 t 검정 (only if not already computed with robust SEs)
+    if not assumptions_violated:
+        # 잔차 표준오차
+        mse = ss_res2 / (n - k2 - 1)
+        # X'X의 역행렬
+        XtX_inv = np.linalg.inv(X2.T @ X2)
+        se_coefs = np.sqrt(np.diag(XtX_inv * mse))
 
-    # UCLA는 마지막 계수
-    ucla_coef = model2.coef_[-1]
-    ucla_se = se_coefs[-1]
-    ucla_t = ucla_coef / ucla_se
-    ucla_p = 2 * (1 - stats.t.cdf(abs(ucla_t), n - k2 - 1))
+        # UCLA는 마지막 계수
+        ucla_coef = model2.coef_[-1]
+        ucla_se = se_coefs[-1]
+        ucla_t = ucla_coef / ucla_se
+        ucla_p = 2 * (1 - stats.t.cdf(abs(ucla_t), n - k2 - 1))
 
     return {
         'outcome': outcome,

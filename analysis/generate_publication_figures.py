@@ -96,10 +96,11 @@ for col in ['pe_rate', 'perseverative_error_rate']:
         master = master.rename(columns={col: 'pe_rate'})
         break
 
-# Clean
-master = master.dropna(subset=['ucla_total', 'pe_rate', 'gender_male'])
+# Clean - ensure DASS covariates are present
+master = master.dropna(subset=['ucla_total', 'pe_rate', 'gender_male',
+                                'dass_depression', 'dass_anxiety', 'dass_stress', 'age'])
 
-print(f"  Loaded N={len(master)} participants")
+print(f"  Loaded N={len(master)} participants (with complete DASS + age data)")
 print(f"    Males: {(master['gender_male'] == 1).sum()}")
 print(f"    Females: {(master['gender_male'] == 0).sum()}")
 
@@ -124,11 +125,22 @@ for gender, gender_label, color, marker in [
               color=color, marker=marker, alpha=0.6, s=100,
               label=gender_label, edgecolors='black', linewidth=0.5)
 
-    # Regression line
+    # Regression line (DASS-controlled)
     if len(subset) >= 10:
-        model = smf.ols('pe_rate ~ ucla_total', data=subset).fit()
+        model = smf.ols('pe_rate ~ ucla_total + dass_depression + dass_anxiety + dass_stress + age',
+                       data=subset).fit()
         x_range = np.linspace(subset['ucla_total'].min(), subset['ucla_total'].max(), 100)
-        y_pred = model.params['Intercept'] + model.params['ucla_total'] * x_range
+        # Predicted values at mean DASS and age for visualization
+        dass_dep_mean = subset['dass_depression'].mean()
+        dass_anx_mean = subset['dass_anxiety'].mean()
+        dass_str_mean = subset['dass_stress'].mean()
+        age_mean = subset['age'].mean()
+        y_pred = (model.params['Intercept'] +
+                  model.params['ucla_total'] * x_range +
+                  model.params['dass_depression'] * dass_dep_mean +
+                  model.params['dass_anxiety'] * dass_anx_mean +
+                  model.params['dass_stress'] * dass_str_mean +
+                  model.params['age'] * age_mean)
 
         r, p = stats.pearsonr(subset['ucla_total'], subset['pe_rate'])
         linestyle = '-' if p < 0.05 else '--'
@@ -138,7 +150,7 @@ for gender, gender_label, color, marker in [
 
 ax.set_xlabel('UCLA Loneliness Score', fontweight='bold')
 ax.set_ylabel('WCST Perseverative Error Rate (%)', fontweight='bold')
-ax.set_title('A. Gender-Specific Vulnerability', fontweight='bold', pad=15)
+ax.set_title('A. Gender-Specific Vulnerability (DASS-adjusted)', fontweight='bold', pad=15)
 ax.legend(loc='upper left', frameon=True, fancybox=True, shadow=True)
 ax.grid(alpha=0.3, linestyle=':', linewidth=1)
 ax.spines['top'].set_visible(False)
@@ -147,8 +159,8 @@ ax.spines['right'].set_visible(False)
 # Panel B: Simple slopes with confidence bands
 ax = axes[1]
 
-# Calculate interaction
-formula = 'pe_rate ~ ucla_total * gender_male'
+# Calculate interaction (DASS-controlled)
+formula = 'pe_rate ~ ucla_total * gender_male + dass_depression + dass_anxiety + dass_stress + age'
 model_int = smf.ols(formula, data=master).fit()
 
 interaction_beta = model_int.params['ucla_total:gender_male']
@@ -158,8 +170,9 @@ interaction_p = model_int.pvalues['ucla_total:gender_male']
 for gender, gender_label, color in [(0, 'Female', COLORS['female']), (1, 'Male', COLORS['male'])]:
     subset = master[master['gender_male'] == gender]
 
-    # Fit model
-    model = smf.ols('pe_rate ~ ucla_total', data=subset).fit()
+    # Fit model (DASS-controlled)
+    model = smf.ols('pe_rate ~ ucla_total + dass_depression + dass_anxiety + dass_stress + age',
+                   data=subset).fit()
     beta = model.params['ucla_total']
     se = model.bse['ucla_total']
     ci_lower = beta - 1.96 * se
@@ -183,8 +196,8 @@ for gender, gender_label, color in [(0, 'Female', COLORS['female']), (1, 'Male',
 ax.axhline(0, color='black', linestyle='-', linewidth=1)
 ax.set_xticks([0, 1])
 ax.set_xticklabels(['Female', 'Male'])
-ax.set_ylabel('UCLA → PE Slope (β)', fontweight='bold')
-ax.set_title(f'B. Interaction: β={interaction_beta:.2f}, p={interaction_p:.3f}',
+ax.set_ylabel('UCLA → PE Slope (β, DASS-adjusted)', fontweight='bold')
+ax.set_title(f'B. Interaction (DASS-adjusted): β={interaction_beta:.2f}, p={interaction_p:.3f}',
             fontweight='bold', pad=15)
 ax.grid(axis='y', alpha=0.3, linestyle=':', linewidth=1)
 ax.spines['top'].set_visible(False)
@@ -215,9 +228,20 @@ for gender, gender_label, color, marker in [
               color=color, marker=marker, alpha=0.6, s=80, label=gender_label)
 
     if len(subset) >= 10:
-        model = smf.ols('pe_rate ~ ucla_total', data=subset).fit()
+        model = smf.ols('pe_rate ~ ucla_total + dass_depression + dass_anxiety + dass_stress + age',
+                       data=subset).fit()
         x_range = np.linspace(subset['ucla_total'].min(), subset['ucla_total'].max(), 100)
-        y_pred = model.params['Intercept'] + model.params['ucla_total'] * x_range
+        # Predicted values at mean DASS and age
+        dass_dep_mean = subset['dass_depression'].mean()
+        dass_anx_mean = subset['dass_anxiety'].mean()
+        dass_str_mean = subset['dass_stress'].mean()
+        age_mean = subset['age'].mean()
+        y_pred = (model.params['Intercept'] +
+                  model.params['ucla_total'] * x_range +
+                  model.params['dass_depression'] * dass_dep_mean +
+                  model.params['dass_anxiety'] * dass_anx_mean +
+                  model.params['dass_stress'] * dass_str_mean +
+                  model.params['age'] * age_mean)
         ax1.plot(x_range, y_pred, color=color, linewidth=2.5)
 
 ax1.set_xlabel('UCLA Loneliness', fontweight='bold')
@@ -351,17 +375,18 @@ fig, ax = plt.subplots(figsize=(10, 8))
 # Compile effect sizes from all analyses
 effects = []
 
-# Main effect (males)
+# Main effect (males, DASS-controlled)
 males = master[master['gender_male'] == 1]
 if len(males) >= 10:
-    r, p = stats.pearsonr(males['ucla_total'], males['pe_rate'])
-    model = smf.ols('pe_rate ~ ucla_total', data=males).fit()
+    model = smf.ols('pe_rate ~ ucla_total + dass_depression + dass_anxiety + dass_stress + age',
+                   data=males).fit()
     beta = model.params['ucla_total']
     ci_lower = model.conf_int().loc['ucla_total', 0]
     ci_upper = model.conf_int().loc['ucla_total', 1]
+    p = model.pvalues['ucla_total']
 
     effects.append({
-        'analysis': 'Main Effect (Males)',
+        'analysis': 'Main Effect (Males, DASS-adj)',
         'beta': beta,
         'ci_lower': ci_lower,
         'ci_upper': ci_upper,
@@ -416,9 +441,10 @@ with open(OUTPUT_DIR / "FIGURE_CATALOG.txt", 'w', encoding='utf-8') as f:
     f.write("MAIN FIGURES\n")
     f.write("-"*80 + "\n\n")
 
-    f.write("Figure 1: Main Effect - UCLA × Gender → WCST PE\n")
+    f.write("Figure 1: Main Effect - UCLA × Gender → WCST PE (DASS-adjusted)\n")
     f.write("  Panel A: Scatter plot with regression lines by gender\n")
     f.write("  Panel B: Simple slopes comparison with 95% CIs\n")
+    f.write("  NOTE: All models control for DASS-21 subscales + age\n")
     f.write("  File: Figure1_MainEffect.pdf\n\n")
 
     f.write("Figure 2: Key Findings Summary (4-panel)\n")

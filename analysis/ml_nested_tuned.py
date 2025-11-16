@@ -69,10 +69,12 @@ def build_base_dataframe() -> pd.DataFrame:
     demo = participants[["participant_id", "age", "gender", "education", "courseName", "professorName", "classSection", "createdAt"]].copy()
     demo["age"] = _to_num(demo["age"])
     # Derive time-of-day / day-of-week features from createdAt if present
-    # NOTE: These time features are legitimate predictors (circadian effects on cognition)
-    # but could also capture batch effects if recruitment timing correlates with outcomes.
-    # Interpretation should be cautious. No data leakage: features are derived from
-    # participant-level metadata available at prediction time.
+    # CRITICAL WARNING: These time features could capture BATCH EFFECTS if recruitment
+    # timing correlates with UCLA scores. We will validate this below using ANOVA/correlation.
+    # If significant correlation is found, these features should be REMOVED from analysis
+    # to avoid spurious predictive performance.
+    # No data leakage in the traditional sense (features available at prediction time),
+    # but potential confounding with recruitment procedures.
     try:
         dt = pd.to_datetime(demo["createdAt"], errors="coerce")
         demo["created_hour"] = dt.dt.hour.astype("Int64")
@@ -175,6 +177,63 @@ def build_base_dataframe() -> pd.DataFrame:
     if tfeat_path.exists():
         tfeat = pd.read_csv(tfeat_path)
         df = df.merge(tfeat, on="participant_id", how="left")
+
+    # CRITICAL FIX: Validate time-based features for batch effects
+    # Test if created_hour, created_dow correlate with UCLA scores
+    print("\n" + "=" * 80)
+    print("BATCH EFFECT VALIDATION: Testing Time Features vs UCLA Correlation")
+    print("=" * 80)
+
+    valid_data = df[df["ucla_total"].notna() & df["created_hour"].notna()].copy()
+    if len(valid_data) > 20:
+        from scipy import stats as sp_stats
+
+        # Test 1: created_hour (continuous) vs UCLA (Pearson correlation)
+        r_hour, p_hour = sp_stats.pearsonr(valid_data["created_hour"], valid_data["ucla_total"])
+        print(f"\ncreated_hour vs UCLA: r = {r_hour:.3f}, p = {p_hour:.4f}")
+        if p_hour < 0.05:
+            print("  [WARNING] Significant correlation detected!")
+            print("     This suggests recruitment timing may confound UCLA predictions.")
+            print("     Consider REMOVING time features from analysis.")
+        else:
+            print("  [OK] No significant correlation (batch effect unlikely)")
+
+        # Test 2: created_dow (categorical) vs UCLA (ANOVA)
+        if "created_dow" in df.columns and df["created_dow"].notna().sum() > 0:
+            dow_groups = []
+            for dow in valid_data["created_dow"].dropna().unique():
+                ucla_vals = valid_data[valid_data["created_dow"] == dow]["ucla_total"].values
+                if len(ucla_vals) >= 2:  # Need at least 2 per group
+                    dow_groups.append(ucla_vals)
+            if len(dow_groups) >= 2:
+                f_stat, p_dow = sp_stats.f_oneway(*dow_groups)
+                print(f"\ncreated_dow vs UCLA (ANOVA): F = {f_stat:.2f}, p = {p_dow:.4f}")
+                if p_dow < 0.05:
+                    print("  [WARNING] Day-of-week significantly affects UCLA scores!")
+                    print("     This indicates recruitment day confounds outcomes.")
+                    print("     Consider REMOVING created_dow from analysis.")
+                else:
+                    print("  [OK] No significant day-of-week effect")
+
+        # Test 3: created_hour_bin (categorical) vs UCLA
+        if "created_hour_bin" in df.columns and df["created_hour_bin"].notna().sum() > 0:
+            bin_groups = []
+            for hbin in valid_data["created_hour_bin"].dropna().unique():
+                ucla_vals = valid_data[valid_data["created_hour_bin"] == hbin]["ucla_total"].values
+                if len(ucla_vals) >= 2:
+                    bin_groups.append(ucla_vals)
+            if len(bin_groups) >= 2:
+                f_stat, p_bin = sp_stats.f_oneway(*bin_groups)
+                print(f"\ncreated_hour_bin vs UCLA (ANOVA): F = {f_stat:.2f}, p = {p_bin:.4f}")
+                if p_bin < 0.05:
+                    print("  [WARNING] Hour bin significantly affects UCLA scores!")
+                else:
+                    print("  [OK] No significant hour bin effect")
+
+        print("\n" + "=" * 80)
+        print("Proceeding with analysis. Review warnings above before interpreting results.")
+        print("=" * 80 + "\n")
+
     return df
 
 
@@ -407,13 +466,17 @@ def nested_regression(df: pd.DataFrame, feature_set: str) -> None:
     X = work[numeric_cols + categorical_cols]
     y = work["ucla_total"].astype(float).to_numpy()
 
-    outer = KFold(n_splits=5, shuffle=True, random_state=42)
+    # CRITICAL FIX: Use stratified K-fold for regression to ensure balanced folds
+    # Create UCLA quartile bins for stratification
+    y_bins = pd.qcut(y, q=4, labels=False, duplicates='drop')
+    outer = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
 
     rows = []
     preds_rows = []
     tuned_params = []
 
-    for i, (tr, te) in enumerate(outer.split(X, y), 1):
+    # Use y_bins for stratification
+    for i, (tr, te) in enumerate(outer.split(X, y_bins), 1):
         Xtr, Xte = X.iloc[tr], X.iloc[te]
         ytr, yte = y[tr], y[te]
 
@@ -442,6 +505,7 @@ def nested_regression(df: pd.DataFrame, feature_set: str) -> None:
         best_score = -np.inf
         best_params = None
 
+        # Inner loop uses regular KFold (stratification is more critical for outer loop)
         inner = KFold(n_splits=3, shuffle=True, random_state=123)
         for name, (pipe, grid) in candidates.items():
             gs = GridSearchCV(pipe, grid, cv=inner, scoring="r2", n_jobs=None)

@@ -63,11 +63,54 @@ else:
 ucla_scores = ucla_data.groupby('participant_id')['score'].sum().reset_index()
 ucla_scores.columns = ['participant_id', 'ucla_total']
 
+# DASS scores
+if 'surveyName' in surveys.columns:
+    dass_data = surveys[surveys['surveyName'].str.lower() == 'dass-21'].copy()
+elif 'survey' in surveys.columns:
+    dass_data = surveys[surveys['survey'].str.lower() == 'dass-21'].copy()
+else:
+    raise KeyError("No survey name column found")
+
+# Parse DASS subscales (items 1-21, specific subscales)
+dass_pivot = dass_data.pivot_table(
+    index='participant_id',
+    columns='item',
+    values='response',
+    aggfunc='first'
+).reset_index()
+
+# DASS subscales (0-indexed columns, skip participant_id)
+# Depression: items 3,5,10,13,16,17,21 (1-indexed) → columns 3,5,10,13,16,17,21
+# Anxiety: items 2,4,7,9,15,19,20
+# Stress: items 1,6,8,11,12,14,18
+if len(dass_pivot.columns) > 20:  # Has 21 items + participant_id
+    item_cols = [col for col in dass_pivot.columns if col != 'participant_id']
+    dass_pivot['dass_depression'] = dass_pivot[item_cols].iloc[:, [2, 4, 9, 12, 15, 16, 20]].sum(axis=1)
+    dass_pivot['dass_anxiety'] = dass_pivot[item_cols].iloc[:, [1, 3, 6, 8, 14, 18, 19]].sum(axis=1)
+    dass_pivot['dass_stress'] = dass_pivot[item_cols].iloc[:, [0, 5, 7, 10, 11, 13, 17]].sum(axis=1)
+    dass_scores = dass_pivot[['participant_id', 'dass_depression', 'dass_anxiety', 'dass_stress']]
+else:
+    # Fallback: create dummy DASS columns
+    print("  WARNING: Could not parse DASS subscales, creating placeholders")
+    dass_scores = pd.DataFrame({
+        'participant_id': ucla_scores['participant_id'],
+        'dass_depression': 0,
+        'dass_anxiety': 0,
+        'dass_stress': 0
+    })
+
 # Merge with demographics
 master = participants[['participant_id', 'age', 'gender', 'education']].merge(
     ucla_scores, on='participant_id', how='inner'
+).merge(
+    dass_scores, on='participant_id', how='left'
 )
 master['age'] = pd.to_numeric(master['age'], errors='coerce')
+
+# Fill missing DASS with median
+for col in ['dass_depression', 'dass_anxiety', 'dass_stress']:
+    if col in master.columns:
+        master[col] = master[col].fillna(master[col].median())
 
 # WCST data for PE rate
 wcst_trials = ensure_participant_id(pd.read_csv(RESULTS_DIR / "4b_wcst_trials.csv"))
@@ -99,10 +142,11 @@ master = master.merge(wcst_summary[['participant_id', 'pe_rate', 'wcst_accuracy'
 master['gender'] = normalize_gender_series(master['gender'])
 master['gender_male'] = (master['gender'] == 'male').astype(int)
 
-# Drop missing
-master = master.dropna(subset=['ucla_total', 'gender_male', 'pe_rate']).copy()
+# Drop missing (including DASS covariates)
+master = master.dropna(subset=['ucla_total', 'gender_male', 'pe_rate',
+                                'dass_depression', 'dass_anxiety', 'dass_stress', 'age']).copy()
 
-print(f"  Loaded {len(master)} participants with complete data")
+print(f"  Loaded {len(master)} participants with complete data (including DASS covariates)")
 print(f"  Males: {master['gender_male'].sum()}, Females: {(1-master['gender_male']).sum()}\n")
 
 # ============================================================================
@@ -133,10 +177,13 @@ for gender_name, gender_val in [('Male', 1), ('Female', 0), ('All', None)]:
 
     df_sub['z_ucla'] = (df_sub['ucla_total'] - df_sub['ucla_total'].mean()) / df_sub['ucla_total'].std()
     df_sub['z_age'] = (df_sub['age'] - df_sub['age'].mean()) / df_sub['age'].std()
+    df_sub['z_dass_dep'] = (df_sub['dass_depression'] - df_sub['dass_depression'].mean()) / df_sub['dass_depression'].std()
+    df_sub['z_dass_anx'] = (df_sub['dass_anxiety'] - df_sub['dass_anxiety'].mean()) / df_sub['dass_anxiety'].std()
+    df_sub['z_dass_str'] = (df_sub['dass_stress'] - df_sub['dass_stress'].mean()) / df_sub['dass_stress'].std()
 
-    linear_model = smf.ols("pe_rate ~ z_ucla + z_age", data=df_sub).fit()
+    linear_model = smf.ols("pe_rate ~ z_ucla + z_dass_dep + z_dass_anx + z_dass_str + z_age", data=df_sub).fit()
     print(f"   R² = {linear_model.rsquared:.4f}, AIC = {linear_model.aic:.2f}, BIC = {linear_model.bic:.2f}")
-    print(f"   β_UCLA = {linear_model.params['z_ucla']:.3f}, p = {linear_model.pvalues['z_ucla']:.4f}")
+    print(f"   β_UCLA = {linear_model.params['z_ucla']:.3f}, p = {linear_model.pvalues['z_ucla']:.4f} (DASS-controlled)")
 
     all_results.append({
         'gender': gender_name,
@@ -156,9 +203,9 @@ for gender_name, gender_val in [('Male', 1), ('Female', 0), ('All', None)]:
     print("   " + "-" * 60)
 
     df_sub['z_ucla_sq'] = df_sub['z_ucla'] ** 2
-    quad_model = smf.ols("pe_rate ~ z_ucla + z_ucla_sq + z_age", data=df_sub).fit()
+    quad_model = smf.ols("pe_rate ~ z_ucla + z_ucla_sq + z_dass_dep + z_dass_anx + z_dass_str + z_age", data=df_sub).fit()
     print(f"   R² = {quad_model.rsquared:.4f}, AIC = {quad_model.aic:.2f}, BIC = {quad_model.bic:.2f}")
-    print(f"   β_UCLA² = {quad_model.params.get('z_ucla_sq', np.nan):.3f}, p = {quad_model.pvalues.get('z_ucla_sq', np.nan):.4f}")
+    print(f"   β_UCLA² = {quad_model.params.get('z_ucla_sq', np.nan):.3f}, p = {quad_model.pvalues.get('z_ucla_sq', np.nan):.4f} (DASS-controlled)")
 
     all_results.append({
         'gender': gender_name,
@@ -187,7 +234,7 @@ for gender_name, gender_val in [('Male', 1), ('Female', 0), ('All', None)]:
         df_sub[f'ucla_x_above_{threshold}'] = df_sub['z_ucla'] * df_sub[f'ucla_above_{threshold}']
 
         try:
-            formula = f"pe_rate ~ z_ucla + ucla_above_{threshold} + ucla_x_above_{threshold} + z_age"
+            formula = f"pe_rate ~ z_ucla + ucla_above_{threshold} + ucla_x_above_{threshold} + z_dass_dep + z_dass_anx + z_dass_str + z_age"
             piecewise_model = smf.ols(formula, data=df_sub).fit()
 
             print(f"\n   Threshold = {threshold}:")
@@ -274,7 +321,7 @@ for gender_name, gender_val in [('Male', 1), ('Female', 0), ('All', None)]:
     ]
 
     if best_threshold:
-        formula_best = f"pe_rate ~ z_ucla + ucla_above_{best_threshold} + ucla_x_above_{best_threshold} + z_age"
+        formula_best = f"pe_rate ~ z_ucla + ucla_above_{best_threshold} + ucla_x_above_{best_threshold} + z_dass_dep + z_dass_anx + z_dass_str + z_age"
         best_piecewise = smf.ols(formula_best, data=df_sub).fit()
         comparison.append((f'Piecewise_{best_threshold}', best_piecewise.aic,
                            best_piecewise.bic, best_piecewise.rsquared))
@@ -372,6 +419,8 @@ clinical_cutoff_text = (
 report_text = f"""
 DOSE-RESPONSE THRESHOLD ANALYSIS REPORT
 ========================================
+
+NOTE: All models control for DASS-21 (depression, anxiety, stress) + age
 
 MALE FINDINGS (Primary Interest):
 ----------------------------------

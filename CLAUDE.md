@@ -127,6 +127,44 @@ The codebase implements a multi-method validation strategy:
 
 Key hypothesis: UCLA loneliness predicts EF impairment beyond mood/anxiety (DASS-21 as covariates).
 
+### ⚠️ CRITICAL: DASS-21 Covariate Control Requirement
+
+**ALL confirmatory analyses testing UCLA effects MUST control for DASS-21 subscales.**
+
+**Why this is mandatory:**
+1. UCLA loneliness and DASS (depression/anxiety/stress) are highly correlated (r ~ 0.5-0.7)
+2. Without DASS control, "loneliness effects" confound with general emotional distress
+3. Master analysis (2025-01-16) showed: ALL UCLA main effects disappear when DASS is controlled
+4. Only UCLA × Gender interactions survive DASS control
+
+**Implementation:**
+```python
+# WRONG - No DASS control:
+model = smf.ols("pe_rate ~ z_ucla * C(gender_male)", data=df).fit()
+
+# CORRECT - With DASS control:
+model = smf.ols("pe_rate ~ z_ucla * C(gender_male) + z_dass_dep + z_dass_anx + z_dass_str + z_age",
+                data=df).fit()
+```
+
+**Required covariates in ALL regression models:**
+- `dass_depression` (or `z_dass_dep` if standardized)
+- `dass_anxiety` (or `z_dass_anx` if standardized)
+- `dass_stress` (or `z_dass_str` if standardized)
+- `age` (or `z_age` if standardized)
+
+**Exception:** Mediation analyses where DASS is the mediator (not a covariate).
+
+**Reference analysis:**
+- Script: `analysis/master_dass_controlled_analysis.py`
+- Results: `results/analysis_outputs/master_dass_controlled/`
+- Report: `CORRECTED_FINAL_INTERPRETATION.txt`
+
+**Key finding:**
+- UCLA main effects: ALL p > 0.05 after DASS control (no pure loneliness effect)
+- UCLA × Gender interaction: p = 0.025 for WCST PE (survives DASS control)
+- Conclusion: Only gender-specific vulnerability is independent of mood
+
 ## Output Location
 
 All analysis outputs go to `results/analysis_outputs/`:

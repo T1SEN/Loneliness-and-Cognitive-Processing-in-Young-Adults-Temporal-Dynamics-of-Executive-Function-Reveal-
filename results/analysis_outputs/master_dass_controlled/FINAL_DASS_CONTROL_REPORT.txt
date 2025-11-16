@@ -1,0 +1,47 @@
+================================================================================
+FINAL REPORT: DASS-CONTROLLED CONFIRMATORY ANALYSIS
+================================================================================
+
+OBJECTIVE
+--------------------------------------------------------------------------------
+Test whether UCLA loneliness effects on executive function persist after
+controlling for DASS-21 (depression, anxiety, stress).
+
+RESULTS SUMMARY
+--------------------------------------------------------------------------------
+
+Total hypotheses tested: 3
+Survived DASS control (p < 0.05): 0
+Failed DASS control (p ≥ 0.05): 3
+
+EFFECTS THAT FAILED DASS CONTROL:
+
+H1_PRIMARY: WCST PE Rate
+  UCLA β = 0.3237, p = 0.6957
+  INTERPRETATION: Effect attributable to mood/anxiety, not pure loneliness
+
+H3: Stroop Interference
+  UCLA β = 12.1299, p = 0.4852
+  INTERPRETATION: Effect attributable to mood/anxiety, not pure loneliness
+
+H4: PRP Bottleneck
+  UCLA β = -7.5015, p = 0.7552
+  INTERPRETATION: Effect attributable to mood/anxiety, not pure loneliness
+
+================================================================================
+CONCLUSION
+================================================================================
+
+CRITICAL: NO UCLA effects survived DASS control.
+
+All observed 'loneliness effects' are attributable to general emotional
+distress (DASS), not pure loneliness. Claims of 'loneliness beyond mood'
+are NOT supported.
+
+RECOMMENDATION: Re-frame findings as 'emotional distress effects' or
+acknowledge that loneliness and mood are inseparable in this dataset.
+
+================================================================================
+Generated: 2025-01-16
+Output location: results\analysis_outputs\master_dass_controlled
+================================================================================

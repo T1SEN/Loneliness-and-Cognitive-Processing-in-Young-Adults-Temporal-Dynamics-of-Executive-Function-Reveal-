@@ -1,0 +1,5 @@
+﻿hypothesis,metric,tier,claimed_r,actual_r,claimed_p,actual_p,claimed_beta,actual_beta,r_diff_pct,p_match,sign_match,replicated
+PRP Ex-Gaussian: Male τ,Male UCLA×τ_long partial correlation,1,0.578,0.3436259005616539,0.002,0.08611500848701743,,,40.54915215196299,False,True,False
+PRP Ex-Gaussian: Female τ,Female UCLA×τ_long partial correlation,1,-0.384,0.06770461777250253,0.009,0.67172070654522,,,117.63141087825586,False,False,False
+Post-Error Slowing: Male,Male UCLA×PES partial correlation,2,0.422,0.2963750758288724,0.018,0.12076141232414635,,,29.76893937704445,False,True,False
+Error Cascades: Female,Female UCLA×Cascades partial correlation,2,-0.389,-0.13075830680521586,0.007,0.3983831177049709,,,66.38603938169258,False,True,False
