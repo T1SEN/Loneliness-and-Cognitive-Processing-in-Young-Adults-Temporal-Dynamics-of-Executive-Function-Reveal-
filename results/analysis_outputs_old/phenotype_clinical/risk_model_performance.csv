@@ -1,0 +1,3 @@
+﻿model,mean_auc,sd_auc
+Logistic Regression,0.4553571428571429,0.10822555634376922
+Random Forest,0.378125,0.11611091361368267

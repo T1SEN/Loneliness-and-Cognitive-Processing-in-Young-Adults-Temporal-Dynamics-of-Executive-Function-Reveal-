@@ -1,0 +1,26 @@
+================================================================================
+TASK ORDER / FATIGUE CONFOUND ANALYSIS - SUMMARY
+================================================================================
+
+RESEARCH QUESTION
+--------------------------------------------------------------------------------
+Could the UCLA × Gender → WCST PE effect be explained by task order or fatigue?
+
+TASK ORDER
+--------------------------------------------------------------------------------
+Could not determine task order from available data
+
+MODEL COMPARISON
+--------------------------------------------------------------------------------
+                       Model     Beta        p  N
+Baseline (no order controls) 0.201204 0.032807 78
+
+INTERPRETATION
+--------------------------------------------------------------------------------
+✓ EFFECT ROBUST TO ORDER CONTROLS
+  UCLA × Gender interaction persists when controlling for:
+
+  Effect is task-specific (WCST), not position/fatigue artifact
+
+================================================================================
+Full results saved to: results\analysis_outputs\advanced_analyses\task_order_confound

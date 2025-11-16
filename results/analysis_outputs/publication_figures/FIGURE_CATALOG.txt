@@ -1,0 +1,26 @@
+================================================================================
+PUBLICATION FIGURE CATALOG
+================================================================================
+
+MAIN FIGURES
+--------------------------------------------------------------------------------
+
+Figure 1: Main Effect - UCLA × Gender → WCST PE
+  Panel A: Scatter plot with regression lines by gender
+  Panel B: Simple slopes comparison with 95% CIs
+  File: Figure1_MainEffect.pdf
+
+Figure 2: Key Findings Summary (4-panel)
+  Panel A: Main gender moderation
+  Panel B: Time costs (compensation analysis)
+  Panel C: UCLA facet differentiation
+  Panel D: DASS anxiety stratification
+  File: Figure2_KeyFindings.pdf
+
+Figure 3: Effect Size Forest Plot
+  Shows β coefficients with 95% CIs across analyses
+  File: Figure3_ForestPlot.pdf
+
+================================================================================
+All figures saved in: results\analysis_outputs\publication_figures
+Formats: PDF (vector) + PNG (high-res raster)

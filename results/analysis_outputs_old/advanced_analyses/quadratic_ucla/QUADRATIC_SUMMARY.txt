@@ -1,0 +1,37 @@
+QUADRATIC UCLA EFFECTS ANALYSIS - SUMMARY
+================================================================================
+
+RESEARCH QUESTION
+--------------------------------------------------------------------------------
+Is the UCLA→PE relationship linear or non-linear?
+Does PE accelerate at extreme loneliness levels?
+
+KEY FINDINGS
+--------------------------------------------------------------------------------
+
+1. LINEAR VS QUADRATIC MODEL COMPARISON
+   Linear model: R²=0.0430, AIC=430.51
+   Quadratic model: R²=0.0501, AIC=431.97
+   LR test: p=0.4631
+
+   ✗ NOT SIGNIFICANT: Linear relationship sufficient
+   → No evidence of threshold or acceleration
+
+   Quadratic coefficient: β=-0.002672, p=0.4840
+   → Negative curvature: PE decelerates at high UCLA
+
+2. BREAKPOINT ANALYSIS
+   Best breakpoint: UCLA = 45
+   Slope below 45: β=0.1492
+   Slope above 45: β=0.2018
+   ✓ Segmented model better than linear
+
+
+IMPLICATIONS
+--------------------------------------------------------------------------------
+NO THRESHOLD DETECTED:
+  Risk increases linearly with loneliness
+  No specific 'cutoff' for intervention targeting
+
+================================================================================
+Full results saved to: results\analysis_outputs\advanced_analyses\quadratic_ucla

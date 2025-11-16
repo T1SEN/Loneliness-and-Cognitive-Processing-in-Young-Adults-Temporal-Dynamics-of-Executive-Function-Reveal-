@@ -1,0 +1,5 @@
+﻿metric,interaction_beta,male_r,male_p,female_r,female_p,male_n,female_n
+pe_slope,0.004198544448552957,0.2153052892543485,0.2711955932924427,-0.09461117805950067,0.5316887872980911,28,46
+early_pe_rate,0.006278578532865778,,,,,28,46
+late_pe_rate,0.019718180935602025,,,,,28,46
+block_three_way,,,,,,28,46

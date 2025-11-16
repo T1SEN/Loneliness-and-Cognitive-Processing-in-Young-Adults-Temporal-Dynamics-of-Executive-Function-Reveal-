@@ -1,0 +1,48 @@
+================================================================================
+OUTLIER PROFILING & CASE STUDIES
+================================================================================
+
+OBJECTIVE
+--------------------------------------------------------------------------------
+Identify and characterize extreme responders to understand individual
+differences beyond group averages.
+
+SAMPLE
+--------------------------------------------------------------------------------
+Total N=72
+
+EXTREME GROUPS
+--------------------------------------------------------------------------------
+
+group
+Average       53
+Resilient      6
+Unexpected     6
+Protected      4
+Vulnerable     3
+
+VULNERABLE PROFILE (High UCLA + High PE)
+--------------------------------------------------------------------------------
+N=3
+Gender: 2 male, 1 female
+UCLA: M=57.7, SD=6.4
+PE Rate: M=15.3%, SD=1.9%
+
+RESILIENT PROFILE (High UCLA + Low PE)
+--------------------------------------------------------------------------------
+N=6
+Gender: 1 male, 5 female
+UCLA: M=58.0, SD=3.9
+PE Rate: M=6.7%, SD=1.4%
+
+KEY FINDINGS
+--------------------------------------------------------------------------------
+Gender composition:
+  Vulnerable group: 67% male
+  Resilient group: 17% male
+
+✓ Vulnerable group predominantly MALE
+✓ Resilient group predominantly FEMALE
+
+================================================================================
+Full profiles saved to: results\analysis_outputs\outlier_profiling

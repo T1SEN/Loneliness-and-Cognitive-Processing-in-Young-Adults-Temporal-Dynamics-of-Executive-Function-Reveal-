@@ -1,0 +1,73 @@
+================================================================================
+SPECIFICATION CURVE ANALYSIS - SUMMARY
+================================================================================
+
+RESEARCH QUESTION
+--------------------------------------------------------------------------------
+Is the UCLA × Gender → WCST PE interaction robust across reasonable
+analytical choices?
+
+SPECIFICATIONS TESTED
+--------------------------------------------------------------------------------
+Total specifications: 162
+
+outlier_handling:
+  - none: 54 specs
+  - winsorize_95: 54 specs
+  - remove_3sd: 54 specs
+
+covariates:
+  - none: 54 specs
+  - dass: 54 specs
+  - dass_age: 54 specs
+
+error_metric:
+  - pe_rate: 54 specs
+  - total_errors: 54 specs
+  - pe_count: 54 specs
+
+trial_filter:
+  - all: 54 specs
+  - valid_rt: 54 specs
+  - no_timeout: 54 specs
+
+standardize:
+  - raw: 81 specs
+  - zscore: 81 specs
+
+KEY FINDINGS
+--------------------------------------------------------------------------------
+Median interaction β: 1.110
+Range: [0.148, 5.015]
+IQR: [0.199, 2.404]
+
+Median p-value: 0.053
+Significant (p<0.05): 72 / 162 (44.4%)
+Highly significant (p<0.01): 0 / 162 (0.0%)
+
+ROBUSTNESS INTERPRETATION
+--------------------------------------------------------------------------------
+~ MODERATELY ROBUST
+  44% of specifications yield p<0.05
+  Effect present but sensitive to some choices
+
+SPECIFICATION SENSITIVITY
+--------------------------------------------------------------------------------
+
+outlier_handling:
+  none: 22% sig, median β=1.258
+  winsorize_95: 67% sig, median β=1.128
+  remove_3sd: 44% sig, median β=1.084
+
+covariates:
+  none: 11% sig, median β=1.056
+  dass: 67% sig, median β=1.270
+  dass_age: 56% sig, median β=1.241
+
+error_metric:
+  pe_rate: 78% sig, median β=1.047
+  total_errors: 33% sig, median β=1.921
+  pe_count: 22% sig, median β=1.023
+
+================================================================================
+Full results saved to: results\analysis_outputs\advanced_analyses\specification_curve

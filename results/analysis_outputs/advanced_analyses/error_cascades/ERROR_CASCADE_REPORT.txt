@@ -1,0 +1,56 @@
+================================================================================
+TRIAL-LEVEL ERROR CASCADE ANALYSIS - SUMMARY
+================================================================================
+
+RESEARCH QUESTION
+--------------------------------------------------------------------------------
+Do errors cluster in temporal chains, and does UCLA loneliness predict
+cascade severity across WCST, Stroop, and PRP tasks?
+
+KEY FINDINGS
+--------------------------------------------------------------------------------
+
+CASCADE PREVALENCE:
+  WCST: 34.6% of errors occur in chains
+  Stroop: 5.2% of errors occur in chains
+  PRP: 19.1% of errors occur in chains
+
+UCLA × CASCADE CORRELATIONS:
+--------------------------------------------------------------------------------
+           Variable         r        p  N Sig
+     wcst_max_chain -0.110875 0.333848 78    
+  wcst_cascade_prop -0.233753 0.039422 78   *
+   stroop_max_chain -0.062006 0.572930 85    
+stroop_cascade_prop  0.012429 0.910110 85    
+      prp_max_chain  0.098861 0.376887 82    
+   prp_cascade_prop  0.145956 0.190732 82    
+
+GENDER-STRATIFIED CORRELATIONS:
+--------------------------------------------------------------------------------
+
+wcst_max_chain:
+  Female: r=-0.249, p=0.091  (N=47)
+  Male: r=0.113, p=0.545  (N=31)
+
+wcst_cascade_prop:
+  Female: r=-0.389, p=0.007 ** (N=47)
+  Male: r=0.047, p=0.802  (N=31)
+
+stroop_max_chain:
+  Female: r=-0.061, p=0.669  (N=52)
+  Male: r=-0.068, p=0.707  (N=33)
+
+stroop_cascade_prop:
+  Female: r=0.077, p=0.589  (N=52)
+  Male: r=-0.288, p=0.104  (N=33)
+
+prp_max_chain:
+  Female: r=0.120, p=0.407  (N=50)
+  Male: r=0.170, p=0.352  (N=32)
+
+prp_cascade_prop:
+  Female: r=0.120, p=0.408  (N=50)
+  Male: r=0.201, p=0.271  (N=32)
+
+================================================================================
+Full results saved to: results\analysis_outputs\advanced_analyses\error_cascades

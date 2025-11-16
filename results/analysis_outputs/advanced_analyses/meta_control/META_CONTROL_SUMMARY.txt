@@ -1,0 +1,43 @@
+CROSS-TASK META-CONTROL INTEGRATION ANALYSIS - SUMMARY
+================================================================================
+
+RESEARCH QUESTION
+--------------------------------------------------------------------------------
+Do WCST, PRP, and Stroop share a common 'meta-control' factor?
+Does low meta-control amplify the UCLA→DASS relationship?
+
+KEY FINDINGS
+--------------------------------------------------------------------------------
+
+1. PCA META-CONTROL FACTOR
+   Variance explained by PC1: 37.7%
+
+   Loadings:
+     wcst_pe_rate: -0.543
+     prp_bottleneck_effect: -0.701
+     stroop_interference_effect: -0.462
+
+2. UCLA × META-CONTROL MODERATION
+   Interaction: β=-2.303, p=0.1945
+   ✗ No significant moderation
+
+3. MEDIATION TEST
+   Path a (UCLA → Meta-control): β=0.007, p=0.9512
+   Path b (Meta-control → DASS): β=0.244, p=0.8747
+   Indirect effect: 0.002
+   ✗ Mediation not supported
+
+4. CROSS-TASK CORRELATIONS
+   WCST × PRP: r=0.099, p=0.4059
+   WCST × Stroop: r=0.004, p=0.9707
+   PRP × Stroop: r=0.083, p=0.4856
+
+
+INTERPRETATION
+--------------------------------------------------------------------------------
+✓ META-CONTROL FACTOR IS COHERENT:
+  PC1 explains 37.7% of variance
+  → Three tasks tap into shared executive control system
+
+================================================================================
+Full results saved to: results\analysis_outputs\advanced_analyses\meta_control

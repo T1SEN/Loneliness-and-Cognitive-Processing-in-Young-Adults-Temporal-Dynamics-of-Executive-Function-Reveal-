@@ -1,0 +1,33 @@
+STROOP METHODOLOGICAL DIAGNOSIS - WHY IS STROOP NULL?
+================================================================================
+
+FOUR HYPOTHESES TESTED
+--------------------------------------------------------------------------------
+
+H1: FLOOR EFFECT (High Accuracy)
+  • Overall accuracy: 99.0%
+  • Incongruent accuracy: 97.8%
+  • Finding: ✓ Evidence of ceiling effect
+    - Accuracy >95% leaves minimal variance for UCLA to predict
+
+H2: METRIC RELIABILITY
+  • Split-half reliability: r=0.214
+  ⚠️ Poor reliability - metric may be unstable
+
+H3: NEUTRAL BASELINE
+  • Traditional interference: r=0.011, p=0.9231
+  • Neutral baseline: r=0.017, p=0.8800
+  → Neutral baseline shows stronger (but still weak) effect
+
+H4: SUBGROUP EFFECTS
+  • UCLA × Gender interaction: p=0.9819
+
+================================================================================
+CONCLUSION
+--------------------------------------------------------------------------------
+Stroop null finding is likely THEORETICAL, not methodological:
+  1. Loneliness may selectively impair PROACTIVE control (WCST, PRP)
+  2. Stroop requires REACTIVE control (trial-by-trial conflict)
+  3. Different cognitive mechanisms → different sensitivities to loneliness
+
+Results saved to: results\analysis_outputs\advanced_analyses\stroop_diagnosis

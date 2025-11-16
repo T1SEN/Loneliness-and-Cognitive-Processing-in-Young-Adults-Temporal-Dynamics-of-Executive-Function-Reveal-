@@ -566,15 +566,14 @@ print("[2/16] Preparing analysis dataset...")
 # DASS subscales should now be merged from survey data
 # Verify they exist
 if 'dass_depression' not in master.columns:
-    print("  Warning: DASS subscales not found after merge. Check data.")
-    master['dass_depression'] = 0
-    master['dass_anxiety'] = 0
-    master['dass_stress'] = 0
+    print("  Warning: DASS subscales not found after merge. Creating NaN columns.")
+    master['dass_depression'] = np.nan
+    master['dass_anxiety'] = np.nan
+    master['dass_stress'] = np.nan
 else:
-    # Fill NaN with 0 for participants without DASS data
-    master['dass_depression'] = master['dass_depression'].fillna(0)
-    master['dass_anxiety'] = master['dass_anxiety'].fillna(0)
-    master['dass_stress'] = master['dass_stress'].fillna(0)
+    # Keep NaN for participants without DASS data (do NOT inject 0)
+    # Analyses using DASS as covariates will drop these participants
+    pass
 
 # Create gender binary variable (robust to Korean labels)
 if 'gender' in master.columns:
@@ -607,9 +606,11 @@ if 'dass_depression' in master_complete.columns:
     master_complete['z_dass_anx'] = scaler.fit_transform(master_complete[['dass_anxiety']])
     master_complete['z_dass_stress'] = scaler.fit_transform(master_complete[['dass_stress']])
 else:
-    master_complete['z_dass_dep'] = 0
-    master_complete['z_dass_anx'] = 0
-    master_complete['z_dass_stress'] = 0
+    # FIXED: Use NaN instead of 0 for missing DASS data
+    # Setting to 0 incorrectly implies "average mood" for participants without DASS scores
+    master_complete['z_dass_dep'] = np.nan
+    master_complete['z_dass_anx'] = np.nan
+    master_complete['z_dass_stress'] = np.nan
 
 print("[2/16] ✓ Data preparation complete")
 print()
@@ -815,21 +816,10 @@ print()
 
 
 # ============================================================================
-# PHASE 5: MEDIATION ANALYSIS
+# PHASE 5: SKIPPED - Mediation analysis requires separate dedicated script
 # ============================================================================
-
-print("="*80)
-print("PHASE 5: MEDIATION ANALYSIS (UCLA → DASS → EF)")
-print("="*80)
-print()
-
-print("[11/16] Running mediation analysis...")
-
-# Placeholder - full mediation requires more complex modeling
-mediation_results = []
-
-print("  ✓ Mediation analysis complete (placeholder)")
-print()
+# NOTE: Mediation analysis (UCLA → DASS → EF) is implemented in
+# analysis/dass_mediation_bootstrapped.py - see that script for full results
 
 
 # ============================================================================

@@ -1,0 +1,39 @@
+================================================================================
+BAYESIAN CHANGEPOINT DETECTION - PERFORMANCE COLLAPSE TIMING
+================================================================================
+
+OBJECTIVE
+--------------------------------------------------------------------------------
+Identify the precise trial where performance undergoes a regime shift
+from stable to deteriorated performance.
+
+METHOD
+--------------------------------------------------------------------------------
+CUSUM (Cumulative Sum) changepoint detection:
+- Detects trial where cumulative deviation from mean is maximized
+- Applied to RT series and PE occurrence series
+- Changepoint = trial index with maximum absolute CUSUM
+
+SAMPLE
+--------------------------------------------------------------------------------
+Total N = 72
+  RT changepoints detected: 48
+  PE changepoints detected: 72
+
+CHANGEPOINT TIMING (% through task)
+--------------------------------------------------------------------------------
+RT Changepoint: M=33.5%, SD=20.6%
+PE Changepoint: M=30.5%, SD=17.7%
+
+UCLA → CHANGEPOINT TIMING CORRELATIONS
+--------------------------------------------------------------------------------
+(Negative r = earlier changepoint with higher loneliness)
+
+RT Changepoint: r=0.222, p=0.1293
+  ~ No significant UCLA → timing relationship
+
+PE Changepoint: r=-0.128, p=0.2836
+  ~ No significant UCLA → timing relationship
+
+================================================================================
+Outputs saved to: results\analysis_outputs\changepoint_detection

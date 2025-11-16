@@ -1,0 +1,4 @@
+﻿Test,Metric,Comparison,F_statistic,p_value,Significant,LR_statistic
+Task Position Main Effect,PRP_T2_RT,Position 1 vs 2 vs 3,0.34000199173568807,0.5614682348077149,No,
+Task Position Main Effect,Stroop_Interference,Position 1 vs 2 vs 3,0.7276503692069421,0.4860981346590434,No,
+Position × UCLA×Gender Interaction,WCST_PE_Rate,Skipped - no variation,,,N/A (confounded),

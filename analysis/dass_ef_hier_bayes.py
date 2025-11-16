@@ -29,6 +29,7 @@ import pymc as pm
 import arviz as az
 
 from dass_exec_models import build_df, add_meta_control
+from statistical_utils import check_bayesian_convergence
 
 try:
     from pymc.sampling_jax import sample_numpyro_nuts
@@ -181,6 +182,37 @@ def fit_model(long: pd.DataFrame) -> az.InferenceData:
                 random_seed=sample_kwargs["random_seed"],
                 return_inferencedata=True,
             )
+
+    # ADDED: Check Bayesian convergence diagnostics
+    print("\n" + "=" * 70)
+    print("Bayesian Convergence Diagnostics")
+    print("=" * 70)
+    convergence_results = check_bayesian_convergence(
+        idata,
+        var_names=["mu_dep", "mu_anx", "mu_str", "tau_dep", "tau_anx", "tau_str"],
+        rhat_threshold=1.01,
+        ess_bulk_threshold=400,
+        verbose=True
+    )
+
+    # Save convergence diagnostics
+    convergence_results['summary'].to_csv(OUT / "dass_ef_hier_convergence.csv")
+    print(f"\n✓ Convergence diagnostics saved to dass_ef_hier_convergence.csv")
+
+    # Save trace plots for key parameters
+    try:
+        import matplotlib.pyplot as plt
+        az.plot_trace(idata, var_names=["mu_dep", "mu_anx", "mu_str"])
+        plt.tight_layout()
+        plt.savefig(OUT / "dass_ef_hier_trace_plots.png", dpi=150)
+        print(f"✓ Trace plots saved to dass_ef_hier_trace_plots.png")
+        plt.close()
+    except Exception as e:
+        print(f"Warning: Could not save trace plots: {e}")
+
+    if not convergence_results['converged']:
+        print("\n⚠️  WARNING: Model did not converge properly!")
+        print("⚠️  Consider increasing draws/tune or checking model specification")
 
     return idata
 

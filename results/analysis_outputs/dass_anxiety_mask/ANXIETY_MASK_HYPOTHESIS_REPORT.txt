@@ -1,0 +1,50 @@
+================================================================================
+DASS ANXIETY: MASK VS MODERATOR HYPOTHESIS TESTING
+================================================================================
+
+RESEARCH QUESTION
+--------------------------------------------------------------------------------
+Why does UCLA × Gender → PE effect emerge ONLY in low-anxiety individuals?
+
+COMPETING HYPOTHESES
+--------------------------------------------------------------------------------
+A. ANXIETY AS MASK: Anxiety narrows attention, overriding loneliness effects
+B. ANXIETY AS MODERATOR: Anxiety provides protective arousal
+C. FLOOR EFFECT: High anxiety already impaired, no room for UCLA effect
+
+SAMPLE
+--------------------------------------------------------------------------------
+N = 72
+  Low anxiety: 39
+  High anxiety: 33
+
+TEST 1: FLOOR EFFECT
+--------------------------------------------------------------------------------
+Low Anxiety PE: M=10.86%, SD=4.01%
+High Anxiety PE: M=10.26%, SD=5.29%
+t-test: t=0.552, p=0.5824
+Floor effect supported: False
+
+TEST 2: 3-WAY INTERACTION
+--------------------------------------------------------------------------------
+UCLA × Gender × Anxiety: β=-0.043, p=0.9750
+3-way moderation supported: False
+
+TEST 3: STRATIFIED EFFECTS
+--------------------------------------------------------------------------------
+
+anxiety_group gender  n         r        p      beta   beta_p
+  Low Anxiety Female 24 -0.378437 0.068230 -0.117113 0.068230
+  Low Anxiety   Male 15  0.494164 0.061157  0.230233 0.061157
+ High Anxiety Female 21 -0.243983 0.286504 -0.157680 0.286504
+ High Anxiety   Male 12  0.517666 0.084739  0.147668 0.084739
+
+CONCLUSION
+--------------------------------------------------------------------------------
+~ UNCLEAR PATTERN
+
+Evidence is mixed or insufficient to support a single hypothesis.
+Further investigation needed with larger sample.
+
+================================================================================
+Full results saved to: results\analysis_outputs\dass_anxiety_mask

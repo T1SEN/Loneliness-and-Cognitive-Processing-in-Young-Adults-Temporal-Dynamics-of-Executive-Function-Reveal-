@@ -1,0 +1,3 @@
+﻿task,mean_accuracy,sd_accuracy,ceiling_effect,n
+WCST,,,No,82
+Stroop,98.8396624472574,1.3545806477573812,Yes,79

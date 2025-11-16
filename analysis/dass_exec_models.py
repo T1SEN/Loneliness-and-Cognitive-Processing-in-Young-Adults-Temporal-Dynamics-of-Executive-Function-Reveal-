@@ -28,6 +28,9 @@ import statsmodels.formula.api as smf
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 
+from data_loader_utils import normalize_gender_series
+from statistical_utils import apply_multiple_comparison_correction
+
 
 BASE = Path(__file__).resolve().parent.parent
 RES = BASE / "results"
@@ -41,14 +44,6 @@ def read_csv_lower(path: Path) -> pd.DataFrame:
         df.columns.str.strip().str.lower().str.replace(" ", "_").str.replace(".", "_", regex=False)
     )
     return df
-
-
-def clean_gender(s: pd.Series) -> pd.Series:
-    x = s.fillna("").astype(str)
-    out = pd.Series(np.nan, index=s.index, dtype="object")
-    out[x.str.contains("남")] = "male"
-    out[x.str.contains("여")] = "female"
-    return out
 
 
 def z(series: pd.Series) -> pd.Series:
@@ -67,7 +62,7 @@ def build_df() -> pd.DataFrame:
         columns={"participantid": "participant_id"}
     )
     demo["age"] = pd.to_numeric(demo["age"], errors="coerce")
-    demo["gender"] = clean_gender(demo["gender"])
+    demo["gender"] = normalize_gender_series(demo["gender"])
 
     dass = (
         surveys.query("surveyname == 'dass'")
@@ -227,9 +222,23 @@ def main() -> None:
     # Quick key rows
     if not coef.empty:
         key = coef[coef["term"].isin(["z_dass_dep", "z_dass_anx", "z_dass_stress"])]
+
+        # ADDED: Apply multiple comparison correction (FDR) to key p-values
+        if 'p_value' in key.columns and len(key) > 0:
+            p_values = key['p_value'].values
+            reject_fdr, p_adjusted_fdr = apply_multiple_comparison_correction(
+                p_values,
+                method='fdr_bh',
+                alpha=0.05
+            )
+            key = key.copy()
+            key['p_adjusted_fdr'] = p_adjusted_fdr
+            key['significant_fdr'] = reject_fdr
+            print(f"\n[Multiple comparison correction applied: {len(key)} tests, FDR method]")
+
         key.to_csv(OUT / "dass_key_pvalues.csv", index=False)
         print("\n=== Key D/A/S coefficients (HC3) ===")
-        cols = [c for c in ["outcome", "spec", "term", "estimate", "p_value", "conf_low", "conf_high"] if c in key.columns]
+        cols = [c for c in ["outcome", "spec", "term", "estimate", "p_value", "p_adjusted_fdr", "conf_low", "conf_high"] if c in key.columns]
         print(key[cols].to_string(index=False))
 
 

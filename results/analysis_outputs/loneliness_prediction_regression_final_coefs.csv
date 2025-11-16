@@ -1,0 +1,17 @@
+﻿feature,coefficient
+wcst_pe_rate,0.0
+late_minus_early_pe,-0.0
+wcst_rt_cv,0.0
+wcst_accuracy,-0.0
+stroop_interference,0.0
+prp_bottleneck,0.0
+prp_t1_slowing,0.0
+gender_male,-0.0
+age,-0.0
+dass_depression,0.8100538627290363
+dass_stress,0.2398900198383266
+dass_anxiety,0.14928724364754095
+gender_x_wcst_pe,0.0
+gender_x_late_minus_early,0.0
+gender_x_wcst_rt_cv,0.0
+intercept,31.683987103136445

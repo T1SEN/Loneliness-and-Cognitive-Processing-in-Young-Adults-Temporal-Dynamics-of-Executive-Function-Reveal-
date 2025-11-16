@@ -1,0 +1,97 @@
+================================================================================
+STROOP CONGRUENCY SEQUENCE EFFECT (CSE) - CONFLICT ADAPTATION ANALYSIS
+================================================================================
+
+OBJECTIVE
+--------------------------------------------------------------------------------
+Test whether lonely individuals (especially males) show impaired trial-to-trial
+cognitive control adjustments using the Congruency Sequence Effect (CSE).
+
+BACKGROUND
+--------------------------------------------------------------------------------
+CSE (Gratton et al., 1992) measures dynamic conflict adaptation:
+- Negative CSE = Reduced interference after incongruent trials (good adaptation)
+- CSE ≈ 0 = No adaptation, flat interference regardless of N-1 trial
+- Positive CSE = Increased interference after incongruent trials (maladaptive)
+
+CSE Formula: (cI - cC) - (iI - iC)
+  where:
+    cI = RT incongruent trial after congruent trial
+    cC = RT congruent trial after congruent trial
+    iI = RT incongruent trial after incongruent trial
+    iC = RT congruent trial after incongruent trial
+
+SAMPLE
+--------------------------------------------------------------------------------
+Total N = 72
+  Males: 27
+  Females: 45
+
+OVERALL CSE PATTERN
+--------------------------------------------------------------------------------
+Mean CSE = 9.8 ms (SD = 131.2)
+
+✗ Positive CSE indicates maladaptive pattern (unusual)
+
+GENDER DIFFERENCES IN CSE
+--------------------------------------------------------------------------------
+Males: M = 7.2 ms (SD = 136.4)
+Females: M = 11.3 ms (SD = 129.5)
+Independent t-test: t = -0.13, p = 0.8998
+
+~ No significant gender difference in baseline CSE
+
+UCLA → CSE CORRELATIONS
+--------------------------------------------------------------------------------
+Overall: r = -0.031, p = 0.7977
+Males (N=27): r = -0.223, p = 0.2633
+  ~ No significant UCLA → CSE relationship in males
+Females (N=45): r = 0.085, p = 0.5796
+  ~ No significant UCLA → CSE relationship in females
+
+INTERACTION MODEL: CSE ~ UCLA × Gender
+--------------------------------------------------------------------------------
+UCLA main effect: β = 10.76, p = 0.5840
+Gender main effect: β = -3.74, p = 0.9081
+UCLA × Gender: β = -41.71, p = 0.2086
+Model R² = 0.024
+
+~ No significant UCLA × Gender interaction
+  Loneliness → CSE relationship similar across genders
+
+INTERPRETATION
+--------------------------------------------------------------------------------
+FINDING: No significant loneliness → CSE relationship detected.
+
+Theoretical implications:
+- CSE tests PROACTIVE control (anticipatory strategy adjustment)
+- Distinct from REACTIVE control (mean interference)
+- Impaired CSE suggests reduced cognitive flexibility
+- Can explain null mean Stroop findings if baseline is low
+
+LIMITATIONS
+--------------------------------------------------------------------------------
+1. CSE requires sufficient trials in all 4 cells (cC, cI, iC, iI)
+2. Practice effects may reduce CSE magnitude over task duration
+3. Assumes stable conflict adaptation strategy across all trials
+4. Does not distinguish proactive from reactive control mechanisms
+
+NEXT STEPS
+--------------------------------------------------------------------------------
+1. Test CSE changes over time (early vs late blocks)
+2. Link CSE to PRP bottleneck (cross-task control flexibility)
+3. Test CSE × DASS anxiety (anxiety-driven hypervigilance)
+4. Trial-level MVPA to predict vulnerability moments
+
+================================================================================
+OUTPUT FILES
+================================================================================
+1. cse_participant_scores.csv - Individual CSE scores
+2. cse_summary_stats.csv - Descriptive statistics by gender
+3. cse_regression_model.csv - UCLA × Gender interaction model
+4. cse_interaction_pattern.png - 2×2 RT pattern visualization
+5. ucla_cse_scatterplots.png - Loneliness correlations
+6. cse_distribution.png - CSE distribution by gender
+7. CSE_CONFLICT_ADAPTATION_REPORT.txt - This report
+
+Analysis completed: 2025-11-16 13:41:20

@@ -38,7 +38,14 @@
       "Bash(.venvScriptspip.exe list)",
       "Bash(findstr:*)",
       "Bash(C:/Users/ansel/my_research_exporter/venv/Scripts/pip.exe list:*)",
-      "Bash(C:/Users/ansel/my_research_exporter/venv/Scripts/python.exe:*)"
+      "Bash(C:/Users/ansel/my_research_exporter/venv/Scripts/python.exe:*)",
+      "Bash(timeout 60 ./venv/Scripts/python.exe:*)",
+      "Bash(timeout 90 ./venv/Scripts/python.exe:*)",
+      "Bash(./venv/Scripts/pip.exe freeze:*)",
+      "Bash(requirements_frozen.txt)",
+      "Bash(find:*)",
+      "Bash(if exist resultsanalysis_outputs_old rmdir /s /q resultsanalysis_outputs_old)",
+      "Bash(xcopy:*)"
     ],
     "deny": [],
     "ask": []

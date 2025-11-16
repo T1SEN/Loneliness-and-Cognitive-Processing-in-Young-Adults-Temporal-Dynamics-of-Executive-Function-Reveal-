@@ -20,6 +20,9 @@ from sklearn.preprocessing import StandardScaler
 import warnings
 warnings.filterwarnings('ignore')
 
+# Import statistical utilities for rigorous testing
+from statistical_utils import apply_multiple_comparison_correction, test_ols_assumptions
+
 if sys.platform.startswith("win") and hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding='utf-8')
 
@@ -288,6 +291,13 @@ def hierarchical_regression(df, outcome, covariates, predictor):
     ss_res2 = np.sum((y - y_pred2) ** 2)
     r2_2 = 1 - (ss_res2 / ss_tot)
 
+    # ADDED: Test statistical assumptions for OLS
+    assumption_results = test_ols_assumptions(
+        y, y_pred2, X2,
+        feature_names=covariates + [predictor],
+        verbose=True
+    )
+
     # ΔR² 검정
     delta_r2 = r2_2 - r2_1
     n = len(df_clean)
@@ -352,8 +362,27 @@ for outcome_var, outcome_label in outcomes:
         print(f"   × 유의하지 않음 (p ≥ .05)")
 
 results_df = pd.DataFrame(results)
+
+# ADDED: Multiple comparison correction (FDR) for 3 tests
+print("\n" + "-" * 70)
+print("다중비교 보정 (Multiple Comparison Correction)")
+print("-" * 70)
+p_values_raw = results_df['p_value'].values
+reject_fdr, p_adjusted_fdr = apply_multiple_comparison_correction(
+    p_values_raw,
+    method='fdr_bh',
+    alpha=0.05
+)
+results_df['p_adjusted_fdr'] = p_adjusted_fdr
+results_df['significant_fdr'] = reject_fdr
+
+print("\n원래 p-values vs. FDR 보정 p-values:")
+for i, (outcome_var, outcome_label) in enumerate(outcomes):
+    print(f"  {outcome_label}:")
+    print(f"    Raw p = {p_values_raw[i]:.4f}, FDR-adjusted p = {p_adjusted_fdr[i]:.4f}, Significant = {reject_fdr[i]}")
+
 results_df.to_csv(output_dir / "hierarchical_regression_results.csv", index=False, encoding='utf-8-sig')
-print(f"\n✓ 위계적 회귀 결과 저장: {output_dir / 'hierarchical_regression_results.csv'}")
+print(f"\n✓ 위계적 회귀 결과 저장 (다중비교 보정 포함): {output_dir / 'hierarchical_regression_results.csv'}")
 
 # ============================================================================
 # 6. 공통 요인 분석 (PCA)

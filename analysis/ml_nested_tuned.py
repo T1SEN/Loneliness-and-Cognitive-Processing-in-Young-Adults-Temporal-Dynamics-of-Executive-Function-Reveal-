@@ -69,6 +69,10 @@ def build_base_dataframe() -> pd.DataFrame:
     demo = participants[["participant_id", "age", "gender", "education", "courseName", "professorName", "classSection", "createdAt"]].copy()
     demo["age"] = _to_num(demo["age"])
     # Derive time-of-day / day-of-week features from createdAt if present
+    # NOTE: These time features are legitimate predictors (circadian effects on cognition)
+    # but could also capture batch effects if recruitment timing correlates with outcomes.
+    # Interpretation should be cautious. No data leakage: features are derived from
+    # participant-level metadata available at prediction time.
     try:
         dt = pd.to_datetime(demo["createdAt"], errors="coerce")
         demo["created_hour"] = dt.dt.hour.astype("Int64")
