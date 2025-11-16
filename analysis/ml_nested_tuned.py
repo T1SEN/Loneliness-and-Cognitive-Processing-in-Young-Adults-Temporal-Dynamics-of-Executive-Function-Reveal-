@@ -249,8 +249,11 @@ def select_features(df: pd.DataFrame, feature_set: str) -> Tuple[List[str], List
         "stroop_post_error_slowing", "stroop_post_error_rt", "stroop_post_correct_rt", "stroop_incong_slope", "stroop_trials",
     ]
     ef_numeric = ef_numeric + [c for c in trial_cols if c in df.columns]
-    demo_num = ["age", "created_hour", "ucla_duration", "dass_duration", "duration_prp", "duration_stroop", "duration_wcst"]
-    demo_cat = ["gender", "education", "courseName", "professorName", "classSection", "created_dow", "created_hour_bin"]
+    # CRITICAL: Time features (created_hour, created_dow, created_hour_bin) REMOVED
+    # Reason: Potential batch effects (recruitment timing may confound UCLA predictions)
+    # See batch effect validation (lines 181-236) for empirical tests
+    demo_num = ["age", "ucla_duration", "dass_duration", "duration_prp", "duration_stroop", "duration_wcst"]
+    demo_cat = ["gender", "education", "courseName", "professorName", "classSection"]
     dass_num = ["dass_dep", "dass_anx", "dass_stress"]
 
     fs = feature_set.lower()

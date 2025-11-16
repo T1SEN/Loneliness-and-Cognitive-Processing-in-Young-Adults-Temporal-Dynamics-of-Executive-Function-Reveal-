@@ -188,8 +188,9 @@ print(f"  Mean CSE: {cse_df['cse'].mean():.1f} ms (SD={cse_df['cse'].std():.1f})
 # ============================================================================
 print("\n[4/5] Testing UCLA × Gender → CSE...")
 
-# Merge CSE with master
-merge_cols = ['participant_id', 'ucla_total', 'gender', 'gender_male']
+# Merge CSE with master (CRITICAL: Include DASS for covariate control)
+merge_cols = ['participant_id', 'ucla_total', 'gender', 'gender_male',
+              'dass_depression', 'dass_anxiety', 'dass_stress']
 if 'age' in master.columns:
     merge_cols.append('age')
 
@@ -199,9 +200,12 @@ analysis_data = cse_df.merge(
     how='inner'
 )
 
-# Drop missing UCLA
-analysis_data = analysis_data.dropna(subset=['ucla_total', 'gender_male'])
+# Drop missing UCLA and DASS (required for DASS-controlled analysis)
+print(f"  N before filtering: {len(analysis_data)}")
+analysis_data = analysis_data.dropna(subset=['ucla_total', 'gender_male',
+                                              'dass_depression', 'dass_anxiety', 'dass_stress'])
 
+print(f"  N after DASS filtering: {len(analysis_data)}")
 print(f"  Final N={len(analysis_data)}")
 print(f"    Males: {(analysis_data['gender_male'] == 1).sum()}")
 print(f"    Females: {(analysis_data['gender_male'] == 0).sum()}")
@@ -228,16 +232,20 @@ else:
     r_female, p_female = np.nan, np.nan
     print(f"  Females: Insufficient N")
 
-# Interaction test: UCLA × Gender → CSE
+# Interaction test: UCLA × Gender → CSE (DASS-controlled)
 analysis_data['z_ucla'] = (analysis_data['ucla_total'] - analysis_data['ucla_total'].mean()) / analysis_data['ucla_total'].std()
+analysis_data['z_dass_dep'] = (analysis_data['dass_depression'] - analysis_data['dass_depression'].mean()) / analysis_data['dass_depression'].std()
+analysis_data['z_dass_anx'] = (analysis_data['dass_anxiety'] - analysis_data['dass_anxiety'].mean()) / analysis_data['dass_anxiety'].std()
+analysis_data['z_dass_str'] = (analysis_data['dass_stress'] - analysis_data['dass_stress'].mean()) / analysis_data['dass_stress'].std()
 
-formula = 'cse ~ z_ucla * gender_male'
+formula = 'cse ~ z_ucla * gender_male + z_dass_dep + z_dass_anx + z_dass_str'
 model = smf.ols(formula, data=analysis_data).fit()
 
-print(f"\n  Interaction Model: CSE ~ UCLA × Gender")
+print(f"\n  Interaction Model: CSE ~ UCLA × Gender (DASS-controlled)")
 print(f"    UCLA main effect: β={model.params['z_ucla']:.2f}, p={model.pvalues['z_ucla']:.4f}")
 print(f"    Gender main effect: β={model.params['gender_male']:.2f}, p={model.pvalues['gender_male']:.4f}")
 print(f"    UCLA × Gender: β={model.params['z_ucla:gender_male']:.2f}, p={model.pvalues['z_ucla:gender_male']:.4f}")
+print(f"    DASS controls: Depression p={model.pvalues['z_dass_dep']:.4f}, Anxiety p={model.pvalues['z_dass_anx']:.4f}, Stress p={model.pvalues['z_dass_str']:.4f}")
 
 # ============================================================================
 # 5. VISUALIZATIONS

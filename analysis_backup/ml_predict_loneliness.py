@@ -8,6 +8,24 @@ demographics and DASS controls. It supports both:
 - regression: predict continuous UCLA total (or z-scored)
 - classification: predict high loneliness (top 25%) vs others
 
+⚠️ WARNING: PREDICTION MODEL, NOT CAUSAL INFERENCE ⚠️
+================================================================================
+This is a MACHINE LEARNING prediction model (EF→UCLA), not a causal analysis.
+
+Predictive performance does NOT establish that:
+  1. EF deficits CAUSE loneliness
+  2. EF has independent effects after controlling for DASS
+  3. The relationship is not confounded by third variables
+
+When DASS is included as a feature, the model tests joint prediction, not
+whether EF has unique effects beyond mood/anxiety.
+
+For causal inference about UCLA→EF (the reverse direction), use:
+  - master_dass_controlled_analysis.py (hierarchical regression with covariates)
+
+This script is for EXPLORATORY PREDICTION ONLY.
+================================================================================
+
 Features are assembled directly from CSV exports under `results/` to avoid
 dependencies on other analysis scripts. Models are evaluated with cross-
 validation and key metrics are exported alongside permutation importances.
@@ -45,6 +63,7 @@ from sklearn.model_selection import KFold, StratifiedKFold, cross_val_predict
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.inspection import permutation_importance
+from sklearn.base import clone
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -183,13 +202,10 @@ def build_base_dataframe() -> pd.DataFrame:
         return (x - x.mean()) / x.std()
 
     df["z_ucla"] = _z(df["ucla_total"])
-    # High loneliness: top quartile
-    if df["ucla_total"].notna().sum() > 0:
-        thr = df["ucla_total"].quantile(0.75)
-    else:
-        thr = np.nan
-    df["high_loneliness"] = (df["ucla_total"] >= thr).astype(float)
-    df.attrs["loneliness_threshold"] = float(thr) if np.isfinite(thr) else thr
+    # CRITICAL FIX: Do NOT compute threshold here (data leakage)
+    # Threshold will be computed per-fold in CV loop
+    # Keep only UCLA total, high_loneliness will be computed per fold
+    df.attrs["threshold_method"] = "Q75 computed per training fold"
 
     return df
 
@@ -359,9 +375,11 @@ def run_cv_models(df: pd.DataFrame, task: str, feature_set: str, age_min: int | 
         y = work[target_col].to_numpy(dtype=float)
         is_classification = False
     else:
-        target_col = "high_loneliness"
+        # CRITICAL FIX: For classification, keep UCLA continuous
+        # Threshold will be computed per fold
+        target_col = "ucla_total"
         work = work.dropna(subset=[target_col])
-        y = work[target_col].to_numpy(dtype=int)
+        y_continuous = work[target_col].to_numpy(dtype=float)
         is_classification = True
 
     # Build X
@@ -369,9 +387,8 @@ def run_cv_models(df: pd.DataFrame, task: str, feature_set: str, age_min: int | 
 
     # Choose CV strategy
     if is_classification:
-        # Ensure both classes present
-        if len(np.unique(y)) < 2:
-            raise ValueError("High-loneliness classification has only one class in data. Adjust threshold or filters.")
+        # Use continuous UCLA for initial stratification bins
+        y_bins_strat = pd.qcut(y_continuous, q=4, labels=False, duplicates='drop')
         cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
     else:
         cv = KFold(n_splits=5, shuffle=True, random_state=42)
@@ -385,29 +402,55 @@ def run_cv_models(df: pd.DataFrame, task: str, feature_set: str, age_min: int | 
         est = run.estimator
         # Get cross-validated predictions
         if is_classification:
-            # Predicted labels and probabilities (if available)
-            y_pred = cross_val_predict(est, X, y, cv=cv, n_jobs=None, method="predict")
-            y_proba = None
-            try:
-                y_proba = cross_val_predict(est, X, y, cv=cv, n_jobs=None, method="predict_proba")[:, 1]
-            except Exception:
-                # Some models may not implement predict_proba
-                pass
-            m = evaluate_classification(y, y_pred, y_proba)
-            metrics_rows.append({"model": run.name, **m, "n": int(len(y))})
+            # CRITICAL FIX: Manual CV loop to compute threshold per fold
+            y_pred_all = np.zeros(len(y_continuous), dtype=int)
+            y_proba_all = np.zeros(len(y_continuous), dtype=float) if hasattr(est, 'predict_proba') else None
+            y_true_all = np.zeros(len(y_continuous), dtype=int)
+
+            for train_idx, test_idx in cv.split(X, y_bins_strat):
+                X_train, X_test = X.iloc[train_idx], X.iloc[test_idx]
+                y_train_cont, y_test_cont = y_continuous[train_idx], y_continuous[test_idx]
+
+                # Compute threshold on TRAINING DATA ONLY (Q75)
+                threshold = np.quantile(y_train_cont, 0.75)
+
+                # Convert to binary using training-derived threshold
+                y_train = (y_train_cont >= threshold).astype(int)
+                y_test = (y_test_cont >= threshold).astype(int)
+
+                # Fit model on training fold
+                est_clone = clone(est)
+                est_clone.fit(X_train, y_train)
+
+                # Predict on test fold
+                y_pred_all[test_idx] = est_clone.predict(X_test)
+                y_true_all[test_idx] = y_test
+
+                if y_proba_all is not None:
+                    try:
+                        y_proba_all[test_idx] = est_clone.predict_proba(X_test)[:, 1]
+                    except:
+                        y_proba_all = None  # Disable if fails
+
+            # Evaluate aggregated predictions
+            m = evaluate_classification(y_true_all, y_pred_all, y_proba_all)
+            metrics_rows.append({"model": run.name, **m, "n": int(len(y_continuous))})
+
             # Threshold optimization (best F1)
-            if y_proba is not None:
-                mopt = optimize_threshold(y, y_proba)
+            if y_proba_all is not None:
+                mopt = optimize_threshold(y_true_all, y_proba_all)
                 if mopt:
-                    metrics_rows_opt.append({"model": run.name, **mopt, "n": int(len(y))})
+                    metrics_rows_opt.append({"model": run.name, **mopt, "n": int(len(y_continuous))})
+
             out = pd.DataFrame({
                 "participant_id": work["participant_id"].values,
-                "y_true": y,
-                "y_pred": y_pred,
+                "y_true": y_true_all,
+                "y_pred": y_pred_all,
             })
-            if y_proba is not None:
-                out["y_proba"] = y_proba
+            if y_proba_all is not None:
+                out["y_proba"] = y_proba_all
         else:
+            # Regression task
             y_pred = cross_val_predict(est, X, y, cv=cv, n_jobs=None, method="predict")
             m = evaluate_regression(y, y_pred)
             metrics_rows.append({"model": run.name, **m, "n": int(len(y))})
@@ -492,12 +535,15 @@ def main() -> None:
     age_min = None if args.age_min is not None and args.age_min < 0 else args.age_min
     age_max = None if args.age_max is not None and args.age_max < 0 else args.age_max
 
-    # Report sample and threshold
-    thr = df.attrs.get("loneliness_threshold", np.nan)
-    if isinstance(thr, (int, float)) and np.isfinite(thr):
-        print(f"High-loneliness threshold (75th percentile UCLA): {thr:.2f}")
+    # Report sample and threshold methodology
+    method = df.attrs.get("threshold_method", "Unknown")
+    if args.task == "classification":
+        print(f"\n[CRITICAL FIX APPLIED]")
+        print(f"   Threshold method: {method}")
+        print(f"   This prevents data leakage from using global threshold.")
+        print(f"   Each CV fold computes Q75 on TRAINING DATA ONLY.\n")
     else:
-        print("High-loneliness threshold could not be computed (missing UCLA data).")
+        print(f"\nTarget: Continuous UCLA score (regression)\n")
 
     run_cv_models(df, args.task, args.features, age_min, age_max)
 

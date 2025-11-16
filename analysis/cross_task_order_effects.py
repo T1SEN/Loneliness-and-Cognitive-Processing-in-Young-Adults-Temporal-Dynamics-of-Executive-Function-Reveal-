@@ -140,16 +140,25 @@ if 'testName' in summary.columns and 'timestamp' in summary.columns:
 
         # Test: WCST Position × UCLA × Gender
         if 'wcst_position_cat' in master.columns:
-            master_order = master.dropna(subset=['wcst_position_cat', 'ucla_total', 'gender_male', 'pe_rate']).copy()
+            master_order_unfiltered = master.dropna(subset=['wcst_position_cat', 'ucla_total', 'gender_male', 'pe_rate']).copy()
+            print(f"  N before DASS filtering: {len(master_order_unfiltered)}")
+
+            master_order = master.dropna(subset=['wcst_position_cat', 'ucla_total', 'gender_male', 'pe_rate',
+                                                   'dass_depression', 'dass_anxiety', 'dass_stress']).copy()
+            print(f"  N after DASS filtering: {len(master_order)}")
+            print(f"  Excluded due to missing DASS: {len(master_order_unfiltered) - len(master_order)}")
 
             if len(master_order) >= 30:
                 scaler = StandardScaler()
                 master_order['z_ucla'] = scaler.fit_transform(master_order[['ucla_total']])
+                master_order['z_dass_dep'] = scaler.fit_transform(master_order[['dass_depression']])
+                master_order['z_dass_anx'] = scaler.fit_transform(master_order[['dass_anxiety']])
+                master_order['z_dass_str'] = scaler.fit_transform(master_order[['dass_stress']])
 
-                print("  Testing: WCST Position × UCLA × Gender → PE")
+                print("  Testing: WCST Position × UCLA × Gender → PE (DASS-controlled)")
                 print()
 
-                formula = "pe_rate ~ C(wcst_position_cat) * z_ucla * C(gender_male)"
+                formula = "pe_rate ~ C(wcst_position_cat) * z_ucla * C(gender_male) + z_dass_dep + z_dass_anx + z_dass_str"
 
                 try:
                     model = ols(formula, data=master_order).fit()
@@ -159,7 +168,7 @@ if 'testName' in summary.columns and 'timestamp' in summary.columns:
                         pos_data = master_order[master_order['wcst_position_cat'] == position].copy()
 
                         if len(pos_data) >= 10:
-                            pos_model = ols("pe_rate ~ z_ucla * C(gender_male)", data=pos_data).fit()
+                            pos_model = ols("pe_rate ~ z_ucla * C(gender_male) + z_dass_dep + z_dass_anx + z_dass_str", data=pos_data).fit()
 
                             if "z_ucla:C(gender_male)[T.1]" in pos_model.params:
                                 int_beta = pos_model.params["z_ucla:C(gender_male)[T.1]"]
@@ -195,22 +204,32 @@ print()
 
 # Test: Does Stroop performance predict WCST PE?
 if 'stroop_interference' in master.columns:
-    carryover_data = master.dropna(subset=['stroop_interference', 'pe_rate', 'ucla_total', 'gender_male']).copy()
+    carryover_data_unfiltered = master.dropna(subset=['stroop_interference', 'pe_rate', 'ucla_total', 'gender_male']).copy()
+    print(f"  N before DASS filtering: {len(carryover_data_unfiltered)}")
+
+    carryover_data = master.dropna(subset=['stroop_interference', 'pe_rate', 'ucla_total', 'gender_male',
+                                             'dass_depression', 'dass_anxiety', 'dass_stress']).copy()
+    print(f"  N after DASS filtering: {len(carryover_data)}")
+    print(f"  Excluded due to missing DASS: {len(carryover_data_unfiltered) - len(carryover_data)}")
+    print()
 
     if len(carryover_data) >= 30:
         scaler_co = StandardScaler()
         carryover_data['z_ucla'] = scaler_co.fit_transform(carryover_data[['ucla_total']])
         carryover_data['z_stroop'] = scaler_co.fit_transform(carryover_data[['stroop_interference']])
+        carryover_data['z_dass_dep'] = scaler_co.fit_transform(carryover_data[['dass_depression']])
+        carryover_data['z_dass_anx'] = scaler_co.fit_transform(carryover_data[['dass_anxiety']])
+        carryover_data['z_dass_str'] = scaler_co.fit_transform(carryover_data[['dass_stress']])
 
         # Path model: Stroop errors → WCST PE (moderated by UCLA × Gender)
-        print("  Path 1: Stroop → WCST PE (overall)")
+        print("  Path 1: Stroop → WCST PE (overall, DASS-controlled)")
 
-        stroop_wcst_model = ols("pe_rate ~ z_stroop", data=carryover_data).fit()
+        stroop_wcst_model = ols("pe_rate ~ z_stroop + z_dass_dep + z_dass_anx + z_dass_str", data=carryover_data).fit()
         print(f"    β={stroop_wcst_model.params['z_stroop']:.3f}, p={stroop_wcst_model.pvalues['z_stroop']:.4f}")
 
-        print("\n  Path 2: Stroop → WCST PE (moderated by UCLA × Gender)")
+        print("\n  Path 2: Stroop → WCST PE (moderated by UCLA × Gender, DASS-controlled)")
 
-        interaction_model = ols("pe_rate ~ z_stroop * z_ucla * C(gender_male)", data=carryover_data).fit()
+        interaction_model = ols("pe_rate ~ z_stroop * z_ucla * C(gender_male) + z_dass_dep + z_dass_anx + z_dass_str", data=carryover_data).fit()
 
         # Test by gender
         print("\n  By gender:")
@@ -219,8 +238,8 @@ if 'stroop_interference' in master.columns:
             gender_data = carryover_data[carryover_data['gender_male'] == gender].copy()
 
             if len(gender_data) >= 15:
-                # Stroop → PE, moderated by UCLA
-                gender_model = ols("pe_rate ~ z_stroop * z_ucla", data=gender_data).fit()
+                # Stroop → PE, moderated by UCLA (DASS-controlled)
+                gender_model = ols("pe_rate ~ z_stroop * z_ucla + z_dass_dep + z_dass_anx + z_dass_str", data=gender_data).fit()
 
                 if "z_stroop:z_ucla" in gender_model.params:
                     int_beta = gender_model.params["z_stroop:z_ucla"]
