@@ -54,50 +54,14 @@ participants = load_participants()
 surveys = ensure_participant_id(pd.read_csv(RESULTS_DIR / "2_surveys_results.csv"))
 
 # UCLA scores
-if 'surveyName' in surveys.columns:
-    ucla_data = surveys[surveys['surveyName'].str.lower() == 'ucla'].copy()
-elif 'survey' in surveys.columns:
-    ucla_data = surveys[surveys['survey'].str.lower() == 'ucla'].copy()
-else:
-    raise KeyError("No survey name column found")
-ucla_scores = ucla_data.groupby('participant_id')['score'].sum().reset_index()
+ucla_data = surveys[surveys['surveyName'].str.lower() == 'ucla'].copy()
+ucla_scores = ucla_data[['participant_id', 'score']].copy()
 ucla_scores.columns = ['participant_id', 'ucla_total']
 
-# DASS scores
-if 'surveyName' in surveys.columns:
-    dass_data = surveys[surveys['surveyName'].str.lower() == 'dass-21'].copy()
-elif 'survey' in surveys.columns:
-    dass_data = surveys[surveys['survey'].str.lower() == 'dass-21'].copy()
-else:
-    raise KeyError("No survey name column found")
-
-# Parse DASS subscales (items 1-21, specific subscales)
-dass_pivot = dass_data.pivot_table(
-    index='participant_id',
-    columns='item',
-    values='response',
-    aggfunc='first'
-).reset_index()
-
-# DASS subscales (0-indexed columns, skip participant_id)
-# Depression: items 3,5,10,13,16,17,21 (1-indexed) → columns 3,5,10,13,16,17,21
-# Anxiety: items 2,4,7,9,15,19,20
-# Stress: items 1,6,8,11,12,14,18
-if len(dass_pivot.columns) > 20:  # Has 21 items + participant_id
-    item_cols = [col for col in dass_pivot.columns if col != 'participant_id']
-    dass_pivot['dass_depression'] = dass_pivot[item_cols].iloc[:, [2, 4, 9, 12, 15, 16, 20]].sum(axis=1)
-    dass_pivot['dass_anxiety'] = dass_pivot[item_cols].iloc[:, [1, 3, 6, 8, 14, 18, 19]].sum(axis=1)
-    dass_pivot['dass_stress'] = dass_pivot[item_cols].iloc[:, [0, 5, 7, 10, 11, 13, 17]].sum(axis=1)
-    dass_scores = dass_pivot[['participant_id', 'dass_depression', 'dass_anxiety', 'dass_stress']]
-else:
-    # Fallback: create dummy DASS columns
-    print("  WARNING: Could not parse DASS subscales, creating placeholders")
-    dass_scores = pd.DataFrame({
-        'participant_id': ucla_scores['participant_id'],
-        'dass_depression': 0,
-        'dass_anxiety': 0,
-        'dass_stress': 0
-    })
+# DASS scores (already has score_D, score_A, score_S columns)
+dass_data = surveys[surveys['surveyName'].str.lower() == 'dass'].copy()
+dass_scores = dass_data[['participant_id', 'score_D', 'score_A', 'score_S']].copy()
+dass_scores.columns = ['participant_id', 'dass_depression', 'dass_anxiety', 'dass_stress']
 
 # Merge with demographics
 master = participants[['participant_id', 'age', 'gender', 'education']].merge(

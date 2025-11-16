@@ -47,7 +47,9 @@
       "Bash(if exist resultsanalysis_outputs_old rmdir /s /q resultsanalysis_outputs_old)",
       "Bash(xcopy:*)",
       "Bash(../venv/Scripts/python.exe:*)",
-      "Bash(timeout 180 ./venv/Scripts/python.exe:*)"
+      "Bash(timeout 180 ./venv/Scripts/python.exe:*)",
+      "Bash(test:*)",
+      "Bash(xargs ls:*)"
     ],
     "deny": [],
     "ask": []

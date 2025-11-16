@@ -50,54 +50,38 @@ print()
 print("[1/5] Loading data...")
 
 master = pd.read_csv(Path("results/analysis_outputs/master_expanded_metrics.csv"))
+
+# Load age and gender from participants
 participants = pd.read_csv(RESULTS_DIR / "1_participants_info.csv", encoding='utf-8-sig')
-
 if 'participantId' in participants.columns:
-    if 'participant_id' in participants.columns:
-        participants.drop(columns=['participantId'], inplace=True)
-    else:
-        participants.rename(columns={'participantId': 'participant_id'}, inplace=True)
+    participants = participants.rename(columns={'participantId': 'participant_id'})
 
-# Load DASS data
-surveys = pd.read_csv(RESULTS_DIR / "2_surveys_results.csv", encoding='utf-8-sig')
-if 'participantId' in surveys.columns:
-    surveys = surveys.rename(columns={'participantId': 'participant_id'})
-
-# Extract DASS subscales
-dass_data = surveys[surveys['survey'].str.lower() == 'dass-21'].copy()
-dass_pivot = dass_data.pivot_table(
-    index='participant_id',
-    columns='item',
-    values='response',
-    aggfunc='first'
-).reset_index()
-
-# Calculate DASS subscales (0-indexed items)
-if len(dass_pivot.columns) > 20:  # Has 21 items
-    dass_pivot['dass_depression'] = dass_pivot.iloc[:, [3, 5, 10, 13, 16, 17, 21]].sum(axis=1)
-    dass_pivot['dass_anxiety'] = dass_pivot.iloc[:, [2, 4, 7, 9, 15, 19, 20]].sum(axis=1)
-    dass_pivot['dass_stress'] = dass_pivot.iloc[:, [1, 6, 8, 11, 12, 14, 18]].sum(axis=1)
-    dass_summary = dass_pivot[['participant_id', 'dass_depression', 'dass_anxiety', 'dass_stress']]
-else:
-    # Fallback: use existing DASS columns from master if available
-    dass_summary = master[['participant_id', 'dass_depression', 'dass_anxiety', 'dass_stress']].dropna()
-
+# master_expanded_metrics already has DASS subscales, just merge demographics
 master = master.merge(
     participants[['participant_id', 'age', 'gender']],
     on='participant_id',
     how='left'
-).merge(
-    dass_summary,
-    on='participant_id',
-    how='left'
 )
 
-# Handle Korean gender
-if 'gender' in master.columns:
-    master['gender_male'] = 0
-    master.loc[master['gender'] == '남성', 'gender_male'] = 1
-    master.loc[master['gender'].str.lower() == 'male', 'gender_male'] = 1
-    master['gender_label'] = master['gender_male'].map({0: 'Female', 1: 'Male'})
+# Handle Korean gender normalization
+def normalize_gender(val):
+    if pd.isna(val):
+        return None
+    val_str = str(val).strip().lower()
+    if '남' in val_str or val_str in ['m', 'male']:
+        return 'male'
+    elif '여' in val_str or val_str in ['f', 'female']:
+        return 'female'
+    return None
+
+master['gender_normalized'] = master['gender'].apply(normalize_gender)
+master['gender_male'] = (master['gender_normalized'] == 'male').astype(int)
+
+# DASS data already in master from master_expanded_metrics
+# Gender already normalized above
+
+# Add gender label for plotting
+master['gender_label'] = master['gender_male'].map({0: 'Female', 1: 'Male'})
 
 master = master.dropna(subset=['ucla_total', 'gender_male',
                                 'dass_depression', 'dass_anxiety', 'dass_stress', 'age']).copy()

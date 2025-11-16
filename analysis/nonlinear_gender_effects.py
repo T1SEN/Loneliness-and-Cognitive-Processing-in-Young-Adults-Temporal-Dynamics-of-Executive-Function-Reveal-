@@ -48,55 +48,32 @@ print()
 print("[1/4] Loading data...")
 
 master = pd.read_csv(Path("results/analysis_outputs/master_expanded_metrics.csv"))
+
+# Load age and gender from participants
 participants = pd.read_csv(RESULTS_DIR / "1_participants_info.csv", encoding='utf-8-sig')
-
 if 'participantId' in participants.columns:
-    if 'participant_id' in participants.columns:
-        participants.drop(columns=['participantId'], inplace=True)
-    else:
-        participants.rename(columns={'participantId': 'participant_id'}, inplace=True)
+    participants = participants.rename(columns={'participantId': 'participant_id'})
 
-# Load DASS data
-surveys = pd.read_csv(RESULTS_DIR / "2_surveys_results.csv", encoding='utf-8-sig')
-if 'participantId' in surveys.columns:
-    surveys = surveys.rename(columns={'participantId': 'participant_id'})
-
-dass_data = surveys[surveys['survey'].str.lower() == 'dass-21'].copy()
-dass_pivot = dass_data.pivot_table(index='participant_id', columns='item', values='response', aggfunc='first').reset_index()
-
-if len(dass_pivot.columns) > 20:
-    item_cols = [col for col in dass_pivot.columns if col != 'participant_id']
-    dass_pivot['dass_depression'] = dass_pivot[item_cols].iloc[:, [2, 4, 9, 12, 15, 16, 20]].sum(axis=1)
-    dass_pivot['dass_anxiety'] = dass_pivot[item_cols].iloc[:, [1, 3, 6, 8, 14, 18, 19]].sum(axis=1)
-    dass_pivot['dass_stress'] = dass_pivot[item_cols].iloc[:, [0, 5, 7, 10, 11, 13, 17]].sum(axis=1)
-    dass_summary = dass_pivot[['participant_id', 'dass_depression', 'dass_anxiety', 'dass_stress']]
-else:
-    # Fallback to existing columns if available
-    if all(col in master.columns for col in ['dass_depression', 'dass_anxiety', 'dass_stress']):
-        dass_summary = master[['participant_id', 'dass_depression', 'dass_anxiety', 'dass_stress']].drop_duplicates()
-    else:
-        dass_summary = pd.DataFrame({
-            'participant_id': master['participant_id'].unique(),
-            'dass_depression': 0,
-            'dass_anxiety': 0,
-            'dass_stress': 0
-        })
-
+# Merge with demographics
 master = master.merge(
     participants[['participant_id', 'age', 'gender']],
     on='participant_id',
     how='left'
-).merge(
-    dass_summary,
-    on='participant_id',
-    how='left'
 )
 
-# Handle Korean gender
-if 'gender' in master.columns:
-    master['gender_male'] = 0
-    master.loc[master['gender'] == '남성', 'gender_male'] = 1
-    master.loc[master['gender'].str.lower() == 'male', 'gender_male'] = 1
+# Handle Korean gender normalization
+def normalize_gender(val):
+    if pd.isna(val):
+        return None
+    val_str = str(val).strip().lower()
+    if '남' in val_str or val_str in ['m', 'male']:
+        return 'male'
+    elif '여' in val_str or val_str in ['f', 'female']:
+        return 'female'
+    return None
+
+master['gender_normalized'] = master['gender'].apply(normalize_gender)
+master['gender_male'] = (master['gender_normalized'] == 'male').astype(int)
 
 # Filter complete cases (including DASS)
 master = master.dropna(subset=['ucla_total', 'pe_rate', 'gender_male',
