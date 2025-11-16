@@ -49,7 +49,20 @@
       "Bash(../venv/Scripts/python.exe:*)",
       "Bash(timeout 180 ./venv/Scripts/python.exe:*)",
       "Bash(test:*)",
-      "Bash(xargs ls:*)"
+      "Bash(xargs ls:*)",
+      "Bash(git log:*)",
+      "Bash(analysis_backup/comprehensive_replication_verification.py)",
+      "Bash(analysis_backup/remaining_hypotheses_verification_corrected.py)",
+      "Bash(analysis_backup/ml_predict_loneliness.py)",
+      "Bash(analysis_backup/tree_ensemble_exploration.py)",
+      "Bash(if [ -d advanced_analyses ])",
+      "Bash(then echo \"=== advanced_analyses ===\")",
+      "Bash(if [ -d deep_dive_analysis ])",
+      "Bash(then echo \"=== deep_dive_analysis ===\")",
+      "Bash(if [ -d visualizations ])",
+      "Bash(then echo \"=== visualizations ===\")",
+      "Bash(if [ -d publication_figures ])",
+      "Bash(then echo \"=== publication_figures ===\")"
     ],
     "deny": [],
     "ask": []

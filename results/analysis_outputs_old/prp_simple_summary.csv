@@ -1,3 +1,0 @@
-,mean,sd,hdi_3%,hdi_97%,mcse_mean,mcse_sd,ess_bulk,ess_tail,r_hat
-mu_prp_effect,0.669,0.019,0.634,0.704,0.0,0.0,4683.275,4340.159,1.001
-sigma_prp_effect,0.165,0.013,0.141,0.19,0.0,0.0,5459.371,4420.852,1.001

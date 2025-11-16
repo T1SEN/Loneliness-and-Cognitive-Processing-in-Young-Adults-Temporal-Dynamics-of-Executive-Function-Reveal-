@@ -1,4 +1,0 @@
-stroop_effect: resid vs hour r=-0.030 (n=73)
-prp_bottleneck: resid vs hour r=-0.020 (n=73)
-wcst_total_errors: resid vs hour r=-0.168 (n=73)
-Stroop slope ~ UCLA: est=10.588, p=0.761 (n=79)

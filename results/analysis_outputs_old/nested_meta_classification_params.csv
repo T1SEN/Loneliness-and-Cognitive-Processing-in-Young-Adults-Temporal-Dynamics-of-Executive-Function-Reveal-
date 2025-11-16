@@ -1,6 +1,0 @@
-fold,model,mdl__max_depth,mdl__min_samples_leaf,mdl__n_estimators
-1,rf,,3,300
-2,rf,8.0,1,300
-3,rf,,3,600
-4,rf,,3,300
-5,rf,,3,600

@@ -1,6 +1,0 @@
-fold,model,mdl__max_depth,mdl__min_samples_leaf,mdl__n_estimators,mdl__alpha
-1,rf,,1.0,800.0,
-2,rf,,3.0,800.0,
-3,rf,,3.0,800.0,
-4,lasso,,,,0.1
-5,rf,,3.0,800.0,

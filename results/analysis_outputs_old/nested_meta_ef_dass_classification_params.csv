@@ -1,6 +1,0 @@
-fold,model,mdl__learning_rate,mdl__max_depth,mdl__n_estimators,mdl__C
-1,gbrt,0.1,2.0,300.0,
-2,gbrt,0.1,2.0,600.0,
-3,logreg,,,,0.1
-4,gbrt,0.05,2.0,600.0,
-5,gbrt,0.1,2.0,600.0,

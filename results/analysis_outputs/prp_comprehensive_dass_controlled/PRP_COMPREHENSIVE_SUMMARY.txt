@@ -1,0 +1,46 @@
+
+PRP COMPREHENSIVE ANALYSIS - FINAL SUMMARY
+==========================================
+
+Data Summary:
+- Total participants: 75
+- Males: 30, Females: 45
+- Total valid trials analyzed: 9809
+
+Key Metrics Computed:
+1. Bottleneck Effect: T2 RT (short SOA - long SOA)
+   - Mean: 614.7 ms (SD: 153.4)
+
+2. SOA Slope: Linear trend in T2 RT across SOA bins
+   - Mean: -307.4 ms/step
+
+3. Dual-Task Variability (CV, IQR)
+   - Mean CV: 0.436
+   - Mean IQR: 613.4 ms
+
+4. Error Cascades
+   - Mean cascade rate: 0.083
+   - Mean cascade inflation: 0.054
+
+5. Post-Error Adjustments
+   - T1 PES: 214.3 ms
+   - T2 RT after T1 error: 452.4 ms
+
+6. Temporal Dynamics
+   - RT drift (late - early): -114.5 ms
+
+Statistical Analysis:
+- ALL models controlled for DASS depression, anxiety, stress, and age
+- Tested 11 dependent variables
+- Significant UCLA main effects (p < 0.05): 7 / 11
+- Significant UCLA × Gender interactions (p < 0.10): 4
+
+Files Generated:
+1. prp_metrics_master.csv - All computed metrics merged with master dataset
+2. prp_dass_controlled_regression_results.csv - Regression results for all DVs
+
+Next Steps:
+- If interactions found: Simple slopes analysis at ±1 SD UCLA
+- If variability effects: Ex-Gaussian decomposition (μ, σ, τ)
+- If error cascades: Trial-level mixed-effects models
+- Cross-task integration: Compare PRP patterns with WCST gender effects

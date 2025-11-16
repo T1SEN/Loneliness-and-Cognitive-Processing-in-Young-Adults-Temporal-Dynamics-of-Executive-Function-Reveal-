@@ -1,6 +1,0 @@
-model,task,feature,importance_mean,importance_std
-logreg,classification,age,-0.0003272727272727116,0.007382216240449266
-logreg,classification,dass_dep,0.1665818181818182,0.03649109178435643
-logreg,classification,dass_anx,0.04139393939393942,0.02003009673024464
-logreg,classification,dass_stress,0.007618181818181837,0.008872737622116832
-logreg,classification,gender=남성,-0.00033939393939391715,0.005702331454943544

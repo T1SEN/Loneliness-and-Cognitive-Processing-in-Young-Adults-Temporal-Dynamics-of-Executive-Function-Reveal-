@@ -1,6 +1,0 @@
-fold,model,mdl__alpha
-1,lasso,0.1
-2,ridge,10.0
-3,ridge,10.0
-4,lasso,0.1
-5,ridge,10.0

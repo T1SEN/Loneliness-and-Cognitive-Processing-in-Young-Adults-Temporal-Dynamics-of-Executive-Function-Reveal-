@@ -1,4 +1,0 @@
-﻿task,analysis,metric,gender,n,r,p,interpretation
-PRP,RT Variability,T2 RT SD (long SOA),male,27,0.5190634476127525,0.0055316288886906,Baseline variability
-Stroop,Learning Curves,Interference Slope,female,45,0.2923398811887988,0.0513317961250017,Positive = interference increases over time
-PRP,Learning Curves,Bottleneck Slope,female,44,0.2785121993513282,0.0671503767271963,Negative = bottleneck decreases (learning)
