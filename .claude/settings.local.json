@@ -62,7 +62,10 @@
       "Bash(if [ -d visualizations ])",
       "Bash(then echo \"=== visualizations ===\")",
       "Bash(if [ -d publication_figures ])",
-      "Bash(then echo \"=== publication_figures ===\")"
+      "Bash(then echo \"=== publication_figures ===\")",
+      "Bash(/bashes)",
+      "Bash(\"Results Summary\")",
+      "Bash(gh:*)"
     ],
     "deny": [],
     "ask": []

@@ -42,14 +42,7 @@ elif 'participantid' in trials.columns:
 
 master = pd.read_csv(RESULTS_DIR / "analysis_outputs/master_dataset.csv", encoding='utf-8-sig')
 master.columns = master.columns.str.lower()
-participants = pd.read_csv(RESULTS_DIR / "1_participants_info.csv", encoding='utf-8-sig')
-participants.columns = participants.columns.str.lower()
-if 'participantid' in participants.columns and 'participant_id' in participants.columns:
-    participants = participants.drop(columns=['participantid'])
-elif 'participantid' in participants.columns:
-    participants.rename(columns={'participantid': 'participant_id'}, inplace=True)
-
-master = master.merge(participants[['participant_id', 'gender', 'age']], on='participant_id', how='left')
+# Map Korean gender values to English
 gender_map = {'남성': 'male', '여성': 'female', 'male': 'male', 'female': 'female'}
 master['gender'] = master['gender'].map(gender_map)
 

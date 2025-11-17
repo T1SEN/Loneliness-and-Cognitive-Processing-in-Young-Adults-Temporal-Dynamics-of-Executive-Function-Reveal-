@@ -1,0 +1,3 @@
+﻿task,condition,q50_beta,q90_beta,tail_effect_stronger
+WCST,overall,0.44479598196287345,0.28625795110019125,False
+Stroop,incongruent,0.42840849657158236,0.4732311060878867,True

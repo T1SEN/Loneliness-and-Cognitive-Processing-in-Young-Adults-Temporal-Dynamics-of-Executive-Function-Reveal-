@@ -98,7 +98,7 @@ print(master.groupby(['age_group', 'gender']).size().unstack(fill_value=0))
 print("\n[2/5] Testing continuous Age × Gender × UCLA interaction...")
 
 # Model 1: Two-way (baseline - from existing analyses)
-model_2way = smf.ols('wcst_pe_rate ~ ucla_total * gender_male + age_centered + dass_total',
+model_2way = smf.ols('wcst_pe_rate ~ ucla_total * gender_male + age_centered + dass_depression + dass_anxiety + dass_stress',
                       data=master).fit()
 
 print("\n  Model 1 (Two-way): UCLA × Gender")
@@ -106,7 +106,7 @@ print(f"    UCLA × Gender: β={model_2way.params['ucla_total:gender_male']:.4f}
 print(f"    R² = {model_2way.rsquared:.4f}")
 
 # Model 2: Three-way interaction
-model_3way = smf.ols('wcst_pe_rate ~ ucla_total * gender_male * age_centered + dass_total',
+model_3way = smf.ols('wcst_pe_rate ~ ucla_total * gender_male * age_centered + dass_depression + dass_anxiety + dass_stress',
                       data=master).fit()
 
 print("\n  Model 2 (Three-way): UCLA × Gender × Age")
@@ -137,7 +137,7 @@ else:
 print("\n[3/5] Testing median-split age groups...")
 
 # Run 2×2 ANCOVA: Age_group × Gender → PE (controlling UCLA)
-model_age_group = smf.ols('wcst_pe_rate ~ C(age_group) * C(gender) * ucla_total + dass_total',
+model_age_group = smf.ols('wcst_pe_rate ~ C(age_group) * C(gender) * ucla_total + dass_depression + dass_anxiety + dass_stress',
                           data=master).fit()
 
 print("\n  2×2×continuous ANCOVA: Age_group × Gender × UCLA")
@@ -165,7 +165,7 @@ for age_group in ['Younger', 'Older']:
     subset = master[master['age_group'] == age_group].copy()
     print(f"\n    [{age_group} (N={len(subset)})]")
 
-    model = smf.ols('wcst_pe_rate ~ ucla_total * gender_male + dass_total', data=subset).fit()
+    model = smf.ols('wcst_pe_rate ~ ucla_total * gender_male + dass_depression + dass_anxiety + dass_stress', data=subset).fit()
 
     if 'ucla_total:gender_male' in model.params:
         beta = model.params['ucla_total:gender_male']
@@ -185,11 +185,11 @@ for age_group in ['Younger', 'Older']:
         females = subset[subset['gender_male'] == 0]
 
         if len(males) >= 10:
-            model_m = smf.ols('wcst_pe_rate ~ ucla_total + dass_total', data=males).fit()
+            model_m = smf.ols('wcst_pe_rate ~ ucla_total + dass_depression + dass_anxiety + dass_stress', data=males).fit()
             print(f"        Males (N={len(males)}): UCLA slope β={model_m.params['ucla_total']:.4f}, p={model_m.pvalues['ucla_total']:.4f}")
 
         if len(females) >= 10:
-            model_f = smf.ols('wcst_pe_rate ~ ucla_total + dass_total', data=females).fit()
+            model_f = smf.ols('wcst_pe_rate ~ ucla_total + dass_depression + dass_anxiety + dass_stress', data=females).fit()
             print(f"        Females (N={len(females)}): UCLA slope β={model_f.params['ucla_total']:.4f}, p={model_f.pvalues['ucla_total']:.4f}")
 
 stratified_df = pd.DataFrame(results_stratified)
@@ -208,7 +208,7 @@ for quartile in ['Q1_Youngest', 'Q2', 'Q3', 'Q4_Oldest']:
     if len(subset) < 10:
         continue
 
-    model = smf.ols('wcst_pe_rate ~ ucla_total * gender_male + dass_total', data=subset).fit()
+    model = smf.ols('wcst_pe_rate ~ ucla_total * gender_male + dass_depression + dass_anxiety + dass_stress', data=subset).fit()
 
     if 'ucla_total:gender_male' in model.params:
         beta = model.params['ucla_total:gender_male']

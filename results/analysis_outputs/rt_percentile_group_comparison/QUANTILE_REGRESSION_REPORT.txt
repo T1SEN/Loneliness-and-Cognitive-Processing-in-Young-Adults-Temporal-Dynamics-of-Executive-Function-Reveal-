@@ -1,0 +1,64 @@
+================================================================================
+QUANTILE REGRESSION ANALYSIS REPORT
+================================================================================
+
+PURPOSE
+--------------------------------------------------------------------------------
+Test whether UCLA × Gender effects are concentrated in RT distribution tails
+(90th percentile = slow lapses) rather than central tendency (median).
+
+HYPOTHESIS
+--------------------------------------------------------------------------------
+If loneliness affects attentional lapses (tau in Ex-Gaussian), we expect:
+  - STRONG effects at q=0.90 (slow tail)
+  - WEAK effects at q=0.50 (median)
+This would converge with Ex-Gaussian tau findings.
+
+METHOD
+--------------------------------------------------------------------------------
+Quantiles: [0.1, 0.25, 0.5, 0.75, 0.9]
+Models tested: 10
+Formula: RT(quantile) ~ UCLA × Gender + DASS(3) + Age
+
+KEY FINDINGS
+--------------------------------------------------------------------------------
+
+WCST:
+  overall:
+    q=0.10: β=0.1737, p=0.4635 
+    q=0.25: β=0.3140, p=0.1754 
+    q=0.50: β=0.4448, p=0.0562 
+    q=0.75: β=0.4530, p=0.0543 
+    q=0.90: β=0.2863, p=0.2389 
+
+Stroop:
+  incongruent:
+    q=0.10: β=0.4936, p=0.0315 *
+    q=0.25: β=0.4319, p=0.0643 
+    q=0.50: β=0.4284, p=0.0803 
+    q=0.75: β=0.4762, p=0.0522 
+    q=0.90: β=0.4732, p=0.0514 
+
+INTERPRETATION
+--------------------------------------------------------------------------------
+✗ Only 1/2 tasks show stronger tail effects
+  → Effects NOT primarily driven by lapses
+  → May reflect general slowing (mu) rather than tail (tau)
+
+THEORETICAL IMPLICATIONS
+--------------------------------------------------------------------------------
+If q=0.90 >> q=0.50:
+  → Loneliness × Gender affects LAPSES/attentional failures (not sustained slowing)
+  → Supports reactive control deficit (occasional breakdowns)
+  → Aligns with dual mechanisms of control (DMC) framework
+
+If q=0.90 ≈ q=0.50:
+  → Loneliness × Gender affects ENTIRE RT distribution uniformly
+  → Supports general slowing (mu/sigma) rather than lapse-specific (tau)
+  → May reflect energetic/motivational depletion
+
+NEXT STEPS
+--------------------------------------------------------------------------------
+- Compare with Ex-Gaussian tau results for convergent validity
+- If tail-dominant: Emphasize lapse-vulnerability in Discussion
+- If uniform: Emphasize general slowing mechanism

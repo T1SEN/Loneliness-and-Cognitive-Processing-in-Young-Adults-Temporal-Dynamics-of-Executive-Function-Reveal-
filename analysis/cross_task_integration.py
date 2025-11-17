@@ -36,17 +36,9 @@ print("\n[1] Loading master data with all task metrics...")
 
 master = pd.read_csv(Path("results/analysis_outputs/master_dataset.csv"), encoding='utf-8-sig')
 master.columns = master.columns.str.lower()
-
-participants = pd.read_csv(Path("results/1_participants_info.csv"), encoding='utf-8-sig')
-participants.columns = participants.columns.str.lower()
-if 'participantid' in participants.columns and 'participant_id' in participants.columns:
-    participants = participants.drop(columns=['participantid'])
-elif 'participantid' in participants.columns:
-    participants.rename(columns={'participantid': 'participant_id'}, inplace=True)
-
-master = master.merge(participants[['participant_id', 'gender', 'age']], on='participant_id', how='left')
-# Use canonical gender normalization function
-master['gender'] = normalize_gender_series(master['gender'])
+# Map Korean gender values to English
+gender_map = {'남성': 'male', '여성': 'female', 'male': 'male', 'female': 'female'}
+master['gender'] = master['gender'].map(gender_map)
 
 print(f"  Master data: N={len(master)}")
 
@@ -67,10 +59,10 @@ for gender in ['male', 'female']:
     data = master[master['gender'] == gender]
 
     # WCST
-    if len(data.dropna(subset=['ucla_total', 'pe_rate'])) >= 10:
+    if len(data.dropna(subset=['ucla_total', 'perseverative_error_rate'])) >= 10:
         r_wcst, p_wcst = pearsonr(
-            data.dropna(subset=['ucla_total', 'pe_rate'])['ucla_total'],
-            data.dropna(subset=['ucla_total', 'pe_rate'])['pe_rate']
+            data.dropna(subset=['ucla_total', 'perseverative_error_rate'])['ucla_total'],
+            data.dropna(subset=['ucla_total', 'perseverative_error_rate'])['perseverative_error_rate']
         )
     else:
         r_wcst, p_wcst = np.nan, np.nan
@@ -168,11 +160,11 @@ task_specificity_df.to_csv(OUTPUT_DIR / "task_specificity.csv", index=False, enc
 print("\n[4] Computing individual vulnerability profiles...")
 
 # Z-score each metric
-for col in ['pe_rate', 'stroop_interference', 'prp_bottleneck']:
+for col in ['perseverative_error_rate', 'stroop_interference', 'prp_bottleneck']:
     master[f'{col}_z'] = (master[col] - master[col].mean()) / master[col].std()
 
 # Define vulnerable as > +1SD
-master['wcst_vulnerable'] = (master['pe_rate_z'] > 1).astype(int)
+master['wcst_vulnerable'] = (master['perseverative_error_rate_z'] > 1).astype(int)
 master['stroop_vulnerable'] = (master['stroop_interference_z'] > 1).astype(int)
 master['prp_vulnerable'] = (master['prp_bottleneck_z'] > 1).astype(int)
 

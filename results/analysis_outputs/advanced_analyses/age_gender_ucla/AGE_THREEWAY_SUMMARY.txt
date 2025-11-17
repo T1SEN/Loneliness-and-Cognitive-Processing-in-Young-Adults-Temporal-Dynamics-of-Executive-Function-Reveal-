@@ -10,17 +10,17 @@ KEY FINDINGS
 --------------------------------------------------------------------------------
 
 1. CONTINUOUS THREE-WAY INTERACTION
-   UCLA × Gender × Age: p=0.0789
+   UCLA × Gender × Age: p=0.0746
    ✗ NOT significant: Age does not significantly modulate the effect
 
 2. MEDIAN-SPLIT AGE GROUPS
-   Younger (N=34): UCLA×Gender β=0.3738, p=0.0275 [Yes]
-   Older (N=38): UCLA×Gender β=0.0450, p=0.6127 [No]
+   Younger (N=34): UCLA×Gender β=0.3966, p=0.0254 [Yes]
+   Older (N=38): UCLA×Gender β=0.0428, p=0.6438 [No]
 
 3. AGE QUARTILE ANALYSIS
-   ✓ Q1_Youngest (Age 18-19, N=34): β=0.3738, p=0.0275
-   ✓ Q3 (Age 21-21, N=12): β=-0.4497, p=0.0178
-   ✗ Q4_Oldest (Age 22-29, N=17): β=0.0587, p=0.7095
+   ✓ Q1_Youngest (Age 18-19, N=34): β=0.3966, p=0.0254
+   ✓ Q3 (Age 21-21, N=12): β=-0.6173, p=0.0033
+   ✗ Q4_Oldest (Age 22-29, N=17): β=0.0327, p=0.8570
 
 INTERPRETATION
 --------------------------------------------------------------------------------

@@ -2,29 +2,31 @@ TWO-WAY MODEL (UCLA ¡¿ Gender)
 ================================================================================
                             OLS Regression Results                            
 ==============================================================================
-Dep. Variable:           wcst_pe_rate   R-squared:                       0.109
-Model:                            OLS   Adj. R-squared:                  0.042
-Method:                 Least Squares   F-statistic:                     1.620
-Date:                Sun, 16 Nov 2025   Prob (F-statistic):              0.167
-Time:                        11:51:04   Log-Likelihood:                -207.67
-No. Observations:                  72   AIC:                             427.3
-Df Residuals:                      66   BIC:                             441.0
-Df Model:                           5                                         
+Dep. Variable:           wcst_pe_rate   R-squared:                       0.115
+Model:                            OLS   Adj. R-squared:                  0.018
+Method:                 Least Squares   F-statistic:                     1.184
+Date:                Sun, 16 Nov 2025   Prob (F-statistic):              0.324
+Time:                        22:55:13   Log-Likelihood:                -207.45
+No. Observations:                  72   AIC:                             430.9
+Df Residuals:                      64   BIC:                             449.1
+Df Model:                           7                                         
 Covariance Type:            nonrobust                                         
 ==========================================================================================
                              coef    std err          t      P>|t|      [0.025      0.975]
 ------------------------------------------------------------------------------------------
-Intercept                 13.7873      2.438      5.655      0.000       8.920      18.655
-ucla_total                -0.0301      0.068     -0.443      0.660      -0.166       0.106
-gender_male               -9.1131      4.014     -2.270      0.026     -17.127      -1.099
-ucla_total:gender_male     0.2055      0.093      2.217      0.030       0.020       0.391
-age_centered              -0.1849      0.263     -0.703      0.485      -0.710       0.341
-dass_total                -0.0717      0.045     -1.611      0.112      -0.161       0.017
+Intercept                 13.7729      2.571      5.358      0.000       8.637      18.908
+ucla_total                -0.0247      0.072     -0.344      0.732      -0.168       0.119
+gender_male               -9.3112      4.076     -2.284      0.026     -17.455      -1.168
+ucla_total:gender_male     0.2106      0.094      2.235      0.029       0.022       0.399
+age_centered              -0.1617      0.271     -0.596      0.553      -0.704       0.381
+dass_depression           -0.1011      0.112     -0.906      0.368      -0.324       0.122
+dass_anxiety               0.0055      0.132      0.042      0.967      -0.259       0.270
+dass_stress               -0.1165      0.112     -1.045      0.300      -0.339       0.106
 ==============================================================================
-Omnibus:                       34.338   Durbin-Watson:                   1.934
-Prob(Omnibus):                  0.000   Jarque-Bera (JB):               99.753
-Skew:                           1.459   Prob(JB):                     2.18e-22
-Kurtosis:                       7.973   Cond. No.                         439.
+Omnibus:                       31.213   Durbin-Watson:                   1.945
+Prob(Omnibus):                  0.000   Jarque-Bera (JB):               83.203
+Skew:                           1.346   Prob(JB):                     8.56e-19
+Kurtosis:                       7.526   Cond. No.                         400.
 ==============================================================================
 
 Notes:
@@ -34,32 +36,34 @@ THREE-WAY MODEL (UCLA ¡¿ Gender ¡¿ Age)
 ================================================================================
                             OLS Regression Results                            
 ==============================================================================
-Dep. Variable:           wcst_pe_rate   R-squared:                       0.189
-Model:                            OLS   Adj. R-squared:                  0.087
-Method:                 Least Squares   F-statistic:                     1.841
-Date:                Sun, 16 Nov 2025   Prob (F-statistic):             0.0858
-Time:                        11:51:04   Log-Likelihood:                -204.27
-No. Observations:                  72   AIC:                             426.5
-Df Residuals:                      63   BIC:                             447.0
-Df Model:                           8                                         
+Dep. Variable:           wcst_pe_rate   R-squared:                       0.196
+Model:                            OLS   Adj. R-squared:                  0.064
+Method:                 Least Squares   F-statistic:                     1.485
+Date:                Sun, 16 Nov 2025   Prob (F-statistic):              0.167
+Time:                        22:55:13   Log-Likelihood:                -203.99
+No. Observations:                  72   AIC:                             430.0
+Df Residuals:                      61   BIC:                             455.0
+Df Model:                          10                                         
 Covariance Type:            nonrobust                                         
 =======================================================================================================
                                           coef    std err          t      P>|t|      [0.025      0.975]
 -------------------------------------------------------------------------------------------------------
-Intercept                              12.8597      2.416      5.323      0.000       8.032      17.687
-ucla_total                             -0.0171      0.067     -0.256      0.799      -0.151       0.116
-gender_male                            -8.4570      3.997     -2.116      0.038     -16.444      -0.470
-ucla_total:gender_male                  0.1926      0.092      2.087      0.041       0.008       0.377
-age_centered                           -3.8181      1.677     -2.277      0.026      -7.169      -0.467
-ucla_total:age_centered                 0.0720      0.036      1.989      0.051      -0.000       0.144
-gender_male:age_centered                4.7554      2.032      2.340      0.022       0.695       8.816
-ucla_total:gender_male:age_centered    -0.0944      0.047     -2.026      0.047      -0.187      -0.001
-dass_total                             -0.0626      0.044     -1.428      0.158      -0.150       0.025
+Intercept                              12.9989      2.543      5.111      0.000       7.914      18.084
+ucla_total                             -0.0154      0.071     -0.217      0.829      -0.157       0.126
+gender_male                            -8.5629      4.050     -2.114      0.039     -16.661      -0.465
+ucla_total:gender_male                  0.1953      0.094      2.088      0.041       0.008       0.382
+age_centered                           -3.8691      1.711     -2.261      0.027      -7.291      -0.447
+ucla_total:age_centered                 0.0730      0.037      1.978      0.052      -0.001       0.147
+gender_male:age_centered                4.7157      2.100      2.246      0.028       0.517       8.914
+ucla_total:gender_male:age_centered    -0.0922      0.049     -1.891      0.063      -0.190       0.005
+dass_depression                        -0.0702      0.115     -0.610      0.544      -0.300       0.160
+dass_anxiety                            0.0189      0.133      0.142      0.887      -0.246       0.284
+dass_stress                            -0.1271      0.109     -1.162      0.250      -0.346       0.092
 ==============================================================================
-Omnibus:                       32.104   Durbin-Watson:                   1.886
-Prob(Omnibus):                  0.000   Jarque-Bera (JB):               94.120
-Skew:                           1.340   Prob(JB):                     3.65e-21
-Kurtosis:                       7.918   Cond. No.                         805.
+Omnibus:                       27.895   Durbin-Watson:                   1.916
+Prob(Omnibus):                  0.000   Jarque-Bera (JB):               72.175
+Skew:                           1.193   Prob(JB):                     2.13e-16
+Kurtosis:                       7.285   Cond. No.                         806.
 ==============================================================================
 
 Notes:

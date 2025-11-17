@@ -1,0 +1,78 @@
+================================================================================
+LONELINESS CLASSIFICATION REPORT
+================================================================================
+
+RESEARCH QUESTION
+--------------------------------------------------------------------------------
+Can executive function patterns predict high vs low loneliness?
+If so, is this predictive signature gender-specific?
+
+METHOD
+--------------------------------------------------------------------------------
+Target: High loneliness (UCLA ≥52.0) vs Low (UCLA ≤32.0)
+N: 40 participants (extremes only)
+Features: 6 EF metrics
+Models: Logistic Regression + Random Forest
+Validation: 5-fold stratified cross-validation
+
+KEY FINDINGS
+--------------------------------------------------------------------------------
+
+Logistic Regression - Overall (N=40):
+  AUC: 0.988 ± 0.025
+  Accuracy: 0.925
+  F1: 0.921
+
+Logistic Regression - Male (N=13):
+  AUC: 0.861 ± 0.104
+  Accuracy: 0.850
+  F1: 0.822
+
+Logistic Regression - Female (N=27):
+  AUC: 1.000 ± 0.000
+  Accuracy: 0.926
+  F1: 0.926
+
+Random Forest - Overall (N=40):
+  AUC: 0.981 ± 0.025
+  Accuracy: 0.875
+  F1: 0.881
+
+Random Forest - Male (N=13):
+  AUC: 1.000 ± 0.000
+  Accuracy: 0.917
+  F1: 0.889
+
+Random Forest - Female (N=27):
+  AUC: 0.983 ± 0.024
+  Accuracy: 0.963
+  F1: 0.963
+
+INTERPRETATION GUIDE
+--------------------------------------------------------------------------------
+AUC = 0.50: Random chance (no signal)
+AUC = 0.60-0.65: Weak predictive signal
+AUC = 0.65-0.75: Moderate signal (meaningful individual differences)
+AUC > 0.75: Strong signal (potential screening utility)
+
+CONCLUSION
+--------------------------------------------------------------------------------
+✓ Overall AUC = 0.981 → MEANINGFUL predictive signal exists.
+  EF patterns can discriminate high vs low loneliness above chance.
+
+○ No clear gender difference: Male AUC=1.000, Female AUC=0.983
+  Similar predictive patterns across genders.
+
+LIMITATIONS
+--------------------------------------------------------------------------------
+- Small sample size limits generalizability
+- Extreme group design (top/bottom 25%) may inflate AUC
+- Cross-validation on same dataset (not external validation)
+- Predictive model ≠ causal mechanism
+
+NEXT STEPS
+--------------------------------------------------------------------------------
+- If AUC > 0.65: Cite in Discussion as evidence for measurable EF signature
+- Examine feature importance to identify which EF metrics drive classification
+- If gender-specific: Connect to interaction findings from regression models
+- Future: External validation in independent sample

@@ -1,0 +1,233 @@
+﻿file,p_column,p_value,coefficient,effect
+extreme_group_median_results.csv,p,4.328666469241161e-07,,
+extreme_group_median_results.csv,p,1.1277619635867302e-05,,
+extreme_group_median_results.csv,p,1.307658785789272e-05,,
+extreme_group_quartile_results.csv,p,1.1129231532838983e-06,,
+extreme_group_quartile_results.csv,p,5.209159592829135e-05,,
+extreme_group_quartile_results.csv,p,3.433456869050625e-06,,
+gamma_hypothesis_summary_fixed.csv,p_value,0.0205196743545414,2.7380274733269383,
+gender_simple_slopes.csv,p_interaction,0.0042404859482175,,WCST Perseverative Error Rate
+imputation_sensitivity_samples.csv,p_value,0.0482997077857258,-46.65977369688389,prp_bottleneck
+loneliness_models_coefficients_py.csv,p_value,0.0449460646518881,10.199896495488412,Stroop interference (ms)
+loneliness_models_coefficients_py.csv,p_value,0.0044183742800448,416.55577406295794,PRP bottleneck (short-long RT)
+loneliness_models_coefficients_py.csv,p_value,0.0039169406787586,-104.16069175213649,PRP bottleneck (short-long RT)
+loneliness_models_coefficients_py.csv,p_value,0.0454894568496055,13.56674193206011,PRP bottleneck (short-long RT)
+loneliness_models_coefficients_py.csv,p_value,0.0021442793991859,32.17751366447698,WCST total errors
+loneliness_models_coefficients_py.csv,p_value,0.0472813879524549,-0.5394881464733594,Latent meta-control factor
+loneliness_models_fit_py.csv,p_value,0.0152530603933747,,PRP bottleneck (short-long RT)
+loneliness_quartile_coefficients_py.csv,p_value,0.0026760354549679,440.6409430199526,PRP bottleneck (short-long RT)
+loneliness_quartile_coefficients_py.csv,p_value,0.005398317925599,-105.72811141906776,PRP bottleneck (short-long RT)
+loneliness_quartile_coefficients_py.csv,p_value,0.0445000030753135,13.633674605914814,PRP bottleneck (short-long RT)
+loneliness_quartile_coefficients_py.csv,p_value,0.0043942014273613,33.28120087144003,WCST total errors
+loneliness_quartile_fit_py.csv,p_value,0.0205361808457736,,PRP bottleneck (short-long RT)
+lpa_posthoc.csv,p_value,0.0358809571372266,,
+cross_task_correlations\cross_task_correlations.csv,p,0.0033647769635194,0.5438597275283947,
+dass_components\dass_component_3way_models.csv,ucla_gender_pvalue,0.0397738706963517,,
+female_compensation_costs\compensation_costs_results.csv,p,0.000922992771688,9.593603193986082,PRP T2 Mean RT
+female_compensation_costs\compensation_costs_results.csv,p,3.5740790466761927e-10,0.9353516735393071,DASS Total
+female_compensation_costs\compensation_costs_results.csv,p,1.471028890315453e-07,1.3960789775914642,DASS Total
+female_compensation_costs\compensation_costs_results.csv,p,1.056469071966708e-05,0.2506242445835488,DASS Anxiety
+female_compensation_costs\compensation_costs_results.csv,p,0.0002303779779716,0.3455547124985761,DASS Anxiety
+female_compensation_costs\compensation_costs_results.csv,p,7.431508658524878e-11,0.4097261941610657,DASS Depression
+female_compensation_costs\compensation_costs_results.csv,p,6.634073652072694e-07,0.5621726840646439,DASS Depression
+female_compensation_costs\compensation_costs_results.csv,p,0.0001375753511928,0.2750012347946924,DASS Stress
+female_compensation_costs\compensation_costs_results.csv,p,2.773348521513697e-06,0.4883515810282439,DASS Stress
+individual_profiles\profile_group_comparisons.csv,p_value,0.0002347840159345,,
+individual_profiles\profile_group_comparisons.csv,p_value,0.0013547289979669,,
+individual_profiles\profile_group_comparisons.csv,p_value,0.0023397941871448,,
+individual_profiles\profile_group_comparisons.csv,p_value,0.0493793875909841,,
+individual_profiles\profile_group_comparisons.csv,p_value,0.0445468047413488,,
+individual_profiles\profile_group_comparisons.csv,p_value,0.0168840602705273,,
+individual_profiles\profile_group_comparisons.csv,p_value,0.0317560124643876,,
+male_vulnerability_comprehensive\male_vulnerability_correlations.csv,p,0.0263244805624881,20.497060803193808,
+male_vulnerability_comprehensive\male_vulnerability_correlations.csv,p,0.0268106739913325,26.213766292679985,
+mechanism_analysis\dass_stratified_moderation.csv,interaction_pval,0.0082062137694508,,pe_rate
+mechanism_analysis\dass_stratified_moderation.csv,interaction_pval,0.0205527439392567,,wcst_accuracy
+mechanism_analysis\dass_stratified_moderation.csv,interaction_pval,0.0058404125218824,,pe_rate
+mechanism_analysis\dass_stratified_moderation.csv,interaction_pval,0.0468295113334145,,wcst_accuracy
+prp_comprehensive_dass_controlled\prp_dass_controlled_regression_results.csv,p_ucla,0.0324894074805691,76.97972881840315,T2 RT Variability (IQR)
+prp_comprehensive_dass_controlled\prp_dass_controlled_regression_results.csv,p_ucla,0.0173493689132192,0.1070451668447702,Error Cascade Rate
+prp_comprehensive_dass_controlled\prp_dass_controlled_regression_results.csv,p_ucla,0.0222384850509993,0.1083408899448524,Error Cascade Rate
+prp_comprehensive_dass_controlled\prp_dass_controlled_regression_results.csv,p_ucla,0.0301409697776572,0.1526334296543761,Error Cascade Rate
+prp_comprehensive_dass_controlled\prp_dass_controlled_regression_results.csv,p_ucla,0.0371111519006975,0.0935424734861755,Cascade Inflation
+prp_comprehensive_dass_controlled\prp_dass_controlled_regression_results.csv,p_ucla,0.0391726170295432,0.0973990881699024,Cascade Inflation
+prp_comprehensive_dass_controlled\prp_dass_controlled_regression_results.csv,p_ucla,0.0373693690373531,0.1461776568391618,Cascade Inflation
+prp_comprehensive_dass_controlled\prp_dass_controlled_regression_results.csv,p_interaction,0.0343386336129923,-12.76788075788053,PRP Bottleneck (short - long SOA)
+prp_comprehensive_dass_controlled\prp_dass_controlled_regression_results.csv,p_interaction,0.0129744082585068,-2.4235810911389324,Mean T2 RT
+prp_comprehensive_dass_controlled\prp_dass_controlled_regression_results.csv,p_interaction,0.0343386336129924,6.383940378940224,SOA Slope
+prp_comprehensive_dass_controlled\prp_dass_controlled_regression_results.csv,p_interaction,0.0156619395799922,6.399033695504977,T2 RT Variability (IQR)
+prp_exgaussian_dass_controlled\prp_exgaussian_dass_controlled_results.csv,p_ucla,0.0056221969234357,65.91113959875031,σ at short SOA
+prp_exgaussian_dass_controlled\prp_exgaussian_dass_controlled_results.csv,p_ucla,0.038378335483558,-65.86913715177667,τ at short SOA
+prp_exgaussian_dass_controlled\prp_exgaussian_dass_controlled_results.csv,p_interaction,0.0157073046181776,-10.87407438142678,τ (Exponential tail)
+prp_exgaussian_dass_controlled\prp_exgaussian_dass_controlled_results.csv,p_interaction,0.0485439427185983,-65.86913715177667,τ at short SOA
+reliability_composites\composite_vs_original_comparison.csv,p,0.0380930236170442,0.3682642180009705,
+reproducibility_checks\p_values_confirmed.csv,p_value,0.00424,,
+reproducibility_checks\p_values_confirmed.csv,p_value,0.003,,
+reproducibility_checks\p_values_confirmed.csv,p_value,0.008206,,
+reproducibility_checks\p_values_confirmed.csv,p_value,0.02055,,
+reproducibility_checks\p_values_confirmed.csv,p_value,0.005532,,
+reproducibility_checks\p_values_confirmed.csv,p_value,0.01132,,
+reproducibility_checks\p_values_confirmed.csv,p_value,0.001567,,
+reproducibility_checks\p_values_confirmed.csv,p_value,0.01885,,
+reproducibility_checks\p_values_confirmed.csv,p_value,0.02115,,
+reproducibility_checks\p_values_confirmed.csv,p_value,0.00925,,
+reproducibility_checks\p_values_confirmed.csv,p_value,0.02009,,
+reproducibility_checks\p_values_confirmed.csv,p_value,0.008295,,
+reproducibility_checks\p_values_confirmed.csv,p_value,0.01155,,
+reproducibility_checks\p_values_confirmed.csv,p_value,0.006464,,
+reproducibility_checks\p_values_confirmed.csv,p_value,0.03258,,
+reproducibility_checks\p_values_confirmed.csv,p_value,0.03119,,
+reproducibility_checks\p_values_confirmed.csv,p_value,0.02891,,
+reproducibility_checks\p_values_confirmed.csv,p_value,0.03611,,
+statistical_suite\wcst_pe_reliability.csv,p_value,0.0053213951370741,,
+temporal_fatigue\individual_fatigue_slopes.csv,p,0.0494363428003721,0.1886758952847359,
+temporal_fatigue\individual_fatigue_slopes.csv,p,0.0489110020100582,0.197475524015225,
+stroop_deep_dive\learning_curves\early_vs_late_effects.csv,p,0.0210339249578486,-4.524225480306859,
+stroop_deep_dive\learning_curves\individual_slopes.csv,p,0.0081333621605982,-0.9918666378394018,
+stroop_deep_dive\learning_curves\ucla_gender_quartile_interaction.csv,p,6.435298414965501e-16,145.87758475465006,
+stroop_deep_dive\learning_curves\ucla_gender_quartile_interaction.csv,p,0.0034498749453087,70.75131085526594,
+stroop_deep_dive\learning_curves\ucla_gender_quartile_interaction.csv,p,0.0006349129576267,82.64731322520507,
+stroop_deep_dive\learning_curves\ucla_gender_quartile_interaction.csv,p,0.0105336757436338,61.87943862963256,
+stroop_deep_dive\learning_curves\ucla_gender_quartile_interaction.csv,p,0.0017097544927584,33.163012334462884,
+stroop_deep_dive\learning_curves\ucla_gender_quartile_interaction.csv,p,0.0375009228922176,-33.912775625987734,
+stroop_deep_dive\rt_variability\ucla_gender_models.csv,p,3.743011326264527e-31,311.18356345985694,incongruent_rt_sd
+stroop_deep_dive\rt_variability\ucla_gender_models.csv,p,0.0249653369245452,26.806581181641995,incongruent_rt_sd
+stroop_deep_dive\rt_variability\ucla_gender_models.csv,p,0.0437921342543445,-37.333900191699456,incongruent_rt_sd
+stroop_deep_dive\rt_variability\ucla_gender_models.csv,p,9.860809477695897e-30,235.5392532484322,congruent_rt_sd
+stroop_deep_dive\rt_variability\ucla_gender_models.csv,p,0.0258103881124338,-31.381581338103743,congruent_rt_sd
+stroop_deep_dive\rt_variability\ucla_gender_models.csv,p,1.7580673630010455e-32,1.380013864294212,variability_ratio_sd
+stroop_deep_dive\rt_variability\ucla_gender_models.csv,p,0.0365965460582022,0.104749250585643,variability_ratio_sd
+stroop_deep_dive\rt_variability\ucla_gender_models.csv,p,0.0175875924250315,0.1755075556190756,variability_ratio_sd
+robustness\split_half_replication\split_half_100_iterations.csv,validation_p,0.0172436656877509,,
+robustness\split_half_replication\split_half_100_iterations.csv,validation_p,0.0162871059438563,,
+robustness\split_half_replication\split_half_100_iterations.csv,validation_p,0.0462637552792523,,
+robustness\split_half_replication\split_half_100_iterations.csv,validation_p,0.0487788414546377,,
+robustness\split_half_replication\split_half_100_iterations.csv,validation_p,0.0084943068661823,,
+robustness\split_half_replication\split_half_100_iterations.csv,validation_p,0.0275732851987882,,
+robustness\split_half_replication\split_half_100_iterations.csv,validation_p,0.0219855058880805,,
+robustness\split_half_replication\split_half_100_iterations.csv,validation_p,0.0438652149294471,,
+robustness\split_half_replication\split_half_100_iterations.csv,validation_p,0.0490297268316503,,
+robustness\split_half_replication\split_half_100_iterations.csv,validation_p,0.0386608779091362,,
+prp_deep_dive\learning_curves\individual_slopes.csv,p,0.0135024543124925,-0.9864975456875076,
+prp_deep_dive\learning_curves\individual_slopes.csv,p,0.0180541228115892,0.9819458771884108,
+prp_deep_dive\learning_curves\individual_slopes.csv,p,0.0490295778401976,-0.9509704221598024,
+prp_deep_dive\learning_curves\individual_slopes.csv,p,0.0255629165271044,-0.9744370834728956,
+prp_deep_dive\learning_curves\individual_slopes.csv,p,0.0078508357641581,-0.992149164235842,
+prp_deep_dive\learning_curves\ucla_gender_quartile_interaction.csv,p,5.161047831352312e-105,705.2096337641551,
+prp_deep_dive\learning_curves\ucla_gender_quartile_interaction.csv,p,0.0165866655604758,-100.11214542074455,
+prp_deep_dive\learning_curves\ucla_gender_quartile_interaction.csv,p,0.0007747489153212,138.40117304431504,
+prp_deep_dive\learning_curves\ucla_gender_quartile_interaction.csv,p,0.0106481906949725,137.3497546621409,
+prp_deep_dive\learning_curves\ucla_gender_quartile_interaction.csv,p,0.0417551140425677,-139.8594240755742,
+prp_deep_dive\learning_curves\ucla_gender_quartile_interaction.csv,p,0.0035653975759795,46.64356638001836,
+prp_deep_dive\learning_curves\ucla_gender_quartile_interaction.csv,p,0.0214390028898081,0.2010744718897711,
+prp_deep_dive\rt_variability\ucla_gender_models.csv,p,2.282031652703856e-44,476.52195149538,t2_rt_sd
+prp_deep_dive\rt_variability\ucla_gender_models.csv,p,0.0001642321911036,-84.19057717446269,t2_rt_sd
+prp_deep_dive\rt_variability\ucla_gender_models.csv,p,0.0124657930186683,56.30977934562548,t2_rt_sd
+prp_deep_dive\rt_variability\ucla_gender_models.csv,p,1.993724893369664e-37,429.7993136769248,t2_rt_sd_short
+prp_deep_dive\rt_variability\ucla_gender_models.csv,p,0.0055085829778838,-71.2636412015436,t2_rt_sd_short
+prp_deep_dive\rt_variability\ucla_gender_models.csv,p,0.0440646832684246,53.084926736933554,t2_rt_sd_short
+prp_deep_dive\rt_variability\ucla_gender_models.csv,p,2.3232017337380732e-23,255.21861239449265,t2_rt_sd_long
+prp_deep_dive\rt_variability\ucla_gender_models.csv,p,0.0362672437149026,-56.78773109133762,t2_rt_sd_long
+mechanism_analysis\exgaussian\prp_exgaussian_bottleneck_correlations.csv,p,0.0115540836130402,0.4786138063123143,
+mechanism_analysis\exgaussian\prp_exgaussian_bottleneck_correlations.csv,p,0.0064643667605912,0.5108970711118601,
+mechanism_analysis\exgaussian\prp_exgaussian_gender_correlations.csv,p,0.0188475776367965,0.448864007900205,
+mechanism_analysis\exgaussian\prp_exgaussian_gender_correlations.csv,p,0.02114982492037,0.4414755027899595,
+mechanism_analysis\exgaussian\prp_exgaussian_gender_correlations.csv,p,0.0354075633848533,0.4064203470509142,
+mechanism_analysis\exgaussian\prp_exgaussian_gender_correlations.csv,p,0.0460991675813076,-0.387044274020298,
+mechanism_analysis\exgaussian\prp_exgaussian_gender_correlations.csv,p,0.0015668121450386,0.5786543242957607,
+mechanism_analysis\exgaussian\prp_exgaussian_gender_correlations.csv,p,0.0200899604915524,0.3455149461141314,
+mechanism_analysis\exgaussian\prp_exgaussian_gender_correlations.csv,p,0.0092501425691221,-0.3837991087051222,
+mechanism_analysis\exgaussian\prp_exgaussian_gender_correlations.csv,p,0.0082948545150325,0.3931213329981229,
+deep_dive_analysis\dass_2x2x2\anxiety_buffering_profiles.csv,pval,0.0082062137694508,4.279326867995469,pe_rate
+deep_dive_analysis\dass_2x2x2\anxiety_buffering_profiles.csv,pval,0.0205527439392564,-8.736669298197494,wcst_accuracy
+deep_dive_analysis\statistical_robustness\multiverse_specifications.csv,pval,0.041841754755866,1.9656806254199577,pe_rate
+deep_dive_analysis\statistical_robustness\multiverse_specifications.csv,pval,0.0446643155675659,1.9508668501940667,pe_rate
+deep_dive_analysis\statistical_robustness\multiverse_specifications.csv,pval,0.0362382498279228,2.424875050454508,pe_rate
+deep_dive_analysis\statistical_robustness\multiverse_specifications.csv,pval,0.0242405851663635,2.201959964303905,pe_rate
+deep_dive_analysis\statistical_robustness\multiverse_specifications.csv,pval,0.0482307772005863,2.283827975876867,pe_rate
+deep_dive_analysis\statistical_robustness\multiverse_specifications.csv,pval,0.030189386027216,2.1074754008834597,pe_rate
+deep_dive_analysis\statistical_robustness\multiverse_specifications.csv,pval,0.032771144951434,2.474908888173968,pe_rate
+deep_dive_analysis\statistical_robustness\multiverse_specifications.csv,pval,0.0324831396031046,2.117253943351688,pe_rate
+deep_dive_analysis\statistical_robustness\multiverse_specifications.csv,pval,0.0257323379830581,2.6324295304902563,pe_rate
+deep_dive_analysis\statistical_robustness\multiverse_specifications.csv,pval,0.0232495928456125,2.2717009522826594,pe_rate
+deep_dive_analysis\statistical_robustness\multiverse_specifications.csv,pval,0.0444472802943417,-4.205223922657049,wcst_accuracy
+deep_dive_analysis\statistical_robustness\multiverse_specifications.csv,pval,0.0480411578700027,-3.9954835519927454,wcst_accuracy
+deep_dive_analysis\statistical_robustness\multiverse_specifications.csv,pval,0.0333006046385346,-4.521852448296629,wcst_accuracy
+deep_dive_analysis\statistical_robustness\multiverse_specifications.csv,pval,0.042019195846875,-4.162464244990424,wcst_accuracy
+advanced_analyses\error_cascades\gender_cascade_correlations.csv,p,0.0069395440436642,-0.3886485026025401,
+advanced_analyses\error_cascades\ucla_cascade_correlations.csv,p,0.0394221188808303,-0.233753465481888,
+advanced_analyses\exgaussian_pathways\gender_stratified_correlations.csv,p,0.0099784717612331,-0.6615168402577695,
+advanced_analyses\exgaussian_pathways\gender_stratified_correlations.csv,p,0.0316067955693202,0.4144466567356083,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0280195480551792,0.2064965060008959,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0280195480551792,2.4963257529374365,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0280195480551792,0.2064965060008959,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0280195480551792,2.4963257529374365,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0280195480551792,0.2064965060008959,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0280195480551792,2.4963257529374365,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0328068534293436,0.2012043832675386,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0328068534293439,2.4323495505171864,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0328068534293436,0.2012043832675386,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0328068534293439,2.4323495505171864,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0328068534293436,0.2012043832675386,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0328068534293439,2.4323495505171864,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0365161984362559,0.1560674640460602,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0365161984362542,1.8866916309573447,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0365161984362559,0.1560674640460602,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0365161984362542,1.8866916309573447,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0365161984362559,0.1560674640460602,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0365161984362542,1.8866916309573447,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0166126163500661,0.1810737108424112,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0166126163500659,2.1889908759710304,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0166126163500661,0.1810737108424112,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0166126163500659,2.1889908759710304,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0166126163500661,0.1810737108424112,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0166126163500659,2.1889908759710304,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0496173167845233,0.3697712166381129,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0496173167845235,4.470145421175909,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0496173167845233,0.3697712166381129,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0496173167845235,4.470145421175909,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0496173167845233,0.3697712166381129,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0496173167845235,4.470145421175909,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0250881782390871,0.1988217022979143,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0250881782390871,2.403545441524276,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0250881782390871,0.1988217022979143,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0250881782390871,2.403545441524276,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0250881782390871,0.1988217022979143,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0250881782390871,2.403545441524276,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0190410918904313,0.178384086845756,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0190410918904315,2.156476148343909,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0190410918904313,0.178384086845756,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0190410918904315,2.156476148343909,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0190410918904313,0.178384086845756,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0190410918904315,2.156476148343909,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0296715501731677,0.1933409139091397,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0296715501731678,2.337288469596426,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0296715501731677,0.1933409139091397,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0296715501731678,2.337288469596426,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0296715501731677,0.1933409139091397,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0296715501731678,2.337288469596426,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0247450796053643,0.1835040864505174,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0247450796053637,2.2296741791781662,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0247450796053643,0.1835040864505174,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0247450796053637,2.2296741791781662,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0247450796053643,0.1835040864505174,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0247450796053637,2.2296741791781662,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0457053989226401,0.3620076904833534,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0457053989226407,4.432820106593231,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0457053989226401,0.3620076904833534,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0457053989226407,4.432820106593231,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0457053989226401,0.3620076904833534,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0457053989226407,4.432820106593231,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0282762629605873,0.1801758614225772,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.028276262960587,2.189234439928569,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0282762629605873,0.1801758614225772,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.028276262960587,2.189234439928569,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0282762629605873,0.1801758614225772,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.028276262960587,2.189234439928569,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0485466374303871,0.3603753594006642,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0485466374303865,4.41283205044369,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0485466374303871,0.3603753594006642,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0485466374303865,4.41283205044369,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0485466374303871,0.3603753594006642,
+advanced_analyses\specification_curve\specification_curve_results.csv,p,0.0485466374303865,4.41283205044369,
+advanced_analyses\task_order_confound\task_order_model_comparison.csv,p,0.0328068534293437,,
