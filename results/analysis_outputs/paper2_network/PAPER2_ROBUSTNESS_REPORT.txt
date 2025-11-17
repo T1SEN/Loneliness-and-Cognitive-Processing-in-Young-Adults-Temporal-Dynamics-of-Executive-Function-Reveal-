@@ -1,0 +1,49 @@
+====================================================================================================
+PAPER 2 ROBUSTNESS EXTENSIONS: SUMMARY REPORT
+====================================================================================================
+
+BOOTSTRAP EDGE STABILITY (1000 iterations)
+----------------------------------------------------------------------------------------------------
+Total edges tested: 55
+Stable edges (95% CI excludes zero): 28 (50.9%)
+Unstable edges (95% CI includes zero): 27 (49.1%)
+
+Top 5 Most Stable Edges:
+  1. PRP_RT -- PRP_RMSSD: r=0.540 [0.389, 0.667]
+  2. UCLA -- DASS_Dep: r=0.478 [0.227, 0.686]
+  3. DASS_Anx -- DASS_Str: r=0.421 [0.203, 0.611]
+  4. Stroop_Int -- Stroop_tau: r=0.390 [0.205, 0.553]
+  5. PRP_tau -- WCST_tau: r=0.292 [0.102, 0.465]
+
+BRIDGE CENTRALITY ANALYSIS
+----------------------------------------------------------------------------------------------------
+Definition: Sum of absolute edge weights connecting to nodes in OTHER community
+
+Top 5 Bridge Nodes:
+  1. DASS_Str (Mood): 0.128
+  2. PRP_tau (EF): 0.077
+  3. DASS_Anx (Mood): 0.077
+  4. WCST_tau (EF): 0.074
+  5. WCST_PE (EF): 0.054
+
+COMMUNITY DETECTION (Spectral Clustering, k=2)
+----------------------------------------------------------------------------------------------------
+Community 0: WCST_PE, PRP_RT, Stroop_Int, PRP_tau, PRP_RMSSD, WCST_tau, Stroop_tau
+Community 1: UCLA, DASS_Dep, DASS_Anx, DASS_Str
+
+KEY FINDINGS
+----------------------------------------------------------------------------------------------------
+1. Network stability: 50.9% of edges have 95% CIs excluding zero
+2. Top bridge node: DASS_Str connects mood and EF clusters
+3. Community structure largely matches conceptual grouping (mood vs EF)
+
+OUTPUTS CREATED
+----------------------------------------------------------------------------------------------------
+1. paper2_bootstrap_edge_stability.csv - Bootstrap statistics for all edges
+2. paper2_bridge_centrality.csv - Bridge strength rankings
+3. paper2_community_detection.csv - Data-driven community assignments
+4. paper2_bootstrap_ci_plot.png - Visualization of top 15 edges
+
+====================================================================================================
+END OF ROBUSTNESS ANALYSIS
+====================================================================================================

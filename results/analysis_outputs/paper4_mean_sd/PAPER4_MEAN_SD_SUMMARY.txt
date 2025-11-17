@@ -1,0 +1,51 @@
+====================================================================================================
+PAPER 4 (REVISED): MEAN RT vs SD RT ANALYSIS - SUMMARY REPORT
+====================================================================================================
+
+RESEARCH QUESTION:
+  Does loneliness affect RT LOCATION (mean) or SCALE (SD)?
+  How does this compare to TAU (lapses) from Paper 1?
+
+METHOD:
+----------------------------------------------------------------------------------------------------
+  - Hierarchical regression with DASS control
+  - Gender stratification
+  - Comparison: Mean RT vs SD RT vs Tau sensitivity
+
+SAMPLE SIZE:
+  Stroop: 2 participants
+  PRP: 0 participants
+  WCST: 81 participants
+
+KEY FINDINGS:
+----------------------------------------------------------------------------------------------------
+
+WCST - SIGNIFICANT MALE EFFECTS:
+  mean_rt: r=0.408, p=0.0253
+  sd_rt: r=0.414, p=0.0228
+  tau: r=0.418, p=0.0216
+
+METRIC SENSITIVITY RANKING (by male correlation size):
+----------------------------------------------------------------------------------------------------
+
+WCST:
+  #1: tau (r=0.418)
+  #2: sd_rt (r=0.414)
+  #3: mean_rt (r=0.408)
+
+OUTPUTS:
+----------------------------------------------------------------------------------------------------
+  1. paper4_mean_sd_metrics.csv - Mean/SD RT for all participants
+  2. paper4_regression_results.csv - Hierarchical regression results
+  3. paper4_metric_comparison.csv - Mean vs SD vs Tau comparison
+  4. paper4_mean_sd_scatter_grid.png - 2x3 visualization (300 dpi)
+
+CONCLUSIONS:
+----------------------------------------------------------------------------------------------------
+  - [To be filled based on actual results]
+  - Complements Paper 1's focus on lapses (tau)
+  - Simpler and more robust than DDM approach
+
+====================================================================================================
+END OF REPORT
+====================================================================================================
