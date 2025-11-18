@@ -65,7 +65,15 @@
       "Bash(then echo \"=== publication_figures ===\")",
       "Bash(/bashes)",
       "Bash(\"Results Summary\")",
-      "Bash(gh:*)"
+      "Bash(gh:*)",
+      "Bash(git push:*)",
+      "Bash(tee:*)",
+      "Bash(.venvScriptspip.exe list --format=freeze)",
+      "Bash(results/analysis_outputs/advanced_comprehensive/ADVANCED_ANALYSES_SUMMARY.txt)",
+      "Bash(timeout 300 ./venv/Scripts/python.exe:*)",
+      "Bash(PYTHONIOENCODING=utf-8 timeout 600 ./venv/Scripts/python.exe:*)",
+      "Bash(C:Usersanselmy_research_exporterframework4_output.txt)",
+      "Bash(timeout 300 PYTHONIOENCODING=utf-8 ./venv/Scripts/python.exe:*)"
     ],
     "deny": [],
     "ask": []
