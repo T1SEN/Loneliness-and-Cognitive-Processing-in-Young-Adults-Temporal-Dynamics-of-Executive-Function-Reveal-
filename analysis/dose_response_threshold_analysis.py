@@ -25,7 +25,8 @@ import statsmodels.formula.api as smf
 from sklearn.metrics import roc_curve, auc, roc_auc_score
 import warnings
 
-from data_loader_utils import ensure_participant_id, load_participants, normalize_gender_series
+from data_loader_utils import normalize_gender_series, load_master_dataset
+from analysis.utils.trial_data_loader import load_wcst_trials
 warnings.filterwarnings('ignore')
 
 # ============================================================================
@@ -48,48 +49,28 @@ print("=" * 80)
 
 print("\nLoading data...")
 
-# Participant info and surveys
-participants = load_participants()
+master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
+if "ucla_total" not in master.columns and "ucla_score" in master.columns:
+    master["ucla_total"] = master["ucla_score"]
 
-surveys = ensure_participant_id(pd.read_csv(RESULTS_DIR / "2_surveys_results.csv"))
+master = master.rename(columns={"gender_normalized": "gender"})
+master["gender"] = master["gender"].fillna("").astype(str).str.strip().str.lower()
+master["gender_male"] = (master["gender"] == "male").astype(int)
+master["age"] = pd.to_numeric(master["age"], errors="coerce")
 
-# UCLA scores
-ucla_data = surveys[surveys['surveyName'].str.lower() == 'ucla'].copy()
-ucla_scores = ucla_data[['participant_id', 'score']].copy()
-ucla_scores.columns = ['participant_id', 'ucla_total']
-
-# DASS scores (already has score_D, score_A, score_S columns)
-dass_data = surveys[surveys['surveyName'].str.lower() == 'dass'].copy()
-dass_scores = dass_data[['participant_id', 'score_D', 'score_A', 'score_S']].copy()
-dass_scores.columns = ['participant_id', 'dass_depression', 'dass_anxiety', 'dass_stress']
-
-# Merge with demographics
-master = participants[['participant_id', 'age', 'gender', 'education']].merge(
-    ucla_scores, on='participant_id', how='inner'
-).merge(
-    dass_scores, on='participant_id', how='left'
-)
-master['age'] = pd.to_numeric(master['age'], errors='coerce')
-
-# Fill missing DASS with median
-for col in ['dass_depression', 'dass_anxiety', 'dass_stress']:
-    if col in master.columns:
-        master[col] = master[col].fillna(master[col].median())
-
-# WCST data for PE rate
-wcst_trials = ensure_participant_id(pd.read_csv(RESULTS_DIR / "4b_wcst_trials.csv"))
-
-import ast
-def _parse_wcst_extra(extra_str):
-    if not isinstance(extra_str, str):
-        return {}
-    try:
-        return ast.literal_eval(extra_str)
-    except (ValueError, SyntaxError):
-        return {}
-
-wcst_trials['extra_dict'] = wcst_trials['extra'].apply(_parse_wcst_extra)
-wcst_trials['is_pe'] = wcst_trials['extra_dict'].apply(lambda x: x.get('isPE', False))
+# WCST data for PE rate via shared loader
+wcst_trials, _ = load_wcst_trials(use_cache=True)
+if "is_pe" not in wcst_trials.columns:
+    def _parse_wcst_extra(extra_str):
+        if not isinstance(extra_str, str):
+            return {}
+        try:
+            import ast
+            return ast.literal_eval(extra_str)
+        except Exception:
+            return {}
+    wcst_trials["extra_dict"] = wcst_trials["extra"].apply(_parse_wcst_extra) if "extra" in wcst_trials.columns else {}
+    wcst_trials["is_pe"] = wcst_trials.get("extra_dict", {}).apply(lambda x: x.get("isPE", False) if isinstance(x, dict) else False)
 
 wcst_summary = wcst_trials.groupby('participant_id').agg(
     pe_count=('is_pe', 'sum'),
@@ -101,10 +82,6 @@ wcst_summary['pe_rate'] = (wcst_summary['pe_count'] / wcst_summary['total_trials
 # Merge WCST
 master = master.merge(wcst_summary[['participant_id', 'pe_rate', 'wcst_accuracy']],
                       on='participant_id', how='left')
-
-# Create gender dummy
-master['gender'] = normalize_gender_series(master['gender'])
-master['gender_male'] = (master['gender'] == 'male').astype(int)
 
 # Drop missing (including DASS covariates)
 master = master.dropna(subset=['ucla_total', 'gender_male', 'pe_rate',

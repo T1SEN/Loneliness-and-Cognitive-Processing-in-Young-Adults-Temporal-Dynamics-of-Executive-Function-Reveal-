@@ -22,6 +22,9 @@ from scipy.optimize import minimize
 import warnings
 warnings.filterwarnings('ignore')
 
+from data_loader_utils import load_master_dataset
+from analysis.utils.trial_data_loader import load_prp_trials
+
 if sys.platform.startswith("win") and hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding='utf-8')
 
@@ -33,19 +36,27 @@ print("=" * 80)
 print("PRP EX-GAUSSIAN RT DECOMPOSITION")
 print("=" * 80)
 
-# Load
-trials = pd.read_csv(RESULTS_DIR / "4a_prp_trials.csv", encoding='utf-8-sig')
+trials, _ = load_prp_trials(
+    use_cache=True,
+    rt_min=200,
+    rt_max=5000,
+    require_t1_correct=False,
+    require_t2_correct_for_rt=False,
+    enforce_short_long_only=False,
+    drop_timeouts=True,
+)
 trials.columns = trials.columns.str.lower()
-if 'participantid' in trials.columns and 'participant_id' in trials.columns:
-    trials = trials.drop(columns=['participantid'])
-elif 'participantid' in trials.columns:
-    trials.rename(columns={'participantid': 'participant_id'}, inplace=True)
+if "soa_nominal_ms" not in trials.columns and "soa" in trials.columns:
+    trials["soa_nominal_ms"] = trials["soa"]
+if "t2_rt_ms" not in trials.columns and "t2_rt" in trials.columns:
+    trials["t2_rt_ms"] = trials["t2_rt"]
 
-master = pd.read_csv(RESULTS_DIR / "analysis_outputs/master_dataset.csv", encoding='utf-8-sig')
-master.columns = master.columns.str.lower()
-# Map Korean gender values to English
-gender_map = {'남성': 'male', '여성': 'female', 'male': 'male', 'female': 'female'}
-master['gender'] = master['gender'].map(gender_map)
+master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
+if "ucla_total" not in master.columns and "ucla_score" in master.columns:
+    master["ucla_total"] = master["ucla_score"]
+master = master.rename(columns={"gender_normalized": "gender"})
+master["gender"] = master["gender"].fillna("").astype(str).str.strip().str.lower()
+master["gender_male"] = (master["gender"] == "male").astype(int)
 
 # Clean
 rt_col_t2 = 't2_rt_ms' if 't2_rt_ms' in trials.columns else 't2_rt'

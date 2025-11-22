@@ -28,6 +28,8 @@ import seaborn as sns
 import warnings
 warnings.filterwarnings('ignore')
 
+from analysis.utils.trial_data_loader import load_prp_trials
+
 np.random.seed(42)
 
 # Set plotting style
@@ -50,43 +52,17 @@ print()
 
 print("[1/5] Loading data...")
 
-master = load_master_dataset(use_cache=True)
+master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
+if "ucla_total" not in master.columns and "ucla_score" in master.columns:
+    master["ucla_total"] = master["ucla_score"]
 
-# Load age and gender from participants
-master = load_master_dataset(use_cache=True)
-participants = master[['participant_id','gender_normalized','age']].rename(columns={'gender_normalized':'gender'})
-if 'participantId' in participants.columns:
-    participants = participants.rename(columns={'participantId': 'participant_id'})
+master = master.rename(columns={"gender_normalized": "gender"})
+master["gender"] = master["gender"].fillna("").astype(str).str.strip().str.lower()
+master["gender_male"] = (master["gender"] == "male").astype(int)
+master["gender_label"] = master["gender_male"].map({0: "Female", 1: "Male"})
 
-# master_expanded_metrics already has DASS subscales, just merge demographics
-master = master.merge(
-    participants[['participant_id', 'age', 'gender']],
-    on='participant_id',
-    how='left'
-)
+master = master.dropna(subset=["ucla_total", "gender_male", "dass_depression", "dass_anxiety", "dass_stress", "age"]).copy()
 
-# Handle Korean gender normalization
-def normalize_gender(val):
-    if pd.isna(val):
-        return None
-    val_str = str(val).strip().lower()
-    if '남' in val_str or val_str in ['m', 'male']:
-        return 'male'
-    elif '여' in val_str or val_str in ['f', 'female']:
-        return 'female'
-    return None
-
-master['gender_normalized'] = master['gender'].apply(normalize_gender)
-master['gender_male'] = (master['gender_normalized'] == 'male').astype(int)
-
-# DASS data already in master from master_expanded_metrics
-# Gender already normalized above
-
-# Add gender label for plotting
-master['gender_label'] = master['gender_male'].map({0: 'Female', 1: 'Male'})
-
-master = master.dropna(subset=['ucla_total', 'gender_male',
-                                'dass_depression', 'dass_anxiety', 'dass_stress', 'age']).copy()
 
 # Load feedback sensitivity (for post-error analysis)
 feedback = pd.read_csv(Path("results/analysis_outputs/wcst_trial_dynamics/feedback_sensitivity.csv"))
@@ -293,13 +269,19 @@ print()
 
 print("[4/5] Analysis 3: PRP Slope Decomposition...")
 
-# Load PRP trial data
-prp_trials = pd.read_csv(RESULTS_DIR / "4a_prp_trials.csv", encoding='utf-8-sig')
-
-if 'participantId' in prp_trials.columns and 'participant_id' in prp_trials.columns:
-    prp_trials.drop(columns=['participantId'], inplace=True)
-elif 'participantId' in prp_trials.columns:
-    prp_trials.rename(columns={'participantId': 'participant_id'}, inplace=True)
+prp_trials, _ = load_prp_trials(
+    use_cache=True,
+    rt_min=0,
+    rt_max=10_000,
+    require_t1_correct=False,
+    require_t2_correct_for_rt=False,
+    enforce_short_long_only=False,
+    drop_timeouts=True,
+)
+if "soa_nominal_ms" not in prp_trials.columns and "soa" in prp_trials.columns:
+    prp_trials["soa_nominal_ms"] = prp_trials["soa"]
+if "t2_rt_ms" not in prp_trials.columns and "t2_rt" in prp_trials.columns:
+    prp_trials["t2_rt_ms"] = prp_trials["t2_rt"]
 
 prp_decomp_results = []
 

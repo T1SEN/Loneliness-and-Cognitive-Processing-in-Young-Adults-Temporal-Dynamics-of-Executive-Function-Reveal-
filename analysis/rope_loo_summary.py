@@ -23,6 +23,9 @@ import pandas as pd
 import pymc as pm
 import arviz as az
 
+from data_loader_utils import load_master_dataset
+from analysis.utils.trial_data_loader import load_stroop_trials, load_prp_trials
+
 
 BASE = Path(__file__).resolve().parent.parent
 RES = BASE / "results"
@@ -37,67 +40,52 @@ def _z(s: pd.Series) -> pd.Series:
     return (s - s.mean()) / s.std()
 
 
-def ensure_participant_id(df: pd.DataFrame) -> pd.DataFrame:
-    """Ensure participant_id column is populated, falling back to camelCase."""
-    if "participant_id" in df.columns and df["participant_id"].notna().any():
-        return df
-    for cand in ("participantId", "participantid"):
-        if cand in df.columns:
-            df["participant_id"] = df[cand]
-            break
-    if "participant_id" not in df.columns or df["participant_id"].isna().all():
-        raise RuntimeError("Unable to recover participant_id column.")
-    return df
-
-
 def load_covariates() -> pd.DataFrame:
-    surv = pd.read_csv(RES / "2_surveys_results.csv")
-    surv.columns = surv.columns.str.lower()
-    ucla = (
-        surv[surv["surveyname"].str.lower() == "ucla"]
-        [["participantid", "score"]]
-        .rename(columns={"participantid": "participant_id", "score": "ucla_total"})
-    )
-    dass = (
-        surv[surv["surveyname"].str.lower() == "dass"]
-        [["participantid", "score_d", "score_a", "score_s"]]
-        .rename(
-            columns={
-                "participantid": "participant_id",
-                "score_d": "dass_dep",
-                "score_a": "dass_anx",
-                "score_s": "dass_stress",
-            }
-        )
-    )
-    cov = ucla.merge(dass, on="participant_id", how="inner")
-    cov["z_ucla"] = _z(cov["ucla_total"]) 
-    cov["z_dass_dep"] = _z(cov["dass_dep"]) 
-    cov["z_dass_anx"] = _z(cov["dass_anx"]) 
-    cov["z_dass_stress"] = _z(cov["dass_stress"]) 
+    """
+    Pull covariates from the unified master dataset (UCLA + DASS with z-scores).
+    Falls back to on-the-fly z-scoring if precomputed cols are missing.
+    """
+    master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
+    cov = master.copy()
+
+    # Harmonize column names used in this script
+    if "ucla_total" not in cov.columns and "ucla_score" in cov.columns:
+        cov["ucla_total"] = cov["ucla_score"]
+
+    if "z_ucla" not in cov.columns:
+        base = cov["ucla_total"] if "ucla_total" in cov.columns else cov.get("ucla_score")
+        cov["z_ucla"] = _z(base) if base is not None else np.nan
+
+    cov["z_dass_dep"] = cov["z_dass_depression"] if "z_dass_depression" in cov.columns else _z(cov.get("dass_depression"))
+    cov["z_dass_anx"] = cov["z_dass_anxiety"] if "z_dass_anxiety" in cov.columns else _z(cov.get("dass_anxiety"))
+    cov["z_dass_stress"] = cov["z_dass_stress"] if "z_dass_stress" in cov.columns else _z(cov.get("dass_stress"))
+
+    needed = ["participant_id", "ucla_total", "z_ucla", "z_dass_dep", "z_dass_anx", "z_dass_stress"]
+    cov = cov[[c for c in needed if c in cov.columns]].dropna(subset=["participant_id", "z_ucla", "z_dass_dep", "z_dass_anx", "z_dass_stress"])
+    cov["participant_id"] = cov["participant_id"].astype(str)
     return cov
 
 
 def prepare_stroop(cov: pd.DataFrame) -> pd.DataFrame:
-    df = pd.read_csv(RES / "4c_stroop_trials.csv")
-    df = ensure_participant_id(df)
-    df = df[df["participant_id"].notna()].copy()
-    if "timeout" in df.columns:
-        df = df[df["timeout"] == False]
-    df = df[df["rt_ms"].notna() & (df["rt_ms"] >= 200) & (df["rt_ms"] <= 3000)].copy()
-    if "type" in df.columns:
-        cond = df["type"].astype(str).str.lower()
-    elif "cond" in df.columns:
-        cond = df["cond"].astype(str).str.lower()
-    else:
+    trials, _ = load_stroop_trials(use_cache=True, rt_min=200, rt_max=3000, drop_timeouts=True, require_correct_for_rt=True)
+    cond_col = None
+    for cand in ("type", "condition", "cond"):
+        if cand in trials.columns:
+            cond_col = cand
+            break
+    if cond_col is None:
         raise RuntimeError("Stroop trials missing condition column")
+
+    cond = trials[cond_col].astype(str).str.lower()
     code_map = {"congruent": 0.0, "neutral": 0.5, "incongruent": 1.0}
-    df["condition_code"] = cond.map(code_map)
-    df = df[df["condition_code"].notna()]
-    df = df.merge(cov, on="participant_id", how="inner").dropna(
-        subset=["participant_id", "rt_ms", "condition_code", "z_ucla", "z_dass_dep", "z_dass_anx", "z_dass_stress"]
+    trials["condition_code"] = cond.map(code_map)
+    trials = trials[trials["condition_code"].notna()]
+
+    trials["participant_id"] = trials["participant_id"].astype(str)
+    df = trials.merge(cov, on="participant_id", how="inner").dropna(
+        subset=["participant_id", "rt", "condition_code", "z_ucla", "z_dass_dep", "z_dass_anx", "z_dass_stress"]
     )
-    df["rt_sec"] = df["rt_ms"] / 1000.0
+    df["rt_sec"] = df["rt"] / 1000.0
     df["log_rt"] = np.log(df["rt_sec"].clip(lower=1e-3))
     pid_uni = {pid: i for i, pid in enumerate(sorted(df["participant_id"].unique()))}
     df["pid_idx"] = df["participant_id"].map(pid_uni)
@@ -105,17 +93,23 @@ def prepare_stroop(cov: pd.DataFrame) -> pd.DataFrame:
 
 
 def prepare_prp(cov: pd.DataFrame) -> pd.DataFrame:
-    df = pd.read_csv(RES / "4a_prp_trials.csv")
-    df = ensure_participant_id(df)
-    df = df[df["participant_id"].notna()].copy()
-    df = df[(df["t2_timeout"] == False) & df["t2_rt_ms"].notna()].copy()
-    df = df[(df["t2_rt_ms"] >= 200) & (df["t2_rt_ms"] <= 4000)].copy()
-    soa_col = "soa_nominal_ms" if "soa_nominal_ms" in df.columns else "soa"
-    df["soa_scaled"] = pd.to_numeric(df[soa_col], errors="coerce") / 1000.0
-    df = df.merge(cov, on="participant_id", how="inner").dropna(
-        subset=["participant_id", "t2_rt_ms", "soa_scaled", "z_ucla", "z_dass_dep", "z_dass_anx", "z_dass_stress"]
+    trials, _ = load_prp_trials(
+        use_cache=True,
+        rt_min=200,
+        rt_max=4000,
+        require_t1_correct=False,
+        require_t2_correct_for_rt=False,
+        enforce_short_long_only=False,
     )
-    df["t2_rt_sec"] = df["t2_rt_ms"] / 1000.0
+    trials["participant_id"] = trials["participant_id"].astype(str)
+
+    soa_col = "soa"
+    trials["soa_scaled"] = pd.to_numeric(trials[soa_col], errors="coerce") / 1000.0
+
+    df = trials.merge(cov, on="participant_id", how="inner").dropna(
+        subset=["participant_id", "t2_rt", "soa_scaled", "z_ucla", "z_dass_dep", "z_dass_anx", "z_dass_stress"]
+    )
+    df["t2_rt_sec"] = df["t2_rt"] / 1000.0
     df["log_t2_rt"] = np.log(df["t2_rt_sec"].clip(lower=1e-3))
     pid_uni = {pid: i for i, pid in enumerate(sorted(df["participant_id"].unique()))}
     df["pid_idx"] = df["participant_id"].map(pid_uni)

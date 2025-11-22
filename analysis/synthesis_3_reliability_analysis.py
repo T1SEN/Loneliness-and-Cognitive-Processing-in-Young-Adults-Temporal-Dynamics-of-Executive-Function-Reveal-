@@ -44,6 +44,8 @@ warnings.filterwarnings('ignore')
 # Import local utilities
 sys.path.append('analysis')
 from statistical_utils import bootstrap_ci
+from data_loader_utils import load_master_dataset
+from analysis.utils.trial_data_loader import load_prp_trials, load_wcst_trials, load_stroop_trials
 
 np.random.seed(42)
 
@@ -150,16 +152,17 @@ def bootstrap_correlation(half1, half2, n_bootstrap=10000):
 
 print("[1/3] Computing PRP τ (long SOA) split-half reliability...")
 
-prp_trials = pd.read_csv(RESULTS_DIR / "4a_prp_trials.csv", encoding='utf-8-sig')
-if 'participantId' in prp_trials.columns:
-    prp_trials = prp_trials.rename(columns={'participantId': 'participant_id'})
-
-# Filter valid trials
-prp_trials = prp_trials[
-    (prp_trials['t1_correct'] == True) &
-    (prp_trials['t2_rt'] > 0) &
-    (prp_trials['t2_rt'] < 5000)
-].copy()
+prp_trials, _ = load_prp_trials(
+    use_cache=True,
+    rt_min=200,
+    rt_max=5000,
+    require_t1_correct=False,
+    require_t2_correct_for_rt=False,
+    enforce_short_long_only=False,
+    drop_timeouts=True,
+)
+if "t2_rt" not in prp_trials.columns and "t2_rt_ms" in prp_trials.columns:
+    prp_trials["t2_rt"] = prp_trials["t2_rt_ms"]
 
 # SOA categorization
 def categorize_soa(soa):
@@ -261,24 +264,19 @@ else:
 
 print("\n[2/3] Computing WCST PE rate split-half reliability...")
 
-wcst_trials = pd.read_csv(RESULTS_DIR / "4b_wcst_trials.csv", encoding='utf-8-sig')
-if 'participantId' in wcst_trials.columns:
-    wcst_trials = wcst_trials.rename(columns={'participantId': 'participant_id'})
+wcst_trials, _ = load_wcst_trials(use_cache=True)
 
-# Remove duplicate columns if any
-wcst_trials = wcst_trials.loc[:, ~wcst_trials.columns.duplicated()]
-
-# Parse extra field for PE
-def _parse_wcst_extra(extra_str):
-    if not isinstance(extra_str, str):
-        return {}
-    try:
-        return ast.literal_eval(extra_str)
-    except (ValueError, SyntaxError):
-        return {}
-
-wcst_trials['extra_dict'] = wcst_trials['extra'].apply(_parse_wcst_extra)
-wcst_trials['is_pe'] = wcst_trials['extra_dict'].apply(lambda x: x.get('isPE', False))
+# Ensure is_pe exists
+if "is_pe" not in wcst_trials.columns:
+    def _parse_wcst_extra(extra_str):
+        if not isinstance(extra_str, str):
+            return {}
+        try:
+            return ast.literal_eval(extra_str)
+        except (ValueError, SyntaxError):
+            return {}
+    wcst_trials["extra_dict"] = wcst_trials["extra"].apply(_parse_wcst_extra) if "extra" in wcst_trials.columns else {}
+    wcst_trials["is_pe"] = wcst_trials.get("extra_dict", {}).apply(lambda x: x.get("isPE", False) if isinstance(x, dict) else False)
 
 # Add trial index per participant
 # Check for trial column name
@@ -348,15 +346,15 @@ else:
 
 print("\n[3/3] Computing Stroop interference split-half reliability...")
 
-stroop_trials = pd.read_csv(RESULTS_DIR / "4c_stroop_trials.csv", encoding='utf-8-sig')
-if 'participantId' in stroop_trials.columns:
-    stroop_trials = stroop_trials.rename(columns={'participantId': 'participant_id'})
-
-# Remove duplicate columns if any
-stroop_trials = stroop_trials.loc[:, ~stroop_trials.columns.duplicated()]
-
-# Filter correct trials only
-stroop_trials = stroop_trials[stroop_trials['correct'] == True].copy()
+stroop_trials, _ = load_stroop_trials(
+    use_cache=True,
+    rt_min=200,
+    rt_max=3000,
+    drop_timeouts=True,
+    require_correct_for_rt=True,
+)
+if "rt_ms" not in stroop_trials.columns and "rt" in stroop_trials.columns:
+    stroop_trials["rt_ms"] = stroop_trials["rt"]
 
 # Add trial index per participant
 stroop_trials = stroop_trials.sort_values(['participant_id', 'trial']).reset_index(drop=True)

@@ -39,19 +39,14 @@ print("="*100)
 
 # === LOAD DATA ===
 print("\n[1] Loading data...")
-master = load_master_dataset(use_cache=True)
+master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
+if "ucla_total" not in master.columns and "ucla_score" in master.columns:
+    master["ucla_total"] = master["ucla_score"]
 participants = master[['participant_id','gender_normalized','age']].rename(columns={'gender_normalized':'gender'})
-surveys = pd.read_csv(RESULTS_DIR / "2_surveys_results.csv", encoding='utf-8-sig')
-cog_summary = pd.read_csv(RESULTS_DIR / "3_cognitive_tests_summary.csv", encoding='utf-8-sig')
+participants['gender'] = participants['gender'].fillna("").astype(str).str.strip().str.lower()
 
-# Normalize column names
-if 'participantId' in participants.columns:
-    participants = participants.rename(columns={'participantId': 'participant_id'})
-if 'participantId' in surveys.columns:
-    surveys = surveys.rename(columns={'participantId': 'participant_id'})
-
-# Convert gender to English
-participants['gender'] = participants['gender'].map({'남성': 'male', '여성': 'female'})
+# Surveys not needed; use master for UCLA/DASS
+surveys = master[['participant_id', 'ucla_total', 'dass_depression', 'dass_anxiety', 'dass_stress']].dropna()
 
 # Load Paper 1 EF variability metrics
 paper1_dir = Path("results/analysis_outputs/paper1_distributional")
@@ -60,14 +55,8 @@ paper1_results = pd.read_csv(paper1_dir / "paper1_participant_variability_metric
 # Merge
 df = participants[['participant_id', 'age', 'gender']].copy()
 
-# UCLA scores
-ucla = surveys[surveys['surveyName'] == 'ucla'][['participant_id', 'score']].rename(columns={'score': 'ucla_total'})
-df = df.merge(ucla, on='participant_id', how='inner')
-
-# DASS-21 scores
-dass = surveys[surveys['surveyName'] == 'dass'][['participant_id', 'score_D', 'score_A', 'score_S']].rename(
-    columns={'score_D': 'dass_depression', 'score_A': 'dass_anxiety', 'score_S': 'dass_stress'})
-df = df.merge(dass, on='participant_id', how='inner')
+# UCLA/DASS from master
+df = df.merge(surveys, on='participant_id', how='inner')
 
 # Paper 1 EF metrics
 df = df.merge(paper1_results, on='participant_id', how='inner')

@@ -38,46 +38,22 @@ print("="*100)
 
 # === LOAD DATA ===
 print("\n[1] Loading data...")
-master = load_master_dataset(use_cache=True)
-participants = master[['participant_id','gender_normalized','age']].rename(columns={'gender_normalized':'gender'})
-surveys = pd.read_csv(RESULTS_DIR / "2_surveys_results.csv", encoding='utf-8-sig')
 paper1_dir = Path("results/analysis_outputs/paper1_distributional")
 paper1_results = pd.read_csv(paper1_dir / "paper1_participant_variability_metrics.csv", encoding='utf-8-sig')
 
-# Normalize
-if 'participantId' in participants.columns:
-    participants = participants.rename(columns={'participantId': 'participant_id'})
-if 'participantId' in surveys.columns:
-    surveys = surveys.rename(columns={'participantId': 'participant_id'})
+master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
+if "ucla_total" not in master.columns and "ucla_score" in master.columns:
+    master["ucla_total"] = master["ucla_score"]
+master = master.rename(columns={"gender_normalized": "gender"})
+master["gender"] = master["gender"].fillna("").astype(str).str.strip().str.lower()
+master["gender_male"] = (master["gender"] == "male").astype(int)
 
-participants['gender'] = participants['gender'].map({'남성': 'male', '여성': 'female'})
-
-# Merge
-df = participants[['participant_id', 'age', 'gender']].copy()
-
-# UCLA
-ucla = surveys[surveys['surveyName'] == 'ucla'][['participant_id', 'score']].rename(columns={'score': 'ucla_total'})
-df = df.merge(ucla, on='participant_id', how='inner')
-
-# DASS
-dass = surveys[surveys['surveyName'] == 'dass'][['participant_id', 'score_D', 'score_A', 'score_S']].rename(
-    columns={'score_D': 'dass_depression', 'score_A': 'dass_anxiety', 'score_S': 'dass_stress'})
-df = df.merge(dass, on='participant_id', how='inner')
-
-# Paper 1 metrics
+# Merge master with Paper 1 metrics
+df = master[['participant_id', 'age', 'gender', 'gender_male', 'ucla_total', 'dass_depression', 'dass_anxiety', 'dass_stress']].copy()
 df = df.merge(paper1_results, on='participant_id', how='inner')
 
-# Resolve duplicate columns
-if 'gender_x' in df.columns:
-    df['gender'] = df['gender_x']
-if 'age_x' in df.columns:
-    df['age'] = df['age_x']
-cols_to_drop = [c for c in df.columns if c.endswith('_y') or (c.endswith('_x') and c.replace('_x', '') in df.columns)]
-df = df.drop(columns=cols_to_drop)
-
 # Drop missing
-df = df.dropna(subset=['gender'])
-df['gender_male'] = (df['gender'] == 'male').astype(int)
+df = df.dropna(subset=['gender', 'ucla_total', 'dass_depression', 'dass_anxiety', 'dass_stress'])
 
 print(f"Sample: N={len(df)} ({df['gender_male'].sum()} males, {len(df) - df['gender_male'].sum()} females)")
 

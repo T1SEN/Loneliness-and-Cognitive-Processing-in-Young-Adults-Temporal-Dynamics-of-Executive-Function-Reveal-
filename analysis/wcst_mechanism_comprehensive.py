@@ -26,6 +26,8 @@ import seaborn as sns
 import warnings
 warnings.filterwarnings('ignore')
 
+from analysis.utils.trial_data_loader import load_wcst_trials
+
 # UTF-8 설정
 if sys.platform.startswith("win") and hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding='utf-8')
@@ -43,10 +45,20 @@ print("="*80)
 # 데이터 로드
 # ============================================================================
 print("\n[데이터 로딩]")
-master = load_master_dataset(use_cache=True)
-participants = master[['participant_id','gender_normalized','age']].rename(columns={'gender_normalized':'gender'})
-surveys = pd.read_csv(RESULTS_DIR / "2_surveys_results.csv", encoding='utf-8-sig')
-wcst_trials = pd.read_csv(RESULTS_DIR / "4b_wcst_trials.csv", encoding='utf-8-sig')
+master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
+if "ucla_total" not in master.columns and "ucla_score" in master.columns:
+    master["ucla_total"] = master["ucla_score"]
+master = master.rename(columns={"gender_normalized": "gender"})
+master["gender"] = master["gender"].fillna("").astype(str).str.strip().str.lower()
+master["gender_male"] = (master["gender"] == "male").astype(int)
+
+participants = master[['participant_id','gender','age']]
+ucla = master[['participant_id', 'ucla_total']].dropna()
+dass_df = master[['participant_id', 'dass_anxiety', 'dass_stress', 'dass_depression', 'dass_total']].dropna()
+
+wcst_trials, _ = load_wcst_trials(use_cache=True)
+if 'participantId' in wcst_trials.columns and 'participant_id' not in wcst_trials.columns:
+    wcst_trials = wcst_trials.rename(columns={'participantId': 'participant_id'})
 
 # UCLA & DASS
 ucla = surveys[surveys['surveyName'] == 'ucla'][['participantId', 'score']].dropna()

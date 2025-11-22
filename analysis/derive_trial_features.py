@@ -15,6 +15,7 @@ from typing import Dict, List
 import numpy as np
 import pandas as pd
 
+from analysis.utils.trial_data_loader import load_prp_trials, load_stroop_trials
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 RESULTS_DIR = BASE_DIR / "results"
@@ -23,17 +24,19 @@ OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
 
 
 def load_prp_features() -> pd.DataFrame:
-    path = RESULTS_DIR / "4a_prp_trials.csv"
-    prp = pd.read_csv(path)
+    prp, _ = load_prp_trials(
+        use_cache=True,
+        rt_min=0,  # keep all positive RTs, we filter below
+        rt_max=10_000,
+        require_t1_correct=False,
+        require_t2_correct_for_rt=False,
+        enforce_short_long_only=False,
+        drop_timeouts=True,
+    )
 
-    prp["participant_id"] = prp["participant_id"].fillna(prp["participantId"])
-    prp["t2_rt_ms"] = pd.to_numeric(prp["t2_rt_ms"], errors="coerce")
-    prp["soa_nominal_ms"] = pd.to_numeric(prp["soa_nominal_ms"], errors="coerce")
-    prp = prp[
-        (prp["t2_timeout"] == False)
-        & (prp["t2_rt_ms"].notna())
-        & (prp["t2_rt_ms"] > 0)
-    ]
+    prp["t2_rt_ms"] = pd.to_numeric(prp["t2_rt"], errors="coerce")
+    prp["soa_nominal_ms"] = pd.to_numeric(prp["soa"], errors="coerce")
+    prp = prp[(prp["t2_rt_ms"].notna()) & (prp["t2_rt_ms"] > 0)]
 
     def cv(series: pd.Series) -> float:
         if len(series) < 3 or series.mean() == 0:
@@ -58,13 +61,36 @@ def load_prp_features() -> pd.DataFrame:
 
 
 def load_stroop_features() -> pd.DataFrame:
-    path = RESULTS_DIR / "4c_stroop_trials.csv"
-    stroop = pd.read_csv(path)
-    stroop["participant_id"] = stroop["participant_id"].fillna(stroop["participantId"])
-    stroop["rt_ms"] = pd.to_numeric(stroop["rt_ms"], errors="coerce")
-    stroop["trial"] = pd.to_numeric(stroop["trial"], errors="coerce")
-    stroop = stroop[(stroop["timeout"] == False) & stroop["rt_ms"].notna()]
-    stroop = stroop.sort_values(["participant_id", "trial"])
+    stroop, _ = load_stroop_trials(
+        use_cache=True,
+        rt_min=0,
+        rt_max=10_000,
+        drop_timeouts=True,
+        require_correct_for_rt=False,
+    )
+
+    # Normalize columns
+    rt_col = "rt"
+    trial_col = None
+    for cand in ("trial", "trialIndex", "idx"):
+        if cand in stroop.columns:
+            trial_col = cand
+            break
+    if trial_col is None:
+        raise KeyError("Stroop trials missing trial index column (trial/trialIndex/idx)")
+
+    stroop["rt_ms"] = pd.to_numeric(stroop[rt_col], errors="coerce")
+    stroop["trial_order"] = pd.to_numeric(stroop[trial_col], errors="coerce")
+    stroop = stroop[stroop["rt_ms"].notna()]
+    stroop = stroop.sort_values(["participant_id", "trial_order"])
+
+    cond_col = None
+    for cand in ("type", "condition", "cond"):
+        if cand in stroop.columns:
+            cond_col = cand
+            break
+    if cond_col is None:
+        raise KeyError("Stroop trials missing condition column")
 
     records: List[Dict] = []
     for pid, group in stroop.groupby("participant_id"):
@@ -81,10 +107,10 @@ def load_stroop_features() -> pd.DataFrame:
             else np.nan
         )
 
-        incong = grp[grp["type"].str.lower() == "incongruent"]
+        incong = grp[grp[cond_col].astype(str).str.lower() == "incongruent"]
         slope = np.nan
-        if len(incong) >= 5 and incong["trial"].nunique() > 1:
-            x = incong["trial"].values
+        if len(incong) >= 5 and incong["trial_order"].nunique() > 1:
+            x = incong["trial_order"].values
             y = incong["rt_ms"].values
             coef = np.polyfit(x, y, 1)
             slope = coef[0]

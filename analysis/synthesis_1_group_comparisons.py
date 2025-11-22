@@ -45,6 +45,9 @@ import ast
 import warnings
 warnings.filterwarnings('ignore')
 
+from data_loader_utils import load_master_dataset
+from analysis.utils.trial_data_loader import load_prp_trials
+
 # Import local utilities
 import sys
 sys.path.append('analysis')
@@ -71,30 +74,19 @@ print()
 
 print("[1/5] Loading data...")
 
-# Load master dataset
-master_path = RESULTS_DIR / "analysis_outputs/master_dataset.csv"
-if not master_path.exists():
-    print("ERROR: master_dataset.csv not found")
-    sys.exit(1)
+# Load master dataset via shared loader
+master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
+if "ucla_total" not in master.columns and "ucla_score" in master.columns:
+    master["ucla_total"] = master["ucla_score"]
 
-master = pd.read_csv(master_path, encoding='utf-8-sig')
-
-# Normalize columns
-if 'participantId' in master.columns:
-    master = master.rename(columns={'participantId': 'participant_id'})
-
-# Ensure gender coding
-if 'gender' not in master.columns and 'gender_male' in master.columns:
-    master['gender'] = master['gender_male'].map({1: 'male', 0: 'female'})
-elif 'gender' in master.columns:
-    gender_map = {'남성': 'male', '여성': 'female', 'Male': 'male', 'Female': 'female'}
-    master['gender'] = master['gender'].map(gender_map)
-    master['gender_male'] = (master['gender'] == 'male').astype(int)
+master = master.rename(columns={"gender_normalized": "gender"})
+master["gender"] = master["gender"].fillna("").astype(str).str.strip().str.lower()
+master["gender_male"] = (master["gender"] == "male").astype(int)
 
 # Rename PE if needed
-for col in ['pe_rate', 'perseverative_error_rate']:
-    if col in master.columns and col != 'pe_rate':
-        master = master.rename(columns={col: 'pe_rate'})
+for col in ["pe_rate", "perseverative_error_rate"]:
+    if col in master.columns and col != "pe_rate":
+        master = master.rename(columns={col: "pe_rate"})
         break
 
 print(f"  Total N = {len(master)}")
@@ -105,10 +97,19 @@ print(f"  Total N = {len(master)}")
 
 print("[2/5] Computing PRP τ(long SOA) from trial-level data...")
 
-# Load PRP trials
-prp_trials = pd.read_csv(RESULTS_DIR / "4a_prp_trials.csv", encoding='utf-8-sig')
-if 'participantId' in prp_trials.columns:
-    prp_trials = prp_trials.rename(columns={'participantId': 'participant_id'})
+prp_trials, _ = load_prp_trials(
+    use_cache=True,
+    rt_min=200,
+    rt_max=5000,
+    require_t1_correct=False,
+    require_t2_correct_for_rt=False,
+    enforce_short_long_only=False,
+    drop_timeouts=True,
+)
+if "soa_nominal_ms" not in prp_trials.columns and "soa" in prp_trials.columns:
+    prp_trials["soa_nominal_ms"] = prp_trials["soa"]
+if "t2_rt" not in prp_trials.columns and "t2_rt_ms" in prp_trials.columns:
+    prp_trials["t2_rt"] = prp_trials["t2_rt_ms"]
 
 # Filter valid trials
 prp_trials = prp_trials[

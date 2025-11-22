@@ -123,31 +123,28 @@ ddm_results = []
 
 # === STROOP TASK ===
 print("\n[2.1] Stroop task...")
-stroop_trials = pd.read_csv(RESULTS_DIR / "4c_stroop_trials.csv", encoding='utf-8-sig')
-
-# Drop null participant_id column and rename
-if 'participant_id' in stroop_trials.columns:
-    stroop_trials = stroop_trials.drop(columns=['participant_id'])
-if 'participantId' in stroop_trials.columns:
-    stroop_trials = stroop_trials.rename(columns={'participantId': 'participant_id'})
-
-# Filter valid trials
-# Check column names
-if 'rt' in stroop_trials.columns:
-    rt_col_stroop = 'rt'
-    correct_col = 'correct'
-    type_col = 'type'
-else:
+stroop_trials, _ = load_stroop_trials(
+    use_cache=True,
+    rt_min=200,
+    rt_max=5000,
+    drop_timeouts=True,
+    require_correct_for_rt=False,
+)
+rt_col_stroop = "rt" if "rt" in stroop_trials.columns else "rt_ms" if "rt_ms" in stroop_trials.columns else None
+if rt_col_stroop is None:
     print("ERROR: Stroop columns not found")
-    rt_col_stroop = None
-
-if rt_col_stroop:
+    stroop_clean = pd.DataFrame()
+else:
     stroop_clean = stroop_trials[
         (stroop_trials[rt_col_stroop] > 200) &
         (stroop_trials[rt_col_stroop] < 5000)
     ].copy().reset_index(drop=True)
-else:
-    stroop_clean = pd.DataFrame()
+correct_col = "correct" if "correct" in stroop_trials.columns else None
+type_col = None
+for cand in ("type", "condition", "cond"):
+    if cand in stroop_trials.columns:
+        type_col = cand
+        break
 
 print(f"  Stroop trials: {len(stroop_clean)} valid")
 
@@ -191,20 +188,20 @@ print(f"  Stroop DDM: {len([r for r in ddm_results if r['task'] == 'stroop'])} p
 
 # === PRP TASK ===
 print("\n[2.2] PRP task...")
-prp_trials = pd.read_csv(RESULTS_DIR / "4a_prp_trials.csv", encoding='utf-8-sig')
-
-if 'participantId' in prp_trials.columns:
-    prp_trials = prp_trials.drop(columns=['participant_id'], errors='ignore')
-if 'participantId' in prp_trials.columns:
-    prp_trials = prp_trials.rename(columns={'participantId': 'participant_id'})
-
-# Use t2_rt_ms column
-rt_col = 't2_rt_ms' if 't2_rt_ms' in prp_trials.columns else 't2_rt'
-
+prp_trials, _ = load_prp_trials(
+    use_cache=True,
+    rt_min=200,
+    rt_max=5000,
+    require_t1_correct=False,
+    require_t2_correct_for_rt=False,
+    enforce_short_long_only=False,
+    drop_timeouts=True,
+)
+rt_col = "t2_rt" if "t2_rt" in prp_trials.columns else "t2_rt_ms"
 prp_clean = prp_trials[
     (prp_trials[rt_col] > 200) &
     (prp_trials[rt_col] < 5000) &
-    (prp_trials['t2_timeout'] == False)
+    (~prp_trials.get('t2_timeout', False))
 ].copy().reset_index(drop=True)
 
 print(f"  PRP trials: {len(prp_clean)} valid")

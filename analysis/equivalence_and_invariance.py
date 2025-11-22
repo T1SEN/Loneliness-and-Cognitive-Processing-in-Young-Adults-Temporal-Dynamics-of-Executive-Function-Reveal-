@@ -16,6 +16,9 @@ import arviz as az
 import pymc as pm
 from scipy import stats
 
+from data_loader_utils import load_master_dataset
+from analysis.utils.trial_data_loader import load_wcst_trials
+
 BASE = Path(__file__).resolve().parent.parent
 RES = BASE / "results"
 OUT = RES / "analysis_outputs"
@@ -146,13 +149,11 @@ def run_model_compare(df: pd.DataFrame) -> pd.DataFrame:
 # ------------------------
 
 def wcst_window_switch() -> pd.DataFrame:
-    p = RES / "4b_wcst_trials.csv"
-    if not p.exists():
-        return pd.DataFrame()
-    df = pd.read_csv(p)
+    df, _ = load_wcst_trials(use_cache=True)
+    if "reactionTimeMs" not in df.columns and "rt_ms" in df.columns:
+        df = df.rename(columns={"rt_ms": "reactionTimeMs"})
     if "reactionTimeMs" not in df.columns or "ruleAtThatTime" not in df.columns:
         return pd.DataFrame()
-    df["participant_id"] = df["participant_id"].fillna(df.get("participantId"))
     df = df.dropna(subset=["participant_id"]).copy()
     # basic RT filters
     df = df[(pd.to_numeric(df["reactionTimeMs"], errors="coerce") >= 200) & (pd.to_numeric(df["reactionTimeMs"], errors="coerce") <= 5000)]
@@ -181,13 +182,9 @@ def wcst_window_switch() -> pd.DataFrame:
 # ------------------------
 
 def invariance_time_of_day(df: pd.DataFrame) -> str:
-    p = RES / "4b_wcst_trials.csv"
-    if not p.exists():
-        return "[Invariance] WCST trials file not found.\n"
-    tr = pd.read_csv(p)
+    tr, _ = load_wcst_trials(use_cache=True)
     if "timestamp" not in tr.columns:
         return "[Invariance] timestamp column not available; skipping.\n"
-    tr["participant_id"] = tr["participant_id"].fillna(tr.get("participantId"))
     use = tr.dropna(subset=["participant_id","timestamp"]).copy()
     use["ts"] = pd.to_datetime(use["timestamp"], errors="coerce")
     use = use.dropna(subset=["ts"]) 

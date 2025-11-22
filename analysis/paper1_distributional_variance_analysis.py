@@ -210,47 +210,58 @@ def parse_wcst_extra(extra_str):
 
 print("[1/8] Loading base datasets...")
 
-# Load master dataset
-master = pd.read_csv(RESULTS_DIR / "analysis_outputs/master_dataset.csv", encoding='utf-8-sig')
+from data_loader_utils import load_master_dataset
+from analysis.utils.trial_data_loader import load_prp_trials, load_wcst_trials, load_stroop_trials
 
-# Normalize columns
-if 'participantId' in master.columns:
-    master = master.rename(columns={'participantId': 'participant_id'})
+# Load master dataset via shared loader
+master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
+if "ucla_total" not in master.columns and "ucla_score" in master.columns:
+    master["ucla_total"] = master["ucla_score"]
 
-# Ensure gender coding
-if 'gender' not in master.columns and 'gender_male' in master.columns:
-    master['gender'] = master['gender_male'].map({1: 'male', 0: 'female'})
-elif 'gender' in master.columns:
-    gender_map = {'남성': 'male', '여성': 'female', 'Male': 'male', 'Female': 'female'}
-    master['gender'] = master['gender'].map(gender_map)
+# Normalize gender
+master = master.rename(columns={"gender_normalized": "gender"})
+master["gender"] = master["gender"].fillna("").astype(str).str.strip().str.lower()
+master["gender_male"] = (master["gender"] == "male").astype(int)
 
 print(f"  Master dataset: N = {len(master)}")
-print(f"    - Males: {(master['gender'] == 'male').sum()}")
-print(f"    - Females: {(master['gender'] == 'female').sum()}")
+print(f"    - Males: {(master['gender_male'] == 1).sum()}")
+print(f"    - Females: {(master['gender_male'] == 0).sum()}")
 
-# Load trial-level data
-prp_trials = pd.read_csv(RESULTS_DIR / "4a_prp_trials.csv", encoding='utf-8-sig')
-wcst_trials = pd.read_csv(RESULTS_DIR / "4b_wcst_trials.csv", encoding='utf-8-sig')
-stroop_trials = pd.read_csv(RESULTS_DIR / "4c_stroop_trials.csv", encoding='utf-8-sig')
+# Load trial-level data via shared loaders
+prp_trials, _ = load_prp_trials(
+    use_cache=True,
+    rt_min=0,
+    rt_max=10_000,
+    require_t1_correct=False,
+    require_t2_correct_for_rt=False,
+    enforce_short_long_only=False,
+    drop_timeouts=True,
+)
+wcst_trials, _ = load_wcst_trials(use_cache=True)
+stroop_trials, _ = load_stroop_trials(
+    use_cache=True,
+    rt_min=0,
+    rt_max=3_000,
+    drop_timeouts=True,
+    require_correct_for_rt=False,
+)
 
-# Normalize participant_id - FIXED: Drop bad participant_id first, then rename participantId
-# PRP
-if 'participant_id' in prp_trials.columns:
-    prp_trials = prp_trials.drop(columns=['participant_id'])  # Drop the NaN-filled column
-if 'participantId' in prp_trials.columns:
-    prp_trials = prp_trials.rename(columns={'participantId': 'participant_id'})
+# Normalize key RT/condition columns for downstream code
+if "t2_rt_ms" not in prp_trials.columns and "t2_rt" in prp_trials.columns:
+    prp_trials["t2_rt_ms"] = prp_trials["t2_rt"]
+if "soa_nominal_ms" not in prp_trials.columns and "soa" in prp_trials.columns:
+    prp_trials["soa_nominal_ms"] = prp_trials["soa"]
 
-# WCST
-if 'participant_id' in wcst_trials.columns:
-    wcst_trials = wcst_trials.drop(columns=['participant_id'])
-if 'participantId' in wcst_trials.columns:
-    wcst_trials = wcst_trials.rename(columns={'participantId': 'participant_id'})
+if "rt_ms" not in wcst_trials.columns and "reactionTimeMs" in wcst_trials.columns:
+    wcst_trials["rt_ms"] = wcst_trials["reactionTimeMs"]
 
-# Stroop
-if 'participant_id' in stroop_trials.columns:
-    stroop_trials = stroop_trials.drop(columns=['participant_id'])
-if 'participantId' in stroop_trials.columns:
-    stroop_trials = stroop_trials.rename(columns={'participantId': 'participant_id'})
+if "rt_ms" not in stroop_trials.columns and "rt" in stroop_trials.columns:
+    stroop_trials["rt_ms"] = stroop_trials["rt"]
+if "type" not in stroop_trials.columns:
+    for cand in ("condition", "cond"):
+        if cand in stroop_trials.columns:
+            stroop_trials["type"] = stroop_trials[cand]
+            break
 
 print(f"  PRP trials: {len(prp_trials)}")
 print(f"  WCST trials: {len(wcst_trials)}")

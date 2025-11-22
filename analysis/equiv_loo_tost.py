@@ -7,6 +7,9 @@ import arviz as az
 import pymc as pm
 from scipy import stats
 
+from data_loader_utils import load_master_dataset
+from analysis.utils.trial_data_loader import load_wcst_trials
+
 BASE = Path(__file__).resolve().parent.parent
 RES = BASE / 'results'
 OUT = RES / 'analysis_outputs'
@@ -77,11 +80,11 @@ def run_model_compare(df):
     out=pd.DataFrame(rows); out.to_csv(OUT/'model_compare_waic_loo.csv', index=False); return out
 
 def wcst_window():
-    p=RES/'4b_wcst_trials.csv'
-    if not p.exists(): return pd.DataFrame()
-    df=pd.read_csv(p)
-    if 'reactionTimeMs' not in df.columns or 'ruleAtThatTime' not in df.columns: return pd.DataFrame()
-    df['participant_id']=df['participant_id'].fillna(df.get('participantId'))
+    df, _ = load_wcst_trials(use_cache=True)
+    if 'reactionTimeMs' not in df.columns and 'rt_ms' in df.columns:
+        df = df.rename(columns={'rt_ms': 'reactionTimeMs'})
+    if 'reactionTimeMs' not in df.columns or 'ruleAtThatTime' not in df.columns:
+        return pd.DataFrame()
     df=df.dropna(subset=['participant_id']).copy()
     rt=pd.to_numeric(df['reactionTimeMs'], errors='coerce')
     df=df[(rt>=200)&(rt<=5000)]; df=df.sort_values(['participant_id', df.get('trialIndex','trialIndexInBlock')])
@@ -100,11 +103,9 @@ def wcst_window():
     return out
 
 def invariance_time(df):
-    p=RES/'4b_wcst_trials.csv'
-    if not p.exists(): return '[Invariance] WCST trials missing\n'
-    tr=pd.read_csv(p)
+    tr, _ = load_wcst_trials(use_cache=True)
     if 'timestamp' not in tr.columns: return '[Invariance] timestamp missing\n'
-    tr['participant_id']=tr['participant_id'].fillna(tr.get('participantId'))
+    tr=tr.dropna(subset=['participant_id','timestamp']).copy(); tr['ts']=pd.to_datetime(tr['timestamp'], errors='coerce'); tr=tr.dropna(subset=['ts'])
     tr=tr.dropna(subset=['participant_id','timestamp']).copy(); tr['ts']=pd.to_datetime(tr['timestamp'], errors='coerce'); tr=tr.dropna(subset=['ts'])
     tr['hour']=tr['ts'].dt.hour
     ef=df[['participant_id','stroop_effect','prp_bottleneck','wcst_total_errors','z_ucla','z_dass_dep','z_dass_anx','z_dass_stress','age','gender']].dropna()

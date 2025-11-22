@@ -30,6 +30,8 @@ from scipy.stats import pearsonr
 import warnings
 warnings.filterwarnings('ignore')
 
+from analysis.utils.trial_data_loader import load_prp_trials
+
 if sys.platform.startswith("win") and hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding='utf-8')
 
@@ -48,36 +50,24 @@ print("=" * 80)
 # ============================================================================
 print("\n[1] Loading data...")
 
-# Load trial-level PRP data
-trials = pd.read_csv(RESULTS_DIR / "4a_prp_trials.csv", encoding='utf-8-sig')
+trials, _ = load_prp_trials(
+    use_cache=True,
+    rt_min=200,
+    rt_max=5000,
+    require_t1_correct=False,
+    require_t2_correct_for_rt=False,
+    enforce_short_long_only=False,
+    drop_timeouts=True,
+)
 trials.columns = trials.columns.str.lower()
-if 'participantid' in trials.columns and 'participant_id' in trials.columns:
-    trials = trials.drop(columns=['participantid'])
-elif 'participantid' in trials.columns:
-    trials.rename(columns={'participantid': 'participant_id'}, inplace=True)
 
-# Load master dataset (has UCLA, DASS, demographics)
-master = pd.read_csv(RESULTS_DIR / "analysis_outputs/master_dataset.csv", encoding='utf-8-sig')
-master.columns = master.columns.str.lower()
-
-# Load participants for additional demographics if needed
-master = load_master_dataset(use_cache=True)
-participants = master[['participant_id','gender_normalized','age']].rename(columns={'gender_normalized':'gender'})
-participants.columns = participants.columns.str.lower()
-if 'participantid' in participants.columns and 'participant_id' in participants.columns:
-    participants = participants.drop(columns=['participantid'])
-elif 'participantid' in participants.columns:
-    participants.rename(columns={'participantid': 'participant_id'}, inplace=True)
-
-# Merge master with participant info
-if 'gender_dup' in master.columns:
-    master['gender'] = master['gender'].fillna(master['gender_dup'])
-    master = master.drop(columns=[c for c in master.columns if c.endswith('_dup')])
-
-# Gender mapping
-gender_map = {'남성': 'male', '여성': 'female', 'male': 'male', 'female': 'female'}
-master['gender'] = master['gender'].map(gender_map)
-master['gender_male'] = (master['gender'] == 'male').astype(int)
+# Load master dataset (UCLA, DASS, demographics)
+master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
+if "ucla_total" not in master.columns and "ucla_score" in master.columns:
+    master["ucla_total"] = master["ucla_score"]
+master = master.rename(columns={"gender_normalized": "gender"})
+master["gender"] = master["gender"].fillna("").astype(str).str.strip().str.lower()
+master["gender_male"] = (master["gender"] == "male").astype(int)
 
 print(f"  Master dataset: N={len(master)}")
 print(f"    Males: {sum(master['gender']=='male')}, Females: {sum(master['gender']=='female')}")

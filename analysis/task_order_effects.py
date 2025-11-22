@@ -42,14 +42,17 @@ print("="*80)
 # ============================================================================
 print("\n[1/6] Loading data...")
 
-master = load_master_dataset(use_cache=True)
-participants = master[['participant_id','gender_normalized','age']].rename(columns={'gender_normalized':'gender'})
-surveys = pd.read_csv(RESULTS_DIR / "2_surveys_results.csv")
-cognitive = pd.read_csv(RESULTS_DIR / "3_cognitive_tests_summary.csv")
+master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
+if "ucla_total" not in master.columns and "ucla_score" in master.columns:
+    master["ucla_total"] = master["ucla_score"]
+master = master.rename(columns={"gender_normalized": "gender"})
+master["gender"] = master["gender"].fillna("").astype(str).str.strip().str.lower()
+master["gender_male"] = (master["gender"] == "male").astype(int)
 
-# Normalize participant IDs
-participants['participant_id'] = participants.get('participantId', participants.get('participant_id'))
+surveys = pd.read_csv(RESULTS_DIR / "2_surveys_results.csv")
 surveys['participant_id'] = surveys.get('participantId', surveys.get('participant_id'))
+
+cognitive = pd.read_csv(RESULTS_DIR / "3_cognitive_tests_summary.csv")
 cognitive['participant_id'] = cognitive.get('participantId', cognitive.get('participant_id'))
 
 print(f"  Loaded: {len(participants)} participants, {len(cognitive)} task records")
@@ -115,19 +118,14 @@ print(task_counts)
 # ============================================================================
 print("\n[3/6] Merging with demographics and UCLA scores...")
 
-# Get UCLA scores
-ucla_data = surveys[surveys['surveyName'].str.lower() == 'ucla'].copy()
-ucla_data['ucla_total'] = pd.to_numeric(ucla_data['score'], errors='coerce')
-ucla_data = ucla_data[['participant_id', 'ucla_total']].dropna()
+# Get UCLA/DASS from master
+if "dass_total" not in master.columns:
+    master["dass_total"] = master[["dass_depression", "dass_anxiety", "dass_stress"]].sum(axis=1)
+ucla_data = master[['participant_id', 'ucla_total']].dropna()
+dass_data = master[['participant_id', 'dass_total']].dropna()
 
-# Get DASS scores for control
-dass_data = surveys[surveys['surveyName'].str.lower() == 'dass'].copy()
-dass_data['dass_total'] = pd.to_numeric(dass_data['score'], errors='coerce')
-dass_data = dass_data[['participant_id', 'dass_total']].dropna()
-
-# Merge participants (get gender, age)
-demo = participants[['participant_id', 'gender', 'age']].copy()
-demo['gender'] = demo['gender'].str.lower()
+# Merge participants (get gender, age, gender_male)
+demo = master[['participant_id', 'gender', 'age', 'gender_male']].copy()
 demo['age'] = pd.to_numeric(demo['age'], errors='coerce')
 
 # Merge all

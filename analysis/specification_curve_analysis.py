@@ -30,6 +30,8 @@ import seaborn as sns
 from itertools import product
 import ast
 
+from analysis.utils.trial_data_loader import load_wcst_trials
+
 # Paths
 RESULTS_DIR = Path("results")
 OUTPUT_DIR = Path("results/analysis_outputs/advanced_analyses/specification_curve")
@@ -47,35 +49,30 @@ print("="*80)
 # ============================================================================
 print("\n[1/5] Loading data...")
 
-# Demographics
-master = load_master_dataset(use_cache=True)
-participants = master[['participant_id','gender_normalized','age']].rename(columns={'gender_normalized':'gender'})
-gender_map = {'남성': 'male', '여성': 'female'}
-participants['gender'] = participants['gender'].map(gender_map)
-participants['gender_male'] = (participants['gender'] == 'male').astype(int)
-participants = participants.rename(columns={'participantId': 'participant_id'})
+# Demographics and surveys via master
+master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
+if "ucla_total" not in master.columns and "ucla_score" in master.columns:
+    master["ucla_total"] = master["ucla_score"]
+master = master.rename(columns={"gender_normalized": "gender"})
+master["gender"] = master["gender"].fillna("").astype(str).str.strip().str.lower()
+master["gender_male"] = (master["gender"] == "male").astype(int)
 
-# UCLA & DASS
-surveys = pd.read_csv(RESULTS_DIR / "2_surveys_results.csv", encoding='utf-8-sig')
-surveys = surveys.rename(columns={'participantId': 'participant_id'})
+# Derive DASS total
+if "dass_total" not in master.columns and all(col in master.columns for col in ["dass_depression", "dass_anxiety", "dass_stress"]):
+    master["dass_total"] = master["dass_depression"] + master["dass_anxiety"] + master["dass_stress"]
 
-ucla_data = surveys[surveys['surveyName'] == 'ucla'].copy()
-ucla_data['ucla_total'] = pd.to_numeric(ucla_data['score'], errors='coerce')
-ucla_data = ucla_data[['participant_id', 'ucla_total']].dropna()
-
-dass_data = surveys[surveys['surveyName'] == 'dass'].copy()
-dass_data['score_A'] = pd.to_numeric(dass_data['score_A'], errors='coerce')
-dass_data['score_S'] = pd.to_numeric(dass_data['score_S'], errors='coerce')
-dass_data['score_D'] = pd.to_numeric(dass_data['score_D'], errors='coerce')
-dass_data['dass_total'] = dass_data[['score_A', 'score_S', 'score_D']].sum(axis=1)
-dass_data = dass_data[['participant_id', 'dass_total']].dropna()
-
-# WCST trial-level data
-wcst_trials = pd.read_csv(RESULTS_DIR / "4b_wcst_trials.csv", encoding='utf-8-sig')
-if 'participantId' in wcst_trials.columns and 'participant_id' not in wcst_trials.columns:
-    wcst_trials.rename(columns={'participantId': 'participant_id'}, inplace=True)
-elif 'participantId' in wcst_trials.columns and 'participant_id' in wcst_trials.columns:
-    wcst_trials.drop(columns=['participantId'], inplace=True)
+# WCST trial-level data via shared loader
+wcst_trials, _ = load_wcst_trials(use_cache=True)
+if "is_pe" not in wcst_trials.columns:
+    def _parse_wcst_extra(extra_str):
+        if not isinstance(extra_str, str):
+            return {}
+        try:
+            return ast.literal_eval(extra_str)
+        except Exception:
+            return {}
+    wcst_trials["extra_dict"] = wcst_trials["extra"].apply(_parse_wcst_extra) if "extra" in wcst_trials.columns else {}
+    wcst_trials["is_pe"] = wcst_trials.get("extra_dict", {}).apply(lambda x: x.get("isPE", False) if isinstance(x, dict) else False)
 
 print(f"  Loaded {len(wcst_trials):,} WCST trials from {wcst_trials['participant_id'].nunique()} participants")
 

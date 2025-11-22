@@ -36,6 +36,7 @@ import warnings
 warnings.filterwarnings('ignore')
 
 from data_loader_utils import normalize_gender_series
+from analysis.utils.trial_data_loader import load_wcst_trials
 
 np.random.seed(42)
 RNG = np.random.default_rng(42)
@@ -135,28 +136,16 @@ print()
 
 print("[2/5] Loading data...")
 
-# Load WCST trial data
-wcst_trials = pd.read_csv(Path("results/4b_wcst_trials.csv"), encoding='utf-8-sig')
+wcst_trials, _ = load_wcst_trials(use_cache=True)
 
 # Load participant data
-master = load_master_dataset(use_cache=True)
-master = load_master_dataset(use_cache=True)
-participants = master[['participant_id','gender_normalized','age']].rename(columns={'gender_normalized':'gender'})
+master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
+if "ucla_total" not in master.columns and "ucla_score" in master.columns:
+    master["ucla_total"] = master["ucla_score"]
 
-if 'participantId' in participants.columns:
-    if 'participant_id' in participants.columns:
-        participants.drop(columns=['participantId'], inplace=True)
-    else:
-        participants.rename(columns={'participantId': 'participant_id'}, inplace=True)
-
-master = master.merge(
-    participants[['participant_id', 'age', 'gender']],
-    on='participant_id',
-    how='left'
-)
-
-master['gender'] = normalize_gender_series(master['gender'])
-master['gender_male'] = (master['gender'] == 'male').astype(int)
+master = master.rename(columns={"gender_normalized": "gender"})
+master["gender"] = normalize_gender_series(master["gender"])
+master["gender_male"] = (master["gender"] == "male").astype(int)
 
 def zscore(series: pd.Series) -> pd.Series:
     s = pd.to_numeric(series, errors='coerce')
@@ -171,18 +160,22 @@ master['z_dass_anx'] = zscore(master['dass_anxiety'])
 master['z_dass_stress'] = zscore(master['dass_stress'])
 master['z_age'] = zscore(master['age'])
 
-# Parse extra for isPE
-import ast
-def parse_extra(extra_str):
-    if not isinstance(extra_str, str):
-        return {}
-    try:
-        return ast.literal_eval(extra_str)
-    except:
-        return {}
-
-wcst_trials['extra_dict'] = wcst_trials['extra'].apply(parse_extra)
-wcst_trials['isPE'] = wcst_trials['extra_dict'].apply(lambda x: x.get('isPE', False))
+# Ensure isPE
+if "isPE" in wcst_trials.columns:
+    wcst_trials["isPE"] = wcst_trials["isPE"]
+elif "is_pe" in wcst_trials.columns:
+    wcst_trials["isPE"] = wcst_trials["is_pe"]
+else:
+    import ast
+    def parse_extra(extra_str):
+        if not isinstance(extra_str, str):
+            return {}
+        try:
+            return ast.literal_eval(extra_str)
+        except Exception:
+            return {}
+    wcst_trials["extra_dict"] = wcst_trials["extra"].apply(parse_extra) if "extra" in wcst_trials.columns else {}
+    wcst_trials["isPE"] = wcst_trials.get("extra_dict", {}).apply(lambda x: x.get("isPE", False) if isinstance(x, dict) else False)
 
 # Extract RT (prefer explicit millisecond columns when available)
 if 'rt_ms' in wcst_trials.columns:

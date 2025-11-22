@@ -72,6 +72,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy import stats
 
+from analysis.utils.trial_data_loader import load_prp_trials, load_wcst_trials, load_stroop_trials
+
 try:
     import pymc as pm
     import arviz as az
@@ -132,40 +134,20 @@ def load_dag_data():
     print("LOADING DATA FOR CAUSAL DAG ANALYSIS")
     print("=" * 70)
 
-    # Load datasets
-    master = load_master_dataset(use_cache=True)
-    participants = master[['participant_id', 'gender_normalized', 'age']].rename(columns={'gender_normalized': 'gender'})
-    surveys = pd.read_csv(RESULTS_DIR / "2_surveys_results.csv", encoding='utf-8')
-    cognitive = pd.read_csv(RESULTS_DIR / "3_cognitive_tests_summary.csv", encoding='utf-8')
+    # Load unified master dataset
+    master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
+    if "ucla_total" not in master.columns and "ucla_score" in master.columns:
+        master["ucla_total"] = master["ucla_score"]
+    master = master.rename(columns={"gender_normalized": "gender"})
+    master["gender"] = master["gender"].fillna("").astype(str).str.strip().str.lower()
+    master["gender_male"] = (master["gender"] == "male").astype(int)
 
-    # Normalize columns
-    participants = participants.rename(columns={'participantId': 'participant_id'})
-    surveys = surveys.rename(columns={'participantId': 'participant_id'})
-    cognitive = cognitive.rename(columns={'participantId': 'participant_id'})
-
-    # Extract UCLA and DASS
-    ucla = surveys[surveys['surveyName'] == 'ucla'].copy()
-    dass = surveys[surveys['surveyName'] == 'dass'].copy()
-
-    ucla_scores = ucla[['participant_id', 'score']].rename(columns={'score': 'ucla_score'})
-    dass_scores = dass[['participant_id', 'score_D', 'score_A', 'score_S']].rename(
-        columns={'score_D': 'dass_depression', 'score_A': 'dass_anxiety', 'score_S': 'dass_stress'}
-    )
-
-    # Merge
-    master = participants.merge(ucla_scores, on='participant_id', how='inner')
-    master = master.merge(dass_scores, on='participant_id', how='inner')
-    master = master.merge(cognitive, on='participant_id', how='inner')
-
-    # Compute EF metrics (simplified - using existing function pattern)
+    # Ensure EF metrics present (fallback to compute if missing)
     master = compute_ef_metrics_dag(master)
 
-    # Normalize gender
-    master['gender'] = master['gender'].map({'남성': 'male', '여성': 'female'})
-    master['gender_male'] = (master['gender'] == 'male').astype(int)
-
     # Standardize all variables for modeling
-    master['z_ucla'] = (master['ucla_score'] - master['ucla_score'].mean()) / master['ucla_score'].std()
+    base_ucla = master['ucla_total'] if 'ucla_total' in master.columns else master.get('ucla_score')
+    master['z_ucla'] = (base_ucla - base_ucla.mean()) / base_ucla.std()
     master['z_dass_dep'] = (master['dass_depression'] - master['dass_depression'].mean()) / master['dass_depression'].std()
     master['z_dass_anx'] = (master['dass_anxiety'] - master['dass_anxiety'].mean()) / master['dass_anxiety'].std()
     master['z_dass_str'] = (master['dass_stress'] - master['dass_stress'].mean()) / master['dass_stress'].std()
@@ -183,63 +165,70 @@ def load_dag_data():
 
 
 def compute_ef_metrics_dag(master):
-    """Compute EF metrics (same as previous frameworks)."""
-    try:
-        wcst_trials = pd.read_csv(RESULTS_DIR / "4b_wcst_trials.csv")
-        if 'participantId' in wcst_trials.columns and 'participant_id' in wcst_trials.columns:
-            wcst_trials = wcst_trials.drop(columns=['participant_id']) if wcst_trials['participant_id'].isna().sum() > wcst_trials['participantId'].isna().sum() else wcst_trials
-        wcst_trials = wcst_trials.rename(columns={'participantId': 'participant_id'})
-        wcst_valid = wcst_trials[wcst_trials['participant_id'].notna()].copy()
+    """Ensure EF metrics exist; compute from shared trial loaders when missing."""
+    # WCST PE
+    if "wcst_pe_rate" not in master.columns:
+        try:
+            wcst_trials, _ = load_wcst_trials(use_cache=True)
+            if "isPE" in wcst_trials.columns:
+                wcst_trials["is_pe"] = wcst_trials["isPE"]
+            elif "is_pe" not in wcst_trials.columns:
+                # parse extra if needed
+                def _parse_wcst_extra(extra_str):
+                    if not isinstance(extra_str, str):
+                        return {}
+                    try:
+                        return ast.literal_eval(extra_str)
+                    except Exception:
+                        return {}
+                wcst_trials["extra_dict"] = wcst_trials["extra"].apply(_parse_wcst_extra) if "extra" in wcst_trials.columns else {}
+                wcst_trials["is_pe"] = wcst_trials.get("extra_dict", {}).apply(lambda x: x.get("isPE", False) if isinstance(x, dict) else False)
+            pe_rate = wcst_trials.groupby("participant_id")["is_pe"].mean().reset_index().rename(columns={"is_pe": "wcst_pe_rate"})
+            master = master.merge(pe_rate, on="participant_id", how="left")
+        except Exception:
+            pass
 
-        if 'isPE' in wcst_valid.columns:
-            wcst_valid['isPE_bool'] = wcst_valid['isPE'].apply(lambda x: True if str(x).lower() in ['true', '1', 1, True] else False)
-            pe_rate = wcst_valid.groupby('participant_id')['isPE_bool'].mean().reset_index()
-            pe_rate = pe_rate.rename(columns={'isPE_bool': 'wcst_pe_rate'})
-            master = master.merge(pe_rate, on='participant_id', how='left')
-    except:
-        pass
+    # PRP bottleneck
+    if "prp_bottleneck" not in master.columns:
+        try:
+            prp_trials, _ = load_prp_trials(
+                use_cache=True,
+                rt_min=200,
+                rt_max=5000,
+                require_t1_correct=True,
+                require_t2_correct_for_rt=True,
+                enforce_short_long_only=True,
+                drop_timeouts=True,
+            )
+            prp_rt = prp_trials.groupby(["participant_id", "soa_bin"])["t2_rt"].mean().unstack()
+            if {"short", "long"}.issubset(prp_rt.columns):
+                prp_rt["prp_bottleneck"] = prp_rt["short"] - prp_rt["long"]
+                master = master.merge(prp_rt[["prp_bottleneck"]], on="participant_id", how="left")
+        except Exception:
+            pass
 
-    try:
-        prp_trials = pd.read_csv(RESULTS_DIR / "4a_prp_trials.csv")
-        if 'participantId' in prp_trials.columns and 'participant_id' in prp_trials.columns:
-            prp_trials = prp_trials.drop(columns=['participant_id']) if prp_trials['participant_id'].isna().sum() > prp_trials['participantId'].isna().sum() else prp_trials
-        prp_trials = prp_trials.rename(columns={'participantId': 'participant_id'})
-        prp_valid = prp_trials[prp_trials['participant_id'].notna()].copy()
-
-        rt_col = 't2_rt_ms' if 't2_rt_ms' in prp_valid.columns else 't2_rt'
-        soa_col = 'soa_ms' if 'soa_ms' in prp_valid.columns else ('soa_nominal_ms' if 'soa_nominal_ms' in prp_valid.columns else 'soa')
-        prp_valid = prp_valid[(prp_valid[rt_col].notna()) & (prp_valid[rt_col] > 0)].copy()
-
-        def bin_soa(soa):
-            return 'short' if soa <= 150 else ('long' if soa >= 1200 else 'medium')
-
-        prp_valid['soa_bin'] = prp_valid[soa_col].apply(bin_soa)
-        prp_rt = prp_valid.groupby(['participant_id', 'soa_bin'])[rt_col].mean().unstack()
-
-        if 'short' in prp_rt.columns and 'long' in prp_rt.columns:
-            prp_rt['prp_bottleneck'] = prp_rt['short'] - prp_rt['long']
-            master = master.merge(prp_rt[['prp_bottleneck']], on='participant_id', how='left')
-    except:
-        pass
-
-    try:
-        stroop_trials = pd.read_csv(RESULTS_DIR / "4c_stroop_trials.csv")
-        if 'participantId' in stroop_trials.columns and 'participant_id' in stroop_trials.columns:
-            stroop_trials = stroop_trials.drop(columns=['participant_id']) if stroop_trials['participant_id'].isna().sum() > stroop_trials['participantId'].isna().sum() else stroop_trials
-        stroop_trials = stroop_trials.rename(columns={'participantId': 'participant_id'})
-        stroop_valid = stroop_trials[stroop_trials['participant_id'].notna()].copy()
-
-        rt_col = 'rt_ms' if 'rt_ms' in stroop_valid.columns else 'rt'
-        cond_col = 'condition' if 'condition' in stroop_valid.columns else 'cond'
-        stroop_valid = stroop_valid[(stroop_valid[rt_col].notna()) & (stroop_valid[rt_col] > 0)].copy()
-
-        stroop_rt = stroop_valid.groupby(['participant_id', cond_col])[rt_col].mean().unstack()
-
-        if 'incongruent' in stroop_rt.columns and 'congruent' in stroop_rt.columns:
-            stroop_rt['stroop_interference'] = stroop_rt['incongruent'] - stroop_rt['congruent']
-            master = master.merge(stroop_rt[['stroop_interference']], on='participant_id', how='left')
-    except:
-        pass
+    # Stroop interference
+    if "stroop_interference" not in master.columns:
+        try:
+            stroop_trials, _ = load_stroop_trials(
+                use_cache=True,
+                rt_min=200,
+                rt_max=3000,
+                drop_timeouts=True,
+                require_correct_for_rt=True,
+            )
+            cond_col = None
+            for cand in ("type", "condition", "cond"):
+                if cand in stroop_trials.columns:
+                    cond_col = cand
+                    break
+            if cond_col:
+                stroop_rt = stroop_trials.groupby(["participant_id", cond_col])["rt"].mean().unstack()
+                if {"incongruent", "congruent"}.issubset(stroop_rt.columns):
+                    stroop_rt["stroop_interference"] = stroop_rt["incongruent"] - stroop_rt["congruent"]
+                    master = master.merge(stroop_rt[["stroop_interference"]], on="participant_id", how="left")
+        except Exception:
+            pass
 
     return master
 
