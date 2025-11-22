@@ -16,6 +16,7 @@ Theoretical mechanisms:
 import sys
 from pathlib import Path
 import pandas as pd
+from data_loader_utils import load_master_dataset
 import numpy as np
 import ast
 from scipy import stats
@@ -43,21 +44,11 @@ print("="*80)
 
 print("\n[1] Loading data...")
 
-# Load participants
-participants = pd.read_csv(RESULTS_DIR / "1_participants_info.csv")
-participants = participants.rename(columns={'participantId': 'participant_id'})
+master_full = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
+master_full = master_full.rename(columns={"gender_normalized": "gender"})
+master_full["gender"] = master_full["gender"].fillna("").astype(str).str.strip().str.lower()
 
-# Load surveys
-surveys = pd.read_csv(RESULTS_DIR / "2_surveys_results.csv", encoding='utf-8-sig')
-surveys = surveys.rename(columns={'participantId': 'participant_id'})
-
-# Load WCST trials
-wcst_trials = pd.read_csv(RESULTS_DIR / "4b_wcst_trials.csv")
-# Already has participant_id column
-
-print(f"  Loaded {len(participants)} participants")
-print(f"  Loaded {len(surveys)} survey responses")
-print(f"  Loaded {len(wcst_trials)} WCST trials")
+print(f"  Loaded master rows: {len(master_full)}")
 
 # ============================================================================
 # 2. EXTRACT UCLA LONELINESS
@@ -65,9 +56,10 @@ print(f"  Loaded {len(wcst_trials)} WCST trials")
 
 print("\n[2] Extracting UCLA loneliness scores...")
 
-ucla_scores = surveys[surveys['surveyName'] == 'ucla'][['participant_id', 'score']].copy()
-ucla_scores = ucla_scores.rename(columns={'score': 'ucla_total'})
-ucla_scores = ucla_scores.dropna(subset=['ucla_total'])
+if 'ucla_total' not in master_full.columns and 'ucla_score' in master_full.columns:
+    master_full['ucla_total'] = master_full['ucla_score']
+
+ucla_scores = master_full[['participant_id', 'ucla_total']].dropna(subset=['ucla_total']).copy()
 
 print(f"  UCLA scores for {len(ucla_scores)} participants")
 print(f"  Mean: {ucla_scores['ucla_total'].mean():.2f}, SD: {ucla_scores['ucla_total'].std():.2f}")
@@ -78,14 +70,8 @@ print(f"  Mean: {ucla_scores['ucla_total'].mean():.2f}, SD: {ucla_scores['ucla_t
 
 print("\n[3] Extracting DASS-21 subscales...")
 
-dass_subscales = surveys[surveys['surveyName'] == 'dass'][['participant_id', 'score_D', 'score_A', 'score_S', 'score']].copy()
-dass_subscales = dass_subscales.rename(columns={
-    'score_D': 'dass_depression',
-    'score_A': 'dass_anxiety',
-    'score_S': 'dass_stress',
-    'score': 'dass_total'
-})
-dass_subscales = dass_subscales.dropna(subset=['dass_depression', 'dass_anxiety', 'dass_stress'])
+dass_subscales = master_full[['participant_id', 'dass_depression', 'dass_anxiety', 'dass_stress']].dropna(subset=['dass_depression', 'dass_anxiety', 'dass_stress']).copy()
+dass_subscales['dass_total'] = dass_subscales[['dass_depression', 'dass_anxiety', 'dass_stress']].sum(axis=1)
 
 print(f"  DASS subscales for {len(dass_subscales)} participants")
 print(f"  Depression - Mean: {dass_subscales['dass_depression'].mean():.2f}, SD: {dass_subscales['dass_depression'].std():.2f}")
@@ -96,36 +82,12 @@ print(f"  Stress - Mean: {dass_subscales['dass_stress'].mean():.2f}, SD: {dass_s
 # 4. COMPUTE WCST PERSEVERATIVE ERROR RATE
 # ============================================================================
 
-print("\n[4] Computing WCST perseverative error rate...")
+print("\n[4] WCST perseverative error rate (from master)...")
 
-def parse_wcst_extra(extra_str):
-    """Parse WCST extra field for isPE flag"""
-    if not isinstance(extra_str, str):
-        return {}
-    try:
-        return ast.literal_eval(extra_str)
-    except (ValueError, SyntaxError):
-        return {}
-
-wcst_trials['extra_parsed'] = wcst_trials['extra'].apply(parse_wcst_extra)
-wcst_trials['is_pe'] = wcst_trials['extra_parsed'].apply(lambda x: x.get('isPE', False))
-
-# Filter valid trials
-wcst_valid = wcst_trials[
-    (wcst_trials['timeout'] == False) &
-    (wcst_trials['rt_ms'] > 0)
-].copy()
-
-# Compute perseverative error rate per participant
-wcst_pe_rate = (
-    wcst_valid.groupby('participant_id')
-    .agg(
-        total_trials=('trial_index', 'count'),
-        pe_count=('is_pe', 'sum')
-    )
-    .reset_index()
-)
-wcst_pe_rate['pe_rate'] = (wcst_pe_rate['pe_count'] / wcst_pe_rate['total_trials']) * 100
+if 'pe_rate' in master_full.columns:
+    wcst_pe_rate = master_full[['participant_id', 'pe_rate']].dropna(subset=['pe_rate']).copy()
+else:
+    wcst_pe_rate = pd.DataFrame(columns=['participant_id', 'pe_rate'])
 
 print(f"  WCST PE rate for {len(wcst_pe_rate)} participants")
 print(f"  Mean PE rate: {wcst_pe_rate['pe_rate'].mean():.2f}%, SD: {wcst_pe_rate['pe_rate'].std():.2f}%")
@@ -136,17 +98,17 @@ print(f"  Mean PE rate: {wcst_pe_rate['pe_rate'].mean():.2f}%, SD: {wcst_pe_rate
 
 print("\n[5] Merging master dataset...")
 
-master = participants[['participant_id', 'age', 'gender']].copy()
+master = master_full[['participant_id', 'age', 'gender']].copy()
 master = master.merge(ucla_scores, on='participant_id', how='inner')
 master = master.merge(dass_subscales, on='participant_id', how='inner')
 master = master.merge(wcst_pe_rate[['participant_id', 'pe_rate']], on='participant_id', how='inner')
 
 # Drop missing values
 master = master.dropna(subset=['age', 'gender', 'ucla_total', 'dass_depression', 'dass_anxiety', 'dass_stress', 'pe_rate'])
+ate']], on='participant_id', how='inner')
 
-# Recode gender from Korean to English
-master['gender'] = master['gender'].map({'남성': 'male', '여성': 'female'})
-master = master.dropna(subset=['gender'])
+# Drop missing values
+master = master.dropna(subset=['age', 'gender', 'ucla_total', 'dass_depression', 'dass_anxiety', 'dass_stress', 'pe_rate'])
 
 print(f"  Final N = {len(master)}")
 print(f"  Males: {(master['gender'] == 'male').sum()}, Females: {(master['gender'] == 'female').sum()}")

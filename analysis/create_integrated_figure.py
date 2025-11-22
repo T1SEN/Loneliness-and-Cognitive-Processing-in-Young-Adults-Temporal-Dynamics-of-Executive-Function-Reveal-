@@ -13,6 +13,7 @@ TARGET: Publication-ready composite figure (300 dpi)
 import sys
 from pathlib import Path
 import pandas as pd
+from data_loader_utils import load_master_dataset
 import numpy as np
 from scipy import stats
 import matplotlib.pyplot as plt
@@ -49,7 +50,8 @@ paper3_dir = Path("results/analysis_outputs/paper3_profiles")
 paper3_assignments = pd.read_csv(paper3_dir / "paper3_profile_assignments.csv", encoding='utf-8-sig')
 
 # Merge for scatter plot
-participants = pd.read_csv(RESULTS_DIR / "1_participants_info.csv", encoding='utf-8-sig')
+master = load_master_dataset(use_cache=True)
+participants = master[['participant_id','gender_normalized','age']].rename(columns={'gender_normalized':'gender'})
 surveys = pd.read_csv(RESULTS_DIR / "2_surveys_results.csv", encoding='utf-8-sig')
 
 if 'participantId' in participants.columns:

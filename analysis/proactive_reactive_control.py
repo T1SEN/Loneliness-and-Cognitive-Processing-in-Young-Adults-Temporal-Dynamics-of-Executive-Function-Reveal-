@@ -23,6 +23,8 @@ if sys.platform.startswith("win") and hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding='utf-8')
 
 import pandas as pd
+from data_loader_utils import load_master_dataset
+from analysis.utils.trial_data_loader import load_wcst_trials, load_stroop_trials, load_prp_trials
 import numpy as np
 from pathlib import Path
 import scipy.stats as stats
@@ -49,39 +51,29 @@ print("="*80)
 # ============================================================================
 print("\n[1/6] Loading data...")
 
-# Demographics
-participants = pd.read_csv(RESULTS_DIR / "1_participants_info.csv", encoding='utf-8-sig')
-gender_map = {'남성': 'male', '여성': 'female'}
-participants['gender'] = participants['gender'].map(gender_map)
+# Demographics and psychometrics from master
+master_full = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
+master_full = master_full.rename(columns={'gender_normalized': 'gender'})
+master_full['gender'] = master_full['gender'].fillna('').astype(str).str.strip().str.lower()
+participants = master_full[['participant_id','gender','age']].copy()
 participants['gender_male'] = (participants['gender'] == 'male').astype(int)
-participants = participants.rename(columns={'participantId': 'participant_id'})
 
-# UCLA & DASS
-surveys = pd.read_csv(RESULTS_DIR / "2_surveys_results.csv", encoding='utf-8-sig')
-surveys = surveys.rename(columns={'participantId': 'participant_id'})
+if 'ucla_total' not in master_full.columns and 'ucla_score' in master_full.columns:
+    master_full['ucla_total'] = master_full['ucla_score']
+ucla_data = master_full[['participant_id', 'ucla_total']].dropna()
+dass_data = pd.DataFrame({
+    'participant_id': master_full['participant_id'],
+    'dass_total': master_full.get('dass_depression', 0) + master_full.get('dass_anxiety', 0) + master_full.get('dass_stress', 0)
+}).dropna(subset=['dass_total'])
 
-ucla_data = surveys[surveys['surveyName'] == 'ucla'].copy()
-ucla_data['ucla_total'] = pd.to_numeric(ucla_data['score'], errors='coerce')
-ucla_data = ucla_data[['participant_id', 'ucla_total']].dropna()
+# Trial-level data via loaders
+wcst_trials, wcst_summary = load_wcst_trials(use_cache=True)
+stroop_trials, stroop_summary = load_stroop_trials(use_cache=True)
+prp_trials, prp_summary = load_prp_trials(use_cache=True)
 
-dass_data = surveys[surveys['surveyName'] == 'dass'].copy()
-dass_data['score_A'] = pd.to_numeric(dass_data['score_A'], errors='coerce')
-dass_data['score_S'] = pd.to_numeric(dass_data['score_S'], errors='coerce')
-dass_data['score_D'] = pd.to_numeric(dass_data['score_D'], errors='coerce')
-dass_data['dass_total'] = dass_data[['score_A', 'score_S', 'score_D']].sum(axis=1)
-dass_data = dass_data[['participant_id', 'dass_total']].dropna()
-
-# Trial-level data
-wcst_trials = pd.read_csv(RESULTS_DIR / "4b_wcst_trials.csv", encoding='utf-8-sig')
-stroop_trials = pd.read_csv(RESULTS_DIR / "4c_stroop_trials.csv", encoding='utf-8-sig')
-prp_trials = pd.read_csv(RESULTS_DIR / "4a_prp_trials.csv", encoding='utf-8-sig')
-
-# Normalize column names
-for df in [wcst_trials, stroop_trials, prp_trials]:
-    if 'participantId' in df.columns and 'participant_id' not in df.columns:
-        df.rename(columns={'participantId': 'participant_id'}, inplace=True)
-    elif 'participantId' in df.columns and 'participant_id' in df.columns:
-        df.drop(columns=['participantId'], inplace=True)
+wcst_trials = wcst_trials.rename(columns={'participant_id': 'participant_id'})
+stroop_trials = stroop_trials.rename(columns={'participant_id': 'participant_id'})
+prp_trials = prp_trials.rename(columns={'participant_id': 'participant_id'})
 
 print(f"  Data loaded for {len(participants)} participants")
 
@@ -100,36 +92,46 @@ def _parse_wcst_extra(extra_str):
     except (ValueError, SyntaxError):
         return False
 
-wcst_trials['is_pe'] = wcst_trials['extra'].apply(_parse_wcst_extra)
-wcst_trials['rt_valid'] = wcst_trials['reactionTimeMs'] > 0
-
-wcst_metrics = wcst_trials[wcst_trials['rt_valid']].groupby('participant_id').agg({
-    'reactionTimeMs': ['mean', 'std', 'count'],
-    'is_pe': 'mean'
-}).reset_index()
-wcst_metrics.columns = ['participant_id', 'wcst_mean_rt', 'wcst_sd_rt', 'wcst_n_trials', 'wcst_pe_rate']
-wcst_metrics['wcst_cv'] = wcst_metrics['wcst_sd_rt'] / wcst_metrics['wcst_mean_rt']
-# Approximate total duration as n_trials × mean_rt (in seconds)
-wcst_metrics['wcst_duration'] = wcst_metrics['wcst_n_trials'] * wcst_metrics['wcst_mean_rt'] / 1000
+wcst_trials['is_pe'] = wcst_trials['extra'].apply(_parse_wcst_extra) if 'extra' in wcst_trials.columns else wcst_trials.get('is_pe', False)
+rt_col_wcst = 'reactionTimeMs' if 'reactionTimeMs' in wcst_trials.columns else ('rt_ms' if 'rt_ms' in wcst_trials.columns else None)
+if rt_col_wcst:
+    wcst_trials['rt_valid'] = wcst_trials[rt_col_wcst] > 0
+    wcst_metrics = wcst_trials[wcst_trials['rt_valid']].groupby('participant_id').agg({
+        rt_col_wcst: ['mean', 'std', 'count'],
+        'is_pe': 'mean'
+    }).reset_index()
+    wcst_metrics.columns = ['participant_id', 'wcst_mean_rt', 'wcst_sd_rt', 'wcst_n_trials', 'wcst_pe_rate']
+    wcst_metrics['wcst_cv'] = wcst_metrics['wcst_sd_rt'] / wcst_metrics['wcst_mean_rt']
+    wcst_metrics['wcst_duration'] = wcst_metrics['wcst_n_trials'] * wcst_metrics['wcst_mean_rt'] / 1000
+else:
+    wcst_metrics = pd.DataFrame()
 
 # Stroop
-stroop_trials['rt_valid'] = stroop_trials['rt'] > 0
-stroop_metrics = stroop_trials[stroop_trials['rt_valid']].groupby('participant_id').agg({
-    'rt': ['mean', 'std', 'count'],
-    'trial': lambda x: len(x),  # use trial count as proxy
-    'correct': lambda x: 1 - x.mean()  # error rate
-}).reset_index()
-stroop_metrics.columns = ['participant_id', 'stroop_mean_rt', 'stroop_sd_rt', 'stroop_n_trials', 'stroop_trial_count', 'stroop_error_rate']
-stroop_metrics['stroop_cv'] = stroop_metrics['stroop_sd_rt'] / stroop_metrics['stroop_mean_rt']
+rt_col_stroop = 'rt' if 'rt' in stroop_trials.columns else ('rt_ms' if 'rt_ms' in stroop_trials.columns else None)
+if rt_col_stroop:
+    stroop_trials['rt_valid'] = stroop_trials[rt_col_stroop] > 0
+    stroop_metrics = stroop_trials[stroop_trials['rt_valid']].groupby('participant_id').agg({
+        rt_col_stroop: ['mean', 'std', 'count'],
+        'trial': lambda x: len(x) if 'trial' in stroop_trials.columns else len(x),
+        'correct': lambda x: 1 - x.mean()
+    }).reset_index()
+    stroop_metrics.columns = ['participant_id', 'stroop_mean_rt', 'stroop_sd_rt', 'stroop_n_trials', 'stroop_trial_count', 'stroop_error_rate']
+    stroop_metrics['stroop_cv'] = stroop_metrics['stroop_sd_rt'] / stroop_metrics['stroop_mean_rt']
+else:
+    stroop_metrics = pd.DataFrame()
 
 # PRP
-prp_trials['t2_rt_valid'] = prp_trials['t2_rt'] > 0
-prp_metrics = prp_trials[prp_trials['t2_rt_valid']].groupby('participant_id').agg({
-    't2_rt': ['mean', 'std', 'count'],
-    'idx': lambda x: len(x)
-}).reset_index()
-prp_metrics.columns = ['participant_id', 'prp_mean_rt', 'prp_sd_rt', 'prp_n_trials', 'prp_trial_count']
-prp_metrics['prp_cv'] = prp_metrics['prp_sd_rt'] / prp_metrics['prp_mean_rt']
+rt_col_prp = 't2_rt'
+if 't2_rt' in prp_trials.columns:
+    prp_trials['t2_rt_valid'] = prp_trials['t2_rt'] > 0
+    prp_metrics = prp_trials[prp_trials['t2_rt_valid']].groupby('participant_id').agg({
+        't2_rt': ['mean', 'std', 'count'],
+        'idx': lambda x: len(x) if 'idx' in prp_trials.columns else len(x)
+    }).reset_index()
+    prp_metrics.columns = ['participant_id', 'prp_mean_rt', 'prp_sd_rt', 'prp_n_trials', 'prp_trial_count']
+    prp_metrics['prp_cv'] = prp_metrics['prp_sd_rt'] / prp_metrics['prp_mean_rt']
+else:
+    prp_metrics = pd.DataFrame()
 
 print(f"  WCST: Mean duration = {wcst_metrics['wcst_duration'].mean():.1f}s, Mean CV = {wcst_metrics['wcst_cv'].mean():.3f}")
 print(f"  Stroop: Mean CV = {stroop_metrics['stroop_cv'].mean():.3f}")
@@ -140,11 +142,10 @@ print(f"  PRP: Mean CV = {prp_metrics['prp_cv'].mean():.3f}")
 # ============================================================================
 print("\n[3/6] Merging datasets...")
 
-master = wcst_metrics.merge(stroop_metrics, on='participant_id', how='outer')
-master = master.merge(prp_metrics, on='participant_id', how='outer')
-master = master.merge(ucla_data, on='participant_id', how='left')
-master = master.merge(dass_data, on='participant_id', how='left')
-master = master.merge(participants[['participant_id', 'gender_male', 'age']], on='participant_id', how='left')
+master = ucla_data.merge(dass_data, on='participant_id', how='left')
+master = master.merge(wcst_metrics, on='participant_id', how='left')
+master = master.merge(stroop_metrics, on='participant_id', how='left')
+master = master.merge(prp_metrics, on='participant_id', how='left')
 master = master.dropna(subset=['ucla_total'])
 
 print(f"  Complete cases: {len(master)}")

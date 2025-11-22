@@ -14,6 +14,8 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 from scipy.stats import pearsonr
+from analysis.utils.trial_data_loader import load_prp_trials
+from data_loader_utils import load_master_dataset
 
 if sys.platform.startswith("win") and hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding='utf-8')
@@ -26,23 +28,21 @@ print("=" * 80)
 print("PRP POST-ERROR ADJUSTMENTS")
 print("=" * 80)
 
-# Load
-trials = pd.read_csv(RESULTS_DIR / "4a_prp_trials.csv", encoding='utf-8-sig')
+# Load trials via common loader
+trials, prp_summary = load_prp_trials(use_cache=True)
 trials.columns = trials.columns.str.lower()
-if 'participantid' in trials.columns and 'participant_id' in trials.columns:
-    trials = trials.drop(columns=['participantid'])
-elif 'participantid' in trials.columns:
-    trials.rename(columns={'participantid': 'participant_id'}, inplace=True)
 
-master = pd.read_csv(RESULTS_DIR / "analysis_outputs/master_dataset.csv", encoding='utf-8-sig')
-master.columns = master.columns.str.lower()
-# Map Korean gender values to English
-gender_map = {'남성': 'male', '여성': 'female', 'male': 'male', 'female': 'female'}
-master['gender'] = master['gender'].map(gender_map)
+# Load master for demographics/UCLA/DASS
+master_full = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
+master_full = master_full.rename(columns={'gender_normalized': 'gender'})
+master_full['gender'] = master_full['gender'].fillna('').astype(str).str.strip().str.lower()
+
+if 'ucla_total' not in master_full.columns and 'ucla_score' in master_full.columns:
+    master_full['ucla_total'] = master_full['ucla_score']
 
 # Clean
 rt_col_t1 = 't1_rt_ms' if 't1_rt_ms' in trials.columns else 't1_rt'
-rt_col_t2 = 't2_rt_ms' if 't2_rt_ms' in trials.columns else 't2_rt'
+rt_col_t2 = 't2_rt'
 
 trials_clean = trials[
     (trials['t1_correct'].notna()) &
@@ -107,7 +107,7 @@ def compute_post_error_metrics(group):
 
 post_error_df = trials_clean.groupby('participant_id').apply(compute_post_error_metrics).reset_index()
 post_error_df = post_error_df.merge(
-    master[['participant_id', 'ucla_total', 'gender', 'dass_depression', 'dass_anxiety', 'dass_stress']],
+    master_full[['participant_id', 'ucla_total', 'gender', 'dass_depression', 'dass_anxiety', 'dass_stress']],
     on='participant_id',
     how='inner'
 )

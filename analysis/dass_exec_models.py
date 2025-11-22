@@ -24,6 +24,7 @@ from typing import List, Tuple
 
 import numpy as np
 import pandas as pd
+from data_loader_utils import load_master_dataset
 import statsmodels.formula.api as smf
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
@@ -38,14 +39,6 @@ OUT = RES / "analysis_outputs"
 OUT.mkdir(parents=True, exist_ok=True)
 
 
-def read_csv_lower(path: Path) -> pd.DataFrame:
-    df = pd.read_csv(path)
-    df.columns = (
-        df.columns.str.strip().str.lower().str.replace(" ", "_").str.replace(".", "_", regex=False)
-    )
-    return df
-
-
 def z(series: pd.Series) -> pd.Series:
     s = pd.to_numeric(series, errors="coerce")
     if s.dropna().std() in (0, None) or s.dropna().empty:
@@ -54,69 +47,62 @@ def z(series: pd.Series) -> pd.Series:
 
 
 def build_df() -> pd.DataFrame:
-    participants = read_csv_lower(RES / "1_participants_info.csv")
-    surveys = read_csv_lower(RES / "2_surveys_results.csv")
-    cog = read_csv_lower(RES / "3_cognitive_tests_summary.csv")
+    master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
 
-    demo = participants.loc[:, ["participantid", "age", "gender"]].rename(
-        columns={"participantid": "participant_id"}
+    def _pick(candidates):
+        for c in candidates:
+            if c in master.columns:
+                return master[c]
+        return pd.Series(np.nan, index=master.index)
+
+    df = pd.DataFrame({
+        "participant_id": master["participant_id"],
+        "age": pd.to_numeric(master.get("age"), errors="coerce"),
+        "gender": normalize_gender_series(master.get("gender_normalized", master.get("gender"))),
+    })
+
+    if "ucla_total" in master.columns:
+        df["ucla_total"] = pd.to_numeric(master["ucla_total"], errors="coerce")
+    elif "ucla_score" in master.columns:
+        df["ucla_total"] = pd.to_numeric(master["ucla_score"], errors="coerce")
+
+    df["dass_dep"] = pd.to_numeric(master.get("dass_depression"), errors="coerce")
+    df["dass_anx"] = pd.to_numeric(master.get("dass_anxiety"), errors="coerce")
+    df["dass_stress"] = pd.to_numeric(master.get("dass_stress"), errors="coerce")
+
+    # EF metrics from master (with fallbacks)
+    df["prp_bottleneck"] = pd.to_numeric(master.get("prp_bottleneck"), errors="coerce")
+    if df["prp_bottleneck"].isna().all():
+        short_col = pd.to_numeric(_pick(["rt2_soa_50", "rt2_soa_150"]), errors="coerce")
+        long_col = pd.to_numeric(_pick(["rt2_soa_1200", "rt2_soa_1200_ms"]), errors="coerce")
+        if not short_col.isna().all() and not long_col.isna().all():
+            df["prp_bottleneck"] = short_col - long_col
+
+    df["stroop_effect"] = pd.to_numeric(_pick(["stroop_interference", "stroop_effect"]), errors="coerce")
+    if df["stroop_effect"].isna().all():
+        incong = pd.to_numeric(_pick(["mrt_incong", "rt_mean_incongruent"]), errors="coerce")
+        cong = pd.to_numeric(_pick(["mrt_cong", "rt_mean_congruent"]), errors="coerce")
+        if not incong.isna().all() and not cong.isna().all():
+            df["stroop_effect"] = incong - cong
+
+    df["wcst_total_errors"] = pd.to_numeric(
+        _pick(["wcst_total_errors", "totalerrorcount", "total_error_count", "totalErrorCount"]), errors="coerce"
     )
-    demo["age"] = pd.to_numeric(demo["age"], errors="coerce")
-    demo["gender"] = normalize_gender_series(demo["gender"])
-
-    dass = (
-        surveys.query("surveyname == 'dass'")
-        .loc[:, ["participantid", "score_d", "score_a", "score_s"]]
-        .rename(columns={"participantid": "participant_id", "score_d": "dass_dep", "score_a": "dass_anx", "score_s": "dass_stress"})
+    df["wcst_persev_errors"] = pd.to_numeric(
+        _pick(["wcst_persev_errors", "perseverativeerrorcount", "perseverative_error_count", "perseverativeErrorCount"]), errors="coerce"
     )
-
-    prp = cog.query("testname == 'prp'").copy()
-    prp = prp.assign(
-        prp_bottleneck=pd.to_numeric(prp["rt2_soa_50"], errors="coerce") - pd.to_numeric(prp["rt2_soa_1200"], errors="coerce"),
-    ).rename(columns={"participantid": "participant_id"})
-    prp_keep = prp.loc[:, ["participant_id", "prp_bottleneck", "mrt_t1", "mrt_t2", "acc_t1", "acc_t2"]]
-    for c in ["mrt_t1", "mrt_t2", "acc_t1", "acc_t2"]:
-        prp_keep[c] = pd.to_numeric(prp_keep[c], errors="coerce")
-
-    stroop = (
-        cog.query("testname == 'stroop'")
-        .loc[:, ["participantid", "stroop_effect", "accuracy", "mrt_incong", "mrt_cong", "mrt_total"]]
-        .rename(columns={"participantid": "participant_id", "accuracy": "stroop_accuracy"})
+    df["wcst_nonpersev_errors"] = pd.to_numeric(
+        _pick(["wcst_nonpersev_errors", "nonperseverativeerrorcount", "non_perseverative_error_count", "nonPerseverativeErrorCount"]), errors="coerce"
     )
-    for c in ["stroop_effect", "stroop_accuracy", "mrt_incong", "mrt_cong", "mrt_total"]:
-        stroop[c] = pd.to_numeric(stroop[c], errors="coerce")
-
-    wcst = (
-        cog.query("testname == 'wcst'")
-        .loc[:, [
-            "participantid",
-            "totalerrorcount",
-            "perseverativeerrorcount",
-            "nonperseverativeerrorcount",
-            "conceptuallevelresponsespercent",
-            "perseverativeresponsespercent",
-            "failuretomaintainset",
-        ]]
-        .rename(
-            columns={
-                "participantid": "participant_id",
-                "totalerrorcount": "wcst_total_errors",
-                "perseverativeerrorcount": "wcst_persev_errors",
-                "nonperseverativeerrorcount": "wcst_nonpersev_errors",
-                "conceptuallevelresponsespercent": "wcst_conceptual_pct",
-                "perseverativeresponsespercent": "wcst_persev_resp_pct",
-                "failuretomaintainset": "wcst_failure_to_maintain_set",
-            }
-        )
+    df["wcst_conceptual_pct"] = pd.to_numeric(
+        _pick(["wcst_conceptual_pct", "conceptuallevelresponsespercent", "conceptual_level_responses_percent"]), errors="coerce"
     )
-    for c in wcst.columns:
-        if c != "participant_id":
-            wcst[c] = pd.to_numeric(wcst[c], errors="coerce")
-
-    df = demo.merge(dass, on="participant_id", how="left")
-    df = df.merge(prp_keep, on="participant_id", how="left")
-    df = df.merge(stroop, on="participant_id", how="left")
-    df = df.merge(wcst, on="participant_id", how="left")
+    df["wcst_persev_resp_pct"] = pd.to_numeric(
+        _pick(["wcst_persev_resp_pct", "perseverativeresponsespercent", "perseverative_responses_percent"]), errors="coerce"
+    )
+    df["wcst_failure_to_maintain_set"] = pd.to_numeric(
+        _pick(["wcst_failure_to_maintain_set", "failuretomaintainset", "failure_to_maintain_set"]), errors="coerce"
+    )
 
     # z-scores for D/A/S
     df["z_dass_dep"] = z(df["dass_dep"])

@@ -22,6 +22,8 @@ Date: 2025-01-16
 
 import sys
 import pandas as pd
+from data_loader_utils import load_master_dataset
+from analysis.utils.trial_data_loader import load_prp_trials
 import numpy as np
 from pathlib import Path
 from scipy.stats import exponnorm, pearsonr
@@ -48,30 +50,14 @@ print("=" * 80)
 # ============================================================================
 print("\n[1] Loading data...")
 
-trials = pd.read_csv(RESULTS_DIR / "4a_prp_trials.csv", encoding='utf-8-sig')
+trials, prp_summary = load_prp_trials(use_cache=True)
 trials.columns = trials.columns.str.lower()
-if 'participantid' in trials.columns and 'participant_id' in trials.columns:
-    trials = trials.drop(columns=['participantid'])
-elif 'participantid' in trials.columns:
-    trials.rename(columns={'participantid': 'participant_id'}, inplace=True)
 
-master = pd.read_csv(RESULTS_DIR / "analysis_outputs/master_dataset.csv", encoding='utf-8-sig')
-master.columns = master.columns.str.lower()
-
-participants = pd.read_csv(RESULTS_DIR / "1_participants_info.csv", encoding='utf-8-sig')
-participants.columns = participants.columns.str.lower()
-if 'participantid' in participants.columns and 'participant_id' in participants.columns:
-    participants = participants.drop(columns=['participantid'])
-elif 'participantid' in participants.columns:
-    participants.rename(columns={'participantid': 'participant_id'}, inplace=True)
-
-master = master.merge(participants[['participant_id', 'gender', 'age']], on='participant_id', how='left', suffixes=('', '_dup'))
-if 'gender_dup' in master.columns:
-    master['gender'] = master['gender'].fillna(master['gender_dup'])
-    master = master.drop(columns=[c for c in master.columns if c.endswith('_dup')])
-
-gender_map = {'남성': 'male', '여성': 'female', 'male': 'male', 'female': 'female'}
-master['gender'] = master['gender'].map(gender_map)
+master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
+master = master.rename(columns={'gender_normalized': 'gender'})
+master['gender'] = master['gender'].fillna('').astype(str).str.strip().str.lower()
+if 'ucla_total' not in master.columns and 'ucla_score' in master.columns:
+    master['ucla_total'] = master['ucla_score']
 master['gender_male'] = (master['gender'] == 'male').astype(int)
 
 print(f"  Master dataset: N={len(master)}")
@@ -82,8 +68,8 @@ print(f"  Trial data: {len(trials)} trials")
 # ============================================================================
 print("\n[2] Cleaning trial data...")
 
-rt_col_t2 = 't2_rt_ms' if 't2_rt_ms' in trials.columns else 't2_rt'
-soa_col = 'soa_nominal_ms' if 'soa_nominal_ms' in trials.columns else 'soa'
+rt_col_t2 = 't2_rt'
+soa_col = 'soa'
 
 trials_clean = trials[
     (trials['t2_correct'].notna()) &

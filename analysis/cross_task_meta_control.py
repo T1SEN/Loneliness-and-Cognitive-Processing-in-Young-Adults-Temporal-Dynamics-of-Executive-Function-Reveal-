@@ -28,7 +28,7 @@ import statsmodels.formula.api as smf
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 
-from data_loader_utils import load_participants
+from data_loader_utils import load_master_dataset
 
 # Unicode handling
 if sys.platform.startswith("win") and hasattr(sys.stdout, "reconfigure"):
@@ -48,11 +48,7 @@ print("="*80)
 # ============================================================================
 print("\n[1/6] Loading data...")
 
-master = pd.read_csv(RESULTS_DIR / "analysis_outputs" / "master_expanded_metrics.csv")
-
-participants = load_participants()
-
-master = master.merge(participants[['participant_id', 'gender', 'age']], on='participant_id', how='left')
+master = load_master_dataset(use_cache=True)
 
 # Rename columns
 if 'pe_rate' in master.columns and 'wcst_pe_rate' not in master.columns:

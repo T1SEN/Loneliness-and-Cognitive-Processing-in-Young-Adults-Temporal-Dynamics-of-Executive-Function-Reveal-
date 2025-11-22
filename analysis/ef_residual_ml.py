@@ -26,6 +26,7 @@ from typing import Dict, List, Tuple
 
 import numpy as np
 import pandas as pd
+from data_loader_utils import load_master_dataset
 from sklearn.compose import ColumnTransformer
 from sklearn.decomposition import PCA
 from sklearn.impute import SimpleImputer
@@ -46,97 +47,74 @@ OUT = RESULTS_DIR / "analysis_outputs"
 OUT.mkdir(parents=True, exist_ok=True)
 
 
-def _read_csv(path: Path) -> pd.DataFrame:
-    return pd.read_csv(path)
-
-
 def _to_num(s: pd.Series) -> pd.Series:
     return pd.to_numeric(s, errors="coerce")
 
 
 def load_base() -> pd.DataFrame:
-    participants = _read_csv(RESULTS_DIR / "1_participants_info.csv").rename(
-        columns={"participantId": "participant_id"}
-    )
-    surveys = _read_csv(RESULTS_DIR / "2_surveys_results.csv").rename(
-        columns={"participantId": "participant_id", "surveyName": "survey"}
-    )
-    cog = _read_csv(RESULTS_DIR / "3_cognitive_tests_summary.csv").rename(
-        columns={"participantId": "participant_id", "testName": "test"}
-    )
+    master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
 
-    # Participants
-    demo = participants[["participant_id", "age", "gender"]].copy()
-    demo["age"] = _to_num(demo["age"])  # gender left as raw (Korean)
+    def _pick(candidates):
+        for c in candidates:
+            if c in master.columns:
+                return master[c]
+        return pd.Series(np.nan, index=master.index)
+
+    df = pd.DataFrame({
+        "participant_id": master["participant_id"],
+        "age": _to_num(master.get("age")),
+        "gender": master.get("gender_normalized", master.get("gender")),
+    })
+    df["gender"] = df["gender"].fillna("").astype(str).str.strip().str.lower()
 
     # Surveys
-    ucla = surveys[surveys["survey"].str.lower() == "ucla"][
-        ["participant_id", "score"]
-    ].rename(columns={"score": "ucla_total"})
-    ucla["ucla_total"] = _to_num(ucla["ucla_total"]) 
+    if "ucla_total" in master.columns:
+        df["ucla_total"] = _to_num(master["ucla_total"])
+    elif "ucla_score" in master.columns:
+        df["ucla_total"] = _to_num(master["ucla_score"])
 
-    dass = surveys[surveys["survey"].str.lower() == "dass"][
-        ["participant_id", "score_D", "score_A", "score_S"]
-    ].rename(columns={"score_D": "dass_dep", "score_A": "dass_anx", "score_S": "dass_stress"})
-    for c in ["dass_dep", "dass_anx", "dass_stress"]:
-        dass[c] = _to_num(dass[c])
+    df["dass_dep"] = _to_num(master.get("dass_depression"))
+    df["dass_anx"] = _to_num(master.get("dass_anxiety"))
+    df["dass_stress"] = _to_num(master.get("dass_stress"))
 
-    # EF from summary
-    prp = cog[cog["test"].str.lower() == "prp"].copy()
-    for c in ["rt2_soa_50", "rt2_soa_1200", "mrt_t1", "mrt_t2", "acc_t1", "acc_t2"]:
-        prp[c] = _to_num(prp[c])
-    prp = prp.assign(
-        prp_rt_short=prp["rt2_soa_50"],
-        prp_rt_long=prp["rt2_soa_1200"],
-        prp_bottleneck=lambda d: d["rt2_soa_50"] - d["rt2_soa_1200"],
-        prp_rt_slope=lambda d: (d["rt2_soa_50"] - d["rt2_soa_1200"]) / 1150.0,
-    )[[
-        "participant_id",
-        "prp_bottleneck",
-        "prp_rt_slope",
-        "mrt_t1",
-        "mrt_t2",
-        "acc_t1",
-        "acc_t2",
-    ]].rename(columns={
-        "mrt_t1": "prp_mrt_t1",
-        "mrt_t2": "prp_mrt_t2",
-        "acc_t1": "prp_acc_t1",
-        "acc_t2": "prp_acc_t2",
-    })
-
-    stroop = cog[cog["test"].str.lower() == "stroop"][
-        ["participant_id", "stroop_effect", "accuracy", "mrt_incong", "mrt_cong", "mrt_total"]
-    ].rename(columns={"accuracy": "stroop_accuracy"})
-    for c in ["stroop_effect", "stroop_accuracy", "mrt_incong", "mrt_cong", "mrt_total"]:
-        stroop[c] = _to_num(stroop[c])
-    stroop["stroop_ratio_incong_cong"] = stroop["mrt_incong"] / stroop["mrt_cong"]
-
-    wcst = cog[cog["test"].str.lower() == "wcst"][
-        [
-            "participant_id",
-            "totalErrorCount",
-            "perseverativeErrorCount",
-            "nonPerseverativeErrorCount",
-            "conceptualLevelResponsesPercent",
-            "perseverativeResponsesPercent",
-            "failureToMaintainSet",
-        ]
-    ].rename(
-        columns={
-            "totalErrorCount": "wcst_total_errors",
-            "perseverativeErrorCount": "wcst_persev_errors",
-            "nonPerseverativeErrorCount": "wcst_nonpersev_errors",
-            "conceptualLevelResponsesPercent": "wcst_conceptual_pct",
-            "perseverativeResponsesPercent": "wcst_persev_resp_pct",
-            "failureToMaintainSet": "wcst_failure_to_maintain_set",
-        }
+    # EF metrics (with fallbacks)
+    df["prp_bottleneck"] = _to_num(master.get("prp_bottleneck"))
+    if df["prp_bottleneck"].isna().all():
+        short_col = _to_num(_pick(["rt2_soa_50", "rt2_soa_150"]))
+        long_col = _to_num(_pick(["rt2_soa_1200", "rt2_soa_1200_ms"]))
+        if not short_col.isna().all() and not long_col.isna().all():
+            df["prp_bottleneck"] = short_col - long_col
+    df["prp_rt_slope"] = np.where(
+        df["prp_bottleneck"].notna(),
+        df["prp_bottleneck"] / 1150.0,
+        np.nan,
     )
-    for c in wcst.columns:
-        if c != "participant_id":
-            wcst[c] = _to_num(wcst[c])
+    df["prp_mrt_t1"] = _to_num(_pick(["mrt_t1"]))
+    df["prp_mrt_t2"] = _to_num(_pick(["mrt_t2"]))
+    df["prp_acc_t1"] = _to_num(_pick(["acc_t1"]))
+    df["prp_acc_t2"] = _to_num(_pick(["acc_t2"]))
 
-    # DDM / advanced EF params if available
+    df["stroop_effect"] = _to_num(_pick(["stroop_interference", "stroop_effect"]))
+    if df["stroop_effect"].isna().all():
+        incong = _to_num(_pick(["mrt_incong", "rt_mean_incongruent"]))
+        cong = _to_num(_pick(["mrt_cong", "rt_mean_congruent"]))
+        if not incong.isna().all() and not cong.isna().all():
+            df["stroop_effect"] = incong - cong
+    df["stroop_accuracy"] = _to_num(_pick(["accuracy", "accuracy_stroop"]))
+    df["mrt_incong"] = _to_num(_pick(["mrt_incong"]))
+    df["mrt_cong"] = _to_num(_pick(["mrt_cong"]))
+    df["mrt_total"] = _to_num(_pick(["mrt_total"]))
+    if "mrt_cong" in df.columns and "mrt_incong" in df.columns:
+        df["stroop_ratio_incong_cong"] = df["mrt_incong"] / df["mrt_cong"]
+
+    df["wcst_total_errors"] = _to_num(_pick(["wcst_total_errors", "totalErrorCount", "total_error_count"]))
+    df["wcst_persev_errors"] = _to_num(_pick(["wcst_persev_errors", "perseverativeErrorCount", "perseverative_error_count"]))
+    df["wcst_nonpersev_errors"] = _to_num(_pick(["wcst_nonpersev_errors", "nonPerseverativeErrorCount", "non_perseverative_error_count"]))
+    df["wcst_conceptual_pct"] = _to_num(_pick(["wcst_conceptual_pct", "conceptualLevelResponsesPercent", "conceptual_level_responses_percent"]))
+    df["wcst_persev_resp_pct"] = _to_num(_pick(["wcst_persev_resp_pct", "perseverativeResponsesPercent", "perseverative_responses_percent"]))
+    df["wcst_failure_to_maintain_set"] = _to_num(_pick(["wcst_failure_to_maintain_set", "failureToMaintainSet", "failure_to_maintain_set"]))
+
+    # DDM / advanced EF params if available (keep optional merges)
     ddm_stroop_path = OUT / "stroop_ddm_parameters.csv"
     ddm_prp_path = OUT / "prp_bottleneck_parameters.csv"
     wcst_switch_path = OUT / "wcst_switching_parameters.csv"
@@ -144,11 +122,6 @@ def load_base() -> pd.DataFrame:
     ddm_prp = pd.read_csv(ddm_prp_path) if ddm_prp_path.exists() else pd.DataFrame()
     wcst_adv = pd.read_csv(wcst_switch_path) if wcst_switch_path.exists() else pd.DataFrame()
 
-    df = demo.merge(ucla, on="participant_id", how="left")
-    df = df.merge(dass, on="participant_id", how="left")
-    df = df.merge(stroop, on="participant_id", how="left")
-    df = df.merge(prp, on="participant_id", how="left")
-    df = df.merge(wcst, on="participant_id", how="left")
     if not ddm_stroop.empty:
         df = df.merge(ddm_stroop, on="participant_id", how="left", suffixes=(None, "_ddm"))
     if not ddm_prp.empty:

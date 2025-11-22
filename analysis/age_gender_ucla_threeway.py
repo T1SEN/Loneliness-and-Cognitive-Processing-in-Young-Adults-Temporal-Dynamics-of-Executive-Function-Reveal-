@@ -20,6 +20,7 @@ Date: 2025
 import sys
 from pathlib import Path
 import pandas as pd
+from data_loader_utils import load_master_dataset
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -48,17 +49,16 @@ print("="*80)
 print("\n[1/5] Loading data...")
 
 # Load master dataset and add demographics
-master = pd.read_csv(RESULTS_DIR / "analysis_outputs" / "master_expanded_metrics.csv")
+master = load_master_dataset(use_cache=True)
 
-participants = pd.read_csv(RESULTS_DIR / "1_participants_info.csv", encoding='utf-8-sig')
+master = load_master_dataset(use_cache=True)
+participants = master[['participant_id','gender_normalized','age']].rename(columns={'gender_normalized':'gender'})
 participants['participant_id'] = participants.get('participantId', participants.get('participant_id'))
 participants = participants[['participant_id', 'gender', 'age']].copy()
 participants['age'] = pd.to_numeric(participants['age'], errors='coerce')
 
 # Map Korean gender to English using shared helper
 participants['gender'] = normalize_gender_series(participants['gender'])
-
-master = master.merge(participants, on='participant_id', how='left')
 
 # Rename columns
 if 'pe_rate' in master.columns:

@@ -18,6 +18,7 @@ import sys
 import os
 from pathlib import Path
 import pandas as pd
+from data_loader_utils import load_master_dataset
 import numpy as np
 from scipy import stats
 from scipy.stats import pearsonr
@@ -42,19 +43,20 @@ print("="*80)
 # ============================================================================
 # 1. 데이터 로드
 # ============================================================================
-print("\n[1] 데이터 로딩...")
-participants = pd.read_csv(RESULTS_DIR / "1_participants_info.csv", encoding='utf-8-sig')
-surveys = pd.read_csv(RESULTS_DIR / "2_surveys_results.csv", encoding='utf-8-sig')
+print("\n[1] ?????...")
+master_full = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
+master_full = master_full.rename(columns={'gender_normalized': 'gender'})
+master_full['gender'] = master_full['gender'].fillna('').astype(str).str.strip().str.lower()
+participants = master_full[['participant_id','gender','age']].rename(columns={'participant_id': 'participantId'})
 
-# UCLA
-ucla = surveys[surveys['surveyName'] == 'ucla'][['participantId', 'score']].copy()
-ucla = ucla.dropna()
-ucla.columns = ['participantId', 'ucla_total']
+if 'ucla_total' not in master_full.columns and 'ucla_score' in master_full.columns:
+    master_full['ucla_total'] = master_full['ucla_score']
+ucla = master_full[['participant_id', 'ucla_total']].rename(columns={'participant_id': 'participantId'}).dropna(subset=['ucla_total'])
 
-# DASS
-dass = surveys[surveys['surveyName'] == 'dass'][['participantId', 'score']].copy()
-dass = dass.dropna()
-dass.columns = ['participantId', 'dass_total']
+dass = pd.DataFrame({
+    'participantId': master_full['participant_id'],
+    'dass_total': master_full.get('dass_depression', 0) + master_full.get('dass_anxiety', 0) + master_full.get('dass_stress', 0)
+}).dropna(subset=['dass_total'])
 
 print(f"   Participants: {len(participants)}")
 print(f"   UCLA: {len(ucla)}")
@@ -65,26 +67,18 @@ print(f"   UCLA: {len(ucla)}")
 print("\n[2] WCST Post-Error Slowing 분석...")
 
 try:
-    wcst_trials = pd.read_csv(RESULTS_DIR / "4b_wcst_trials.csv", encoding='utf-8-sig')
-    print(f"   WCST trials: {len(wcst_trials)}")
+    wcst_trials, wcst_summary = load_wcst_trials(use_cache=True)
+    print(f"   WCST trials: {len(wcst_trials)} | participants: {wcst_summary.get('n_participants')}")
+    wcst_trials = wcst_trials.rename(columns={'participant_id': 'participantId'})
 
-    # participantId normalize
-    if 'participant_id' in wcst_trials.columns and 'participantId' not in wcst_trials.columns:
-        wcst_trials.rename(columns={'participant_id': 'participantId'}, inplace=True)
-
-    # 참여자별 PES 계산
     wcst_pes_list = []
-
     for pid in wcst_trials['participantId'].unique():
         trials = wcst_trials[wcst_trials['participantId'] == pid].copy()
-
-        # trialIndex로 정렬
         if 'trialIndex' in trials.columns:
             trials = trials.sort_values('trialIndex').reset_index(drop=True)
         else:
             trials = trials.reset_index(drop=True)
 
-        # RT와 정확도 컬럼
         if 'reactionTimeMs' in trials.columns:
             rt_col = 'reactionTimeMs'
         elif 'rt_ms' in trials.columns:
@@ -92,33 +86,20 @@ try:
         else:
             continue
 
-        # timeout 제외
         trials = trials[trials[rt_col] > 0]
-
         if len(trials) < 10:
             continue
 
-        # 이전 trial의 정답/오답
         trials['prev_correct'] = trials['correct'].shift(1)
-
-        # post-error vs post-correct RT
         post_error = trials[trials['prev_correct'] == False]
         post_correct = trials[trials['prev_correct'] == True]
-
         if len(post_error) < 3 or len(post_correct) < 3:
             continue
 
-        # RT 평균
         rt_post_error = post_error[rt_col].mean()
         rt_post_correct = post_correct[rt_col].mean()
-
-        # PES = post-error RT - post-correct RT
         pes = rt_post_error - rt_post_correct
-
-        # Post-error accuracy (오류 후 정확도)
         post_error_acc = post_error['correct'].mean() * 100
-
-        # Post-correct accuracy
         post_correct_acc = post_correct['correct'].mean() * 100
 
         wcst_pes_list.append({
@@ -135,17 +116,9 @@ try:
         })
 
     wcst_pes_df = pd.DataFrame(wcst_pes_list)
-    print(f"   WCST PES 계산 완료: {len(wcst_pes_df)}명")
-
 except Exception as e:
-    print(f"   ⚠ WCST PES 계산 실패: {e}")
-    import traceback
-    traceback.print_exc()
+    print(f'WCST PES ??: {e}')
     wcst_pes_df = pd.DataFrame()
-
-# ============================================================================
-# 3. Stroop PES 분석
-# ============================================================================
 print("\n[3] Stroop Post-Error Slowing 분석...")
 
 try:

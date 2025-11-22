@@ -28,6 +28,7 @@ from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
 from sklearn.inspection import permutation_importance
 from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error
 import statsmodels.formula.api as smf
+from data_loader_utils import load_master_dataset
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -36,75 +37,61 @@ OUT = RESULTS_DIR / "analysis_outputs"
 OUT.mkdir(parents=True, exist_ok=True)
 
 
-def _read_csv(p: Path) -> pd.DataFrame:
-    return pd.read_csv(p)
-
-
 def _to_num(s: pd.Series) -> pd.Series:
     return pd.to_numeric(s, errors="coerce")
 
 
 def build_dataset() -> pd.DataFrame:
-    surveys = _read_csv(RESULTS_DIR / "2_surveys_results.csv")
-    summary = _read_csv(RESULTS_DIR / "3_cognitive_tests_summary.csv")
-    surveys.columns = surveys.columns.str.lower()
-    summary.columns = summary.columns.str.lower()
+    master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
 
-    dass = (
-        surveys[surveys["surveyname"] == "dass"][
-            ["participantid", "score_d", "score_a", "score_s"]
-        ]
-        .rename(columns={"participantid": "participant_id", "score_d": "dass_dep", "score_a": "dass_anx", "score_s": "dass_stress"})
-        .assign(dass_dep=lambda d: _to_num(d["dass_dep"]), dass_anx=lambda d: _to_num(d["dass_anx"]), dass_stress=lambda d: _to_num(d["dass_stress"]))
+    def _pick(cols):
+        for c in cols:
+            if c in master.columns:
+                return master[c]
+        return pd.Series(np.nan, index=master.index)
+
+    df = pd.DataFrame({
+        "participant_id": master["participant_id"],
+        "dass_dep": _to_num(master.get("dass_depression")),
+        "dass_anx": _to_num(master.get("dass_anxiety")),
+        "dass_stress": _to_num(master.get("dass_stress")),
+    })
+
+    df["prp_bottleneck"] = _to_num(master.get("prp_bottleneck"))
+    if df["prp_bottleneck"].isna().all():
+        short_col = _to_num(_pick(["rt2_soa_50", "rt2_soa_150"]))
+        long_col = _to_num(_pick(["rt2_soa_1200", "rt2_soa_1200_ms"]))
+        if not short_col.isna().all() and not long_col.isna().all():
+            df["prp_bottleneck"] = short_col - long_col
+    df["prp_rt_slope"] = np.where(
+        df["prp_bottleneck"].notna(),
+        df["prp_bottleneck"] / 1150.0,
+        np.nan,
     )
+    df["prp_mrt_t1"] = _to_num(_pick(["mrt_t1"]))
+    df["prp_mrt_t2"] = _to_num(_pick(["mrt_t2"]))
+    df["prp_acc_t1"] = _to_num(_pick(["acc_t1"]))
+    df["prp_acc_t2"] = _to_num(_pick(["acc_t2"]))
 
-    prp = summary[summary["testname"] == "prp"].copy()
-    for c in ["rt2_soa_50", "rt2_soa_1200", "mrt_t1", "mrt_t2", "acc_t1", "acc_t2"]:
-        prp[c] = _to_num(prp[c])
-    prp = prp.assign(
-        prp_bottleneck=lambda d: d["rt2_soa_50"] - d["rt2_soa_1200"],
-        prp_rt_slope=lambda d: (d["rt2_soa_50"] - d["rt2_soa_1200"]) / 1150.0,
-    )[["participantid", "prp_bottleneck", "prp_rt_slope", "mrt_t1", "mrt_t2", "acc_t1", "acc_t2"]].rename(
-        columns={
-            "participantid": "participant_id",
-            "mrt_t1": "prp_mrt_t1",
-            "mrt_t2": "prp_mrt_t2",
-            "acc_t1": "prp_acc_t1",
-            "acc_t2": "prp_acc_t2",
-        }
-    )
+    df["stroop_effect"] = _to_num(_pick(["stroop_interference", "stroop_effect"]))
+    if df["stroop_effect"].isna().all():
+        incong = _to_num(_pick(["mrt_incong", "rt_mean_incongruent"]))
+        cong = _to_num(_pick(["mrt_cong", "rt_mean_congruent"]))
+        if not incong.isna().all() and not cong.isna().all():
+            df["stroop_effect"] = incong - cong
+    df["stroop_accuracy"] = _to_num(_pick(["accuracy", "accuracy_stroop"]))
+    df["mrt_incong"] = _to_num(_pick(["mrt_incong"]))
+    df["mrt_cong"] = _to_num(_pick(["mrt_cong"]))
+    df["mrt_total"] = _to_num(_pick(["mrt_total"]))
+    if "mrt_cong" in df.columns and "mrt_incong" in df.columns:
+        df["stroop_ratio_incong_cong"] = df["mrt_incong"] / df["mrt_cong"]
 
-    stroop = summary[summary["testname"] == "stroop"][
-        ["participantid", "stroop_effect", "accuracy", "mrt_incong", "mrt_cong", "mrt_total"]
-    ].rename(columns={"participantid": "participant_id", "accuracy": "stroop_accuracy"})
-    for c in ["stroop_effect", "stroop_accuracy", "mrt_incong", "mrt_cong", "mrt_total"]:
-        stroop[c] = _to_num(stroop[c])
-    stroop["stroop_ratio_incong_cong"] = stroop["mrt_incong"] / stroop["mrt_cong"]
-
-    wcst = summary[summary["testname"] == "wcst"][
-        [
-            "participantid",
-            "totalerrorcount",
-            "perseverativeerrorcount",
-            "nonperseverativeerrorcount",
-            "conceptuallevelresponsespercent",
-            "perseverativeresponsespercent",
-            "failuretomaintainset",
-        ]
-    ].rename(
-        columns={
-            "participantid": "participant_id",
-            "totalerrorcount": "wcst_total_errors",
-            "perseverativeerrorcount": "wcst_persev_errors",
-            "nonperseverativeerrorcount": "wcst_nonpersev_errors",
-            "conceptuallevelresponsespercent": "wcst_conceptual_pct",
-            "perseverativeresponsespercent": "wcst_persev_resp_pct",
-            "failuretomaintainset": "wcst_failure_to_maintain_set",
-        }
-    )
-    for c in wcst.columns:
-        if c != "participant_id":
-            wcst[c] = _to_num(wcst[c])
+    df["wcst_total_errors"] = _to_num(_pick(["wcst_total_errors", "totalerrorcount", "total_error_count"]))
+    df["wcst_persev_errors"] = _to_num(_pick(["wcst_persev_errors", "perseverativeerrorcount", "perseverative_error_count"]))
+    df["wcst_nonpersev_errors"] = _to_num(_pick(["wcst_nonpersev_errors", "nonperseverativeerrorcount", "non_perseverative_error_count"]))
+    df["wcst_conceptual_pct"] = _to_num(_pick(["wcst_conceptual_pct", "conceptuallevelresponsespercent", "conceptual_level_responses_percent"]))
+    df["wcst_persev_resp_pct"] = _to_num(_pick(["wcst_persev_resp_pct", "perseverativeresponsespercent", "perseverative_responses_percent"]))
+    df["wcst_failure_to_maintain_set"] = _to_num(_pick(["wcst_failure_to_maintain_set", "failuretomaintainset", "failure_to_maintain_set"]))
 
     # Advanced EF (optional)
     ddm_stroop_path = OUT / "stroop_ddm_parameters.csv"
@@ -114,9 +101,6 @@ def build_dataset() -> pd.DataFrame:
     ddm_prp = pd.read_csv(ddm_prp_path) if ddm_prp_path.exists() else pd.DataFrame()
     wcst_adv = pd.read_csv(wcst_switch_path) if wcst_switch_path.exists() else pd.DataFrame()
 
-    df = dass.merge(stroop, on="participant_id", how="left")
-    df = df.merge(prp, on="participant_id", how="left")
-    df = df.merge(wcst, on="participant_id", how="left")
     if not ddm_stroop.empty:
         df = df.merge(ddm_stroop, on="participant_id", how="left", suffixes=(None, "_ddm"))
     if not ddm_prp.empty:
@@ -222,4 +206,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

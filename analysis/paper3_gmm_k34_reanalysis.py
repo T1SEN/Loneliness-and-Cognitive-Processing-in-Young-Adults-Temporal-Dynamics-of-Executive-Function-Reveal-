@@ -17,6 +17,7 @@ ANALYSIS PLAN:
 import sys
 from pathlib import Path
 import pandas as pd
+from data_loader_utils import load_master_dataset
 import numpy as np
 from sklearn.mixture import GaussianMixture
 from scipy import stats
@@ -38,7 +39,8 @@ print("="*100)
 
 # === LOAD DATA ===
 print("\n[1] Loading data...")
-participants = pd.read_csv(RESULTS_DIR / "1_participants_info.csv", encoding='utf-8-sig')
+master = load_master_dataset(use_cache=True)
+participants = master[['participant_id','gender_normalized','age']].rename(columns={'gender_normalized':'gender'})
 surveys = pd.read_csv(RESULTS_DIR / "2_surveys_results.csv", encoding='utf-8-sig')
 cog_summary = pd.read_csv(RESULTS_DIR / "3_cognitive_tests_summary.csv", encoding='utf-8-sig')
 

@@ -25,6 +25,7 @@ from typing import Dict, List, Optional
 
 import numpy as np
 import pandas as pd
+from data_loader_utils import load_master_dataset
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 import statsmodels.formula.api as smf
@@ -90,105 +91,48 @@ def zscore(series: pd.Series) -> pd.Series:
 
 
 def build_analysis_dataframe() -> pd.DataFrame:
-    participants = read_csv_lower(RESULTS_DIR / "1_participants_info.csv")
-    surveys = read_csv_lower(RESULTS_DIR / "2_surveys_results.csv")
-    cog = read_csv_lower(RESULTS_DIR / "3_cognitive_tests_summary.csv")
+    master = load_master_dataset(use_cache=True, force_rebuild=True, merge_cognitive_summary=True)
+    print(f"[AUDIT] Master dataset loaded with {len(master)} rows.")
 
-    # Survey splits
-    ucla = (
-        surveys.query("survey_name == 'ucla'")
-        .loc[:, ["participant_id", "score"]]
-        .rename(columns={"score": "ucla_total"})
-    )
+    def _pick_column(df: pd.DataFrame, candidates: List[str]) -> pd.Series:
+        for c in candidates:
+            if c in df.columns:
+                return df[c]
+        return pd.Series(np.nan, index=df.index)
 
-    dass = (
-        surveys.query("survey_name == 'dass'")
-        .loc[:, ["participant_id", "score_a", "score_s", "score_d"]]
-        .rename(columns={"score_a": "dass_anx", "score_s": "dass_stress", "score_d": "dass_dep"})
-    )
-    dass["dass_total"] = dass[["dass_anx", "dass_stress", "dass_dep"]].sum(axis=1)
+    analysis = master.loc[:, ["participant_id", "age", "gender_normalized"]].rename(columns={"gender_normalized": "gender"})
+    analysis["gender"] = normalize_gender_series(analysis["gender"])
+    analysis["age"] = pd.to_numeric(analysis["age"], errors="coerce")
 
-    # Cognitive metrics
-    prp = cog.query("test_name == 'prp'").copy()
-    prp = prp.assign(
-        prp_bottleneck=prp["rt2_soa_50"] - prp["rt2_soa_1200"],
-        prp_rt_slope=(prp["rt2_soa_50"] - prp["rt2_soa_1200"]) / 1150.0,
-    )[
-        [
-            "participant_id",
-            "n_trials",
-            "acc_t1",
-            "acc_t2",
-            "mrt_t1",
-            "mrt_t2",
-            "rt2_soa_50",
-            "rt2_soa_1200",
-            "prp_bottleneck",
-            "prp_rt_slope",
-        ]
-    ].rename(
-        columns={
-            "n_trials": "prp_n_trials",
-            "acc_t1": "prp_acc_t1",
-            "acc_t2": "prp_acc_t2",
-            "mrt_t1": "prp_mrt_t1",
-            "mrt_t2": "prp_mrt_t2",
-            "rt2_soa_50": "prp_rt_short",
-            "rt2_soa_1200": "prp_rt_long",
-        }
-    )
+    # Core predictors
+    if "ucla_total" in master.columns:
+        analysis["ucla_total"] = master["ucla_total"]
+    elif "ucla_score" in master.columns:
+        analysis["ucla_total"] = master["ucla_score"]
 
-    stroop = (
-        cog.query("test_name == 'stroop'")
-        .loc[:, ["participant_id", "stroop_effect", "accuracy", "total", "mrt_incong", "mrt_cong", "mrt_total"]]
-        .rename(
-            columns={
-                "accuracy": "stroop_accuracy",
-                "total": "stroop_total_trials",
-            }
-        )
-    )
+    analysis["dass_dep"] = master.get("dass_depression")
+    analysis["dass_anx"] = master.get("dass_anxiety")
+    analysis["dass_stress"] = master.get("dass_stress")
+    if {"dass_dep", "dass_anx", "dass_stress"} <= set(analysis.columns):
+        analysis["dass_total"] = analysis[["dass_dep", "dass_anx", "dass_stress"]].sum(axis=1)
 
-    wcst = (
-        cog.query("test_name == 'wcst'")
-        .loc[
-            :,
-            [
-                "participant_id",
-                "total_error_count",
-                "perseverative_error_count",
-                "non_perseverative_error_count",
-                "completed_categories",
-                "conceptual_level_responses_percent",
-                "perseverative_responses_percent",
-                "failure_to_maintain_set",
-            ],
-        ]
-        .rename(
-            columns={
-                "total_error_count": "wcst_total_errors",
-                "perseverative_error_count": "wcst_persev_errors",
-                "non_perseverative_error_count": "wcst_nonpersev_errors",
-                "completed_categories": "wcst_completed_categories",
-                "conceptual_level_responses_percent": "wcst_conceptual_pct",
-                "perseverative_responses_percent": "wcst_persev_resp_pct",
-                "failure_to_maintain_set": "wcst_failure_to_maintain_set",
-            }
-        )
-    )
+    # EF metrics sourced from standardized summaries (PRP/Stroop/WCST)
+    analysis["prp_bottleneck"] = master.get("prp_bottleneck")
+    if "stroop_interference" in master.columns:
+        analysis["stroop_effect"] = master["stroop_interference"]
+    elif {"rt_mean_incongruent", "rt_mean_congruent"} <= set(master.columns):
+        analysis["stroop_effect"] = master["rt_mean_incongruent"] - master["rt_mean_congruent"]
 
-    analysis = (
-        participants.loc[:, ["participant_id", "age", "gender"]]
-        .assign(
-            age=lambda df: pd.to_numeric(df["age"], errors="coerce"),
-            gender=lambda df: normalize_gender_series(df["gender"]),
-        )
-        .merge(ucla, on="participant_id", how="left")
-        .merge(dass, on="participant_id", how="left")
-        .merge(prp, on="participant_id", how="left")
-        .merge(stroop, on="participant_id", how="left")
-        .merge(wcst, on="participant_id", how="left")
-    )
+    # WCST errors from cognitive summary (merged raw columns kept as-is)
+    analysis["wcst_total_errors"] = _pick_column(master, ["wcst_total_errors", "total_error_count", "totalErrorCount"])
+    analysis["wcst_persev_errors"] = _pick_column(master, ["wcst_persev_errors", "perseverative_error_count", "perseverativeErrorCount"])
+    analysis["wcst_nonpersev_errors"] = _pick_column(master, ["wcst_nonpersev_errors", "non_perseverative_error_count", "nonPerseverativeErrorCount"])
+
+    # Optional WCST auxiliaries (kept if present)
+    analysis["wcst_persev_resp_pct"] = _pick_column(master, ["wcst_persev_resp_pct", "perseverative_responses_percent", "perseverativeResponsesPercent"])
+    analysis["wcst_completed_categories"] = _pick_column(master, ["wcst_completed_categories", "completed_categories", "completedCategories"])
+    analysis["wcst_conceptual_pct"] = _pick_column(master, ["wcst_conceptual_pct", "conceptual_level_responses_percent", "conceptualLevelResponsesPercent"])
+    analysis["wcst_failure_to_maintain_set"] = _pick_column(master, ["wcst_failure_to_maintain_set", "failure_to_maintain_set", "failureToMaintainSet"])
 
     # Add z-scores
     for col, new_col in [

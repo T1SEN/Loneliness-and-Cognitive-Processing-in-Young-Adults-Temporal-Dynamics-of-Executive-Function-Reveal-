@@ -38,8 +38,8 @@ The analysis derives three primary EF measures:
 # Activate virtual environment
 .\venv\Scripts\activate
 
-# Install dependencies (if needed)
-.\venv\Scripts\pip.exe install -r requirements.txt  # Note: requirements.txt doesn't exist but packages are already installed
+# View installed packages (no requirements.txt; packages are pre-installed in venv)
+.\venv\Scripts\pip.exe list
 ```
 
 ### Data Export
@@ -52,23 +52,17 @@ PYTHONIOENCODING=utf-8 .\venv\Scripts\python.exe export_alldata.py
 PYTHONIOENCODING=utf-8 .\venv\Scripts\python.exe export_data.py
 ```
 
-### Core Analysis Scripts
+### Running Analysis Scripts
 ```bash
-# Main hypothesis testing pipeline (correlation + hierarchical regression + PCA)
-.\venv\Scripts\python.exe analysis\run_analysis.py
+# Run any analysis script (general pattern)
+.\venv\Scripts\python.exe analysis\<script_name>.py
+
+# PRIMARY: DASS-controlled confirmatory analysis (gold standard)
+.\venv\Scripts\python.exe analysis\master_dass_controlled_analysis.py
 
 # Machine learning nested CV with hyperparameter tuning
 .\venv\Scripts\python.exe analysis\ml_nested_tuned.py --task classification --features demo_dass
 .\venv\Scripts\python.exe analysis\ml_nested_tuned.py --task regression --features ef_demo_dass
-
-# Bayesian hierarchical models
-.\venv\Scripts\python.exe analysis\dass_ef_hier_bayes.py
-
-# Tree ensemble exploration (Random Forest, Gradient Boosting)
-.\venv\Scripts\python.exe analysis\tree_ensemble_exploration.py
-
-# RFE feature selection
-.\venv\Scripts\python.exe analysis\rfe_feature_selection.py
 
 # Generate trial-level features (CV, post-error slowing, RT slopes)
 .\venv\Scripts\python.exe analysis\derive_trial_features.py
@@ -165,52 +159,19 @@ model = smf.ols("pe_rate ~ z_ucla * C(gender_male) + z_dass_dep + z_dass_anx + z
 - UCLA × Gender interaction: p = 0.025 for WCST PE (survives DASS control)
 - Conclusion: Only gender-specific vulnerability is independent of mood
 
-### Analysis Script Classification
+### Analysis Script Classification (by DASS-21 Control Rigor)
 
-Based on comprehensive audit (2025-01-16), scripts are classified by DASS-21 control rigor:
+| Category | Scripts | Notes |
+|----------|---------|-------|
+| ⭐ **Gold Standard** | `master_dass_controlled_analysis.py` (PRIMARY), `loneliness_exec_models.py`, `trial_level_mixed_effects.py`, `prp_comprehensive_dass_controlled.py` | Full DASS control; citable in publications |
+| 🔬 **Mediation** | `dass_mediation_bootstrapped.py`, `mechanism_mediation_analysis.py` | DASS is mediator, not covariate (appropriate) |
+| ⚠️ **Exploratory** | `extreme_group_analysis.py` | No DASS control; hypothesis generation only |
+| 🧰 **Utility** | `data_loader_utils.py`, `derive_trial_features.py`, `ml_nested_tuned.py` | No hypothesis testing |
 
-#### ⭐ GOLD STANDARD (Confirmatory - Can Cite in Publications)
-These scripts implement proper DASS-21 control with all three subscales:
-
-1. **`master_dass_controlled_analysis.py`** - PRIMARY hierarchical regression framework
-2. `loneliness_exec_models.py` - Regression models with full DASS control
-3. `trial_level_mixed_effects.py` - Mixed-effects models with DASS covariates
-4. `trial_level_bayesian.py` - Hierarchical Bayesian models with DASS
-5. `dose_response_threshold_analysis.py` - Dose-response with DASS control
-6. `cross_task_order_effects.py` - Task order effects with DASS control
-7. `generate_publication_figures.py` - Publication figures with proper controls
-8. `prp_comprehensive_dass_controlled.py` - PRP-specific analysis
-9. `prp_exgaussian_dass_controlled.py` - Ex-Gaussian decomposition
-10. `replication_verification_corrected.py` - Replication with corrections
-11. `nonlinear_gender_effects.py` - Nonlinear moderation analysis
-12. `hidden_patterns_analysis.py` - Advanced pattern detection
-13. `mechanism_mediation_analysis.py` - Mediation pathways
-
-**Formula template:** `y ~ z_ucla * z_gender + z_dass_dep + z_dass_anx + z_dass_str + z_age`
-
-#### 🔬 Mediation Exception (Appropriate DASS Exclusion)
-DASS is the mediator variable, not a covariate:
-
-- `dass_mediation_bootstrapped.py` - Tests UCLA → DASS → EF pathway
-- `exgaussian_mediation_analysis.py` - Ex-Gaussian parameter mediation
-- `tau_moderated_mediation.py` - Moderated mediation models
-- `mediation_gender_pathways.py` - Gender-specific pathways
-
-#### ⚠️ Exploratory Only (Cannot Claim "Pure Loneliness" Effects)
-These scripts test UCLA effects WITHOUT proper DASS control and should be labeled as preliminary:
-
-- `extreme_group_analysis.py` - Extreme groups comparison (already has warning banner)
-
-**Status:** Appropriately labeled with explicit warnings. Use for hypothesis generation only.
-
-#### 🧰 Utility Scripts (No Hypothesis Testing)
-Feature generation, visualization, and methodological tools:
-
-- `derive_trial_features.py` - Trial-level feature extraction
-- `data_loader_utils.py`, `statistical_utils.py` - Helper functions
-- `reliability_*.py` - Psychometric analyses
-- `ml_nested_tuned.py` - Machine learning (UCLA+DASS both as features)
-- Task-specific descriptives: `stroop_*.py`, `prp_*.py`, `wcst_*.py`
+**Formula template for confirmatory analyses:**
+```python
+smf.ols("y ~ z_ucla * C(gender_male) + z_dass_dep + z_dass_anx + z_dass_str + z_age", data=df)
+```
 
 ## Output Location
 
@@ -219,12 +180,28 @@ All analysis outputs go to `results/analysis_outputs/`:
 - PNG files for PDPs (partial dependence plots)
 - `analysis_log.txt` for some verbose outputs
 
-## Dependencies
-The virtual environment includes:
+## Shared Utility Modules
+
+### `analysis/data_loader_utils.py`
+Central data loading module used by all analysis scripts:
+- `load_master_dataset()` - Builds/caches unified dataset from all CSVs
+- `load_participants()`, `load_ucla_scores()`, `load_dass_scores()` - Individual loaders
+- `load_wcst_summary()`, `load_prp_summary()`, `load_stroop_summary()` - Task metrics
+- `ensure_participant_id()` - Normalizes participant ID column names
+- `normalize_gender_series()` - Maps Korean/English gender to 'male'/'female'
+
+### `analysis/utils/publication_helpers.py`
+Helper functions for publication-quality outputs:
+- `bootstrap_ci()` - Bootstrap confidence intervals
+- `cohens_d()`, `eta_squared()` - Effect size calculations
+- `format_pvalue()`, `format_ci()` - APA-style formatting
+- `set_publication_style()` - Configure matplotlib for publication figures
+
+## Key Libraries (pre-installed in venv)
 - **Data**: pandas, numpy
-- **Stats**: scipy, statsmodels, scikit-learn
+- **Stats**: scipy, statsmodels
+- **ML**: scikit-learn
 - **Bayesian**: pymc, pytensor, arviz
-- **ML**: scikit-learn (with all estimators)
 - **Viz**: matplotlib, seaborn
 - **Firebase**: firebase-admin, google-cloud-firestore
 

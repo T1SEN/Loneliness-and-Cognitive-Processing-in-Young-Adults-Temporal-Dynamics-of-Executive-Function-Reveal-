@@ -16,6 +16,7 @@ if sys.platform.startswith("win") and hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding='utf-8')
 
 import pandas as pd
+from data_loader_utils import load_master_dataset
 import numpy as np
 from pathlib import Path
 from scipy import stats
@@ -45,10 +46,8 @@ print()
 
 print("[1/4] Loading data...")
 
-master = pd.read_csv(Path("results/analysis_outputs/master_expanded_metrics.csv"))
+master = load_master_dataset(use_cache=True)
 participants = load_participants()[['participant_id', 'age', 'gender']]
-
-master = master.merge(participants, on='participant_id', how='left')
 
 master['gender'] = normalize_gender_series(master['gender'])
 master['gender_male'] = (master['gender'] == 'male').astype(int)

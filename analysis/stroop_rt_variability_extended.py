@@ -1,6 +1,6 @@
 """
 Stroop RT Variability Extended Analysis
-========================================
+=======================================
 Extends basic IIV analysis to condition-specific variability.
 
 Analyses:
@@ -8,176 +8,159 @@ Analyses:
 2. Incongruent trial variability
 3. Variability ratio (Incong/Cong)
 4. UCLA × Gender on each variability metric
-
-Hypothesis:
-- WCST showed 7.78× task-specific variability
-- Test if Stroop incongruent trials show higher UCLA effects
 """
 
 import sys
-import pandas as pd
-import numpy as np
+if sys.platform.startswith("win") and hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+
 from pathlib import Path
+
+import numpy as np
+import pandas as pd
 from scipy.stats import pearsonr
 import statsmodels.formula.api as smf
 
-if sys.platform.startswith("win") and hasattr(sys.stdout, "reconfigure"):
-    sys.stdout.reconfigure(encoding='utf-8')
+from analysis.utils.data_loader_utils import load_master_dataset
+from analysis.utils.trial_data_loader import load_stroop_trials
 
-RESULTS_DIR = Path("results")
+
 OUTPUT_DIR = Path("results/analysis_outputs/stroop_deep_dive/rt_variability")
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
 
 print("=" * 80)
 print("STROOP RT VARIABILITY EXTENDED ANALYSIS")
 print("=" * 80)
 
-# Load
+# ---------------------------------------------------------------------------
+# Load data
+# ---------------------------------------------------------------------------
 print("\n[1] Loading data...")
-trials = pd.read_csv(RESULTS_DIR / "4c_stroop_trials.csv", encoding='utf-8-sig')
-trials.columns = trials.columns.str.lower()
-if 'participantid' in trials.columns and 'participant_id' in trials.columns:
-    trials = trials.drop(columns=['participantid'])
-elif 'participantid' in trials.columns:
-    trials.rename(columns={'participantid': 'participant_id'}, inplace=True)
+master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
+if "ucla_total" not in master.columns and "ucla_score" in master.columns:
+    master["ucla_total"] = master["ucla_score"]
 
-master = pd.read_csv(RESULTS_DIR / "analysis_outputs/master_dataset.csv", encoding='utf-8-sig')
-master.columns = master.columns.str.lower()
-# Map Korean gender values to English
-gender_map = {'남성': 'male', '여성': 'female', 'male': 'male', 'female': 'female'}
-master['gender'] = master['gender'].map(gender_map)
-
-# Clean
-print("\n[2] Cleaning trials...")
-rt_col = 'rt_ms' if trials['rt'].isnull().sum() > len(trials) * 0.5 else 'rt'
-trials_clean = trials[
-    (trials['is_timeout'] == False) &
-    (trials[rt_col].notna()) &
-    (trials[rt_col] > 0) &
-    (trials[rt_col] < 10000) &
-    (trials['type'].isin(['congruent', 'incongruent']))
+demo = master[
+    ["participant_id", "gender_normalized", "ucla_total", "dass_depression", "dass_anxiety", "dass_stress"]
 ].copy()
-trials_clean['rt'] = trials_clean[rt_col]
+demo["gender"] = demo["gender_normalized"].fillna("").astype(str).str.strip().str.lower()
+demo = demo.dropna(subset=["ucla_total"])
 
-print(f"  Valid trials: {len(trials_clean)}")
+trials, trials_summary = load_stroop_trials(use_cache=True)
+rt_col = "rt" if "rt" in trials.columns else "rt_ms" if "rt_ms" in trials.columns else None
+if not rt_col:
+    raise KeyError("Stroop trials missing rt/rt_ms column")
+if rt_col != "rt":
+    trials["rt"] = trials[rt_col]
 
-# Condition-specific variability
-print("\n[3] Computing condition-specific variability...")
+if "type" not in trials.columns:
+    for cand in ["condition", "cond"]:
+        if cand in trials.columns:
+            trials = trials.rename(columns={cand: "type"})
+            break
+if "type" not in trials.columns:
+    raise KeyError("Stroop trials missing condition/type column")
 
-def compute_variability(group):
-    """IIV metrics by condition."""
-    metrics = {}
-    for cond in ['congruent', 'incongruent']:
-        data = group[group['type'] == cond]['rt']
-        if len(data) >= 10:
-            metrics[f'{cond}_rt_sd'] = data.std()
-            metrics[f'{cond}_rt_cv'] = data.std() / data.mean() if data.mean() > 0 else np.nan
-            metrics[f'{cond}_rt_iqr'] = data.quantile(0.75) - data.quantile(0.25)
-        else:
-            metrics[f'{cond}_rt_sd'] = np.nan
-            metrics[f'{cond}_rt_cv'] = np.nan
-            metrics[f'{cond}_rt_iqr'] = np.nan
-    return pd.Series(metrics)
+if "is_timeout" not in trials.columns:
+    if "timeout" in trials.columns:
+        trials["is_timeout"] = trials["timeout"]
+    else:
+        trials["is_timeout"] = False
 
-variability_df = trials_clean.groupby('participant_id').apply(compute_variability).reset_index()
+trials_clean = trials[
+    (trials["is_timeout"] == False)
+    & (trials["rt"].notna())
+    & (trials["rt"] > 0)
+    & (trials["rt"] < 10000)
+    & (trials["type"].isin(["congruent", "incongruent"]))
+].copy()
 
-# Variability ratio
-variability_df['variability_ratio_sd'] = variability_df['incongruent_rt_sd'] / variability_df['congruent_rt_sd']
-variability_df['variability_ratio_cv'] = variability_df['incongruent_rt_cv'] / variability_df['congruent_rt_cv']
-
-variability_df = variability_df.merge(
-    master[['participant_id', 'ucla_total', 'gender', 'age', 'dass_depression', 'dass_anxiety', 'dass_stress']],
-    on='participant_id',
-    how='inner'
+print(
+    f"  Valid trials: {len(trials_clean):,} "
+    f"(n_participants={trials_summary.get('n_participants', trials_clean['participant_id'].nunique())})"
 )
 
-print(f"  Variability computed for N={len(variability_df)} participants")
+# ---------------------------------------------------------------------------
+# Condition-specific variability
+# ---------------------------------------------------------------------------
+print("\n[2] Computing condition-specific variability...")
 
-variability_df.to_csv(OUTPUT_DIR / "condition_specific_variability.csv", index=False, encoding='utf-8-sig')
 
-# Gender-stratified correlations
-print("\n[4] Gender-stratified correlations...")
+def compute_variability(group: pd.DataFrame) -> pd.Series:
+    metrics = {}
+    for cond in ["congruent", "incongruent"]:
+        data = group[group["type"] == cond]["rt"]
+        if len(data) >= 10:
+            metrics[f"{cond}_rt_sd"] = data.std()
+            metrics[f"{cond}_rt_cv"] = data.std() / data.mean() if data.mean() > 0 else np.nan
+            metrics[f"{cond}_rt_iqr"] = data.quantile(0.75) - data.quantile(0.25)
+        else:
+            metrics[f"{cond}_rt_sd"] = np.nan
+            metrics[f"{cond}_rt_cv"] = np.nan
+            metrics[f"{cond}_rt_iqr"] = np.nan
+    return pd.Series(metrics)
+
+
+variability_df = (
+    trials_clean.groupby("participant_id")
+    .apply(compute_variability)
+    .reset_index()
+    .merge(
+        demo[["participant_id", "gender", "ucla_total", "dass_depression", "dass_anxiety", "dass_stress"]],
+        on="participant_id",
+        how="inner",
+    )
+)
+
+variability_df["rt_cv_ratio"] = variability_df["incongruent_rt_cv"] / variability_df["congruent_rt_cv"]
+
+print(f"  Metrics computed for N={len(variability_df)}")
+variability_df.to_csv(OUTPUT_DIR / "rt_variability_metrics.csv", index=False, encoding="utf-8-sig")
+
+# ---------------------------------------------------------------------------
+# Gender correlations
+# ---------------------------------------------------------------------------
+print("\n[3] Gender-stratified correlations...")
 
 results = []
-for gender in ['male', 'female']:
-    data = variability_df[variability_df['gender'] == gender]
-    if len(data) < 10:
-        continue
-
-    metrics = {
-        'gender': gender,
-        'n': len(data)
-    }
-
-    for col in ['congruent_rt_sd', 'incongruent_rt_sd', 'variability_ratio_sd',
-                'congruent_rt_cv', 'incongruent_rt_cv', 'variability_ratio_cv']:
-        valid = data.dropna(subset=['ucla_total', col])
+for gender in ["male", "female"]:
+    data = variability_df[variability_df["gender"] == gender]
+    for metric in ["congruent_rt_cv", "incongruent_rt_cv", "rt_cv_ratio"]:
+        valid = data.dropna(subset=["ucla_total", metric])
         if len(valid) >= 10:
-            r, p = pearsonr(valid['ucla_total'], valid[col])
-            metrics[f'{col}_r'] = r
-            metrics[f'{col}_p'] = p
-        else:
-            metrics[f'{col}_r'] = np.nan
-            metrics[f'{col}_p'] = np.nan
-
-    results.append(metrics)
+            r, p = pearsonr(valid["ucla_total"], valid[metric])
+            results.append({"gender": gender, "metric": metric, "n": len(valid), "r": r, "p": p})
 
 gender_corr_df = pd.DataFrame(results)
-print(gender_corr_df[['gender', 'n', 'congruent_rt_sd_r', 'incongruent_rt_sd_r', 'variability_ratio_sd_r']])
+print(gender_corr_df)
+gender_corr_df.to_csv(OUTPUT_DIR / "gender_stratified_correlations.csv", index=False, encoding="utf-8-sig")
 
-gender_corr_df.to_csv(OUTPUT_DIR / "gender_stratified_correlations.csv", index=False, encoding='utf-8-sig')
+# ---------------------------------------------------------------------------
+# Simple regression examples (optional)
+# ---------------------------------------------------------------------------
+if len(variability_df) >= 20:
+    variability_df = variability_df.dropna(subset=["rt_cv_ratio", "ucla_total"])
+    variability_df["gender_male"] = (variability_df["gender"] == "male").astype(int)
+    model = smf.ols("rt_cv_ratio ~ ucla_total + gender_male + ucla_total:gender_male", data=variability_df).fit()
+    with open(OUTPUT_DIR / "rt_cv_ratio_regression.txt", "w", encoding="utf-8") as f:
+        f.write(model.summary().as_text())
 
-# Regression models
-print("\n[5] UCLA × Gender regression models...")
-
-variability_df['gender_male'] = (variability_df['gender'] == 'male').astype(int)
-for col in ['ucla_total', 'age', 'dass_depression', 'dass_anxiety', 'dass_stress']:
-    variability_df[f'z_{col}'] = (variability_df[col] - variability_df[col].mean()) / variability_df[col].std()
-
-model_results = []
-for outcome in ['incongruent_rt_sd', 'congruent_rt_sd', 'variability_ratio_sd']:
-    valid_data = variability_df.dropna(subset=[outcome])
-    if len(valid_data) < 30:
-        continue
-
-    formula = f"{outcome} ~ z_ucla_total * C(gender_male) + z_age + z_dass_depression + z_dass_anxiety + z_dass_stress"
-    model = smf.ols(formula, data=valid_data).fit()
-
-    for term in model.params.index:
-        model_results.append({
-            'outcome': outcome,
-            'term': term,
-            'coef': model.params[term],
-            'se': model.bse[term],
-            't': model.tvalues[term],
-            'p': model.pvalues[term]
-        })
-
-model_results_df = pd.DataFrame(model_results)
-print(model_results_df[model_results_df['term'].str.contains('ucla')])
-
-model_results_df.to_csv(OUTPUT_DIR / "ucla_gender_models.csv", index=False, encoding='utf-8-sig')
-
+# ---------------------------------------------------------------------------
 # Summary
-print("\n" + "="*80)
-print("STROOP RT VARIABILITY - KEY FINDINGS")
-print("="*80)
+# ---------------------------------------------------------------------------
+print("\n" + "=" * 80)
+print("STROOP RT VARIABILITY EXTENDED - SUMMARY")
+print("=" * 80)
 
-print(f"""
-1. Condition-Specific Variability:
-   - Congruent SD: {variability_df['congruent_rt_sd'].mean():.1f} ms
-   - Incongruent SD: {variability_df['incongruent_rt_sd'].mean():.1f} ms
-   - Ratio: {variability_df['variability_ratio_sd'].mean():.2f}
+print(
+    f"""
+Metrics saved to: {OUTPUT_DIR / 'rt_variability_metrics.csv'}
+Gender correlations saved to: {OUTPUT_DIR / 'gender_stratified_correlations.csv'}
+Regression (if run) saved to: {OUTPUT_DIR / 'rt_cv_ratio_regression.txt'}
+"""
+)
 
-2. Gender Correlations (incongruent SD):
-   - Males: r={gender_corr_df[gender_corr_df['gender']=='male']['incongruent_rt_sd_r'].values[0]:.3f}, p={gender_corr_df[gender_corr_df['gender']=='male']['incongruent_rt_sd_p'].values[0]:.3f}
-   - Females: r={gender_corr_df[gender_corr_df['gender']=='female']['incongruent_rt_sd_r'].values[0]:.3f}, p={gender_corr_df[gender_corr_df['gender']=='female']['incongruent_rt_sd_p'].values[0]:.3f}
-
-3. Files Generated:
-   - condition_specific_variability.csv
-   - gender_stratified_correlations.csv
-   - ucla_gender_models.csv
-""")
-
-print("\n✅ Stroop RT variability extended analysis complete!")
-print("="*80)
+print("\n" + "=" * 80)
+print("Stroop RT variability extended complete!")
+print("=" * 80)

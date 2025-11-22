@@ -19,6 +19,7 @@ if sys.platform.startswith("win") and hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding='utf-8')
 
 import pandas as pd
+from data_loader_utils import load_master_dataset
 import numpy as np
 from pathlib import Path
 from scipy import stats
@@ -48,8 +49,9 @@ print()
 
 print("[1/4] Loading data...")
 
-master = pd.read_csv(Path("results/analysis_outputs/master_expanded_metrics.csv"))
-participants = pd.read_csv(RESULTS_DIR / "1_participants_info.csv", encoding='utf-8-sig')
+master = load_master_dataset(use_cache=True)
+master = load_master_dataset(use_cache=True)
+participants = master[['participant_id','gender_normalized','age']].rename(columns={'gender_normalized':'gender'})
 
 if 'participantId' in participants.columns:
     if 'participant_id' in participants.columns:

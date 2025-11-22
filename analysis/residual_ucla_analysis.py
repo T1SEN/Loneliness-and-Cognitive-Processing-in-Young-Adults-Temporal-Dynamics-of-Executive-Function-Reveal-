@@ -25,6 +25,7 @@ if sys.platform.startswith("win") and hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding='utf-8')
 
 import pandas as pd
+from data_loader_utils import load_master_dataset
 import numpy as np
 from pathlib import Path
 import statsmodels.formula.api as smf
@@ -50,107 +51,10 @@ print("\nPurpose: Test UCLA effects after removing DASS-explained variance")
 print("Method: UCLA_resid = residuals(UCLA ~ DASS_dep + DASS_anx + DASS_str)")
 print("\nLoading data...")
 
-# Load master dataset
-try:
-    master = pd.read_csv(RESULTS_DIR / "analysis_outputs/master_dataset.csv", encoding='utf-8-sig')
-    print(f"  Loaded master dataset: {len(master)} participants")
-except FileNotFoundError:
-    print("  Master dataset not found. Building from raw data...")
+master = load_master_dataset(use_cache=True)
 
-    # Load raw files
-    try:
-        participants = pd.read_csv(RESULTS_DIR / "1_participants_info.csv", encoding='utf-8-sig')
-        surveys = pd.read_csv(RESULTS_DIR / "2_surveys_results.csv", encoding='utf-8-sig')
-        cognitive = pd.read_csv(RESULTS_DIR / "3_cognitive_tests_summary.csv", encoding='utf-8-sig')
-    except FileNotFoundError as e:
-        print(f"\nERROR: Cannot find required data files: {e}")
-        print("\nPlease ensure results/ directory contains:")
-        print("  - 1_participants_info.csv")
-        print("  - 2_surveys_results.csv")
-        print("  - 3_cognitive_tests_summary.csv")
-        print("\nOr run this script first:")
-        print("  PYTHONIOENCODING=utf-8 ./venv/Scripts/python.exe analysis/master_dass_controlled_analysis.py")
-        sys.exit(1)
-
-    # Normalize columns
-    for df in [participants, surveys, cognitive]:
-        df.columns = df.columns.str.lower()
-        if 'participantid' in df.columns:
-            df.rename(columns={'participantid': 'participant_id'}, inplace=True)
-
-    # Parse UCLA scores from surveys
-    surveyname_col = next((col for col in surveys.columns if 'survey' in col.lower() and 'name' in col.lower()), None)
-    if surveyname_col is None:
-        print("\nERROR: Cannot find survey name column in 2_surveys_results.csv")
-        print(f"Available columns: {list(surveys.columns)}")
-        print("Expected a column containing both 'survey' and 'name' (case-insensitive)")
-        sys.exit(1)
-
-    ucla_df = surveys[surveys[surveyname_col].astype(str).str.contains('UCLA|loneliness', case=False, na=False, regex=True)]
-
-    if len(ucla_df) == 0:
-        print("\nERROR: No UCLA/loneliness surveys found in 2_surveys_results.csv")
-        print(f"Checked column: {surveyname_col}")
-        sys.exit(1)
-
-    # Find total score column
-    score_col = next((col for col in ucla_df.columns if 'total' in col.lower() and 'score' in col.lower()), None)
-    if score_col is None:
-        print(f"\nERROR: Cannot find total score column in UCLA data.")
-        print(f"Available columns: {list(ucla_df.columns)}")
-        sys.exit(1)
-
-    ucla_total = ucla_df.groupby('participant_id')[score_col].first().to_frame('ucla_total')
-
-    # Parse DASS scores from surveys
-    dass_df = surveys[surveys[surveyname_col].astype(str).str.contains('DASS', case=False, na=False, regex=True)]
-
-    if len(dass_df) == 0:
-        print("\nERROR: No DASS surveys found in 2_surveys_results.csv")
-        sys.exit(1)
-
-    # Find subscale and score columns
-    subscale_col = next((col for col in dass_df.columns if 'subscale' in col.lower()), None)
-    score_col_dass = next((col for col in dass_df.columns
-                          if 'score' in col.lower() and 'total' not in col.lower()), None)
-
-    if subscale_col is None or score_col_dass is None:
-        print(f"\nERROR: Cannot find subscale/score columns in DASS data.")
-        print(f"Available columns: {list(dass_df.columns)}")
-        sys.exit(1)
-
-    # Check for duplicates before pivoting
-    duplicate_check = dass_df.groupby(['participant_id', subscale_col]).size()
-    duplicates = duplicate_check[duplicate_check > 1]
-    if len(duplicates) > 0:
-        print(f"\nWARNING: Found {len(duplicates)} participant×subscale duplicates in DASS data.")
-        print(f"Using first occurrence for each participant×subscale.")
-
-    # Pivot DASS subscales (use 'first' to avoid silent aggregation)
-    dass_pivot = dass_df.pivot_table(
-        index='participant_id',
-        columns=subscale_col,
-        values=score_col_dass,
-        aggfunc='first'
-    )
-
-    # Normalize subscale names
-    dass_pivot.columns = ['dass_' + str(col).lower().replace(' ', '_') for col in dass_pivot.columns]
-
-    # Ensure we have required subscales
-    required_dass = ['dass_depression', 'dass_anxiety', 'dass_stress']
-    missing_dass = [col for col in required_dass if col not in dass_pivot.columns]
-    if missing_dass:
-        print(f"\nERROR: DASS pivot missing required subscales: {missing_dass}")
-        print(f"Found columns: {list(dass_pivot.columns)}")
-        sys.exit(1)
-
-    # Merge all
-    master = participants.merge(cognitive, on='participant_id', how='inner')
-    master = master.merge(ucla_total, on='participant_id', how='left')
-    master = master.merge(dass_pivot, on='participant_id', how='left')
-
-    print(f"  Built master dataset: {len(master)} participants")
+if 'ucla_total' not in master.columns and 'ucla_score' in master.columns:
+    master['ucla_total'] = master['ucla_score']
 
 # Normalize columns
 master.columns = master.columns.str.lower()

@@ -23,6 +23,7 @@ if sys.platform.startswith("win") and hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding='utf-8')
 
 import pandas as pd
+from data_loader_utils import load_master_dataset
 import numpy as np
 from pathlib import Path
 import scipy.stats as stats
@@ -52,7 +53,8 @@ print("="*80)
 print("\n[1/7] Loading data...")
 
 # Demographics
-participants = pd.read_csv(RESULTS_DIR / "1_participants_info.csv", encoding='utf-8-sig')
+master = load_master_dataset(use_cache=True)
+participants = master[['participant_id','gender_normalized','age']].rename(columns={'gender_normalized':'gender'})
 gender_map = {'남성': 'male', '여성': 'female'}
 participants['gender'] = participants['gender'].map(gender_map)
 participants['gender_male'] = (participants['gender'] == 'male').astype(int)
@@ -89,7 +91,7 @@ else:
     sys.exit(1)
 
 # WCST PE rates
-wcst_summary = pd.read_csv(RESULTS_DIR / "analysis_outputs/master_expanded_metrics.csv", encoding='utf-8-sig')
+wcst_summary = load_master_dataset(use_cache=True)
 if 'participantId' in wcst_summary.columns and 'participant_id' not in wcst_summary.columns:
     wcst_summary.rename(columns={'participantId': 'participant_id'}, inplace=True)
 
@@ -141,7 +143,6 @@ mediator_data.columns = ['participant_id', 'tau']
 # Merge all
 master = ucla_data.merge(mediator_data, on='participant_id', how='inner')
 master = master.merge(wcst_data, on='participant_id', how='inner')
-master = master.merge(participants[['participant_id', 'gender_male', 'age']], on='participant_id', how='inner')
 master = master.merge(dass_data, on='participant_id', how='left')
 
 # Drop missing

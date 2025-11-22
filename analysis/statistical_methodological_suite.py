@@ -14,6 +14,7 @@ import sys
 import os
 from pathlib import Path
 import pandas as pd
+from data_loader_utils import load_master_dataset
 import numpy as np
 from scipy import stats
 from scipy.stats import pearsonr, spearmanr
@@ -39,44 +40,30 @@ print("="*80)
 # ============================================================================
 # 데이터 로드
 # ============================================================================
-print("\n[데이터 로딩]")
-participants = pd.read_csv(RESULTS_DIR / "1_participants_info.csv", encoding='utf-8-sig')
-surveys = pd.read_csv(RESULTS_DIR / "2_surveys_results.csv", encoding='utf-8-sig')
-cognitive = pd.read_csv(RESULTS_DIR / "3_cognitive_tests_summary.csv", encoding='utf-8-sig')
+print("\n[?????]")
+master = load_master_dataset(use_cache=True, force_rebuild=True, merge_cognitive_summary=True)
+master = master.rename(columns={"gender_normalized": "gender"})
+master['gender'] = master['gender'].fillna('').astype(str).str.strip().str.lower()
+master['gender'] = master['gender'].apply(lambda x: 'male' if x == 'male' else ('female' if x == 'female' else None))
 
-# UCLA
-ucla = surveys[surveys['surveyName'] == 'ucla'][['participantId', 'score']].dropna()
-ucla.columns = ['participantId', 'ucla_total']
+if 'ucla_total' not in master.columns and 'ucla_score' in master.columns:
+    master['ucla_total'] = master['ucla_score']
+if 'bottleneck' not in master.columns and 'prp_bottleneck' in master.columns:
+    master['bottleneck'] = master['prp_bottleneck']
+if 'interference' not in master.columns:
+    if 'stroop_interference' in master.columns:
+        master['interference'] = master['stroop_interference']
+    elif {'rt_mean_incongruent', 'rt_mean_congruent'} <= set(master.columns):
+        master['interference'] = master['rt_mean_incongruent'] - master['rt_mean_congruent']
 
-# WCST
-wcst = cognitive[cognitive['testName'] == 'wcst'].copy()
-wcst['pe_rate'] = (wcst['perseverativeErrorCount'] / wcst['totalTrialCount']) * 100
-
-# Stroop
-stroop = cognitive[cognitive['testName'] == 'stroop'].copy()
-# Stroop interference (mrt_incong - mrt_cong)
-if 'mrt_incong' in stroop.columns and 'mrt_cong' in stroop.columns:
-    stroop['interference'] = stroop['mrt_incong'] - stroop['mrt_cong']
-
-# PRP
-prp = cognitive[cognitive['testName'] == 'prp'].copy()
-# PRP bottleneck (T2 RT at short SOA - T2 RT at long SOA)
-# Assuming columns exist: rt2_soa_50, rt2_soa_150, rt2_soa_1200
-if 'rt2_soa_150' in prp.columns and 'rt2_soa_1200' in prp.columns:
-    prp['bottleneck'] = prp['rt2_soa_150'] - prp['rt2_soa_1200']
-
-# Master merge
-master = participants[['participantId', 'gender', 'age']].copy()
-master = master.merge(ucla, on='participantId', how='left')
-master = master.merge(wcst[['participantId', 'pe_rate', 'accuracy']], on='participantId', how='left', suffixes=('', '_wcst'))
-if 'interference' in stroop.columns:
-    master = master.merge(stroop[['participantId', 'interference', 'accuracy']], on='participantId', how='left', suffixes=('', '_stroop'))
-if 'bottleneck' in prp.columns:
-    master = master.merge(prp[['participantId', 'bottleneck']], on='participantId', how='left')
+if {'accuracy_incongruent', 'accuracy_congruent'} <= set(master.columns):
+    master['accuracy_stroop'] = master[['accuracy_incongruent', 'accuracy_congruent']].mean(axis=1)
+elif 'accuracy' in master.columns:
+    master['accuracy_stroop'] = master['accuracy']
 
 master = master.dropna(subset=['gender', 'ucla_total', 'pe_rate'])
 
-print(f"   Total: {len(master)}명")
+print(f"   Total: {len(master)}?")
 print(f"   Gender: {master['gender'].value_counts().to_dict()}")
 
 # ============================================================================
@@ -88,14 +75,14 @@ print("\n[1] Task Difficulty 비교 분석...")
 task_difficulty = []
 
 # WCST
-wcst_acc = wcst['accuracy'].mean()
-wcst_sd = wcst['accuracy'].std()
+wcst_acc = master['wcst_accuracy'].mean() if 'wcst_accuracy' in master.columns else np.nan
+wcst_sd = master['wcst_accuracy'].std() if 'wcst_accuracy' in master.columns else np.nan
 task_difficulty.append({
     'task': 'WCST',
     'mean_accuracy': wcst_acc,
     'sd_accuracy': wcst_sd,
     'ceiling_effect': 'Yes' if wcst_acc > 95 else 'No',
-    'n': len(wcst)
+    'n': master['wcst_accuracy'].notna().sum() if 'wcst_accuracy' in master.columns else 0
 })
 
 # Stroop
@@ -113,8 +100,8 @@ if 'accuracy_stroop' in master.columns:
 # Task difficulty vs Effect size 관계
 # 가설: 너무 쉬운 task (ceiling)나 너무 어려운 task (floor)는 효과 작음
 
-males = master[master['gender'] == '남성']
-females = master[master['gender'] == '여성']
+males = master[master['gender'] == 'male']
+females = master[master['gender'] == 'female']
 
 effect_sizes = []
 
@@ -173,7 +160,7 @@ effect_size_df.to_csv(OUTPUT_DIR / "task_difficulty_effect_sizes.csv", index=Fal
 print("\n[2] 비선형 UCLA 효과 검증...")
 
 # 남성만 (주요 효과가 남성에서 발견되므로)
-males = master[master['gender'] == '남성'].copy()
+males = master[master['gender'] == 'male']
 
 if len(males) > 20:
     # Quadratic model
@@ -261,8 +248,8 @@ print("\n[3] 극단 집단 비교 분석...")
 # 상위 10% UCLA + 상위 10% PE (vulnerable 남성)
 # 하위 10% UCLA + 하위 10% PE (resilient 여성)
 
-males = master[master['gender'] == '남성'].copy()
-females = master[master['gender'] == '여성'].copy()
+males = master[master['gender'] == 'male']
+females = master[master['gender'] == 'female']
 
 # Percentiles
 ucla_90_m = males['ucla_total'].quantile(0.9)

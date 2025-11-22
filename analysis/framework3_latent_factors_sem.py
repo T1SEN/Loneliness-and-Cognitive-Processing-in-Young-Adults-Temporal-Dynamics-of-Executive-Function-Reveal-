@@ -55,6 +55,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from data_loader_utils import load_master_dataset
 import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy import stats
@@ -129,7 +130,8 @@ def load_item_level_data():
     surveys = surveys.rename(columns={'participantId': 'participant_id'})
 
     # Load participant info for gender/age
-    participants = pd.read_csv(RESULTS_DIR / "1_participants_info.csv", encoding='utf-8')
+    master = load_master_dataset(use_cache=True)
+    participants = master[['participant_id', 'gender_normalized', 'age']].rename(columns={'gender_normalized': 'gender'})
     participants = participants.rename(columns={'participantId': 'participant_id'})
     participants['gender'] = participants['gender'].map({'남성': 'male', '여성': 'female'})
 

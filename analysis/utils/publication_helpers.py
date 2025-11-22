@@ -21,6 +21,8 @@ from scipy import stats
 from sklearn.model_selection import cross_val_score, KFold
 from sklearn.utils import resample
 import warnings
+import sys
+from pathlib import Path
 
 # Suppress convergence warnings for cleaner output
 warnings.filterwarnings('ignore', category=UserWarning)
@@ -453,66 +455,36 @@ def nested_cv_with_ci(estimator, X, y, cv_outer=10, cv_inner=5,
 # Data Preprocessing for All Frameworks
 # ============================================================================
 
-def load_master_dataset(include_items=False):
+def load_master_dataset(
+    include_items: bool = False,
+    use_cache: bool = True,
+    force_rebuild: bool = False,
+    add_standardized: bool = True
+):
     """
-    Load and merge all datasets for analysis.
+    Convenience wrapper that delegates to analysis.data_loader_utils.load_master_dataset.
 
     Parameters
     ----------
     include_items : bool, default=False
-        If True, includes item-level UCLA/DASS data
-
-    Returns
-    -------
-    pd.DataFrame : Master dataset with participants, surveys, EF metrics
+        Deprecated placeholder (kept for backward compatibility).
+    use_cache : bool
+        If True, load cached parquet when available.
+    force_rebuild : bool
+        If True, rebuild from raw CSVs.
+    add_standardized : bool
+        If True, add z-scored columns (z_ucla_score, z_dass_depression, ...).
     """
-    from pathlib import Path
+    root_dir = Path(__file__).resolve().parent.parent
+    if str(root_dir) not in sys.path:
+        sys.path.insert(0, str(root_dir))
 
-    results_dir = Path("results")
-
-    # Load base datasets
-    participants = pd.read_csv(results_dir / "1_participants_info.csv")
-    surveys = pd.read_csv(results_dir / "2_surveys_results.csv")
-    cognitive = pd.read_csv(results_dir / "3_cognitive_tests_summary.csv")
-
-    # Normalize column names
-    participants = participants.rename(columns={'participantId': 'participant_id'})
-    surveys = surveys.rename(columns={'participantId': 'participant_id'})
-    cognitive = cognitive.rename(columns={'participantId': 'participant_id'})
-
-    # Separate UCLA and DASS
-    ucla = surveys[surveys['surveyName'] == 'ucla'].copy()
-    dass = surveys[surveys['surveyName'] == 'dass'].copy()
-
-    # Merge surveys by participant
-    ucla_scores = ucla[['participant_id', 'score']].rename(columns={'score': 'ucla_score'})
-    dass_scores = dass[['participant_id', 'score_D', 'score_A', 'score_S']].rename(
-        columns={'score_D': 'dass_depression', 'score_A': 'dass_anxiety', 'score_S': 'dass_stress'}
+    from data_loader_utils import load_master_dataset as _load_master_dataset
+    return _load_master_dataset(
+        use_cache=use_cache,
+        force_rebuild=force_rebuild,
+        add_standardized=add_standardized
     )
-
-    # Merge all
-    master = participants.merge(ucla_scores, on='participant_id', how='inner')
-    master = master.merge(dass_scores, on='participant_id', how='inner')
-    master = master.merge(cognitive, on='participant_id', how='inner')
-
-    # Gender binary (for regression)
-    master['gender_male'] = (master['gender'] == 'male').astype(int)
-
-    if include_items:
-        # Add item-level data
-        ucla_items = [f'q{i}' for i in range(1, 21)]
-        dass_items = [f'q{i}' for i in range(1, 22)]
-
-        ucla_item_data = ucla[['participant_id'] + ucla_items].add_prefix('ucla_')
-        ucla_item_data = ucla_item_data.rename(columns={'ucla_participant_id': 'participant_id'})
-
-        dass_item_data = dass[['participant_id'] + dass_items].add_prefix('dass_')
-        dass_item_data = dass_item_data.rename(columns={'dass_participant_id': 'participant_id'})
-
-        master = master.merge(ucla_item_data, on='participant_id', how='left')
-        master = master.merge(dass_item_data, on='participant_id', how='left')
-
-    return master
 
 
 def standardize_variables(df, vars_to_standardize):

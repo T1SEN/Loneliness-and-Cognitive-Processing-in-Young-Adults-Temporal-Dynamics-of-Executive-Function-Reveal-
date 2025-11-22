@@ -25,6 +25,8 @@ METHOD:
 import sys
 from pathlib import Path
 import pandas as pd
+from data_loader_utils import load_master_dataset
+from analysis.utils.trial_data_loader import load_stroop_trials, load_prp_trials, load_wcst_trials
 import numpy as np
 from scipy import stats
 import statsmodels.formula.api as smf
@@ -47,26 +49,14 @@ print("="*100)
 # === LOAD DATA ===
 print("\n[1] Loading data...")
 
-participants = pd.read_csv(RESULTS_DIR / "1_participants_info.csv", encoding='utf-8-sig')
-surveys = pd.read_csv(RESULTS_DIR / "2_surveys_results.csv", encoding='utf-8-sig')
+master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
+master = master.rename(columns={'gender_normalized': 'gender'})
+master['gender'] = master['gender'].fillna('').astype(str).str.strip().str.lower()
 
-if 'participantId' in participants.columns:
-    participants = participants.rename(columns={'participantId': 'participant_id'})
-if 'participantId' in surveys.columns:
-    surveys = surveys.rename(columns={'participantId': 'participant_id'})
+if 'ucla_total' not in master.columns and 'ucla_score' in master.columns:
+    master['ucla_total'] = master['ucla_score']
 
-participants['gender'] = participants['gender'].map({'남성': 'male', '여성': 'female'})
-
-# UCLA
-ucla = surveys[surveys['surveyName'] == 'ucla'][['participant_id', 'score']].rename(columns={'score': 'ucla_total'})
-
-# DASS
-dass = surveys[surveys['surveyName'] == 'dass'][['participant_id', 'score_D', 'score_A', 'score_S']].rename(
-    columns={'score_D': 'dass_depression', 'score_A': 'dass_anxiety', 'score_S': 'dass_stress'})
-
-# Merge
-demo = participants[['participant_id', 'age', 'gender']].merge(ucla, on='participant_id')
-demo = demo.merge(dass, on='participant_id')
+demo = master[['participant_id', 'age', 'gender', 'ucla_total', 'dass_depression', 'dass_anxiety', 'dass_stress']].copy()
 demo = demo.dropna(subset=['gender'])
 demo['gender_male'] = (demo['gender'] == 'male').astype(int)
 
@@ -83,12 +73,10 @@ rt_metrics = []
 
 # === STROOP ===
 print("\n[2.1] Stroop task...")
-stroop_trials = pd.read_csv(RESULTS_DIR / "4c_stroop_trials.csv", encoding='utf-8-sig')
-
-if 'participant_id' in stroop_trials.columns:
-    stroop_trials = stroop_trials.drop(columns=['participant_id'])
-if 'participantId' in stroop_trials.columns:
-    stroop_trials = stroop_trials.rename(columns={'participantId': 'participant_id'})
+stroop_trials, _ = load_stroop_trials(use_cache=True)
+rt_col_stroop = 'rt'
+if rt_col_stroop not in stroop_trials.columns and 'rt_ms' in stroop_trials.columns:
+    stroop_trials = stroop_trials.rename(columns={'rt_ms': 'rt'})
 
 stroop_clean = stroop_trials[
     (stroop_trials['rt'] > 200) &
@@ -97,7 +85,6 @@ stroop_clean = stroop_trials[
 
 print(f"  Valid trials: {len(stroop_clean)}")
 
-# Incongruent trials only (hardest condition)
 for pid in demo['participant_id']:
     subset = stroop_clean[
         (stroop_clean['participant_id'] == pid) &
@@ -118,24 +105,16 @@ print(f"  Stroop metrics: {len([r for r in rt_metrics if r['task'] == 'stroop'])
 
 # === PRP ===
 print("\n[2.2] PRP task...")
-prp_trials = pd.read_csv(RESULTS_DIR / "4a_prp_trials.csv", encoding='utf-8-sig')
+prp_trials, _ = load_prp_trials(use_cache=True)
 
-if 'participant_id' in prp_trials.columns:
-    prp_trials = prp_trials.drop(columns=['participant_id'])
-if 'participantId' in prp_trials.columns:
-    prp_trials = prp_trials.rename(columns={'participantId': 'participant_id'})
-
-rt_col = 't2_rt_ms' if 't2_rt_ms' in prp_trials.columns else 't2_rt'
-
+rt_col = 't2_rt'
 prp_clean = prp_trials[
     (prp_trials[rt_col] > 200) &
-    (prp_trials[rt_col] < 5000) &
-    (prp_trials['t2_timeout'] == False)
+    (prp_trials[rt_col] < 5000)
 ].copy()
 
 print(f"  Valid trials: {len(prp_clean)}")
 
-# Long SOA only (baseline condition)
 for pid in demo['participant_id']:
     subset = prp_clean[
         (prp_clean['participant_id'] == pid) &
@@ -156,32 +135,28 @@ print(f"  PRP metrics: {len([r for r in rt_metrics if r['task'] == 'prp'])} part
 
 # === WCST ===
 print("\n[2.3] WCST task...")
-wcst_trials = pd.read_csv(RESULTS_DIR / "4b_wcst_trials.csv", encoding='utf-8-sig')
+wcst_trials, _ = load_wcst_trials(use_cache=True)
+rt_col_wcst = 'reactionTimeMs' if 'reactionTimeMs' in wcst_trials.columns else ('rt_ms' if 'rt_ms' in wcst_trials.columns else None)
+if rt_col_wcst:
+    wcst_clean = wcst_trials[
+        (wcst_trials[rt_col_wcst] > 200) &
+        (wcst_trials[rt_col_wcst] < 10000)
+    ].copy()
 
-if 'participant_id' in wcst_trials.columns:
-    wcst_trials = wcst_trials.drop(columns=['participant_id'])
-if 'participantId' in wcst_trials.columns:
-    wcst_trials = wcst_trials.rename(columns={'participantId': 'participant_id'})
+    print(f"  Valid trials: {len(wcst_clean)}")
 
-wcst_clean = wcst_trials[
-    (wcst_trials['reactionTimeMs'] > 200) &
-    (wcst_trials['reactionTimeMs'] < 10000)
-].copy()
+    for pid in demo['participant_id']:
+        subset = wcst_clean[wcst_clean['participant_id'] == pid]
 
-print(f"  Valid trials: {len(wcst_clean)}")
-
-for pid in demo['participant_id']:
-    subset = wcst_clean[wcst_clean['participant_id'] == pid]
-
-    if len(subset) >= 20:
-        rt_metrics.append({
-            'participant_id': pid,
-            'task': 'wcst',
-            'condition': 'overall',
-            'mean_rt': subset['reactionTimeMs'].mean(),
-            'sd_rt': subset['reactionTimeMs'].std(),
-            'n_trials': len(subset)
-        })
+        if len(subset) >= 20:
+            rt_metrics.append({
+                'participant_id': pid,
+                'task': 'wcst',
+                'condition': 'overall',
+                'mean_rt': subset[rt_col_wcst].mean(),
+                'sd_rt': subset[rt_col_wcst].std(),
+                'n_trials': len(subset)
+            })
 
 print(f"  WCST metrics: {len([r for r in rt_metrics if r['task'] == 'wcst'])} participants")
 

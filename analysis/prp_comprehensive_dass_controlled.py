@@ -21,6 +21,7 @@ Date: 2025-01-16
 
 import sys
 import pandas as pd
+from data_loader_utils import load_master_dataset
 import numpy as np
 from pathlib import Path
 import statsmodels.formula.api as smf
@@ -60,7 +61,8 @@ master = pd.read_csv(RESULTS_DIR / "analysis_outputs/master_dataset.csv", encodi
 master.columns = master.columns.str.lower()
 
 # Load participants for additional demographics if needed
-participants = pd.read_csv(RESULTS_DIR / "1_participants_info.csv", encoding='utf-8-sig')
+master = load_master_dataset(use_cache=True)
+participants = master[['participant_id','gender_normalized','age']].rename(columns={'gender_normalized':'gender'})
 participants.columns = participants.columns.str.lower()
 if 'participantid' in participants.columns and 'participant_id' in participants.columns:
     participants = participants.drop(columns=['participantid'])
@@ -68,7 +70,6 @@ elif 'participantid' in participants.columns:
     participants.rename(columns={'participantid': 'participant_id'}, inplace=True)
 
 # Merge master with participant info
-master = master.merge(participants[['participant_id', 'gender', 'age']], on='participant_id', how='left', suffixes=('', '_dup'))
 if 'gender_dup' in master.columns:
     master['gender'] = master['gender'].fillna(master['gender_dup'])
     master = master.drop(columns=[c for c in master.columns if c.endswith('_dup')])

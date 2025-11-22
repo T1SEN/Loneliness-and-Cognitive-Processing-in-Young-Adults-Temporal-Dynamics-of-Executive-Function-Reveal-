@@ -17,6 +17,7 @@ import sys
 import os
 from pathlib import Path
 import pandas as pd
+from data_loader_utils import load_master_dataset
 import numpy as np
 from scipy import stats
 from scipy.stats import pearsonr, spearmanr
@@ -42,7 +43,8 @@ print("="*80)
 # 데이터 로드
 # ============================================================================
 print("\n[데이터 로딩]")
-participants = pd.read_csv(RESULTS_DIR / "1_participants_info.csv", encoding='utf-8-sig')
+master = load_master_dataset(use_cache=True)
+participants = master[['participant_id','gender_normalized','age']].rename(columns={'gender_normalized':'gender'})
 surveys = pd.read_csv(RESULTS_DIR / "2_surveys_results.csv", encoding='utf-8-sig')
 wcst_trials = pd.read_csv(RESULTS_DIR / "4b_wcst_trials.csv", encoding='utf-8-sig')
 
@@ -325,7 +327,6 @@ if len(hyper_df) > 0:
     master = master.merge(hyper_df[['participantId', 'hypervigilance_score']], on='participantId', how='outer')
 
 # Merge 인구통계
-master = master.merge(participants[['participantId', 'gender', 'age']], on='participantId', how='left')
 master = master.merge(ucla, on='participantId', how='left')
 master = master.merge(dass_df, on='participantId', how='left')
 

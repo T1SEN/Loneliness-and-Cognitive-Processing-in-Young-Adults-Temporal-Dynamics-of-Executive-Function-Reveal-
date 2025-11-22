@@ -26,6 +26,7 @@ if sys.platform.startswith("win") and hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding='utf-8')
 
 import pandas as pd
+from data_loader_utils import load_master_dataset
 import numpy as np
 from pathlib import Path
 import scipy.stats as stats
@@ -53,48 +54,36 @@ print("="*80)
 print("\n[1/6] Loading data...")
 
 # Demographics
-participants = pd.read_csv(RESULTS_DIR / "1_participants_info.csv", encoding='utf-8-sig')
+master = load_master_dataset(use_cache=True)
+participants = master[['participant_id','gender_normalized','age']].rename(columns={'gender_normalized':'gender'})
 gender_map = {'남성': 'male', '여성': 'female'}
 participants['gender'] = participants['gender'].map(gender_map)
 participants['gender_male'] = (participants['gender'] == 'male').astype(int)
 if 'participantId' in participants.columns:
     participants = participants.rename(columns={'participantId': 'participant_id'})
 
-# UCLA scores
-surveys = pd.read_csv(RESULTS_DIR / "2_surveys_results.csv", encoding='utf-8-sig')
-if 'participantId' in surveys.columns:
-    surveys = surveys.rename(columns={'participantId': 'participant_id'})
-ucla_data = surveys[surveys['surveyName'] == 'ucla'].copy()
-ucla_data['ucla_total'] = pd.to_numeric(ucla_data['score'], errors='coerce')
-ucla_data = ucla_data[['participant_id', 'ucla_total']].dropna()
+ucla_data = master[['participant_id']].copy()
+ucla_data['ucla_total'] = master['ucla_score'] if 'ucla_score' in master.columns else master.get('ucla_total')
 
 # DASS scores (for covariate control)
-dass_data = surveys[surveys['surveyName'] == 'dass'].copy()
-dass_data['score_A'] = pd.to_numeric(dass_data['score_A'], errors='coerce')
-dass_data['score_S'] = pd.to_numeric(dass_data['score_S'], errors='coerce')
-dass_data['score_D'] = pd.to_numeric(dass_data['score_D'], errors='coerce')
+dass_data = master[['participant_id']].copy()
+for src, dst in [('dass_anxiety', 'score_A'), ('dass_stress', 'score_S'), ('dass_depression', 'score_D')]:
+    if src in master.columns:
+        dass_data[dst] = master[src]
 dass_data['dass_total'] = dass_data[['score_A', 'score_S', 'score_D']].sum(axis=1)
 dass_data = dass_data[['participant_id', 'dass_total']].dropna()
 
 # WCST perseverative errors
-wcst_path = RESULTS_DIR / "analysis_outputs/master_expanded_metrics.csv"
-if not wcst_path.exists():
-    # Try alternative
-    wcst_path = RESULTS_DIR / "3_cognitive_tests_summary.csv"
-
-wcst_data = pd.read_csv(wcst_path, encoding='utf-8-sig')
-if 'participantId' in wcst_data.columns:
-    wcst_data = wcst_data.rename(columns={'participantId': 'participant_id'})
-
-# Find PE column
+wcst_data = master[['participant_id']].copy()
 pe_col = None
-for col in ['pe_rate', 'wcst_pe_rate', 'perseverative_error_rate', 'pe_rate_percent']:
-    if col in wcst_data.columns:
+for col in ['wcst_pe_rate', 'pe_rate', 'perseverative_error_rate', 'pe_rate_percent']:
+    if col in master.columns:
         pe_col = col
+        wcst_data[pe_col] = master[col]
         break
 
 if pe_col is None:
-    print(f"ERROR: No PE column found. Columns: {wcst_data.columns.tolist()}")
+    print(f"ERROR: No PE column found in master dataset. Columns: {master.columns.tolist()}")
     sys.exit(1)
 
 wcst_data = wcst_data[['participant_id', pe_col]].copy()

@@ -88,197 +88,30 @@ EF_OUTCOMES = {
 
 def load_and_prepare_data():
     """
-    Load master dataset and compute derived EF metrics.
+    Load master dataset once using the shared loader (consistent gender, outlier, EF definitions).
     """
     print("=" * 70)
-    print("LOADING DATA")
+    print("LOADING DATA (centralized master dataset)")
     print("=" * 70)
 
-    # Load base datasets (use UTF-8 encoding)
-    participants = pd.read_csv(RESULTS_DIR / "1_participants_info.csv", encoding='utf-8')
-    surveys = pd.read_csv(RESULTS_DIR / "2_surveys_results.csv", encoding='utf-8')
-    cognitive = pd.read_csv(RESULTS_DIR / "3_cognitive_tests_summary.csv", encoding='utf-8')
-
-    # Load trial-level data for computing EF metrics
-    try:
-        wcst_trials = pd.read_csv(RESULTS_DIR / "4b_wcst_trials.csv")
-        prp_trials = pd.read_csv(RESULTS_DIR / "4a_prp_trials.csv")
-        stroop_trials = pd.read_csv(RESULTS_DIR / "4c_stroop_trials.csv")
-    except FileNotFoundError:
-        print("Warning: Trial-level files not found. Using summary metrics only.")
-        wcst_trials = prp_trials = stroop_trials = None
-
-    # Normalize column names
-    participants = participants.rename(columns={'participantId': 'participant_id'})
-    surveys = surveys.rename(columns={'participantId': 'participant_id'})
-    cognitive = cognitive.rename(columns={'participantId': 'participant_id'})
-
-    # Separate UCLA and DASS
-    ucla = surveys[surveys['surveyName'] == 'ucla'].copy()
-    dass = surveys[surveys['surveyName'] == 'dass'].copy()
-
-    # Extract scores
-    ucla_scores = ucla[['participant_id', 'score']].rename(columns={'score': 'ucla_score'})
-    dass_scores = dass[['participant_id', 'score_D', 'score_A', 'score_S']].rename(
-        columns={'score_D': 'dass_depression', 'score_A': 'dass_anxiety', 'score_S': 'dass_stress'}
+    master = load_master_dataset(
+        use_cache=True,
+        force_rebuild=False,
+        add_standardized=True
     )
 
-    # Merge
-    master = participants.merge(ucla_scores, on='participant_id', how='inner')
-    master = master.merge(dass_scores, on='participant_id', how='inner')
-    master = master.merge(cognitive, on='participant_id', how='inner')
+    # Backward-compatible naming
+    if 'ucla_total' in master.columns and 'ucla_score' not in master.columns:
+        master = master.rename(columns={'ucla_total': 'ucla_score'})
+    if 'z_ucla_score' not in master.columns and 'z_ucla_total' in master.columns:
+        master['z_ucla_score'] = master['z_ucla_total']
 
-    # Compute EF metrics
-    master = compute_ef_metrics(master, wcst_trials, prp_trials, stroop_trials)
-
-    # Normalize gender values (한글 → English)
-    master['gender'] = master['gender'].map({'남성': 'male', '여성': 'female'})
-
-    # Gender binary
-    master['gender_male'] = (master['gender'] == 'male').astype(int)
-
-    # Standardize predictors
-    vars_to_z = ['ucla_score', 'dass_depression', 'dass_anxiety', 'dass_stress', 'age']
-    master = standardize_variables(master, vars_to_z)
-
-    print(f"\nFinal sample size: N = {len(master)}")
+    print(f"\\nFinal sample size: N = {len(master)}")
     print(f"  Female: {(master['gender_male'] == 0).sum()}")
     print(f"  Male: {(master['gender_male'] == 1).sum()}")
 
     return master
 
-
-def compute_ef_metrics(master, wcst_trials, prp_trials, stroop_trials):
-    """
-    Compute executive function metrics from trial-level data.
-    """
-    # WCST Perseverative Error Rate
-    if wcst_trials is not None:
-        # Standardize participant ID column
-        if 'participantId' in wcst_trials.columns and 'participant_id' in wcst_trials.columns:
-            # Both exist - drop the one with more NaNs
-            if wcst_trials['participant_id'].isna().sum() > wcst_trials['participantId'].isna().sum():
-                wcst_trials = wcst_trials.drop(columns=['participant_id'])
-                wcst_trials = wcst_trials.rename(columns={'participantId': 'participant_id'})
-        elif 'participantId' in wcst_trials.columns:
-            wcst_trials = wcst_trials.rename(columns={'participantId': 'participant_id'})
-
-        # Check if isPE already exists
-        if 'isPE' in wcst_trials.columns:
-            # Convert to boolean (may be stored as string/object)
-            wcst_trials['isPE_bool'] = wcst_trials['isPE'].apply(
-                lambda x: True if str(x).lower() in ['true', '1', 1, True] else False
-            )
-        else:
-            # Parse 'extra' column for perseverative error flag
-            import ast
-            def parse_extra(extra_str):
-                try:
-                    return ast.literal_eval(extra_str) if isinstance(extra_str, str) else {}
-                except:
-                    return {}
-
-            wcst_trials['extra_dict'] = wcst_trials['extra'].apply(parse_extra)
-            wcst_trials['isPE_bool'] = wcst_trials['extra_dict'].apply(lambda x: x.get('isPE', False))
-
-        # Filter to valid rows (non-null participant_id)
-        wcst_valid = wcst_trials[wcst_trials['participant_id'].notna()].copy()
-
-        pe_rate = wcst_valid.groupby('participant_id')['isPE_bool'].mean().reset_index()
-        pe_rate = pe_rate.rename(columns={'isPE_bool': 'wcst_pe_rate'})
-        master = master.merge(pe_rate, on='participant_id', how='left')
-    else:
-        # Use summary metric if available
-        if 'wcst_perseverative_errors' in master.columns:
-            master['wcst_pe_rate'] = master['wcst_perseverative_errors'] / 128  # Total trials
-
-    # PRP Bottleneck Effect (RT at short SOA - RT at long SOA)
-    if prp_trials is not None:
-        # Standardize participant ID column
-        if 'participantId' in prp_trials.columns and 'participant_id' in prp_trials.columns:
-            if prp_trials['participant_id'].isna().sum() > prp_trials['participantId'].isna().sum():
-                prp_trials = prp_trials.drop(columns=['participant_id'])
-                prp_trials = prp_trials.rename(columns={'participantId': 'participant_id'})
-        elif 'participantId' in prp_trials.columns:
-            prp_trials = prp_trials.rename(columns={'participantId': 'participant_id'})
-
-        # Filter to valid rows first
-        prp_trials = prp_trials[prp_trials['participant_id'].notna()].copy()
-
-        # Determine RT column name
-        rt_col = 't2_rt_ms' if 't2_rt_ms' in prp_trials.columns else 't2_rt'
-
-        # Filter valid trials (no timeout, positive RT)
-        valid_prp = prp_trials[
-            (prp_trials[rt_col].notna()) & (prp_trials[rt_col] > 0)
-        ].copy()
-
-        # Additional filter for timeout if available
-        if 't2_timeout' in valid_prp.columns:
-            valid_prp = valid_prp[
-                (valid_prp['t2_timeout'] == False) | (valid_prp['t2_timeout'] == 'False') |
-                (valid_prp['t2_timeout'].isna())
-            ]
-
-        # Determine SOA column name (soa, soa_ms, or soa_nominal_ms)
-        soa_col = 'soa_ms' if 'soa_ms' in valid_prp.columns else ('soa_nominal_ms' if 'soa_nominal_ms' in valid_prp.columns else 'soa')
-
-        # Bin SOA
-        def bin_soa(soa):
-            if soa <= 150:
-                return 'short'
-            elif 1200 <= soa:
-                return 'long'
-            else:
-                return 'medium'
-
-        valid_prp['soa_bin'] = valid_prp[soa_col].apply(bin_soa)
-
-        # Compute mean RT by participant and SOA bin
-        prp_rt = valid_prp.groupby(['participant_id', 'soa_bin'])[rt_col].mean().unstack()
-
-        if 'short' in prp_rt.columns and 'long' in prp_rt.columns:
-            prp_rt['prp_bottleneck'] = prp_rt['short'] - prp_rt['long']
-            master = master.merge(prp_rt[['prp_bottleneck']], on='participant_id', how='left')
-
-    # Stroop Interference (Incongruent RT - Congruent RT)
-    if stroop_trials is not None:
-        # Standardize participant ID column
-        if 'participantId' in stroop_trials.columns and 'participant_id' in stroop_trials.columns:
-            if stroop_trials['participant_id'].isna().sum() > stroop_trials['participantId'].isna().sum():
-                stroop_trials = stroop_trials.drop(columns=['participant_id'])
-                stroop_trials = stroop_trials.rename(columns={'participantId': 'participant_id'})
-        elif 'participantId' in stroop_trials.columns:
-            stroop_trials = stroop_trials.rename(columns={'participantId': 'participant_id'})
-
-        # Filter to valid rows first
-        stroop_trials = stroop_trials[stroop_trials['participant_id'].notna()].copy()
-
-        # Determine RT column name
-        rt_col = 'rt_ms' if 'rt_ms' in stroop_trials.columns else 'rt'
-
-        # Filter valid trials
-        valid_stroop = stroop_trials[
-            (stroop_trials[rt_col].notna()) & (stroop_trials[rt_col] > 0)
-        ].copy()
-
-        # Additional filter for timeout if available
-        if 'timeout' in valid_stroop.columns:
-            valid_stroop = valid_stroop[
-                (valid_stroop['timeout'] == False) | (valid_stroop['timeout'] == 'False') |
-                (valid_stroop['timeout'].isna())
-            ]
-
-        # Determine condition column name
-        cond_col = 'condition' if 'condition' in valid_stroop.columns else 'cond'
-
-        stroop_rt = valid_stroop.groupby(['participant_id', cond_col])[rt_col].mean().unstack()
-
-        if 'incongruent' in stroop_rt.columns and 'congruent' in stroop_rt.columns:
-            stroop_rt['stroop_interference'] = stroop_rt['incongruent'] - stroop_rt['congruent']
-            master = master.merge(stroop_rt[['stroop_interference']], on='participant_id', how='left')
-
-    return master
 
 
 # ============================================================================

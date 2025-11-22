@@ -12,6 +12,7 @@ Outputs: master_comprehensive_features.csv (extends master_expanded_metrics.csv)
 
 import sys
 import pandas as pd
+from data_loader_utils import load_master_dataset
 import numpy as np
 from pathlib import Path
 import warnings
@@ -323,9 +324,7 @@ print()
 
 print("Merging with master dataset...")
 
-# Load existing master
-master = pd.read_csv(RESULTS_DIR / "analysis_outputs/master_expanded_metrics.csv",
-                     encoding='utf-8-sig')
+master = load_master_dataset(use_cache=True)
 master.columns = master.columns.str.lower()
 
 # Normalize participant ID

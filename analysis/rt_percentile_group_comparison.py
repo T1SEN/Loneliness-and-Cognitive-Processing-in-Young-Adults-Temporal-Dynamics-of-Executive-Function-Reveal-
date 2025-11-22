@@ -33,6 +33,7 @@ if sys.platform.startswith("win") and hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding='utf-8')
 
 import pandas as pd
+from data_loader_utils import load_master_dataset
 import numpy as np
 from pathlib import Path
 import statsmodels.formula.api as smf
@@ -122,7 +123,8 @@ if not (has_prp or has_wcst or has_stroop):
 # Load participant-level covariates
 print("\nLoading participant covariates...")
 try:
-    participants = pd.read_csv(RESULTS_DIR / "1_participants_info.csv", encoding='utf-8-sig')
+    master = load_master_dataset(use_cache=True)
+    participants = master[['participant_id', 'gender_normalized', 'age']].rename(columns={'gender_normalized': 'gender'})
     participants.columns = participants.columns.str.lower()
     if 'participantid' in participants.columns:
         participants.rename(columns={'participantid': 'participant_id'}, inplace=True)

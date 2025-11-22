@@ -17,6 +17,12 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import statsmodels.formula.api as smf
+from analysis.utils.trial_data_loader import (
+    load_prp_trials,
+    load_stroop_trials,
+    load_wcst_trials,
+)
+from data_loader_utils import load_master_dataset
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 
@@ -27,27 +33,14 @@ OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
 
 
 def build_predictor_table() -> pd.DataFrame:
-    surveys = pd.read_csv(RESULTS_DIR / "2_surveys_results.csv")
-    surveys.columns = surveys.columns.str.lower()
+    master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
+    master = master.rename(columns={"gender_normalized": "gender"})
+    master["gender"] = master["gender"].fillna("").astype(str).str.strip().str.lower()
 
-    ucla = (
-        surveys[surveys["surveyname"].str.lower() == "ucla"]
-        [["participantid", "score"]]
-        .rename(columns={"participantid": "participant_id", "score": "ucla_total"})
-    )
-    dass = (
-        surveys[surveys["surveyname"].str.lower() == "dass"]
-        [["participantid", "score_d", "score_a", "score_s"]]
-        .rename(
-            columns={
-                "participantid": "participant_id",
-                "score_d": "dass_depression",
-                "score_a": "dass_anxiety",
-                "score_s": "dass_stress",
-            }
-        )
-    )
-    predictors = ucla.merge(dass, on="participant_id", how="inner")
+    if "ucla_total" not in master.columns and "ucla_score" in master.columns:
+        master["ucla_total"] = master["ucla_score"]
+
+    predictors = master[["participant_id", "ucla_total", "dass_depression", "dass_anxiety", "dass_stress"]].dropna()
 
     def z(series):
         if series.std(skipna=True) == 0:
@@ -62,12 +55,13 @@ def build_predictor_table() -> pd.DataFrame:
 
 
 def fit_stroop_mixedlm(predictors: pd.DataFrame) -> str:
-    stroop = pd.read_csv(RESULTS_DIR / "4c_stroop_trials.csv")
-    stroop["participant_id"] = (
-        stroop["participant_id"].fillna(stroop.get("participantId"))
-    )
-    stroop = stroop[(stroop["timeout"] == False) & stroop["rt_ms"].notna()]
-    stroop = stroop.dropna(subset=["participant_id"])
+    stroop, _ = load_stroop_trials(use_cache=True)
+    rt_col = "rt" if "rt" in stroop.columns else "rt_ms" if "rt_ms" in stroop.columns else None
+    if rt_col is None:
+        return "Stroop: RT column missing.\n"
+    if "timeout" in stroop.columns:
+        stroop = stroop[stroop["timeout"] == False]
+    stroop = stroop.dropna(subset=[rt_col, "participant_id"])
     stroop["condition"] = (
         stroop["cond"]
         if "cond" in stroop.columns
@@ -77,7 +71,7 @@ def fit_stroop_mixedlm(predictors: pd.DataFrame) -> str:
     data = stroop.merge(predictors, on="participant_id", how="inner")
     data = data.dropna(
         subset=[
-            "rt_ms",
+            rt_col,
             "z_ucla",
             "z_dass_dep",
             "z_dass_anx",
@@ -89,11 +83,7 @@ def fit_stroop_mixedlm(predictors: pd.DataFrame) -> str:
         return "Stroop: 데이터가 부족하여 혼합모형을 적합할 수 없습니다.\n"
     data = data.reset_index(drop=True).copy()
     formula = (
-        "rt_ms ~ C(condition) + z_ucla + z_dass_dep + z_dass_anx + "
-        "z_dass_stress + z_ucla:C(condition)"
-    )
-    formula = (
-        "rt_ms ~ C(condition) + z_ucla + z_dass_dep + z_dass_anx + "
+        f"{rt_col} ~ C(condition) + z_ucla + z_dass_dep + z_dass_anx + "
         "z_dass_stress + z_ucla:C(condition)"
     )
     model = smf.mixedlm(
@@ -107,14 +97,25 @@ def fit_stroop_mixedlm(predictors: pd.DataFrame) -> str:
 
 
 def fit_prp_mixedlm(predictors: pd.DataFrame) -> str:
-    prp = pd.read_csv(RESULTS_DIR / "4a_prp_trials.csv")
-    prp = prp[prp["t2_rt_ms"].notna()]
-    prp = prp[prp["t2_timeout"] == False]
-    prp["soa_scaled"] = prp["soa_nominal_ms"] / 1000.0
+    prp, _ = load_prp_trials(use_cache=True)
+
+    rt_col = "t2_rt" if "t2_rt" in prp.columns else "t2_rt_ms" if "t2_rt_ms" in prp.columns else None
+    if rt_col is None:
+        return "PRP: RT column missing.\n"
+    if rt_col != "t2_rt":
+        prp = prp.rename(columns={rt_col: "t2_rt"})
+        rt_col = "t2_rt"
+
+    if "t2_timeout" in prp.columns:
+        prp = prp[prp["t2_timeout"] == False]
+
+    prp = prp.dropna(subset=["participant_id", rt_col, "soa"])
+    prp["soa_scaled"] = prp["soa"] / 1000.0
+
     data = prp.merge(predictors, on="participant_id", how="inner")
     data = data.dropna(
         subset=[
-            "t2_rt_ms",
+            rt_col,
             "soa_scaled",
             "z_ucla",
             "z_dass_dep",
@@ -123,11 +124,11 @@ def fit_prp_mixedlm(predictors: pd.DataFrame) -> str:
         ]
     )
     if len(data) < 2000 or data["participant_id"].nunique() < 20:
-        return "PRP: 데이터가 부족하여 혼합모형을 적합할 수 없습니다.\n"
+        return "PRP: insufficient data for mixed model.\n"
     data = data.reset_index(drop=True).copy()
 
     formula = (
-        "t2_rt_ms ~ soa_scaled + z_ucla + z_dass_dep + "
+        f"{rt_col} ~ soa_scaled + z_ucla + z_dass_dep + "
         "z_dass_anx + z_dass_stress + z_ucla:soa_scaled"
     )
     model = smf.mixedlm(
@@ -139,20 +140,19 @@ def fit_prp_mixedlm(predictors: pd.DataFrame) -> str:
     result = model.fit(method="lbfgs", maxiter=200, disp=False)
     return "\n=== PRP MixedLM (trial-level T2 RT) ===\n" + str(result.summary()) + "\n"
 
-
 def fit_wcst_mixedlm(predictors: pd.DataFrame) -> str:
-    wcst = pd.read_csv(RESULTS_DIR / "4b_wcst_trials.csv")
-    wcst["participant_id"] = wcst["participant_id"].fillna(
-        wcst.get("participantId")
-    )
-    if "reactionTimeMs" not in wcst.columns:
-        return "WCST: reactionTimeMs 컬럼이 없어 분석을 건너뜁니다.\n"
-    wcst = wcst[wcst["reactionTimeMs"].notna()]
-    wcst = wcst.dropna(subset=["participant_id"])
+    wcst, _ = load_wcst_trials(use_cache=True)
+
+    rt_col = "reactionTimeMs" if "reactionTimeMs" in wcst.columns else "rt_ms" if "rt_ms" in wcst.columns else None
+    if rt_col is None:
+        return "WCST: reaction time column missing.\n"
+
+    wcst = wcst.dropna(subset=["participant_id", rt_col, "ruleAtThatTime"])
+
     data = wcst.merge(predictors, on="participant_id", how="inner")
     data = data.dropna(
         subset=[
-            "reactionTimeMs",
+            rt_col,
             "z_ucla",
             "z_dass_dep",
             "z_dass_anx",
@@ -161,11 +161,11 @@ def fit_wcst_mixedlm(predictors: pd.DataFrame) -> str:
         ]
     )
     if len(data) < 1500 or data["participant_id"].nunique() < 20:
-        return "WCST: 데이터가 부족하여 혼합모형을 적합할 수 없습니다.\n"
+        return "WCST: insufficient data for mixed model.\n"
     data = data.reset_index(drop=True).copy()
 
     formula = (
-        "reactionTimeMs ~ C(ruleAtThatTime) + z_ucla + "
+        f"{rt_col} ~ C(ruleAtThatTime) + z_ucla + "
         "z_dass_dep + z_dass_anx + z_dass_stress + z_ucla:C(ruleAtThatTime)"
     )
     model = smf.mixedlm(
@@ -176,7 +176,6 @@ def fit_wcst_mixedlm(predictors: pd.DataFrame) -> str:
     )
     result = model.fit(method="lbfgs", maxiter=200, disp=False)
     return "\n=== WCST MixedLM (trial-level RT) ===\n" + str(result.summary()) + "\n"
-
 
 def main():
     predictors = build_predictor_table()

@@ -16,6 +16,7 @@ Date: 2025
 import sys
 from pathlib import Path
 import pandas as pd
+from data_loader_utils import load_master_dataset
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -41,7 +42,8 @@ print("="*80)
 # ============================================================================
 print("\n[1/6] Loading data...")
 
-participants = pd.read_csv(RESULTS_DIR / "1_participants_info.csv")
+master = load_master_dataset(use_cache=True)
+participants = master[['participant_id','gender_normalized','age']].rename(columns={'gender_normalized':'gender'})
 surveys = pd.read_csv(RESULTS_DIR / "2_surveys_results.csv")
 cognitive = pd.read_csv(RESULTS_DIR / "3_cognitive_tests_summary.csv")
 

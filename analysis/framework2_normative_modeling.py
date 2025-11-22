@@ -68,6 +68,7 @@ from utils.publication_helpers import (
     bootstrap_ci,
     format_pvalue,
     format_ci,
+    load_master_dataset,
 )
 
 warnings.filterwarnings('ignore')
@@ -99,145 +100,29 @@ def load_normative_data():
     Load master dataset for normative modeling.
     """
     print("=" * 70)
-    print("LOADING DATA FOR NORMATIVE MODELING")
+    print("LOADING DATA FOR NORMATIVE MODELING (centralized master dataset)")
     print("=" * 70)
 
-    # Load base datasets (UTF-8 encoding for Korean gender labels)
-    participants = pd.read_csv(RESULTS_DIR / "1_participants_info.csv", encoding='utf-8')
-    surveys = pd.read_csv(RESULTS_DIR / "2_surveys_results.csv", encoding='utf-8')
-    cognitive = pd.read_csv(RESULTS_DIR / "3_cognitive_tests_summary.csv", encoding='utf-8')
-
-    # Normalize column names
-    participants = participants.rename(columns={'participantId': 'participant_id'})
-    surveys = surveys.rename(columns={'participantId': 'participant_id'})
-    cognitive = cognitive.rename(columns={'participantId': 'participant_id'})
-
-    # Separate UCLA and DASS
-    ucla = surveys[surveys['surveyName'] == 'ucla'].copy()
-    dass = surveys[surveys['surveyName'] == 'dass'].copy()
-
-    # Extract scores
-    ucla_scores = ucla[['participant_id', 'score']].rename(columns={'score': 'ucla_score'})
-    dass_scores = dass[['participant_id', 'score_D', 'score_A', 'score_S']].rename(
-        columns={'score_D': 'dass_depression', 'score_A': 'dass_anxiety', 'score_S': 'dass_stress'}
+    master = load_master_dataset(
+        use_cache=True,
+        force_rebuild=False,
+        add_standardized=True
     )
 
-    # Merge
-    master = participants.merge(ucla_scores, on='participant_id', how='inner')
-    master = master.merge(dass_scores, on='participant_id', how='inner')
-    master = master.merge(cognitive, on='participant_id', how='inner')
+    if 'ucla_total' in master.columns and 'ucla_score' not in master.columns:
+        master = master.rename(columns={'ucla_total': 'ucla_score'})
+    if 'z_ucla_score' in master.columns:
+        master['z_ucla'] = master['z_ucla_score']
+    elif 'ucla_score' in master.columns:
+        master['z_ucla'] = (master['ucla_score'] - master['ucla_score'].mean()) / master['ucla_score'].std()
 
-    # Compute EF metrics from trial data
-    master = compute_ef_metrics_normative(master)
-
-    # Normalize gender (한글 → English)
-    master['gender'] = master['gender'].map({'남성': 'male', '여성': 'female'})
-    master['gender_male'] = (master['gender'] == 'male').astype(int)
-
-    # Standardize UCLA for later analyses
-    master['z_ucla'] = (master['ucla_score'] - master['ucla_score'].mean()) / master['ucla_score'].std()
-
-    print(f"\nFinal sample size: N = {len(master)}")
+    print(f"\\nFinal sample size: N = {len(master)}")
     print(f"  Female: {(master['gender_male'] == 0).sum()}")
     print(f"  Male: {(master['gender_male'] == 1).sum()}")
     print(f"  Age range: {master['age'].min():.1f} - {master['age'].max():.1f} years")
 
     return master
 
-
-def compute_ef_metrics_normative(master):
-    """
-    Compute EF metrics from trial-level data (simplified version).
-    """
-    try:
-        # WCST
-        wcst_trials = pd.read_csv(RESULTS_DIR / "4b_wcst_trials.csv")
-
-        # Handle duplicate participant_id columns
-        if 'participantId' in wcst_trials.columns and 'participant_id' in wcst_trials.columns:
-            if wcst_trials['participant_id'].isna().sum() > wcst_trials['participantId'].isna().sum():
-                wcst_trials = wcst_trials.drop(columns=['participant_id'])
-                wcst_trials = wcst_trials.rename(columns={'participantId': 'participant_id'})
-        elif 'participantId' in wcst_trials.columns:
-            wcst_trials = wcst_trials.rename(columns={'participantId': 'participant_id'})
-
-        wcst_valid = wcst_trials[wcst_trials['participant_id'].notna()].copy()
-
-        if 'isPE' in wcst_valid.columns:
-            wcst_valid['isPE_bool'] = wcst_valid['isPE'].apply(
-                lambda x: True if str(x).lower() in ['true', '1', 1, True] else False
-            )
-            pe_rate = wcst_valid.groupby('participant_id')['isPE_bool'].mean().reset_index()
-            pe_rate = pe_rate.rename(columns={'isPE_bool': 'wcst_pe_rate'})
-            master = master.merge(pe_rate, on='participant_id', how='left')
-
-    except Exception as e:
-        print(f"  ⚠️  Could not compute WCST metrics: {e}")
-
-    try:
-        # PRP
-        prp_trials = pd.read_csv(RESULTS_DIR / "4a_prp_trials.csv")
-
-        if 'participantId' in prp_trials.columns and 'participant_id' in prp_trials.columns:
-            if prp_trials['participant_id'].isna().sum() > prp_trials['participantId'].isna().sum():
-                prp_trials = prp_trials.drop(columns=['participant_id'])
-                prp_trials = prp_trials.rename(columns={'participantId': 'participant_id'})
-        elif 'participantId' in prp_trials.columns:
-            prp_trials = prp_trials.rename(columns={'participantId': 'participant_id'})
-
-        prp_valid = prp_trials[prp_trials['participant_id'].notna()].copy()
-
-        rt_col = 't2_rt_ms' if 't2_rt_ms' in prp_valid.columns else 't2_rt'
-        soa_col = 'soa_ms' if 'soa_ms' in prp_valid.columns else ('soa_nominal_ms' if 'soa_nominal_ms' in prp_valid.columns else 'soa')
-
-        prp_valid = prp_valid[(prp_valid[rt_col].notna()) & (prp_valid[rt_col] > 0)].copy()
-
-        def bin_soa(soa):
-            if soa <= 150:
-                return 'short'
-            elif soa >= 1200:
-                return 'long'
-            else:
-                return 'medium'
-
-        prp_valid['soa_bin'] = prp_valid[soa_col].apply(bin_soa)
-        prp_rt = prp_valid.groupby(['participant_id', 'soa_bin'])[rt_col].mean().unstack()
-
-        if 'short' in prp_rt.columns and 'long' in prp_rt.columns:
-            prp_rt['prp_bottleneck'] = prp_rt['short'] - prp_rt['long']
-            master = master.merge(prp_rt[['prp_bottleneck']], on='participant_id', how='left')
-
-    except Exception as e:
-        print(f"  ⚠️  Could not compute PRP metrics: {e}")
-
-    try:
-        # Stroop
-        stroop_trials = pd.read_csv(RESULTS_DIR / "4c_stroop_trials.csv")
-
-        if 'participantId' in stroop_trials.columns and 'participant_id' in stroop_trials.columns:
-            if stroop_trials['participant_id'].isna().sum() > stroop_trials['participantId'].isna().sum():
-                stroop_trials = stroop_trials.drop(columns=['participant_id'])
-                stroop_trials = stroop_trials.rename(columns={'participantId': 'participant_id'})
-        elif 'participantId' in stroop_trials.columns:
-            stroop_trials = stroop_trials.rename(columns={'participantId': 'participant_id'})
-
-        stroop_valid = stroop_trials[stroop_trials['participant_id'].notna()].copy()
-
-        rt_col = 'rt_ms' if 'rt_ms' in stroop_valid.columns else 'rt'
-        cond_col = 'condition' if 'condition' in stroop_valid.columns else 'cond'
-
-        stroop_valid = stroop_valid[(stroop_valid[rt_col].notna()) & (stroop_valid[rt_col] > 0)].copy()
-
-        stroop_rt = stroop_valid.groupby(['participant_id', cond_col])[rt_col].mean().unstack()
-
-        if 'incongruent' in stroop_rt.columns and 'congruent' in stroop_rt.columns:
-            stroop_rt['stroop_interference'] = stroop_rt['incongruent'] - stroop_rt['congruent']
-            master = master.merge(stroop_rt[['stroop_interference']], on='participant_id', how='left')
-
-    except Exception as e:
-        print(f"  ⚠️  Could not compute Stroop metrics: {e}")
-
-    return master
 
 
 # ============================================================================
@@ -311,7 +196,7 @@ def build_gp_normative_model(X, y):
 
 def compute_normative_deviations(df, ef_outcome, method='gp'):
     """
-    Compute personalized normative deviations using cross-validation.
+    Compute personalized normative deviations using cross-validation (no data leakage).
 
     Parameters
     ----------
@@ -335,71 +220,60 @@ def compute_normative_deviations(df, ef_outcome, method='gp'):
     print(f"Method: {method.upper()}")
     print(f"{'=' * 70}")
 
-    # Prepare features (WITHOUT UCLA - that's the test variable)
     feature_cols = ['age', 'dass_depression', 'dass_anxiety', 'dass_stress', 'gender_male']
     X = df[feature_cols].values
     y = df[ef_outcome].values
 
-    # Standardize for GP
-    scaler_X = StandardScaler()
-    scaler_y = StandardScaler()
-
-    X_scaled = scaler_X.fit_transform(X)
-    y_scaled = scaler_y.fit_transform(y.reshape(-1, 1)).ravel()
-
-    # Cross-validated predictions (unbiased)
     print(f"\nPerforming {N_FOLDS}-fold cross-validation...")
-
     kf = KFold(n_splits=N_FOLDS, shuffle=True, random_state=RANDOM_STATE)
 
-    y_pred_scaled = np.zeros_like(y_scaled)
-    y_pred_std_scaled = np.zeros_like(y_scaled)
+    y_pred = np.zeros_like(y, dtype=float)
+    y_pred_std = np.full_like(y, np.nan, dtype=float)
 
-    for fold_idx, (train_idx, test_idx) in enumerate(kf.split(X_scaled)):
+    for fold_idx, (train_idx, test_idx) in enumerate(kf.split(X)):
         print(f"  Fold {fold_idx + 1}/{N_FOLDS}...", end=' ')
 
-        X_train, X_test = X_scaled[train_idx], X_scaled[test_idx]
-        y_train, y_test = y_scaled[train_idx], y_scaled[test_idx]
+        # Fold-specific scaling to prevent leakage
+        scaler_X = StandardScaler()
+        scaler_y = StandardScaler()
+        X_train = scaler_X.fit_transform(X[train_idx])
+        y_train = scaler_y.fit_transform(y[train_idx].reshape(-1, 1)).ravel()
+        X_test = scaler_X.transform(X[test_idx])
 
         if method == 'gam' and PYGAM_AVAILABLE:
             model = build_gam_normative_model(X_train, y_train, feature_cols)
-            y_pred_scaled[test_idx] = model.predict(X_test)
-            # GAM doesn't provide prediction std easily
-            y_pred_std_scaled[test_idx] = np.nan
+            pred_mean = model.predict(X_test)
+            pred_std = np.full_like(pred_mean, np.nan)
         else:
-            # Use GP (default)
             model = build_gp_normative_model(X_train, y_train)
             pred_mean, pred_std = model.predict(X_test, return_std=True)
-            y_pred_scaled[test_idx] = pred_mean
-            y_pred_std_scaled[test_idx] = pred_std
 
-        print("✓")
+        # Inverse-transform predictions back to original scale
+        y_pred[test_idx] = scaler_y.inverse_transform(pred_mean.reshape(-1, 1)).ravel()
+        if pred_std is not None and not np.all(np.isnan(pred_std)):
+            y_pred_std[test_idx] = pred_std * scaler_y.scale_[0]
 
-    # Inverse transform predictions
-    y_pred = scaler_y.inverse_transform(y_pred_scaled.reshape(-1, 1)).ravel()
+        print("done")
 
-    # Compute deviations
     deviation = y - y_pred
-
-    # Z-score deviations (using residual SD)
     deviation_sd = np.std(deviation)
     deviation_z = deviation / deviation_sd
 
-    # Add to dataframe
     df[f'{ef_outcome}_predicted'] = y_pred
+    df[f'{ef_outcome}_predicted_sd'] = y_pred_std
     df[f'{ef_outcome}_deviation'] = deviation
     df[f'{ef_outcome}_deviation_z'] = deviation_z
 
-    # Model fit statistics
     r2 = 1 - (np.var(deviation) / np.var(y))
     rmse = np.sqrt(np.mean(deviation**2))
 
     print(f"\nNormative Model Performance:")
-    print(f"  R² (cross-validated): {r2:.3f}")
+    print(f"  R^2 (cross-validated): {r2:.3f}")
     print(f"  RMSE: {rmse:.3f}")
     print(f"  Deviation SD: {deviation_sd:.3f}")
 
     return df
+
 
 
 # ============================================================================

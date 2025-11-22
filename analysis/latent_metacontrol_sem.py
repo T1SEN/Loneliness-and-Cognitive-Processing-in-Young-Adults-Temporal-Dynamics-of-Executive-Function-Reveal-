@@ -12,6 +12,7 @@ Outputs:
 
 import sys
 import pandas as pd
+from data_loader_utils import load_master_dataset
 import numpy as np
 from pathlib import Path
 import statsmodels.formula.api as smf
@@ -40,7 +41,7 @@ master.columns = master.columns.str.lower()
 
 # Also load expanded if available
 try:
-    expanded = pd.read_csv(RESULTS_DIR / "analysis_outputs/master_expanded_metrics.csv", encoding='utf-8-sig')
+    expanded = load_master_dataset(use_cache=True)
     expanded.columns = expanded.columns.str.lower()
     if 'participantid' in expanded.columns and 'participant_id' not in expanded.columns:
         expanded.rename(columns={'participantid': 'participant_id'}, inplace=True)
@@ -49,13 +50,13 @@ try:
 except FileNotFoundError:
     pass
 
-participants = pd.read_csv(RESULTS_DIR / "1_participants_info.csv", encoding='utf-8-sig')
+master = load_master_dataset(use_cache=True)
+participants = master[['participant_id','gender_normalized','age']].rename(columns={'gender_normalized':'gender'})
 participants.columns = participants.columns.str.lower()
 if 'participantid' in participants.columns:
     participants.rename(columns={'participantid': 'participant_id'}, inplace=True)
 
 if 'gender' not in master.columns:
-    master = master.merge(participants[['participant_id', 'gender']], on='participant_id', how='left')
 
 gender_map = {'남성': 'male', '여성': 'female', 'Male': 'male', 'Female': 'female'}
 master['gender'] = master['gender'].map(gender_map)

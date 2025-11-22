@@ -15,6 +15,7 @@ import sys
 import os
 from pathlib import Path
 import pandas as pd
+from data_loader_utils import load_master_dataset
 import numpy as np
 from scipy import stats
 from scipy.stats import pearsonr
@@ -61,40 +62,23 @@ def cronbach_alpha(df):
     alpha = (n_items / (n_items - 1)) * (1 - item_vars.sum() / total_var)
     return alpha
 
-# ============================================================================
-# 데이터 로드
-# ============================================================================
-print("\n[데이터 로딩]")
-participants = pd.read_csv(RESULTS_DIR / "1_participants_info.csv", encoding='utf-8-sig')
-surveys = pd.read_csv(RESULTS_DIR / "2_surveys_results.csv", encoding='utf-8-sig')
-cognitive = pd.read_csv(RESULTS_DIR / "3_cognitive_tests_summary.csv", encoding='utf-8-sig')
+print("\n[?????]")
+master_full = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
+master_full = master_full.rename(columns={'gender_normalized': 'gender'})
+master_full['gender'] = master_full['gender'].fillna('').astype(str).str.strip().str.lower()
 
-# Trial-level data
-wcst_trials = pd.read_csv(RESULTS_DIR / "4b_wcst_trials.csv", encoding='utf-8-sig')
-stroop_trials = pd.read_csv(RESULTS_DIR / "4c_stroop_trials.csv", encoding='utf-8-sig')
-prp_trials = pd.read_csv(RESULTS_DIR / "4a_prp_trials.csv", encoding='utf-8-sig')
+if 'ucla_total' not in master_full.columns and 'ucla_score' in master_full.columns:
+    master_full['ucla_total'] = master_full['ucla_score']
 
-# Normalize participantId
-for df in [wcst_trials, stroop_trials, prp_trials]:
-    if 'participant_id' in df.columns and 'participantId' not in df.columns:
-        df.rename(columns={'participant_id': 'participantId'}, inplace=True)
+master = master_full[['participant_id','gender','age','ucla_total']].copy()
+master = master.rename(columns={'participant_id': 'participantId'})
 
-# UCLA
-ucla = surveys[surveys['surveyName'] == 'ucla'][['participantId', 'score']].dropna()
-ucla.columns = ['participantId', 'ucla_total']
-
-# Master
-master = participants[['participantId', 'gender', 'age']].copy()
-master = master.merge(ucla, on='participantId', how='left')
+# Trial-level data via loaders
+wcst_trials, _ = load_wcst_trials(use_cache=True)
+stroop_trials, _ = load_stroop_trials(use_cache=True)
+prp_trials, _ = load_prp_trials(use_cache=True)
 
 print(f"   Total participants: {len(master)}")
-
-# ============================================================================
-# WCST 복합 지표 생성
-# ============================================================================
-print("\n[WCST 복합 지표]")
-
-import ast
 
 def parse_wcst_extra(extra_str):
     if not isinstance(extra_str, str):
@@ -112,8 +96,11 @@ elif 'rt_ms' in wcst_trials.columns:
 else:
     rt_col = 'rt'
 
-wcst_trials['extra_dict'] = wcst_trials['extra'].apply(parse_wcst_extra)
-wcst_trials['isPE'] = wcst_trials['extra_dict'].apply(lambda x: x.get('isPE', False))
+if 'extra' in wcst_trials.columns:
+    wcst_trials['extra_dict'] = wcst_trials['extra'].apply(parse_wcst_extra)
+    wcst_trials['isPE'] = wcst_trials['extra_dict'].apply(lambda x: x.get('isPE', False))
+elif 'isPE' not in wcst_trials.columns:
+    wcst_trials['isPE'] = False
 
 wcst_metrics = []
 

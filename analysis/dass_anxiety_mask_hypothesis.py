@@ -36,6 +36,7 @@ if sys.platform.startswith("win") and hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding='utf-8')
 
 import pandas as pd
+from data_loader_utils import load_master_dataset
 import numpy as np
 from pathlib import Path
 import scipy.stats as stats
@@ -61,51 +62,16 @@ print("="*80)
 # 1. LOAD DATA
 # ============================================================================
 print("\n[1/6] Loading data...")
+master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
 
-# Load master dataset
-master_path = RESULTS_DIR / "analysis_outputs/master_dataset.csv"
-if master_path.exists():
-    master = pd.read_csv(master_path, encoding='utf-8-sig')
-else:
-    # Build from scratch
-    participants = pd.read_csv(RESULTS_DIR / "1_participants_info.csv", encoding='utf-8-sig')
-    surveys = pd.read_csv(RESULTS_DIR / "2_surveys_results.csv", encoding='utf-8-sig')
-    cognitive = pd.read_csv(RESULTS_DIR / "3_cognitive_tests_summary.csv", encoding='utf-8-sig')
+if 'ucla_total' not in master.columns and 'ucla_score' in master.columns:
+    master['ucla_total'] = master['ucla_score']
 
-    if 'participantId' in participants.columns:
-        participants = participants.rename(columns={'participantId': 'participant_id'})
-    if 'participantId' in surveys.columns:
-        surveys = surveys.rename(columns={'participantId': 'participant_id'})
-    if 'participantId' in cognitive.columns:
-        cognitive = cognitive.rename(columns={'participantId': 'participant_id'})
-
-    # UCLA
-    ucla_data = surveys[surveys['surveyName'] == 'ucla'][['participant_id', 'score']].rename(columns={'score': 'ucla_total'})
-
-    # DASS
-    dass_data = surveys[surveys['surveyName'] == 'dass'].copy()
-    dass_data = dass_data.rename(columns={'score_A': 'dass_anxiety', 'score_S': 'dass_stress', 'score_D': 'dass_depression'})
-    dass_data['dass_total'] = pd.to_numeric(dass_data['dass_anxiety'], errors='coerce') + \
-                               pd.to_numeric(dass_data['dass_stress'], errors='coerce') + \
-                               pd.to_numeric(dass_data['dass_depression'], errors='coerce')
-
-    master = participants.merge(ucla_data, on='participant_id', how='inner')
-    master = master.merge(dass_data[['participant_id', 'dass_anxiety', 'dass_stress', 'dass_depression', 'dass_total']], on='participant_id', how='left')
-    master = master.merge(cognitive, on='participant_id', how='left')
-
-# Normalize gender (check if column exists)
-if 'gender' not in master.columns:
-    # Load and merge participant gender info
-    participants = pd.read_csv(RESULTS_DIR / "1_participants_info.csv", encoding='utf-8-sig')
-    if 'participantId' in participants.columns:
-        participants = participants.rename(columns={'participantId': 'participant_id'})
-    master = master.merge(participants[['participant_id', 'gender']], on='participant_id', how='left')
-
-gender_map = {'남성': 'male', '여성': 'female', 'male': 'male', 'female': 'female'}
-if 'gender' in master.columns:
-    master['gender'] = master['gender'].map(gender_map)
-    master['gender_male'] = (master['gender'] == 'male').astype(int)
-elif 'gender_male' not in master.columns:
+# Normalize gender directly from master
+master['gender'] = master.get('gender_normalized', master.get('gender'))
+master['gender'] = master['gender'].fillna('').astype(str).str.strip().str.lower()
+master['gender_male'] = master['gender'].map({'male': 1, 'female': 0})
+if master['gender_male'].isna().all():
     print("ERROR: Cannot determine gender")
     import sys
     sys.exit(1)

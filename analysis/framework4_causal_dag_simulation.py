@@ -67,6 +67,7 @@ if sys.platform.startswith("win") and hasattr(sys.stdout, "reconfigure"):
 
 import numpy as np
 import pandas as pd
+from data_loader_utils import load_master_dataset
 import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy import stats
@@ -132,7 +133,8 @@ def load_dag_data():
     print("=" * 70)
 
     # Load datasets
-    participants = pd.read_csv(RESULTS_DIR / "1_participants_info.csv", encoding='utf-8')
+    master = load_master_dataset(use_cache=True)
+    participants = master[['participant_id', 'gender_normalized', 'age']].rename(columns={'gender_normalized': 'gender'})
     surveys = pd.read_csv(RESULTS_DIR / "2_surveys_results.csv", encoding='utf-8')
     cognitive = pd.read_csv(RESULTS_DIR / "3_cognitive_tests_summary.csv", encoding='utf-8')
 

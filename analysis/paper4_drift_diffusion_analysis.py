@@ -22,6 +22,8 @@ ADVANTAGES:
 import sys
 from pathlib import Path
 import pandas as pd
+from data_loader_utils import load_master_dataset
+from analysis.utils.trial_data_loader import load_stroop_trials, load_prp_trials, load_wcst_trials
 import numpy as np
 from scipy import stats
 import matplotlib.pyplot as plt
@@ -102,27 +104,14 @@ def ez_diffusion(mean_rt, var_rt, prop_correct, s=0.1):
 print("\n[1] Loading trial-level data...")
 
 # Participants and surveys
-participants = pd.read_csv(RESULTS_DIR / "1_participants_info.csv", encoding='utf-8-sig')
-surveys = pd.read_csv(RESULTS_DIR / "2_surveys_results.csv", encoding='utf-8-sig')
+master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
+master = master.rename(columns={'gender_normalized': 'gender'})
+master['gender'] = master['gender'].fillna('').astype(str).str.strip().str.lower()
 
-if 'participantId' in participants.columns:
-    participants = participants.rename(columns={'participantId': 'participant_id'})
-if 'participantId' in surveys.columns:
-    surveys = surveys.rename(columns={'participantId': 'participant_id'})
+if 'ucla_total' not in master.columns and 'ucla_score' in master.columns:
+    master['ucla_total'] = master['ucla_score']
 
-participants['gender'] = participants['gender'].map({'남성': 'male', '여성': 'female'})
-
-# UCLA
-ucla = surveys[surveys['surveyName'] == 'ucla'][['participant_id', 'score']].rename(columns={'score': 'ucla_total'})
-
-# DASS
-dass = surveys[surveys['surveyName'] == 'dass'][['participant_id', 'score_D', 'score_A', 'score_S']].rename(
-    columns={'score_D': 'dass_depression', 'score_A': 'dass_anxiety', 'score_S': 'dass_stress'})
-
-# Merge demographics
-demo = participants[['participant_id', 'age', 'gender']].merge(ucla, on='participant_id')
-demo = demo.merge(dass, on='participant_id')
-demo = demo.dropna(subset=['gender'])
+demo = master[['participant_id', 'age', 'gender', 'ucla_total', 'dass_depression', 'dass_anxiety', 'dass_stress']].dropna(subset=['gender']).copy()
 demo['gender_male'] = (demo['gender'] == 'male').astype(int)
 
 print(f"Demographics: N={len(demo)} ({demo['gender_male'].sum()} males, {len(demo) - demo['gender_male'].sum()} females)")
