@@ -27,6 +27,7 @@ import seaborn as sns
 import warnings
 warnings.filterwarnings('ignore')
 
+from analysis.utils.trial_data_loader import load_wcst_trials, load_stroop_trials, load_prp_trials
 # UTF-8 설정
 if sys.platform.startswith("win") and hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding='utf-8')
@@ -122,45 +123,33 @@ except Exception as e:
 print("\n[3] Stroop Post-Error Slowing 분석...")
 
 try:
-    stroop_trials = pd.read_csv(RESULTS_DIR / "4c_stroop_trials.csv", encoding='utf-8-sig')
-    print(f"   Stroop trials: {len(stroop_trials)}")
+    stroop_trials, stroop_summary = load_stroop_trials(use_cache=True, require_correct_for_rt=False)
+    print(f"   Stroop trials: {len(stroop_trials)} | participants: {stroop_summary.get('n_participants')}")
 
-    # participantId normalize
-    if 'participant_id' in stroop_trials.columns and 'participantId' not in stroop_trials.columns:
-        stroop_trials.rename(columns={'participant_id': 'participantId'}, inplace=True)
-
+    stroop_trials = stroop_trials.rename(columns={'participant_id': 'participantId'})
     stroop_pes_list = []
 
     for pid in stroop_trials['participantId'].unique():
         trials = stroop_trials[stroop_trials['participantId'] == pid].copy()
 
-        # trial index로 정렬
         if 'trial' in trials.columns:
             trials = trials.sort_values('trial').reset_index(drop=True)
+        elif 'trialIndex' in trials.columns:
+            trials = trials.sort_values('trialIndex').reset_index(drop=True)
         else:
             trials = trials.reset_index(drop=True)
 
-        # RT 컬럼
-        if 'rt' in trials.columns:
-            rt_col = 'rt'
-        elif 'rt_ms' in trials.columns:
-            rt_col = 'rt_ms'
-        else:
+        rt_col = 'rt' if 'rt' in trials.columns else 'rt_ms' if 'rt_ms' in trials.columns else None
+        if rt_col is None:
             continue
 
-        # timeout 제외, correct RT만
         if 'timeout' in trials.columns:
-            trials = trials[(trials['timeout'] == False) & (trials[rt_col] > 0)]
-        else:
-            trials = trials[trials[rt_col] > 0]
+            trials = trials[(trials['timeout'] == False)]
 
         if len(trials) < 10:
             continue
 
-        # 이전 trial의 정답/오답
         trials['prev_correct'] = trials['correct'].shift(1)
-
-        # post-error vs post-correct RT
         post_error = trials[trials['prev_correct'] == False]
         post_correct = trials[trials['prev_correct'] == True]
 
@@ -170,7 +159,6 @@ try:
         rt_post_error = post_error[rt_col].mean()
         rt_post_correct = post_correct[rt_col].mean()
         pes = rt_post_error - rt_post_correct
-
         post_error_acc = post_error['correct'].mean() * 100
         post_correct_acc = post_correct['correct'].mean() * 100
 
@@ -188,51 +176,52 @@ try:
         })
 
     stroop_pes_df = pd.DataFrame(stroop_pes_list)
-    print(f"   Stroop PES 계산 완료: {len(stroop_pes_df)}명")
+    print(f"   Stroop PES computed: {len(stroop_pes_df)} rows")
 
 except Exception as e:
-    print(f"   ⚠ Stroop PES 계산 실패: {e}")
+    print(f"   !!Stroop PES failed: {e}")
     import traceback
     traceback.print_exc()
     stroop_pes_df = pd.DataFrame()
-
 # ============================================================================
 # 4. PRP PES 분석
 # ============================================================================
 print("\n[4] PRP Post-Error Slowing 분석...")
 
 try:
-    prp_trials = pd.read_csv(RESULTS_DIR / "4a_prp_trials.csv", encoding='utf-8-sig')
-    print(f"   PRP trials: {len(prp_trials)}")
+    prp_trials, prp_summary = load_prp_trials(
+        use_cache=True,
+        require_t1_correct=False,
+        enforce_short_long_only=False,
+        require_t2_correct_for_rt=False,
+        drop_timeouts=True,
+    )
+    print(f"   PRP trials: {len(prp_trials)} | participants: {prp_summary.get('n_participants')}")
 
-    # participantId normalize
-    if 'participant_id' in prp_trials.columns and 'participantId' not in prp_trials.columns:
-        prp_trials.rename(columns={'participant_id': 'participantId'}, inplace=True)
+    prp_trials = prp_trials.rename(columns={'participant_id': 'participantId'})
 
     prp_pes_list = []
 
     for pid in prp_trials['participantId'].unique():
         trials = prp_trials[prp_trials['participantId'] == pid].copy()
 
-        # idx로 정렬
         if 'idx' in trials.columns:
             trials = trials.sort_values('idx').reset_index(drop=True)
         else:
             trials = trials.reset_index(drop=True)
 
-        # timeout 제외 (column 확인)
-        has_t1_timeout = 't1_timeout' in trials.columns
-        has_t2_timeout = 't2_timeout' in trials.columns
+        if 't1_timeout' in trials.columns:
+            trials = trials[trials['t1_timeout'] == False]
 
-        if has_t1_timeout and has_t2_timeout:
-            trials = trials[(trials['t1_timeout'] == False) & (trials['t2_timeout'] == False)]
+        t1_rt_col = 't1_rt' if 't1_rt' in trials.columns else 't1_rt_ms' if 't1_rt_ms' in trials.columns else None
+        if t1_rt_col is None:
+            continue
 
-        trials = trials[(trials['t1_rt'] > 0) & (trials['t2_rt'] > 0)]
+        trials = trials[(trials[t1_rt_col] > 0) & (trials['t2_rt'] > 0)]
 
         if len(trials) < 10:
             continue
 
-        # T1 오류 기준 PES
         trials['prev_t1_correct'] = trials['t1_correct'].shift(1)
 
         post_error_t1 = trials[trials['prev_t1_correct'] == False]
@@ -241,10 +230,9 @@ try:
         if len(post_error_t1) < 3 or len(post_correct_t1) < 3:
             continue
 
-        rt_post_error = post_error_t1['t1_rt'].mean()
-        rt_post_correct = post_correct_t1['t1_rt'].mean()
+        rt_post_error = post_error_t1[t1_rt_col].mean()
+        rt_post_correct = post_correct_t1[t1_rt_col].mean()
         pes = rt_post_error - rt_post_correct
-
         post_error_acc = post_error_t1['t1_correct'].mean() * 100
         post_correct_acc = post_correct_t1['t1_correct'].mean() * 100
 
@@ -262,14 +250,13 @@ try:
         })
 
     prp_pes_df = pd.DataFrame(prp_pes_list)
-    print(f"   PRP PES 계산 완료: {len(prp_pes_df)}명")
+    print(f"   PRP PES computed: {len(prp_pes_df)} rows")
 
 except Exception as e:
-    print(f"   ⚠ PRP PES 계산 실패: {e}")
+    print(f"   !!PRP PES failed: {e}")
     import traceback
     traceback.print_exc()
     prp_pes_df = pd.DataFrame()
-
 # ============================================================================
 # 5. 통합 및 Merge
 # ============================================================================

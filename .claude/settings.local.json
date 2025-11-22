@@ -73,7 +73,8 @@
       "Bash(timeout 300 ./venv/Scripts/python.exe:*)",
       "Bash(PYTHONIOENCODING=utf-8 timeout 600 ./venv/Scripts/python.exe:*)",
       "Bash(C:Usersanselmy_research_exporterframework4_output.txt)",
-      "Bash(timeout 300 PYTHONIOENCODING=utf-8 ./venv/Scripts/python.exe:*)"
+      "Bash(timeout 300 PYTHONIOENCODING=utf-8 ./venv/Scripts/python.exe:*)",
+      "Bash(git config:*)"
     ],
     "deny": [],
     "ask": []

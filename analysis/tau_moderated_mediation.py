@@ -52,28 +52,21 @@ print("="*80)
 # ============================================================================
 print("\n[1/7] Loading data...")
 
-# Demographics
-master = load_master_dataset(use_cache=True)
-participants = master[['participant_id','gender_normalized','age']].rename(columns={'gender_normalized':'gender'})
-gender_map = {'남성': 'male', '여성': 'female'}
-participants['gender'] = participants['gender'].map(gender_map)
+# Demographics and survey scores from master
+master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
+master = master.rename(columns={'gender_normalized': 'gender'})
+master['gender'] = master['gender'].fillna('').astype(str).str.strip().str.lower()
+if 'ucla_total' not in master.columns and 'ucla_score' in master.columns:
+    master['ucla_total'] = master['ucla_score']
+
+participants = master[['participant_id', 'gender', 'age']].copy()
 participants['gender_male'] = (participants['gender'] == 'male').astype(int)
-participants = participants.rename(columns={'participantId': 'participant_id'})
 
-# UCLA
-surveys = pd.read_csv(RESULTS_DIR / "2_surveys_results.csv", encoding='utf-8-sig')
-surveys = surveys.rename(columns={'participantId': 'participant_id'})
-ucla_data = surveys[surveys['surveyName'] == 'ucla'].copy()
-ucla_data['ucla_total'] = pd.to_numeric(ucla_data['score'], errors='coerce')
-ucla_data = ucla_data[['participant_id', 'ucla_total']].dropna()
-
-# DASS
-dass_data = surveys[surveys['surveyName'] == 'dass'].copy()
-dass_data['score_A'] = pd.to_numeric(dass_data['score_A'], errors='coerce')
-dass_data['score_S'] = pd.to_numeric(dass_data['score_S'], errors='coerce')
-dass_data['score_D'] = pd.to_numeric(dass_data['score_D'], errors='coerce')
-dass_data['dass_total'] = dass_data[['score_A', 'score_S', 'score_D']].sum(axis=1)
-dass_data = dass_data[['participant_id', 'dass_total']].dropna()
+ucla_data = master[['participant_id', 'ucla_total']].dropna()
+dass_cols = ['dass_total', 'dass_depression', 'dass_anxiety', 'dass_stress']
+if 'dass_total' not in master.columns and {'dass_depression', 'dass_anxiety', 'dass_stress'} <= set(master.columns):
+    master['dass_total'] = master['dass_depression'] + master['dass_anxiety'] + master['dass_stress']
+dass_data = master[['participant_id', 'dass_total']].dropna()
 
 # Ex-Gaussian parameters (PRP τ)
 exg_path = RESULTS_DIR / "analysis_outputs/mechanism_analysis/exgaussian/prp_exgaussian_parameters.csv"
@@ -91,9 +84,7 @@ else:
     sys.exit(1)
 
 # WCST PE rates
-wcst_summary = load_master_dataset(use_cache=True)
-if 'participantId' in wcst_summary.columns and 'participant_id' not in wcst_summary.columns:
-    wcst_summary.rename(columns={'participantId': 'participant_id'}, inplace=True)
+wcst_summary = master
 
 # Select PE column (try multiple possible names)
 pe_col = None

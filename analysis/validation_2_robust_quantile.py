@@ -58,6 +58,7 @@ from statsmodels.robust.norms import HuberT
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import QuantileRegressor
 import warnings
+from data_loader_utils import load_master_dataset
 warnings.filterwarnings('ignore')
 
 np.random.seed(42)
@@ -85,7 +86,12 @@ print("=" * 80)
 print("\n[1/5] Loading data...")
 
 # Load master dataset
-master = pd.read_csv(RESULTS_DIR / "analysis_outputs/master_dataset.csv", encoding='utf-8-sig')
+master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
+master = master.rename(columns={'gender_normalized': 'gender'})
+master['gender'] = master['gender'].fillna('').astype(str).str.strip().str.lower()
+if 'ucla_total' not in master.columns and 'ucla_score' in master.columns:
+    master['ucla_total'] = master['ucla_score']
+master['gender_male'] = (master['gender'] == 'male').astype(int)
 print(f"  Loaded master dataset: N = {len(master)} participants")
 
 # Load ex-Gaussian tau parameters
@@ -100,18 +106,9 @@ else:
     print(f"  WARNING: Ex-Gaussian parameters not found")
     master['tau'] = np.nan
 
-# Normalize column names
-if 'participantId' in master.columns:
-    master = master.rename(columns={'participantId': 'participant_id'})
-
 # Rename WCST PE if needed
-if 'perseverative_error_rate' in master.columns:
+if 'perseverative_error_rate' in master.columns and 'pe_rate' not in master.columns:
     master = master.rename(columns={'perseverative_error_rate': 'pe_rate'})
-
-# Gender mapping
-gender_map = {'남성': 'male', '여성': 'female', 'Male': 'male', 'Female': 'female'}
-master['gender'] = master['gender'].map(gender_map)
-master['gender_male'] = (master['gender'] == 'male').astype(int)
 
 # Standardize predictors
 print(f"  Standardizing predictors...")

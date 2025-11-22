@@ -45,6 +45,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
 from scipy import stats
 import warnings
+from data_loader_utils import load_master_dataset
 warnings.filterwarnings('ignore')
 
 np.random.seed(42)
@@ -74,7 +75,12 @@ print("=" * 80)
 print("\n[1/4] Loading data...")
 
 # Load master dataset
-master = pd.read_csv(RESULTS_DIR / "analysis_outputs/master_dataset.csv", encoding='utf-8-sig')
+master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
+master = master.rename(columns={'gender_normalized': 'gender'})
+master['gender'] = master['gender'].fillna('').astype(str).str.strip().str.lower()
+if 'ucla_total' not in master.columns and 'ucla_score' in master.columns:
+    master['ucla_total'] = master['ucla_score']
+master['gender_male'] = (master['gender'] == 'male').astype(int)
 print(f"  Loaded master dataset: N = {len(master)} participants")
 
 # Load ex-Gaussian tau parameters

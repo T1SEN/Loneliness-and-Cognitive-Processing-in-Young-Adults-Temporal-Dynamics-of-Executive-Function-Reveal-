@@ -125,45 +125,22 @@ def load_item_level_data():
     print("LOADING ITEM-LEVEL SURVEY DATA")
     print("=" * 70)
 
-    # Load surveys
-    surveys = pd.read_csv(RESULTS_DIR / "2_surveys_results.csv", encoding='utf-8')
-    surveys = surveys.rename(columns={'participantId': 'participant_id'})
+    # Load from master (includes survey items)
+    master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
+    master = master.rename(columns={'gender_normalized': 'gender'})
+    master['gender'] = master['gender'].fillna('').astype(str).str.strip().str.lower()
 
-    # Load participant info for gender/age
-    master = load_master_dataset(use_cache=True)
-    participants = master[['participant_id', 'gender_normalized', 'age']].rename(columns={'gender_normalized': 'gender'})
-    participants = participants.rename(columns={'participantId': 'participant_id'})
-    participants['gender'] = participants['gender'].map({'남성': 'male', '여성': 'female'})
+    # Identify item columns
+    ucla_cols = [c for c in master.columns if c.startswith('ucla_') and c[5:].isdigit()]
+    dass_cols = [c for c in master.columns if c.startswith('dass_') and c[5:].isdigit()]
 
-    # Separate UCLA and DASS
-    ucla = surveys[surveys['surveyName'] == 'ucla'].copy()
-    dass = surveys[surveys['surveyName'] == 'dass'].copy()
+    if not ucla_cols or not dass_cols:
+        raise ValueError("UCLA/DASS item columns not found in master. Rebuild master_dataset with survey items included.")
 
-    print(f"\nUCLA responses: N = {len(ucla)}")
-    print(f"DASS responses: N = {len(dass)}")
-
-    # UCLA items (q1-q20)
-    ucla_items = [f'q{i}' for i in range(1, 21)]
-    ucla_data = ucla[['participant_id'] + ucla_items].copy()
-
-    # Rename with prefix
-    ucla_data = ucla_data.rename(columns={f'q{i}': f'ucla_{i}' for i in range(1, 21)})
-
-    # DASS items (q1-q21)
-    # DASS structure: Depression (q3,5,10,13,16,17,21), Anxiety (q2,4,7,9,15,19,20), Stress (q1,6,8,11,12,14,18)
-    dass_items = [f'q{i}' for i in range(1, 22)]
-    dass_data = dass[['participant_id'] + dass_items].copy()
-
-    # Rename with prefix
-    dass_data = dass_data.rename(columns={f'q{i}': f'dass_{i}' for i in range(1, 22)})
-
-    # Merge
-    df_items = ucla_data.merge(dass_data, on='participant_id', how='inner')
-    df_items = df_items.merge(participants[['participant_id', 'gender', 'age']],
-                              on='participant_id', how='left')
+    df_items = master[['participant_id', 'gender', 'age'] + ucla_cols + dass_cols].copy()
 
     # Drop rows with any missing items
-    item_cols = [f'ucla_{i}' for i in range(1, 21)] + [f'dass_{i}' for i in range(1, 22)]
+    item_cols = ucla_cols + dass_cols
     df_complete = df_items.dropna(subset=item_cols)
 
     print(f"\nComplete cases (all 41 items): N = {len(df_complete)}")

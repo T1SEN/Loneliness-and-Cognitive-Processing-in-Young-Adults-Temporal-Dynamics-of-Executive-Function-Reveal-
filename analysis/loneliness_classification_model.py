@@ -56,6 +56,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import warnings
 warnings.filterwarnings('ignore')
+from data_loader_utils import load_master_dataset
 
 np.random.seed(42)
 
@@ -74,23 +75,13 @@ print("\nPurpose: Predict High vs Low loneliness from EF patterns")
 print("Method: Logistic Regression + Random Forest with 5-fold CV\n")
 
 # Load master dataset
-try:
-    master = pd.read_csv(RESULTS_DIR / "analysis_outputs/master_dataset.csv", encoding='utf-8-sig')
-    print(f"Loaded master dataset: {len(master)} participants")
-except FileNotFoundError:
-    print("ERROR: master_dataset.csv not found.")
-    sys.exit(1)
-
-# Normalize columns
-master.columns = master.columns.str.lower()
-if 'participantid' in master.columns:
-    master.rename(columns={'participantid': 'participant_id'}, inplace=True)
-
-# Ensure gender coding
-gender_map = {'남성': 'male', '여성': 'female', 'Male': 'male', 'Female': 'female', 'M': 'male', 'F': 'female'}
-if 'gender' in master.columns:
-    master['gender'] = master['gender'].map(gender_map).fillna(master['gender'])
-    master['gender_male'] = (master['gender'] == 'male').astype(int)
+master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
+master = master.rename(columns={'gender_normalized': 'gender'})
+master['gender'] = master['gender'].fillna('').astype(str).str.strip().str.lower()
+if 'ucla_total' not in master.columns and 'ucla_score' in master.columns:
+    master['ucla_total'] = master['ucla_score']
+master['gender_male'] = (master['gender'] == 'male').astype(int)
+print(f"Loaded master dataset: {len(master)} participants")
 
 print(f"\nData overview:")
 print(f"  Total N: {len(master)}")

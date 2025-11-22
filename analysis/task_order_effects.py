@@ -49,8 +49,7 @@ master = master.rename(columns={"gender_normalized": "gender"})
 master["gender"] = master["gender"].fillna("").astype(str).str.strip().str.lower()
 master["gender_male"] = (master["gender"] == "male").astype(int)
 
-surveys = pd.read_csv(RESULTS_DIR / "2_surveys_results.csv")
-surveys['participant_id'] = surveys.get('participantId', surveys.get('participant_id'))
+participants = master[['participant_id', 'gender', 'gender_male', 'ucla_total', 'age']].copy()
 
 cognitive = pd.read_csv(RESULTS_DIR / "3_cognitive_tests_summary.csv")
 cognitive['participant_id'] = cognitive.get('participantId', cognitive.get('participant_id'))

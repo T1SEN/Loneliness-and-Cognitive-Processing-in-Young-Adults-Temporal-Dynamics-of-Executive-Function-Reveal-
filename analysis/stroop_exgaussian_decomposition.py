@@ -21,6 +21,9 @@ from pathlib import Path
 from scipy.stats import exponnorm, pearsonr
 from scipy.optimize import minimize
 import warnings
+from analysis.utils.trial_data_loader import load_stroop_trials
+from data_loader_utils import load_master_dataset
+
 warnings.filterwarnings('ignore')
 
 if sys.platform.startswith("win") and hasattr(sys.stdout, "reconfigure"):
@@ -34,19 +37,21 @@ print("=" * 80)
 print("STROOP EX-GAUSSIAN RT DECOMPOSITION")
 print("=" * 80)
 
-# Load
-trials = pd.read_csv(RESULTS_DIR / "4c_stroop_trials.csv", encoding='utf-8-sig')
+# Load via shared loaders
+trials, trial_summary = load_stroop_trials(
+    use_cache=True,
+    rt_min=200,
+    rt_max=3000,
+    drop_timeouts=True,
+    require_correct_for_rt=False,
+)
 trials.columns = trials.columns.str.lower()
-if 'participantid' in trials.columns and 'participant_id' in trials.columns:
-    trials = trials.drop(columns=['participantid'])
-elif 'participantid' in trials.columns:
-    trials.rename(columns={'participantid': 'participant_id'}, inplace=True)
 
-master = pd.read_csv(RESULTS_DIR / "analysis_outputs/master_dataset.csv", encoding='utf-8-sig')
-master.columns = master.columns.str.lower()
-# Map Korean gender values to English
-gender_map = {'남성': 'male', '여성': 'female', 'male': 'male', 'female': 'female'}
-master['gender'] = master['gender'].map(gender_map)
+master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
+master = master.rename(columns={'gender_normalized': 'gender'})
+master['gender'] = master['gender'].fillna('').astype(str).str.strip().str.lower()
+if 'ucla_total' not in master.columns and 'ucla_score' in master.columns:
+    master['ucla_total'] = master['ucla_score']
 
 # Clean
 rt_col = 'rt_ms' if trials['rt'].isnull().sum() > len(trials) * 0.5 else 'rt'

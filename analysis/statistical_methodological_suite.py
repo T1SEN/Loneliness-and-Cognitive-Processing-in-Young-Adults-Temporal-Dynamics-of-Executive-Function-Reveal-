@@ -22,6 +22,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics import roc_curve, auc
 import warnings
+from analysis.utils.trial_data_loader import load_wcst_trials
 warnings.filterwarnings('ignore')
 
 # UTF-8 설정
@@ -307,46 +308,42 @@ print("\n[4] WCST PE 신뢰도 분석 (split-half)...")
 
 # Trial-level 데이터 필요
 try:
-    wcst_trials = pd.read_csv(RESULTS_DIR / "4b_wcst_trials.csv", encoding='utf-8-sig')
-
-    # participantId normalize
-    if 'participant_id' in wcst_trials.columns and 'participantId' not in wcst_trials.columns:
-        wcst_trials.rename(columns={'participant_id': 'participantId'}, inplace=True)
+    wcst_trials, wcst_summary = load_wcst_trials(use_cache=True)
+    print(f"   WCST trials: {len(wcst_trials)} | participants: {wcst_summary.get('n_participants')}")
 
     reliability_list = []
 
-    for pid in wcst_trials['participantId'].unique():
-        trials = wcst_trials[wcst_trials['participantId'] == pid].copy()
-        trials = trials.sort_values('trialIndex').reset_index(drop=True)
+    for pid in wcst_trials['participant_id'].unique():
+        trials = wcst_trials[wcst_trials['participant_id'] == pid].copy()
+        if 'trialIndex' in trials.columns:
+            trials = trials.sort_values('trialIndex').reset_index(drop=True)
+        else:
+            trials = trials.reset_index(drop=True)
 
         if len(trials) < 20:
             continue
 
-        # PE detection (need extra column parsing)
-        # Assume 'isPE' column exists or compute from extra
-        if 'isPE' in trials.columns:
-            pe_col = 'isPE'
-        else:
-            # Parse extra column
+        pe_col = 'isPE' if 'isPE' in trials.columns else None
+        if pe_col is None and 'extra' in trials.columns:
             import ast
             def parse_extra(extra_str):
                 if not isinstance(extra_str, str):
                     return {}
                 try:
                     return ast.literal_eval(extra_str)
-                except:
+                except Exception:
                     return {}
-
             trials['extra_dict'] = trials['extra'].apply(parse_extra)
             trials['isPE'] = trials['extra_dict'].apply(lambda x: x.get('isPE', False))
             pe_col = 'isPE'
 
-        # Split-half
+        if pe_col is None:
+            continue
+
         n_trials = len(trials)
         half1 = trials.iloc[:n_trials//2]
         half2 = trials.iloc[n_trials//2:]
 
-        # PE rate for each half
         pe_rate_h1 = half1[pe_col].mean() * 100 if len(half1) > 0 else np.nan
         pe_rate_h2 = half2[pe_col].mean() * 100 if len(half2) > 0 else np.nan
 
@@ -362,22 +359,19 @@ try:
     reliability_df = pd.DataFrame(reliability_list)
 
     if len(reliability_df) > 10:
-        # Spearman correlation (split-half reliability)
         r_split, p_split = spearmanr(reliability_df['pe_rate_half1'], reliability_df['pe_rate_half2'])
-
-        # Spearman-Brown correction
         r_corrected = (2 * r_split) / (1 + r_split)
 
-        print(f"\n   Split-half reliability (N={len(reliability_df)}):")
+        print(f"\\n   Split-half reliability (N={len(reliability_df)}):")
         print(f"   Spearman r: {r_split:.3f}, p={p_split:.4f}")
         print(f"   Spearman-Brown corrected: {r_corrected:.3f}")
 
         if r_corrected > 0.7:
-            print(f"   → 신뢰도 충분 (excellent)")
+            print('   Reliability: excellent')
         elif r_corrected > 0.5:
-            print(f"   → 신뢰도 양호 (good)")
+            print('   Reliability: good')
         else:
-            print(f"   → 신뢰도 낮음 (poor)")
+            print('   Reliability: poor')
 
         reliability_summary = pd.DataFrame([{
             'n': len(reliability_df),
@@ -387,13 +381,13 @@ try:
             'interpretation': 'Excellent' if r_corrected > 0.7 else ('Good' if r_corrected > 0.5 else 'Poor')
         }])
 
-        reliability_summary.to_csv(OUTPUT_DIR / "wcst_pe_reliability.csv", index=False, encoding='utf-8-sig')
-        reliability_df.to_csv(OUTPUT_DIR / "wcst_pe_split_half_data.csv", index=False, encoding='utf-8-sig')
+        reliability_summary.to_csv(OUTPUT_DIR / 'wcst_pe_reliability.csv', index=False, encoding='utf-8-sig')
+        reliability_df.to_csv(OUTPUT_DIR / 'wcst_pe_split_half_data.csv', index=False, encoding='utf-8-sig')
     else:
-        print(f"   ⚠ 신뢰도 분석 실패 (N={len(reliability_df)} < 10)")
+        print(f"   Reliability analysis skipped (N={len(reliability_df)} < 10)")
 
 except Exception as e:
-    print(f"   ⚠ 신뢰도 분석 실패: {e}")
+    print(f"   Reliability analysis failed: {e}")
     import traceback
     traceback.print_exc()
 

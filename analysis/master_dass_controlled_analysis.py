@@ -47,6 +47,7 @@ from statsmodels.stats.anova import anova_lm
 import matplotlib.pyplot as plt
 import seaborn as sns
 import warnings
+from data_loader_utils import load_master_dataset
 warnings.filterwarnings('ignore')
 
 np.random.seed(42)
@@ -74,25 +75,13 @@ print()
 
 print("[1/6] Loading data...")
 
-# Load master dataset
-master_path = RESULTS_DIR / "analysis_outputs/master_dataset.csv"
-if not master_path.exists():
-    print("ERROR: master_dataset.csv not found")
-    sys.exit(1)
-
-master = pd.read_csv(master_path, encoding='utf-8-sig')
-
-# Normalize column names
-if 'participantId' in master.columns:
-    master = master.rename(columns={'participantId': 'participant_id'})
-
-# Ensure gender is coded
-if 'gender' not in master.columns and 'gender_male' in master.columns:
-    master['gender'] = master['gender_male'].map({1: 'male', 0: 'female'})
-elif 'gender' in master.columns:
-    gender_map = {'남성': 'male', '여성': 'female', 'Male': 'male', 'Female': 'female'}
-    master['gender'] = master['gender'].map(gender_map)
-    master['gender_male'] = (master['gender'] == 'male').astype(int)
+# Load master dataset via shared loader
+master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
+master = master.rename(columns={'gender_normalized': 'gender'})
+master['gender'] = master['gender'].fillna('').astype(str).str.strip().str.lower()
+if 'ucla_total' not in master.columns and 'ucla_score' in master.columns:
+    master['ucla_total'] = master['ucla_score']
+master['gender_male'] = (master['gender'] == 'male').astype(int)
 
 # Rename PE column if needed
 for col in ['pe_rate', 'perseverative_error_rate']:

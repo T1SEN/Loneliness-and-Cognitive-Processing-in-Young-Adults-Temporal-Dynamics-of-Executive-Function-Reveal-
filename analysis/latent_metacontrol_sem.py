@@ -35,31 +35,12 @@ print("LATENT META-CONTROL FACTOR & PATH ANALYSIS")
 print("=" * 80)
 print()
 
-# Load data (use master_dataset.csv which has PE rate)
-master = pd.read_csv(RESULTS_DIR / "analysis_outputs/master_dataset.csv", encoding='utf-8-sig')
-master.columns = master.columns.str.lower()
-
-# Also load expanded if available
-try:
-    expanded = load_master_dataset(use_cache=True)
-    expanded.columns = expanded.columns.str.lower()
-    if 'participantid' in expanded.columns and 'participant_id' not in expanded.columns:
-        expanded.rename(columns={'participantid': 'participant_id'}, inplace=True)
-    # Merge additional columns
-    master = master.merge(expanded, on='participant_id', how='left', suffixes=('', '_exp'))
-except FileNotFoundError:
-    pass
-
-master = load_master_dataset(use_cache=True)
-participants = master[['participant_id','gender_normalized','age']].rename(columns={'gender_normalized':'gender'})
-participants.columns = participants.columns.str.lower()
-if 'participantid' in participants.columns:
-    participants.rename(columns={'participantid': 'participant_id'}, inplace=True)
-
-if 'gender' not in master.columns:
-
-gender_map = {'남성': 'male', '여성': 'female', 'Male': 'male', 'Female': 'female'}
-master['gender'] = master['gender'].map(gender_map)
+# Load data via shared master
+master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
+master = master.rename(columns={'gender_normalized': 'gender'})
+master['gender'] = master['gender'].fillna('').astype(str).str.strip().str.lower()
+if 'ucla_total' not in master.columns and 'ucla_score' in master.columns:
+    master['ucla_total'] = master['ucla_score']
 master['gender_male'] = (master['gender'] == 'male').astype(int)
 
 print(f"Sample: N={len(master)}")

@@ -243,22 +243,13 @@ print(f"  PRP DDM: {len([r for r in ddm_results if r['task'] == 'prp'])} partici
 
 # === WCST TASK ===
 print("\n[2.3] WCST task...")
-wcst_trials = pd.read_csv(RESULTS_DIR / "4b_wcst_trials.csv", encoding='utf-8-sig')
+wcst_trials, wcst_summary = load_wcst_trials(use_cache=True)
+print(f"  WCST trials: {len(wcst_trials)} | participants: {wcst_summary.get('n_participants')}")
 
-# Drop null participant_id column and rename
-if 'participant_id' in wcst_trials.columns:
-    wcst_trials = wcst_trials.drop(columns=['participant_id'])
-if 'participantId' in wcst_trials.columns:
-    wcst_trials = wcst_trials.rename(columns={'participantId': 'participant_id'})
+rt_col_wcst = "reactionTimeMs" if "reactionTimeMs" in wcst_trials.columns else "rt_ms" if "rt_ms" in wcst_trials.columns else None
+correct_col_wcst = "correct" if "correct" in wcst_trials.columns else None
 
-# Check column names
-if 'reactionTimeMs' in wcst_trials.columns:
-    rt_col_wcst = 'reactionTimeMs'
-    correct_col_wcst = 'correct'
-else:
-    rt_col_wcst = None
-
-if rt_col_wcst:
+if rt_col_wcst and correct_col_wcst:
     wcst_clean = wcst_trials[
         (wcst_trials[rt_col_wcst] > 200) &
         (wcst_trials[rt_col_wcst] < 10000)

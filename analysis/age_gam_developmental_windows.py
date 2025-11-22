@@ -32,20 +32,12 @@ print("AGE GAM / DEVELOPMENTAL WINDOWS ANALYSIS")
 print("=" * 80)
 print()
 
-# Load data
-master = pd.read_csv(RESULTS_DIR / "analysis_outputs/master_dataset.csv", encoding='utf-8-sig')
-master.columns = master.columns.str.lower()
-
-master = load_master_dataset(use_cache=True)
-participants = master[['participant_id','gender_normalized','age']].rename(columns={'gender_normalized':'gender'})
-participants.columns = participants.columns.str.lower()
-if 'participantid' in participants.columns:
-    participants.rename(columns={'participantid': 'participant_id'}, inplace=True)
-
-if 'gender' not in master.columns:
-
-gender_map = {'남성': 'male', '여성': 'female', 'Male': 'male', 'Female': 'female'}
-master['gender'] = master['gender'].map(gender_map)
+# Load data from shared master
+master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
+master = master.rename(columns={'gender_normalized': 'gender'})
+master['gender'] = master['gender'].fillna('').astype(str).str.strip().str.lower()
+if 'ucla_total' not in master.columns and 'ucla_score' in master.columns:
+    master['ucla_total'] = master['ucla_score']
 master['gender_male'] = (master['gender'] == 'male').astype(int)
 
 # Mean-center age

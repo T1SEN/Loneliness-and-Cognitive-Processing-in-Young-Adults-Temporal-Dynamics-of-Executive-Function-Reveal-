@@ -49,21 +49,14 @@ paper2_bridge = pd.read_csv(paper2_dir / "paper2_bridge_centrality.csv", encodin
 paper3_dir = Path("results/analysis_outputs/paper3_profiles")
 paper3_assignments = pd.read_csv(paper3_dir / "paper3_profile_assignments.csv", encoding='utf-8-sig')
 
-# Merge for scatter plot
-master = load_master_dataset(use_cache=True)
-participants = master[['participant_id','gender_normalized','age']].rename(columns={'gender_normalized':'gender'})
-surveys = pd.read_csv(RESULTS_DIR / "2_surveys_results.csv", encoding='utf-8-sig')
+# Merge for scatter plot using master
+master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
+master = master.rename(columns={'gender_normalized': 'gender'})
+master['gender'] = master['gender'].fillna('').astype(str).str.strip().str.lower()
+if 'ucla_total' not in master.columns and 'ucla_score' in master.columns:
+    master['ucla_total'] = master['ucla_score']
 
-if 'participantId' in participants.columns:
-    participants = participants.rename(columns={'participantId': 'participant_id'})
-if 'participantId' in surveys.columns:
-    surveys = surveys.rename(columns={'participantId': 'participant_id'})
-
-participants['gender'] = participants['gender'].map({'남성': 'male', '여성': 'female'})
-
-ucla = surveys[surveys['surveyName'] == 'ucla'][['participant_id', 'score']].rename(columns={'score': 'ucla_total'})
-
-scatter_df = participants[['participant_id', 'gender']].merge(ucla, on='participant_id')
+scatter_df = master[['participant_id', 'gender', 'ucla_total']].dropna(subset=['gender', 'ucla_total'])
 scatter_df = scatter_df.merge(paper1_data[['participant_id', 'prp_tau_long']], on='participant_id')
 scatter_df = scatter_df.dropna()
 

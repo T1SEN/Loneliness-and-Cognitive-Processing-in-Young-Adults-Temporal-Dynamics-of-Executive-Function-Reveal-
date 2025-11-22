@@ -15,7 +15,7 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 from scipy.stats import pearsonr
-from data_loader_utils import normalize_gender_series
+from data_loader_utils import load_master_dataset, normalize_gender_series
 
 if sys.platform.startswith("win") and hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding='utf-8')
@@ -33,12 +33,11 @@ print("=" * 80)
 # ============================================================================
 
 print("\n[1] Loading master data with all task metrics...")
-
-master = pd.read_csv(Path("results/analysis_outputs/master_dataset.csv"), encoding='utf-8-sig')
-master.columns = master.columns.str.lower()
-# Map Korean gender values to English
-gender_map = {'남성': 'male', '여성': 'female', 'male': 'male', 'female': 'female'}
-master['gender'] = master['gender'].map(gender_map)
+master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
+master = master.rename(columns={'gender_normalized': 'gender'})
+master['gender'] = master['gender'].fillna('').astype(str).str.strip().str.lower()
+if 'ucla_total' not in master.columns and 'ucla_score' in master.columns:
+    master['ucla_total'] = master['ucla_score']
 
 print(f"  Master data: N={len(master)}")
 

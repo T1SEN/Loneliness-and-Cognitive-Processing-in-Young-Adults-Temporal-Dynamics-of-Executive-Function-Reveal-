@@ -156,6 +156,42 @@ def load_dass_scores():
 
     return dass_summary
 
+
+def load_survey_items():
+    """
+    Load raw UCLA/DASS item responses from 2_surveys_results.csv and return wide format.
+    Columns are renamed to ucla_1..ucla_20 and dass_1..dass_21 when available.
+    """
+    surveys = pd.read_csv(RESULTS_DIR / "2_surveys_results.csv", encoding="utf-8")
+    surveys = ensure_participant_id(surveys)
+
+    def _extract_items(df: pd.DataFrame, prefix: str, n_items: int) -> pd.DataFrame:
+        cols = [f"q{i}" for i in range(1, n_items + 1) if f"q{i}" in df.columns]
+        if not cols:
+            return pd.DataFrame(columns=["participant_id"])
+        tmp = df[["participant_id"] + cols].copy()
+        # Keep first non-null per participant
+        tmp = tmp.groupby("participant_id").first().reset_index()
+        rename_map = {c: f"{prefix}_{c.lstrip('q')}" for c in cols}
+        tmp = tmp.rename(columns=rename_map)
+        # Numeric coercion
+        for c in rename_map.values():
+            tmp[c] = pd.to_numeric(tmp[c], errors="coerce")
+        return tmp
+
+    ucla_df = pd.DataFrame(columns=["participant_id"])
+    dass_df = pd.DataFrame(columns=["participant_id"])
+
+    if "surveyName" in surveys.columns:
+        ucla_df = surveys[surveys["surveyName"].str.lower() == "ucla"].copy()
+        dass_df = surveys[surveys["surveyName"].str.lower().str.contains("dass")].copy()
+
+    ucla_items = _extract_items(ucla_df, "ucla", 20)
+    dass_items = _extract_items(dass_df, "dass", 21)
+
+    survey_items = ucla_items.merge(dass_items, on="participant_id", how="outer")
+    return survey_items
+
 def load_wcst_summary():
     """Load WCST summary metrics including PE rate."""
     wcst_trials = pd.read_csv(RESULTS_DIR / "4b_wcst_trials.csv", encoding="utf-8")
@@ -360,6 +396,7 @@ def load_master_dataset(
         ucla["ucla_total"] = ucla["ucla_score"]
 
     dass = load_dass_scores()
+    survey_items = load_survey_items()
     wcst = load_wcst_summary()
     prp = load_prp_summary()
     stroop = load_stroop_summary()
@@ -367,6 +404,8 @@ def load_master_dataset(
     master = participants.merge(ucla, on="participant_id", how="inner")
     print(f"  Merge participants + UCLA (inner): {len(participants)} -> {len(master)} rows")
     master = _log_merge(master, "master", dass, "dass")
+    if not survey_items.empty:
+        master = _log_merge(master, "master", survey_items, "survey_items")
     master = _log_merge(master, "master", wcst, "wcst")
     master = _log_merge(master, "master", prp, "prp")
     master = _log_merge(master, "master", stroop, "stroop")
