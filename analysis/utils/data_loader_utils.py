@@ -15,7 +15,10 @@ ANALYSIS_OUTPUT_DIR = Path("results/analysis_outputs")
 
 # Standardized shared rules across analyses
 DEFAULT_RT_MIN = 100          # ms; drop anticipations
-DEFAULT_RT_MAX = 5000         # ms; drop extreme outliers
+# Task-level RT caps (match in-app timeouts)
+PRP_RT_MAX = 3000             # ms; PRP task timeout is 3s
+STROOP_RT_MAX = 3000          # ms; Stroop task timeout is 3s
+DEFAULT_RT_MAX = 5000         # ms; legacy upper bound (WCST etc.)
 DEFAULT_SOA_SHORT = 150       # ms; PRP short bin upper bound
 DEFAULT_SOA_LONG = 1200       # ms; PRP long bin lower bound
 
@@ -102,7 +105,13 @@ def load_ucla_scores():
     else:
         raise KeyError("No survey name column found")
 
-    ucla_scores = ucla_data.groupby('participant_id')['score'].sum().reset_index()
+    # 점수가 중복 기록될 경우(재시행) 합산 대신 한 건만 사용
+    ucla_data['score'] = pd.to_numeric(ucla_data['score'], errors='coerce')
+    ucla_data = ucla_data.dropna(subset=['score'])
+    # CSV 순서 기준 최신 기록 유지
+    ucla_data = ucla_data.drop_duplicates(subset=['participant_id'], keep='last')
+
+    ucla_scores = ucla_data[['participant_id', 'score']].rename(columns={'score': 'ucla_total'})
     ucla_scores.columns = ['participant_id', 'ucla_total']
 
     return ucla_scores
@@ -199,11 +208,22 @@ def load_prp_summary():
     if soa_col != 'soa':
         prp_trials = prp_trials.rename(columns={soa_col: 'soa'})
 
-    # Filter valid trials
-    prp_trials = prp_trials[
+    # Normalize correctness/timeout columns
+    prp_trials['t1_correct'] = prp_trials['t1_correct'].fillna(False)
+    prp_trials['t2_correct'] = prp_trials.get('t2_correct', False)
+    if isinstance(prp_trials['t2_correct'], pd.Series):
+        prp_trials['t2_correct'] = prp_trials['t2_correct'].fillna(False)
+    prp_trials['t2_timeout'] = prp_trials.get('t2_timeout', False)
+    if isinstance(prp_trials['t2_timeout'], pd.Series):
+        prp_trials['t2_timeout'] = prp_trials['t2_timeout'].fillna(False)
+
+    # Filter valid trials for RT (정답 + 시간내 반응 + 합리적 RT 범위)
+    prp_rt = prp_trials[
         (prp_trials['t1_correct'] == True) &
+        (prp_trials['t2_correct'] == True) &
+        (prp_trials['t2_timeout'] == False) &
         (prp_trials['t2_rt'] > DEFAULT_RT_MIN) &
-        (prp_trials['t2_rt'] < DEFAULT_RT_MAX)
+        (prp_trials['t2_rt'] < PRP_RT_MAX)
     ].copy()
 
     # Bin SOA
@@ -215,11 +235,11 @@ def load_prp_summary():
         else:
             return 'other'
 
-    prp_trials['soa_bin'] = prp_trials['soa'].apply(bin_soa)
-    prp_trials = prp_trials[prp_trials['soa_bin'].isin(['short', 'long'])].copy()
+    prp_rt['soa_bin'] = prp_rt['soa'].apply(bin_soa)
+    prp_rt = prp_rt[prp_rt['soa_bin'].isin(['short', 'long'])].copy()
 
     # Calculate by SOA
-    prp_summary = prp_trials.groupby(['participant_id', 'soa_bin']).agg(
+    prp_summary = prp_rt.groupby(['participant_id', 'soa_bin']).agg(
         t2_rt_mean=('t2_rt', 'mean'),
         t2_rt_sd=('t2_rt', 'std'),
         n_trials=('t2_rt', 'count')
@@ -247,23 +267,30 @@ def load_stroop_summary():
     if rt_col is None:
         raise KeyError("Stroop trials missing RT column ('rt' or 'rt_ms').")
 
-    # Filter valid trials
-    stroop_trials = stroop_trials[
-        (stroop_trials['timeout'] == False) &
-        (stroop_trials[rt_col] > DEFAULT_RT_MIN) &
-        (stroop_trials[rt_col] < DEFAULT_RT_MAX)
-    ].copy()
-
     # Determine condition column
     cond_col = 'type' if 'type' in stroop_trials.columns else ('condition' if 'condition' in stroop_trials.columns else ('cond' if 'cond' in stroop_trials.columns else None))
     if cond_col is None:
         raise KeyError("Stroop trials missing condition column ('type', 'condition', or 'cond').")
 
-    # Calculate by condition
-    stroop_summary = stroop_trials.groupby(['participant_id', cond_col]).agg(
-        rt_mean=(rt_col, 'mean'),
+    # Accuracy: 모든 trial 포함(타임아웃은 False로 집계되므로 분모 포함)
+    stroop_trials['correct'] = stroop_trials['correct'].fillna(False)
+    acc_summary = stroop_trials.groupby(['participant_id', cond_col]).agg(
         accuracy=('correct', 'mean')
     ).reset_index()
+
+    # RT: 정답 + 시간내 반응 + 합리적 RT 범위
+    rt_trials = stroop_trials[
+        (stroop_trials['timeout'] == False) &
+        (stroop_trials['correct'] == True) &
+        (stroop_trials[rt_col] > DEFAULT_RT_MIN) &
+        (stroop_trials[rt_col] < STROOP_RT_MAX)
+    ].copy()
+
+    rt_summary = rt_trials.groupby(['participant_id', cond_col]).agg(
+        rt_mean=(rt_col, 'mean')
+    ).reset_index()
+
+    stroop_summary = acc_summary.merge(rt_summary, on=['participant_id', cond_col], how='left')
 
     # Pivot to wide
     stroop_wide = stroop_summary.pivot(index='participant_id', columns=cond_col, values=['rt_mean', 'accuracy'])
@@ -289,8 +316,9 @@ def load_master_dataset(
     Standardized definitions:
       - Gender: normalized via normalize_gender_series; gender_male = 1 (male), 0 (female).
       - PRP bottleneck: mean T2 RT (short SOA <= DEFAULT_SOA_SHORT) minus mean T2 RT (long SOA >= DEFAULT_SOA_LONG);
-        include trials with t1_correct == True and DEFAULT_RT_MIN < t2_rt < DEFAULT_RT_MAX.
-      - Stroop interference: mean RT (incongruent) - mean RT (congruent); exclude timeout and RT outside [DEFAULT_RT_MIN, DEFAULT_RT_MAX].
+        include trials with t1_correct == True, t2_correct == True, timeout == False, DEFAULT_RT_MIN < t2_rt < PRP_RT_MAX.
+      - Stroop interference: mean RT (incongruent) - mean RT (congruent); RT는 정답·시간내 반응만 사용, RT 범위 [DEFAULT_RT_MIN, STROOP_RT_MAX],
+        정확도는 timeout 포함 전체 분모.
       - WCST perseverative error rate: proportion of trials flagged isPE per participant.
 
     Parameters
