@@ -1,6 +1,0 @@
-fold,model,mdl__max_depth,mdl__min_samples_leaf,mdl__n_estimators,mdl__learning_rate
-1,rf,8.0,1.0,400,
-2,rf,,3.0,800,
-3,gbrt,3.0,,800,0.1
-4,rf,8.0,1.0,400,
-5,rf,8.0,1.0,800,

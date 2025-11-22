@@ -15,6 +15,7 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 from scipy.stats import pearsonr
+import statsmodels.api as sm
 from data_loader_utils import load_master_dataset, normalize_gender_series
 
 if sys.platform.startswith("win") and hasattr(sys.stdout, "reconfigure"):
@@ -39,6 +40,22 @@ master['gender'] = master['gender'].fillna('').astype(str).str.strip().str.lower
 if 'ucla_total' not in master.columns and 'ucla_score' in master.columns:
     master['ucla_total'] = master['ucla_score']
 
+# Standardize covariates for DASS-controlled analyses
+for col in ['ucla_total', 'dass_depression', 'dass_anxiety', 'dass_stress', 'age']:
+    if col in master.columns:
+        master[col] = pd.to_numeric(master[col], errors='coerce')
+
+def _zscore(series: pd.Series):
+    if series is None or series.empty or series.std() == 0:
+        return pd.Series(np.nan, index=master.index)
+    return (series - series.mean()) / series.std()
+
+master['z_ucla'] = _zscore(master['ucla_total']) if 'ucla_total' in master.columns else np.nan
+master['z_age'] = _zscore(master['age']) if 'age' in master.columns else np.nan
+master['z_dass_dep'] = _zscore(master['dass_depression']) if 'dass_depression' in master.columns else np.nan
+master['z_dass_anx'] = _zscore(master['dass_anxiety']) if 'dass_anxiety' in master.columns else np.nan
+master['z_dass_str'] = _zscore(master['dass_stress']) if 'dass_stress' in master.columns else np.nan
+
 print(f"  Master data: N={len(master)}")
 
 # Try to load additional metrics from deep-dive analyses
@@ -53,6 +70,17 @@ print(f"  Master data: N={len(master)}")
 print("\n[2] Computing effect sizes across tasks...")
 
 effect_sizes = []
+covariate_cols = ['z_dass_dep', 'z_dass_anx', 'z_dass_str', 'z_age']
+
+def dass_controlled_beta(df: pd.DataFrame, outcome: str):
+    """Return (beta_ucla, p_ucla, n) from OLS controlling DASS + age."""
+    needed = ['z_ucla', outcome] + covariate_cols
+    sub = df.dropna(subset=needed)
+    if len(sub) < 15:
+        return np.nan, np.nan, len(sub)
+    X = sm.add_constant(sub[['z_ucla'] + covariate_cols])
+    model = sm.OLS(sub[outcome], X).fit()
+    return model.params.get('z_ucla', np.nan), model.pvalues.get('z_ucla', np.nan), len(sub)
 
 for gender in ['male', 'female']:
     data = master[master['gender'] == gender]
@@ -84,15 +112,29 @@ for gender in ['male', 'female']:
     else:
         r_prp, p_prp = np.nan, np.nan
 
+    # DASS/age-controlled slopes
+    beta_wcst, p_wcst_cov, n_wcst_cov = dass_controlled_beta(data, 'perseverative_error_rate')
+    beta_stroop, p_stroop_cov, n_stroop_cov = dass_controlled_beta(data, 'stroop_interference')
+    beta_prp, p_prp_cov, n_prp_cov = dass_controlled_beta(data, 'prp_bottleneck')
+
     effect_sizes.append({
         'gender': gender,
         'n': len(data),
         'wcst_r': r_wcst,
         'wcst_p': p_wcst,
+        'wcst_beta_dass': beta_wcst,
+        'wcst_p_dass': p_wcst_cov,
+        'wcst_n_dass': n_wcst_cov,
         'stroop_r': r_stroop,
         'stroop_p': p_stroop,
+        'stroop_beta_dass': beta_stroop,
+        'stroop_p_dass': p_stroop_cov,
+        'stroop_n_dass': n_stroop_cov,
         'prp_r': r_prp,
-        'prp_p': p_prp
+        'prp_p': p_prp,
+        'prp_beta_dass': beta_prp,
+        'prp_p_dass': p_prp_cov,
+        'prp_n_dass': n_prp_cov
     })
 
 effect_sizes_df = pd.DataFrame(effect_sizes)
@@ -100,6 +142,9 @@ effect_sizes_df = pd.DataFrame(effect_sizes)
 print(effect_sizes_df)
 
 effect_sizes_df.to_csv(OUTPUT_DIR / "three_task_effect_sizes.csv", index=False, encoding='utf-8-sig')
+# Save DASS-controlled effects separately for quick review
+dass_cols = [c for c in effect_sizes_df.columns if 'beta_dass' in c or 'p_dass' in c or c in ['gender']]
+effect_sizes_df[dass_cols].to_csv(OUTPUT_DIR / "three_task_effect_sizes_dass_controlled.csv", index=False, encoding='utf-8-sig')
 
 # ============================================================================
 # Task Specificity Analysis

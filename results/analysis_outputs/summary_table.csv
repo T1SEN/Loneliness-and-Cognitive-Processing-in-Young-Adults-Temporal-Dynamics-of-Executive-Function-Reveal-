@@ -1,9 +1,0 @@
-﻿Analysis,Key Finding,Conclusion
-주효과 (zero-order),모든 |r| < 0.10,효과 없음
-위계적 회귀 (DASS 통제),"모든 ΔR² < 0.01, p > 0.4",효과 없음
-성별 조절효과 (WCST),상호작용 p=0.004 ***,남성에서 유의한 조절
-신뢰도 보정,r_true = -0.14 (WCST),진정 효과도 작음
-Latent profiles,프로파일 간 차이 없음,조합 효과 없음
-Trial variability,IIV/PES와 무관,효과 없음
-비선형 (PRP),LR p=0.087 (marginal),가능성만 시사
-Robust regression,20-67% 계수 변화,Outlier 영향 큼
