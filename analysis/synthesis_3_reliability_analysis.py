@@ -43,8 +43,8 @@ warnings.filterwarnings('ignore')
 
 # Import local utilities
 sys.path.append('analysis')
-from statistical_utils import bootstrap_ci
-from data_loader_utils import load_master_dataset
+from analysis.statistical_utils import bootstrap_ci
+from analysis.utils.data_loader_utils import load_master_dataset
 from analysis.utils.trial_data_loader import load_prp_trials, load_wcst_trials, load_stroop_trials
 
 np.random.seed(42)
@@ -186,7 +186,7 @@ prp_long = prp_long.loc[:, ~prp_long.columns.duplicated()]
 
 # Add trial index per participant
 if len(prp_long) > 0:
-    prp_long = prp_long.sort_values(['participant_id', 'trial']).reset_index(drop=True)
+    prp_long = prp_long.sort_values(['participant_id', 'trial_index']).reset_index(drop=True)
     prp_long['trial_idx'] = prp_long.groupby('participant_id').cumcount()
 
     # Split odd/even trials

@@ -23,7 +23,7 @@ if sys.platform.startswith("win") and hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding='utf-8')
 
 import pandas as pd
-from data_loader_utils import load_master_dataset
+from analysis.utils.data_loader_utils import load_master_dataset
 import numpy as np
 from pathlib import Path
 from scipy import stats
@@ -35,7 +35,7 @@ import seaborn as sns
 import warnings
 warnings.filterwarnings('ignore')
 
-from data_loader_utils import normalize_gender_series
+from analysis.utils.data_loader_utils import normalize_gender_series
 from analysis.utils.trial_data_loader import load_wcst_trials
 
 np.random.seed(42)

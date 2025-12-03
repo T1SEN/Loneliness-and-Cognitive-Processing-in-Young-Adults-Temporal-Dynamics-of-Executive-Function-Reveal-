@@ -16,7 +16,7 @@ import numpy as np
 from pathlib import Path
 from scipy.stats import pearsonr
 import statsmodels.api as sm
-from data_loader_utils import load_master_dataset, normalize_gender_series
+from analysis.utils.data_loader_utils import load_master_dataset, normalize_gender_series
 
 if sys.platform.startswith("win") and hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding='utf-8')
@@ -35,8 +35,11 @@ print("=" * 80)
 
 print("\n[1] Loading master data with all task metrics...")
 master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
-master = master.rename(columns={'gender_normalized': 'gender'})
-master['gender'] = master['gender'].fillna('').astype(str).str.strip().str.lower()
+# Use gender_normalized if available
+if 'gender_normalized' in master.columns:
+    master['gender'] = master['gender_normalized'].fillna('').astype(str).str.strip().str.lower()
+else:
+    master['gender'] = master['gender'].fillna('').astype(str).str.strip().str.lower()
 if 'ucla_total' not in master.columns and 'ucla_score' in master.columns:
     master['ucla_total'] = master['ucla_score']
 
@@ -86,10 +89,10 @@ for gender in ['male', 'female']:
     data = master[master['gender'] == gender]
 
     # WCST
-    if len(data.dropna(subset=['ucla_total', 'perseverative_error_rate'])) >= 10:
+    if len(data.dropna(subset=['ucla_total', 'pe_rate'])) >= 10:
         r_wcst, p_wcst = pearsonr(
-            data.dropna(subset=['ucla_total', 'perseverative_error_rate'])['ucla_total'],
-            data.dropna(subset=['ucla_total', 'perseverative_error_rate'])['perseverative_error_rate']
+            data.dropna(subset=['ucla_total', 'pe_rate'])['ucla_total'],
+            data.dropna(subset=['ucla_total', 'pe_rate'])['pe_rate']
         )
     else:
         r_wcst, p_wcst = np.nan, np.nan
@@ -113,7 +116,7 @@ for gender in ['male', 'female']:
         r_prp, p_prp = np.nan, np.nan
 
     # DASS/age-controlled slopes
-    beta_wcst, p_wcst_cov, n_wcst_cov = dass_controlled_beta(data, 'perseverative_error_rate')
+    beta_wcst, p_wcst_cov, n_wcst_cov = dass_controlled_beta(data, 'pe_rate')
     beta_stroop, p_stroop_cov, n_stroop_cov = dass_controlled_beta(data, 'stroop_interference')
     beta_prp, p_prp_cov, n_prp_cov = dass_controlled_beta(data, 'prp_bottleneck')
 
@@ -204,11 +207,11 @@ task_specificity_df.to_csv(OUTPUT_DIR / "task_specificity.csv", index=False, enc
 print("\n[4] Computing individual vulnerability profiles...")
 
 # Z-score each metric
-for col in ['perseverative_error_rate', 'stroop_interference', 'prp_bottleneck']:
+for col in ['pe_rate', 'stroop_interference', 'prp_bottleneck']:
     master[f'{col}_z'] = (master[col] - master[col].mean()) / master[col].std()
 
 # Define vulnerable as > +1SD
-master['wcst_vulnerable'] = (master['perseverative_error_rate_z'] > 1).astype(int)
+master['wcst_vulnerable'] = (master['pe_rate_z'] > 1).astype(int)
 master['stroop_vulnerable'] = (master['stroop_interference_z'] > 1).astype(int)
 master['prp_vulnerable'] = (master['prp_bottleneck_z'] > 1).astype(int)
 

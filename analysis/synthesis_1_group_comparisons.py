@@ -45,13 +45,13 @@ import ast
 import warnings
 warnings.filterwarnings('ignore')
 
-from data_loader_utils import load_master_dataset
+from analysis.utils.data_loader_utils import load_master_dataset
 from analysis.utils.trial_data_loader import load_prp_trials
 
 # Import local utilities
 import sys
 sys.path.append('analysis')
-from statistical_utils import cohen_d, bootstrap_ci, apply_multiple_comparison_correction
+from analysis.statistical_utils import cohen_d, bootstrap_ci, apply_multiple_comparison_correction
 
 np.random.seed(42)
 
@@ -79,12 +79,15 @@ master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
 if "ucla_total" not in master.columns and "ucla_score" in master.columns:
     master["ucla_total"] = master["ucla_score"]
 
-master = master.rename(columns={"gender_normalized": "gender"})
-master["gender"] = master["gender"].fillna("").astype(str).str.strip().str.lower()
+# Use gender_normalized if available
+if 'gender_normalized' in master.columns:
+    master['gender'] = master['gender_normalized'].fillna('').astype(str).str.strip().str.lower()
+else:
+    master['gender'] = master['gender'].fillna('').astype(str).str.strip().str.lower()
 master["gender_male"] = (master["gender"] == "male").astype(int)
 
 # Rename PE if needed
-for col in ["pe_rate", "perseverative_error_rate"]:
+for col in ["pe_rate", "pe_rate"]:
     if col in master.columns and col != "pe_rate":
         master = master.rename(columns={col: "pe_rate"})
         break
@@ -97,10 +100,11 @@ print(f"  Total N = {len(master)}")
 
 print("[2/5] Computing PRP τ(long SOA) from trial-level data...")
 
+# Use standard RT filtering thresholds per CLAUDE.md (DEFAULT_RT_MIN=100, PRP_RT_MAX=3000)
 prp_trials, _ = load_prp_trials(
     use_cache=True,
-    rt_min=200,
-    rt_max=5000,
+    rt_min=100,  # Updated from 200 to match DEFAULT_RT_MIN
+    rt_max=3000,  # Updated from 5000 to match PRP_RT_MAX
     require_t1_correct=False,
     require_t2_correct_for_rt=False,
     enforce_short_long_only=False,
@@ -111,11 +115,11 @@ if "soa_nominal_ms" not in prp_trials.columns and "soa" in prp_trials.columns:
 if "t2_rt" not in prp_trials.columns and "t2_rt_ms" in prp_trials.columns:
     prp_trials["t2_rt"] = prp_trials["t2_rt_ms"]
 
-# Filter valid trials
+# Filter valid trials (using standard PRP_RT_MAX=3000 per CLAUDE.md)
 prp_trials = prp_trials[
     (prp_trials['t1_correct'] == True) &
     (prp_trials['t2_rt'] > 0) &
-    (prp_trials['t2_rt'] < 5000)
+    (prp_trials['t2_rt'] < 3000)  # Updated from 5000 to match PRP_RT_MAX
 ].copy()
 
 # SOA categorization

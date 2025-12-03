@@ -1,0 +1,70 @@
+================================================================================
+TIER 2.2: HIDDEN MARKOV MODEL (HMM) - ATTENTIONAL STATES SUMMARY
+================================================================================
+
+RESEARCH QUESTION:
+Does UCLA loneliness predict attentional state dynamics (lapse frequency,
+transition probabilities) as measured by 2-state Gaussian HMM?
+
+================================================================================
+DATA SUMMARY
+================================================================================
+Total participants with HMM fits: 155
+Converged models: 155 (100.0%)
+Mean trials per participant: 87.4 (SD=17.4)
+
+================================================================================
+HMM STATE CHARACTERISTICS (Mean ± SD)
+================================================================================
+Lapsed state occupancy: 13.8% ± 10.4%
+Focused mean RT: 1340.7 ± 399.2 ms
+Lapsed mean RT: 6583.6 ± 8723.1 ms
+RT difference (Lapsed - Focused): 5243.0 ± 8470.1 ms
+
+P(Focus → Lapse): 0.097 ± 0.080
+P(Lapse → Focus): 0.699 ± 0.274
+P(Focus → Focus): 0.903 ± 0.080
+P(Lapse → Lapse): 0.301 ± 0.274
+
+================================================================================
+REGRESSION RESULTS - UCLA PREDICTING HMM METRICS (DASS-controlled)
+================================================================================
+Lapsed State Occupancy (%): β=0.0167, p=0.1629  (R²=0.024)
+P(Focus → Lapse): β=0.0028, p=0.7613  (R²=-0.013)
+P(Lapse → Focus): β=-0.0734, p=0.0169 * (R²=0.056)
+P(Lapse → Lapse): β=0.0734, p=0.0169 * (R²=0.056)
+RT Difference (Lapsed - Focused): β=940.3604, p=0.3406  (R²=-0.002)
+
+================================================================================
+INTERPRETATION
+================================================================================
+
+The HMM identifies two latent attentional states from RT sequences:
+  1. FOCUSED state: Lower mean RT, sustained attention
+  2. LAPSED state: Higher mean RT, attentional lapses/mind-wandering
+
+Key Hypotheses:
+  - If UCLA → HIGHER lapsed occupancy: More time spent 'zoned out'
+  - If UCLA → HIGHER P(Focus → Lapse): More frequent transitions to lapses
+  - If UCLA → LOWER P(Lapse → Focus): Slower recovery from lapses
+  - If UCLA → LARGER RT difference: Deeper lapses when off-task
+
+================================================================================
+FILES GENERATED
+================================================================================
+CSV Files:
+  - hmm_results_raw.csv (per-participant HMM metrics)
+  - hmm_merged_with_predictors.csv (merged with UCLA/DASS)
+  - hmm_descriptive_stats.csv (summary statistics)
+  - regression_results.csv (all regression coefficients)
+
+Text Files:
+  - regression_[outcome].txt (full regression outputs for each outcome)
+
+Figures:
+  - hmm_metrics_by_ucla.png (6-panel figure with all key metrics)
+  - example_state_sequences.png (state sequences for 3 example participants)
+
+================================================================================
+END OF REPORT
+================================================================================

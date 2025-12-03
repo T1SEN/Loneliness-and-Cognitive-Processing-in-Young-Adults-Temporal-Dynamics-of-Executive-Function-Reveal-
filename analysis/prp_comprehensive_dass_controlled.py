@@ -21,7 +21,7 @@ Date: 2025-01-16
 
 import sys
 import pandas as pd
-from data_loader_utils import load_master_dataset
+from analysis.utils.data_loader_utils import load_master_dataset
 import numpy as np
 from pathlib import Path
 import statsmodels.formula.api as smf
@@ -52,11 +52,11 @@ print("\n[1] Loading data...")
 
 trials, _ = load_prp_trials(
     use_cache=True,
-    rt_min=200,
-    rt_max=5000,
-    require_t1_correct=False,
-    require_t2_correct_for_rt=False,
-    enforce_short_long_only=False,
+    rt_min=100,        # Match DEFAULT_RT_MIN (anticipatory response cutoff)
+    rt_max=3000,       # Match PRP_RT_MAX (original experiment timeout)
+    require_t1_correct=True,   # Match original experiment: only correct trials for RT analysis
+    require_t2_correct_for_rt=True,  # Match original experiment design
+    enforce_short_long_only=False,   # Keep medium SOA for comprehensive analysis
     drop_timeouts=True,
 )
 trials.columns = trials.columns.str.lower()
@@ -65,8 +65,11 @@ trials.columns = trials.columns.str.lower()
 master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
 if "ucla_total" not in master.columns and "ucla_score" in master.columns:
     master["ucla_total"] = master["ucla_score"]
-master = master.rename(columns={"gender_normalized": "gender"})
-master["gender"] = master["gender"].fillna("").astype(str).str.strip().str.lower()
+# Use gender_normalized if available
+if 'gender_normalized' in master.columns:
+    master['gender'] = master['gender_normalized'].fillna('').astype(str).str.strip().str.lower()
+else:
+    master['gender'] = master['gender'].fillna('').astype(str).str.strip().str.lower()
 master["gender_male"] = (master["gender"] == "male").astype(int)
 
 print(f"  Master dataset: N={len(master)}")
@@ -83,16 +86,16 @@ rt_col_t1 = 't1_rt_ms' if 't1_rt_ms' in trials.columns else 't1_rt'
 rt_col_t2 = 't2_rt_ms' if 't2_rt_ms' in trials.columns else 't2_rt'
 soa_col = 'soa_nominal_ms' if 'soa_nominal_ms' in trials.columns else 'soa'
 
-# Filter valid trials
+# Filter valid trials (matching original experiment parameters)
 trials_clean = trials[
     (trials['t1_correct'].notna()) &
     (trials['t2_correct'].notna()) &
     (trials[rt_col_t1].notna()) &
     (trials[rt_col_t2].notna()) &
-    (trials[rt_col_t1] > 200) &  # Remove too-fast RTs
-    (trials[rt_col_t1] < 5000) &  # Remove too-slow RTs
-    (trials[rt_col_t2] > 200) &
-    (trials[rt_col_t2] < 5000)
+    (trials[rt_col_t1] > 100) &  # DEFAULT_RT_MIN: Remove anticipatory responses
+    (trials[rt_col_t1] < 3000) &  # PRP_RT_MAX: Original experiment timeout
+    (trials[rt_col_t2] > 100) &
+    (trials[rt_col_t2] < 3000)
 ].copy()
 
 trials_clean['t1_rt'] = trials_clean[rt_col_t1]

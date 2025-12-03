@@ -12,7 +12,7 @@ Outputs:
 
 import sys
 import pandas as pd
-from data_loader_utils import load_master_dataset
+from analysis.utils.data_loader_utils import load_master_dataset
 import numpy as np
 from pathlib import Path
 import statsmodels.formula.api as smf
@@ -36,8 +36,11 @@ print()
 
 # Load data via shared master
 master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
-master = master.rename(columns={'gender_normalized': 'gender'})
-master['gender'] = master['gender'].fillna('').astype(str).str.strip().str.lower()
+# Use gender_normalized if available
+if 'gender_normalized' in master.columns:
+    master['gender'] = master['gender_normalized'].fillna('').astype(str).str.strip().str.lower()
+else:
+    master['gender'] = master['gender'].fillna('').astype(str).str.strip().str.lower()
 if 'ucla_total' not in master.columns and 'ucla_score' in master.columns:
     master['ucla_total'] = master['ucla_score']
 master['gender_male'] = (master['gender'] == 'male').astype(int)
@@ -64,7 +67,7 @@ print()
 print("MODERATION: WCST PE ~ UCLA × Anxiety + UCLA × Stress")
 print("-" * 80)
 
-formula_mod = ("perseverative_error_rate ~ z_ucla * z_anx + z_ucla * z_str + "
+formula_mod = ("pe_rate ~ z_ucla * z_anx + z_ucla * z_str + "
                "C(gender_male) + z_dep + z_age")
 
 model_mod = smf.ols(formula_mod, data=master).fit()
@@ -92,22 +95,22 @@ print("=" * 80)
 print()
 
 # Clean data
-master_clean = master.dropna(subset=['perseverative_error_rate', 'z_ucla', 'z_dep', 'z_anx', 'z_str', 'gender_male'])
+master_clean = master.dropna(subset=['pe_rate', 'z_ucla', 'z_dep', 'z_anx', 'z_str', 'gender_male'])
 
 # Model 1: UCLA only
-model_ucla_only = smf.ols("perseverative_error_rate ~ z_ucla + C(gender_male) + z_age", data=master_clean).fit()
+model_ucla_only = smf.ols("pe_rate ~ z_ucla + C(gender_male) + z_age", data=master_clean).fit()
 r2_ucla_only = model_ucla_only.rsquared
 
 # Model 2: DASS only
-model_dass_only = smf.ols("perseverative_error_rate ~ z_dep + z_anx + z_str + C(gender_male) + z_age", data=master_clean).fit()
+model_dass_only = smf.ols("pe_rate ~ z_dep + z_anx + z_str + C(gender_male) + z_age", data=master_clean).fit()
 r2_dass_only = model_dass_only.rsquared
 
 # Model 3: UCLA + DASS
-model_full = smf.ols("perseverative_error_rate ~ z_ucla + z_dep + z_anx + z_str + C(gender_male) + z_age", data=master_clean).fit()
+model_full = smf.ols("pe_rate ~ z_ucla + z_dep + z_anx + z_str + C(gender_male) + z_age", data=master_clean).fit()
 r2_full = model_full.rsquared
 
 # Model 4: Covariates only (baseline)
-model_cov = smf.ols("perseverative_error_rate ~ C(gender_male) + z_age", data=master_clean).fit()
+model_cov = smf.ols("pe_rate ~ C(gender_male) + z_age", data=master_clean).fit()
 r2_cov = model_cov.rsquared
 
 # Compute unique and common variance

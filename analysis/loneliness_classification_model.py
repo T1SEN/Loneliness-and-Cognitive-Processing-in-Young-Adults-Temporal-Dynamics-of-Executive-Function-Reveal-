@@ -56,7 +56,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import warnings
 warnings.filterwarnings('ignore')
-from data_loader_utils import load_master_dataset
+from analysis.utils.data_loader_utils import load_master_dataset
 
 np.random.seed(42)
 
@@ -76,8 +76,11 @@ print("Method: Logistic Regression + Random Forest with 5-fold CV\n")
 
 # Load master dataset
 master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
-master = master.rename(columns={'gender_normalized': 'gender'})
-master['gender'] = master['gender'].fillna('').astype(str).str.strip().str.lower()
+# Use gender_normalized if available
+if 'gender_normalized' in master.columns:
+    master['gender'] = master['gender_normalized'].fillna('').astype(str).str.strip().str.lower()
+else:
+    master['gender'] = master['gender'].fillna('').astype(str).str.strip().str.lower()
 if 'ucla_total' not in master.columns and 'ucla_score' in master.columns:
     master['ucla_total'] = master['ucla_score']
 master['gender_male'] = (master['gender'] == 'male').astype(int)
@@ -130,7 +133,7 @@ print("=" * 80)
 candidate_features = []
 
 # WCST features
-wcst_features = ['pe_rate', 'wcst_pe_rate', 'perseverative_error_rate',
+wcst_features = ['pe_rate', 'pe_rate', 'pe_rate',
                  'wcst_accuracy', 'wcst_mean_rt']
 candidate_features.extend([f for f in wcst_features if f in extreme_groups.columns])
 

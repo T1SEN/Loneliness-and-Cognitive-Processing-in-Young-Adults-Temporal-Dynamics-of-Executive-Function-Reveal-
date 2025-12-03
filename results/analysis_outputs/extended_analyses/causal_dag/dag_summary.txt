@@ -1,0 +1,40 @@
+
+COMPETING CAUSAL MODELS
+========================
+
+Model 1: Mood-Driven (DASS → EF, UCLA spurious)
+  UCLA ← U → DASS → EF
+  Implication: UCLA effect disappears when controlling DASS
+
+Model 2: Full Mediation (UCLA → DASS → EF)
+  UCLA → DASS → EF
+  Implication: Direct effect = 0, only indirect effect remains
+
+Model 3: Parallel Paths
+  UCLA → EF
+  UCLA → DASS → EF
+  Implication: Both direct and indirect effects present
+
+Model 4: Moderated Mediation
+  UCLA → DASS → EF (paths moderated by Gender)
+  Implication: Different effects for males vs females
+
+EVIDENCE FROM THIS ANALYSIS:
+
+WCST PE Rate:
+  - Effect reduction with DASS control: 94.8%
+  → Supports Model 1 (Mood-Driven) or Model 2 (Full Mediation)
+  - Male ATE: 0.547, Female ATE: -0.280
+  → Supports Model 4 (Gender Moderation)
+
+PRP Bottleneck:
+  - Effect reduction with DASS control: -134.6%
+  → Supports Model 3 (Parallel Paths - direct effect remains)
+  - Male ATE: 21.312, Female ATE: 12.049
+  → Supports Model 4 (Gender Moderation)
+
+WCST Accuracy:
+  - Effect reduction with DASS control: 21.4%
+  → Supports Model 3 (Parallel Paths - direct effect remains)
+  - Male ATE: -1.472, Female ATE: 0.498
+  → Supports Model 4 (Gender Moderation)

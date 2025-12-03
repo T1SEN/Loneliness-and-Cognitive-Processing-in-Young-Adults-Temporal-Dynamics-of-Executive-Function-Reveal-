@@ -20,7 +20,7 @@ if sys.platform.startswith("win") and hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding='utf-8')
 
 import pandas as pd
-from data_loader_utils import load_master_dataset
+from analysis.utils.data_loader_utils import load_master_dataset
 import numpy as np
 from pathlib import Path
 import scipy.stats as stats
@@ -53,8 +53,11 @@ print("\n[1/5] Loading data...")
 master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
 if "ucla_total" not in master.columns and "ucla_score" in master.columns:
     master["ucla_total"] = master["ucla_score"]
-master = master.rename(columns={"gender_normalized": "gender"})
-master["gender"] = master["gender"].fillna("").astype(str).str.strip().str.lower()
+# Use gender_normalized if available
+if 'gender_normalized' in master.columns:
+    master['gender'] = master['gender_normalized'].fillna('').astype(str).str.strip().str.lower()
+else:
+    master['gender'] = master['gender'].fillna('').astype(str).str.strip().str.lower()
 master["gender_male"] = (master["gender"] == "male").astype(int)
 
 # Derive DASS total
@@ -154,9 +157,8 @@ for trial_filter in ['all', 'valid_rt']:
 
     metrics_by_filter[trial_filter] = metrics
 
-# Merge base dataset
-master = ucla_data.merge(participants[['participant_id', 'gender_male', 'age']], on='participant_id', how='inner')
-master = master.merge(dass_data, on='participant_id', how='left')
+# Use master dataset directly (already loaded above with UCLA, DASS, demographics)
+# No need to merge again since master already contains all required columns
 
 print(f"  Base dataset: N={len(master)}")
 

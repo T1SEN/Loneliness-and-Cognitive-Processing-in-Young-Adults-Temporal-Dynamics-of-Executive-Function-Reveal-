@@ -29,7 +29,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # Import statistical utilities for FDR correction
-from statistical_utils import apply_multiple_comparison_correction
+from analysis.statistical_utils import apply_multiple_comparison_correction
 
 # Set style
 sns.set_style("whitegrid")
@@ -77,7 +77,7 @@ print(f"  Mean UCLA = {high_group['ucla_total'].mean():.2f} (SD = {high_group['u
 # Executive function measures to compare
 ef_measures = {
     'stroop_interference': 'Stroop Interference (ms)',
-    'perseverative_error_rate': 'WCST Perseverative Error Rate (%)',
+    'pe_rate': 'WCST Perseverative Error Rate (%)',
     'prp_bottleneck': 'PRP Bottleneck Effect (ms)'
 }
 

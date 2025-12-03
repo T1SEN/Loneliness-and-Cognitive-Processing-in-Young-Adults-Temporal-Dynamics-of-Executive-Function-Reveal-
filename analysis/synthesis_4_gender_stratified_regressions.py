@@ -38,7 +38,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.preprocessing import StandardScaler
 import warnings
-from data_loader_utils import load_master_dataset
+from analysis.utils.data_loader_utils import load_master_dataset
 warnings.filterwarnings('ignore')
 
 np.random.seed(42)
@@ -63,14 +63,17 @@ print()
 print("[1/4] Loading data...")
 
 master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
-master = master.rename(columns={'gender_normalized': 'gender'})
-master['gender'] = master['gender'].fillna('').astype(str).str.strip().str.lower()
+# Use gender_normalized if available
+if 'gender_normalized' in master.columns:
+    master['gender'] = master['gender_normalized'].fillna('').astype(str).str.strip().str.lower()
+else:
+    master['gender'] = master['gender'].fillna('').astype(str).str.strip().str.lower()
 if 'ucla_total' not in master.columns and 'ucla_score' in master.columns:
     master['ucla_total'] = master['ucla_score']
 master['gender_male'] = (master['gender'] == 'male').astype(int)
 
 # Rename PE if needed
-for col in ['pe_rate', 'perseverative_error_rate']:
+for col in ['pe_rate', 'pe_rate']:
     if col in master.columns and col != 'pe_rate':
         master = master.rename(columns={col: 'pe_rate'})
         break

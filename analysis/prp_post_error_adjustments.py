@@ -15,7 +15,7 @@ import numpy as np
 from pathlib import Path
 from scipy.stats import pearsonr
 from analysis.utils.trial_data_loader import load_prp_trials
-from data_loader_utils import load_master_dataset
+from analysis.utils.data_loader_utils import load_master_dataset
 
 if sys.platform.startswith("win") and hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding='utf-8')

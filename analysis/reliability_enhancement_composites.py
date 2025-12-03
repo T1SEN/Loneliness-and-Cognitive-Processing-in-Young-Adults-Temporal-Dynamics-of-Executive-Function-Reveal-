@@ -15,7 +15,7 @@ import sys
 import os
 from pathlib import Path
 import pandas as pd
-from data_loader_utils import load_master_dataset
+from analysis.utils.data_loader_utils import load_master_dataset
 import numpy as np
 from scipy import stats
 from scipy.stats import pearsonr
@@ -138,7 +138,7 @@ for pid in wcst_trials['participantId'].unique():
 
     wcst_metrics.append({
         'participantId': pid,
-        'wcst_pe_rate': pe_rate,
+        'pe_rate': pe_rate,
         'wcst_error_rate': error_rate,
         'wcst_rt_cv': rt_cv,
         'wcst_pes': pes_ms,
@@ -150,7 +150,7 @@ wcst_df = pd.DataFrame(wcst_metrics)
 print(f"   WCST metrics collected: N={len(wcst_df)}")
 
 # Cronbach's alpha for WCST metrics
-wcst_items = wcst_df[['wcst_pe_rate', 'wcst_error_rate', 'wcst_rt_cv', 'wcst_error_runs']].copy()
+wcst_items = wcst_df[['pe_rate', 'wcst_error_rate', 'wcst_rt_cv', 'wcst_error_runs']].copy()
 
 # Standardize (same direction: higher = worse)
 scaler = StandardScaler()
@@ -372,7 +372,7 @@ print("\n[전체 EF 복합 지표 (Meta-Control)]")
 
 # Merge all
 ef_combined = master.copy()
-ef_combined = ef_combined.merge(wcst_df[['participantId', 'wcst_composite', 'wcst_pe_rate']], on='participantId', how='left')
+ef_combined = ef_combined.merge(wcst_df[['participantId', 'wcst_composite', 'pe_rate']], on='participantId', how='left')
 
 # Handle empty stroop_df
 if len(stroop_df) > 0 and 'stroop_composite' in stroop_df.columns:
@@ -529,9 +529,9 @@ for gender_name, gender_df in [('남성', males), ('여성', females)]:
 # Compare with original PE rate
 print("\n   WCST PE Rate (original):")
 for gender_name, gender_df in [('남성', males), ('여성', females)]:
-    data = gender_df[['ucla_total', 'wcst_pe_rate']].dropna()
+    data = gender_df[['ucla_total', 'pe_rate']].dropna()
     if len(data) > 5:
-        r, p = pearsonr(data['ucla_total'], data['wcst_pe_rate'])
+        r, p = pearsonr(data['ucla_total'], data['pe_rate'])
         print(f"   {gender_name}: r={r:+.3f}, p={p:.4f}, N={len(data)}")
         results_comparison.append({
             'metric': 'WCST PE Rate',

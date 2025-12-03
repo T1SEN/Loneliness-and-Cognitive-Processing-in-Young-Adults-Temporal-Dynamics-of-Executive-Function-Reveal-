@@ -23,7 +23,7 @@ if sys.platform.startswith("win") and hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding='utf-8')
 
 import pandas as pd
-from data_loader_utils import load_master_dataset
+from analysis.utils.data_loader_utils import load_master_dataset
 import numpy as np
 from pathlib import Path
 import scipy.stats as stats
@@ -54,8 +54,11 @@ print("\n[1/7] Loading data...")
 
 # Demographics and survey scores from master
 master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
-master = master.rename(columns={'gender_normalized': 'gender'})
-master['gender'] = master['gender'].fillna('').astype(str).str.strip().str.lower()
+# Use gender_normalized if available
+if 'gender_normalized' in master.columns:
+    master['gender'] = master['gender_normalized'].fillna('').astype(str).str.strip().str.lower()
+else:
+    master['gender'] = master['gender'].fillna('').astype(str).str.strip().str.lower()
 if 'ucla_total' not in master.columns and 'ucla_score' in master.columns:
     master['ucla_total'] = master['ucla_score']
 
@@ -88,7 +91,7 @@ wcst_summary = master
 
 # Select PE column (try multiple possible names)
 pe_col = None
-for col_name in ['pe_rate', 'wcst_pe_rate', 'perseverative_error_rate']:
+for col_name in ['pe_rate', 'pe_rate', 'pe_rate']:
     if col_name in wcst_summary.columns:
         pe_col = col_name
         break
@@ -99,7 +102,7 @@ if pe_col is None:
     sys.exit(1)
 
 wcst_data = wcst_summary[['participant_id', pe_col]].copy()
-wcst_data.columns = ['participant_id', 'wcst_pe_rate']
+wcst_data.columns = ['participant_id', 'pe_rate']
 
 print(f"  Loaded WCST PE data: {len(wcst_data)} participants")
 
@@ -135,9 +138,10 @@ mediator_data.columns = ['participant_id', 'tau']
 master = ucla_data.merge(mediator_data, on='participant_id', how='inner')
 master = master.merge(wcst_data, on='participant_id', how='inner')
 master = master.merge(dass_data, on='participant_id', how='left')
+master = master.merge(participants[['participant_id', 'gender_male']], on='participant_id', how='left')
 
 # Drop missing
-master = master.dropna(subset=['ucla_total', 'tau', 'wcst_pe_rate', 'gender_male'])
+master = master.dropna(subset=['ucla_total', 'tau', 'pe_rate', 'gender_male'])
 
 print(f"\n  Complete cases: N={len(master)}")
 print(f"    Males: {(master['gender_male'] == 1).sum()}")
@@ -174,14 +178,14 @@ for gender, label in [(1, 'Male'), (0, 'Female')]:
     print(f"    Path a (UCLA → τ): β={a_path:.3f}, SE={a_se:.3f}, r={r_a:.3f}, p={p_a:.3f}")
 
     # Path b: τ → PE (controlling UCLA)
-    model_b = smf.ols('wcst_pe_rate ~ tau + ucla_total', data=subset).fit()
+    model_b = smf.ols('pe_rate ~ tau + ucla_total', data=subset).fit()
     b_path = model_b.params['tau']
     b_se = model_b.bse['tau']
 
     print(f"    Path b (τ → PE|UCLA): β={b_path:.3f}, SE={b_se:.3f}")
 
     # Path c: UCLA → PE (total effect)
-    model_c = smf.ols('wcst_pe_rate ~ ucla_total', data=subset).fit()
+    model_c = smf.ols('pe_rate ~ ucla_total', data=subset).fit()
     c_path = model_c.params['ucla_total']
     c_se = model_c.bse['ucla_total']
     c_p = model_c.pvalues['ucla_total']
@@ -205,7 +209,7 @@ for gender, label in [(1, 'Male'), (0, 'Female')]:
         m_a = smf.ols('tau ~ ucla_total', data=d).fit()
         a = m_a.params['ucla_total']
         # Path b
-        m_b = smf.ols('wcst_pe_rate ~ tau + ucla_total', data=d).fit()
+        m_b = smf.ols('pe_rate ~ tau + ucla_total', data=d).fit()
         b = m_b.params['tau']
         return a * b
 
@@ -270,7 +274,7 @@ print(f"\n  Path a moderation (UCLA × Gender → τ):")
 print(f"    Interaction: β={a_interaction:.3f}, p={a_interaction_p:.3f}")
 
 # Path b moderation: τ × Gender → PE (controlling UCLA)
-model_b_mod = smf.ols('wcst_pe_rate ~ tau * gender_male + ucla_total', data=master).fit()
+model_b_mod = smf.ols('pe_rate ~ tau * gender_male + ucla_total', data=master).fit()
 b_interaction = model_b_mod.params['tau:gender_male']
 b_interaction_p = model_b_mod.pvalues['tau:gender_male']
 
@@ -306,7 +310,7 @@ if 'dass_total' in master.columns and master['dass_total'].notna().sum() > 50:
         a_dass_p = model_a_dass.pvalues['ucla_total']
 
         # Path b: τ → PE (controlling UCLA + DASS)
-        model_b_dass = smf.ols('wcst_pe_rate ~ tau + ucla_total + dass_total', data=subset).fit()
+        model_b_dass = smf.ols('pe_rate ~ tau + ucla_total + dass_total', data=subset).fit()
         b_dass = model_b_dass.params['tau']
 
         # Indirect
@@ -391,11 +395,11 @@ for gender, label, marker, color in [(1, 'Male', 's', '#3498DB'), (0, 'Female', 
                       alpha=0.6, label=label, marker=marker, s=80, color=color)
 
     # Path b: τ → PE
-    axes[0, 1].scatter(subset['tau'], subset['wcst_pe_rate'],
+    axes[0, 1].scatter(subset['tau'], subset['pe_rate'],
                       alpha=0.6, label=label, marker=marker, s=80, color=color)
 
     # Path c: UCLA → PE (total)
-    axes[1, 0].scatter(subset['ucla_total'], subset['wcst_pe_rate'],
+    axes[1, 0].scatter(subset['ucla_total'], subset['pe_rate'],
                       alpha=0.6, label=label, marker=marker, s=80, color=color)
 
 # Regression lines
@@ -409,7 +413,7 @@ for gender, color in [(1, '#3498DB'), (0, '#E74C3C')]:
     axes[0, 0].plot(x_a, p_a(x_a), color=color, linewidth=2, alpha=0.7)
 
     # Path c
-    z_c = np.polyfit(subset['ucla_total'], subset['wcst_pe_rate'], 1)
+    z_c = np.polyfit(subset['ucla_total'], subset['pe_rate'], 1)
     p_c = np.poly1d(z_c)
     x_c = np.linspace(subset['ucla_total'].min(), subset['ucla_total'].max(), 100)
     axes[1, 0].plot(x_c, p_c(x_c), color=color, linewidth=2, alpha=0.7)
@@ -502,29 +506,29 @@ with open(OUTPUT_DIR / "MODERATED_MEDIATION_REPORT.txt", 'w', encoding='utf-8') 
         female_row = results_df[results_df['Gender'] == 'Female'].iloc[0]
 
         if male_row['indirect_sig'] == 'Yes':
-            f.write(f"✓ MALES: Significant mediation (indirect = {male_row['indirect']:.4f})\n")
-            f.write(f"  UCLA → τ↑ → PE↑ pathway confirmed\n")
-            f.write(f"  Mechanism: Attentional lapses mediate loneliness → perseveration\n\n")
+            f.write(f"[OK] MALES: Significant mediation (indirect = {male_row['indirect']:.4f})\n")
+            f.write(f"  UCLA -> tau_up -> PE_up pathway confirmed\n")
+            f.write(f"  Mechanism: Attentional lapses mediate loneliness -> perseveration\n\n")
         else:
-            f.write(f"✗ MALES: Non-significant mediation (indirect = {male_row['indirect']:.4f})\n\n")
+            f.write(f"[NS] MALES: Non-significant mediation (indirect = {male_row['indirect']:.4f})\n\n")
 
         if female_row['indirect_sig'] == 'Yes':
-            f.write(f"✓ FEMALES: Significant mediation (indirect = {female_row['indirect']:.4f})\n")
+            f.write(f"[OK] FEMALES: Significant mediation (indirect = {female_row['indirect']:.4f})\n")
             if female_row['indirect'] < 0:
-                f.write(f"  UCLA → τ↓ → PE↓ pathway (protective!)\n\n")
+                f.write(f"  UCLA -> tau_down -> PE_down pathway (protective!)\n\n")
             else:
-                f.write(f"  UCLA → τ↑ → PE↑ pathway\n\n")
+                f.write(f"  UCLA -> tau_up -> PE_up pathway\n\n")
         else:
-            f.write(f"✗ FEMALES: Non-significant mediation (indirect = {female_row['indirect']:.4f})\n\n")
+            f.write(f"[NS] FEMALES: Non-significant mediation (indirect = {female_row['indirect']:.4f})\n\n")
 
     f.write("="*80 + "\n")
     f.write(f"Full results saved to: {OUTPUT_DIR}\n")
 
 print("\n" + "="*80)
-print("✓ Moderated Mediation Analysis Complete!")
+print("[OK] Moderated Mediation Analysis Complete!")
 print("="*80)
 print(f"\nKey Finding: {'GENDER-SPECIFIC MEDIATION' if len(results_df) == 2 else 'See results for details'}")
 if len(results_df) == 2:
     for _, row in results_df.iterrows():
-        sig_marker = "✓ SIGNIFICANT" if row['indirect_sig'] == 'Yes' else "✗ Not significant"
+        sig_marker = "[SIGNIFICANT]" if row['indirect_sig'] == 'Yes' else "[Not significant]"
         print(f"  {row['Gender']}: Indirect = {row['indirect']:.4f} {sig_marker}")

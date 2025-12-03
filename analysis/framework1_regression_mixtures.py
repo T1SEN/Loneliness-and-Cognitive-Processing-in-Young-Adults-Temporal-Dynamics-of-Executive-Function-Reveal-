@@ -49,7 +49,8 @@ from sklearn.utils import resample
 import statsmodels.formula.api as smf
 
 # Add utils to path
-sys.path.insert(0, str(Path(__file__).parent))
+_this_file = Path(__file__) if '__file__' in dir() else Path('analysis/framework1_regression_mixtures.py')
+sys.path.insert(0, str(_this_file.parent))
 from utils.publication_helpers import (
     set_publication_style,
     save_publication_figure,
@@ -77,7 +78,7 @@ K_RANGE = range(2, 6)  # Test K=2,3,4,5 classes
 
 # Executive function outcomes to analyze
 EF_OUTCOMES = {
-    'wcst_pe_rate': 'WCST Perseverative Error Rate',
+    'pe_rate': 'WCST Perseverative Error Rate',
     'prp_bottleneck': 'PRP Bottleneck Effect',
     'stroop_interference': 'Stroop Interference'
 }
@@ -361,7 +362,7 @@ def characterize_classes(df, class_labels):
     profile_vars = [
         'age', 'gender_male', 'ucla_score',
         'dass_depression', 'dass_anxiety', 'dass_stress',
-        'wcst_pe_rate', 'prp_bottleneck', 'stroop_interference'
+        'pe_rate', 'prp_bottleneck', 'stroop_interference'
     ]
 
     # Keep only existing columns

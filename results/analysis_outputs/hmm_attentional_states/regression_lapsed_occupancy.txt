@@ -1,0 +1,30 @@
+                            OLS Regression Results                            
+==============================================================================
+Dep. Variable:       lapsed_occupancy   R-squared:                       0.064
+Model:                            OLS   Adj. R-squared:                  0.024
+Method:                 Least Squares   F-statistic:                     1.614
+Date:                Wed, 03 Dec 2025   Prob (F-statistic):              0.147
+Time:                        15:33:33   Log-Likelihood:                 127.99
+No. Observations:                 148   AIC:                            -242.0
+Df Residuals:                     141   BIC:                            -221.0
+Df Model:                           6                                         
+Covariance Type:            nonrobust                                         
+=========================================================================================
+                            coef    std err          t      P>|t|      [0.025      0.975]
+-----------------------------------------------------------------------------------------
+Intercept                 0.1415      0.011     12.999      0.000       0.120       0.163
+C(gender_male)[T.1.0]    -0.0117      0.018     -0.645      0.520      -0.047       0.024
+z_ucla_total              0.0167      0.012      1.403      0.163      -0.007       0.040
+z_dass_depression        -0.0211      0.013     -1.564      0.120      -0.048       0.006
+z_dass_anxiety            0.0243      0.013      1.842      0.068      -0.002       0.050
+z_dass_stress            -0.0060      0.014     -0.445      0.657      -0.033       0.021
+z_age                    -0.0119      0.009     -1.370      0.173      -0.029       0.005
+==============================================================================
+Omnibus:                       13.205   Durbin-Watson:                   2.139
+Prob(Omnibus):                  0.001   Jarque-Bera (JB):               14.086
+Skew:                           0.735   Prob(JB):                     0.000874
+Kurtosis:                       3.350   Cond. No.                         3.72
+==============================================================================
+
+Notes:
+[1] Standard Errors assume that the covariance matrix of the errors is correctly specified.

@@ -28,7 +28,7 @@ import statsmodels.api as sm
 import statsmodels.formula.api as smf
 from sklearn.utils import resample
 
-from data_loader_utils import load_master_dataset, normalize_gender_series
+from analysis.utils.data_loader_utils import load_master_dataset, normalize_gender_series
 
 # Unicode handling for Windows
 if sys.platform.startswith("win") and hasattr(sys.stdout, "reconfigure"):
@@ -49,8 +49,8 @@ print("="*80)
 print("\n[1/6] Loading data...")
 
 master = load_master_dataset()
-if 'pe_rate' in master.columns and 'wcst_pe_rate' not in master.columns:
-    master = master.rename(columns={'pe_rate': 'wcst_pe_rate'})
+if 'pe_rate' in master.columns and 'pe_rate' not in master.columns:
+    master = master.rename(columns={'pe_rate': 'pe_rate'})
 
 if 'dass_total' not in master.columns and all(col in master.columns for col in ['dass_depression', 'dass_anxiety', 'dass_stress']):
     master['dass_total'] = master[['dass_depression', 'dass_anxiety', 'dass_stress']].sum(axis=1)
@@ -62,7 +62,7 @@ print(f"  Loaded master dataset: {len(master)} participants")
 
 # Filter complete cases
 master = master.dropna(subset=['ucla_total', 'dass_total', 'dass_anxiety', 'dass_stress',
-                               'dass_depression', 'wcst_pe_rate', 'gender', 'age'])
+                               'dass_depression', 'pe_rate', 'gender', 'age'])
 print(f"  Complete cases: {len(master)} participants")
 
 # Create gender dummy
@@ -79,7 +79,7 @@ master['z_dass_depression'] = (master['dass_depression'] - master['dass_depressi
 print(f"\n  Descriptives:")
 print(f"    UCLA: M={master['ucla_total'].mean():.2f}, SD={master['ucla_total'].std():.2f}")
 print(f"    DASS Total: M={master['dass_total'].mean():.2f}, SD={master['dass_total'].std():.2f}")
-print(f"    WCST PE Rate: M={master['wcst_pe_rate'].mean():.2f}%, SD={master['wcst_pe_rate'].std():.2f}%")
+print(f"    WCST PE Rate: M={master['pe_rate'].mean():.2f}%, SD={master['pe_rate'].std():.2f}%")
 print(f"    Gender: {master['gender_male'].sum()} male, {len(master) - master['gender_male'].sum()} female")
 
 # ============================================================================
@@ -138,7 +138,7 @@ def bootstrap_mediation(data, x_col, m_col, y_col, covariates=None, n_boot=10000
 
 # Test DASS Total as mediator
 print("\n  [2a] DASS Total as mediator")
-boot_results = bootstrap_mediation(master, 'z_ucla', 'z_dass_total', 'wcst_pe_rate',
+boot_results = bootstrap_mediation(master, 'z_ucla', 'z_dass_total', 'pe_rate',
                                      covariates=['age'], n_boot=10000)
 
 indirect_ci = boot_results['indirect'].quantile([0.025, 0.975])
@@ -163,7 +163,7 @@ for subscale, col in [('Anxiety', 'z_dass_anxiety'),
                       ('Stress', 'z_dass_stress'),
                       ('Depression', 'z_dass_depression')]:
     print(f"\n  [2b] DASS {subscale} as mediator")
-    boot_results = bootstrap_mediation(master, 'z_ucla', col, 'wcst_pe_rate',
+    boot_results = bootstrap_mediation(master, 'z_ucla', col, 'pe_rate',
                                         covariates=['age'], n_boot=10000)
 
     indirect_ci = boot_results['indirect'].quantile([0.025, 0.975])
@@ -208,14 +208,14 @@ for subscale, col in [('Total', 'z_dass_total'),
     print(f"\n  [{subscale}] Moderated mediation")
 
     # Males
-    boot_male = bootstrap_mediation(males, 'z_ucla', col, 'wcst_pe_rate',
+    boot_male = bootstrap_mediation(males, 'z_ucla', col, 'pe_rate',
                                      covariates=['age'], n_boot=10000)
     indirect_male = boot_male['indirect'].mean()
     ci_male = boot_male['indirect'].quantile([0.025, 0.975])
     sig_male = 'Yes' if (ci_male.iloc[0] > 0 or ci_male.iloc[1] < 0) else 'No'
 
     # Females
-    boot_female = bootstrap_mediation(females, 'z_ucla', col, 'wcst_pe_rate',
+    boot_female = bootstrap_mediation(females, 'z_ucla', col, 'pe_rate',
                                        covariates=['age'], n_boot=10000)
     indirect_female = boot_female['indirect'].mean()
     ci_female = boot_female['indirect'].quantile([0.025, 0.975])
@@ -262,7 +262,7 @@ for subscale, col in [('Anxiety', 'z_dass_anxiety')]:  # Focus on anxiety (most 
         print(f"      UCLA × Gender: β={model_a.params['z_ucla:gender_male']:.4f}, p={model_a.pvalues['z_ucla:gender_male']:.4f}")
 
     # Path b: DASS × Gender → WCST_PE (controlling UCLA)
-    model_b = smf.ols(f'wcst_pe_rate ~ {col} * gender_male + z_ucla + age', data=master).fit()
+    model_b = smf.ols(f'pe_rate ~ {col} * gender_male + z_ucla + age', data=master).fit()
     print(f"\n    Path b (DASS_{subscale} × Gender → PE, controlling UCLA):")
     print(f"      DASS main: β={model_b.params[col]:.4f}, p={model_b.pvalues[col]:.4f}")
     if f'{col}:gender_male' in model_b.params:

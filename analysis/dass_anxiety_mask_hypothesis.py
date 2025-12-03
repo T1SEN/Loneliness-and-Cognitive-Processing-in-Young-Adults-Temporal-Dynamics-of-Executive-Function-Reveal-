@@ -36,7 +36,7 @@ if sys.platform.startswith("win") and hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding='utf-8')
 
 import pandas as pd
-from data_loader_utils import load_master_dataset
+from analysis.utils.data_loader_utils import load_master_dataset
 import numpy as np
 from pathlib import Path
 import scipy.stats as stats
@@ -69,7 +69,11 @@ if 'ucla_total' not in master.columns and 'ucla_score' in master.columns:
 
 # Normalize gender directly from master
 master['gender'] = master.get('gender_normalized', master.get('gender'))
-master['gender'] = master['gender'].fillna('').astype(str).str.strip().str.lower()
+# Use gender_normalized if available
+if 'gender_normalized' in master.columns:
+    master['gender'] = master['gender_normalized'].fillna('').astype(str).str.strip().str.lower()
+else:
+    master['gender'] = master['gender'].fillna('').astype(str).str.strip().str.lower()
 master['gender_male'] = master['gender'].map({'male': 1, 'female': 0})
 if master['gender_male'].isna().all():
     print("ERROR: Cannot determine gender")
@@ -78,7 +82,7 @@ if master['gender_male'].isna().all():
 
 # Find PE column
 pe_col = None
-for col in ['pe_rate', 'perseverative_error_rate', 'wcst_pe_rate', 'perseverativeErrorRate']:
+for col in ['pe_rate', 'pe_rate', 'pe_rate', 'perseverativeErrorRate']:
     if col in master.columns:
         pe_col = col
         break

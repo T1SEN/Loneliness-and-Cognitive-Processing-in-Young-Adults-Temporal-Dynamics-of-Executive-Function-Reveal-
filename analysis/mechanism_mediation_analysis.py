@@ -19,7 +19,7 @@ if sys.platform.startswith("win") and hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding='utf-8')
 
 import pandas as pd
-from data_loader_utils import load_master_dataset
+from analysis.utils.data_loader_utils import load_master_dataset
 import numpy as np
 from pathlib import Path
 from scipy import stats
@@ -71,8 +71,8 @@ if 'gender' in master.columns:
     master.loc[master['gender'] == '남성', 'gender_male'] = 1
     master.loc[master['gender'].str.lower() == 'male', 'gender_male'] = 1
 
-# Filter complete cases
-required_cols = ['ucla_total', 'pe_rate', 'gender_male', 'dass_depression', 'dass_anxiety', 'dass_stress']
+# Filter complete cases (include age for covariate control per CLAUDE.md)
+required_cols = ['ucla_total', 'pe_rate', 'gender_male', 'dass_depression', 'dass_anxiety', 'dass_stress', 'age']
 master = master.dropna(subset=required_cols).copy()
 
 print(f"  N={len(master)} ({(master['gender_male']==0).sum()} Female, {(master['gender_male']==1).sum()} Male)")
@@ -196,7 +196,13 @@ for dass_measure in ['dass_depression', 'dass_anxiety', 'dass_stress']:
             if outcome not in stratum_data.columns:
                 continue
 
-            formula = f"{outcome} ~ z_ucla * C(gender_male)"
+            # Note: DASS is used for stratification, not as covariate (stratification approach)
+            # However, we add age control per CLAUDE.md best practices
+            # Within DASS strata, we're testing if UCLA × Gender effect differs by DASS level
+            if 'age' in stratum_data.columns:
+                formula = f"{outcome} ~ z_ucla * C(gender_male) + age"
+            else:
+                formula = f"{outcome} ~ z_ucla * C(gender_male)"
             try:
                 model = ols(formula, data=stratum_data.dropna(subset=[outcome])).fit()
                 interaction_term = "z_ucla:C(gender_male)[T.1]"

@@ -1,0 +1,5 @@
+Model,LOO,LOO_SE,p_loo,WAIC,WAIC_SE,BIC,N_divergent,N_low_ESS,N_high_Rhat,Min_ESS,Max_Rhat
+mood_driven,,,,,,295.6189236840395,0,0,0,22050.379,1.0
+full_mediation,,,,,,278.226734630559,1343,1,127,62.929,1.061
+parallel,,,,,,301.4959722223823,0,0,0,14082.296,1.001
+moderated,,,,,,204.22676404738303,811,76,96,7.248,1.528

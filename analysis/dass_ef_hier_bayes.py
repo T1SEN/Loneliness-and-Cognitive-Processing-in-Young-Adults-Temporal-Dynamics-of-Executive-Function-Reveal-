@@ -29,7 +29,7 @@ import pymc as pm
 import arviz as az
 
 from dass_exec_models import build_df, add_meta_control
-from statistical_utils import check_bayesian_convergence
+from analysis.statistical_utils import check_bayesian_convergence
 
 try:
     from pymc.sampling_jax import sample_numpyro_nuts

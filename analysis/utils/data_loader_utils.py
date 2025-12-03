@@ -29,8 +29,8 @@ STANDARDIZE_COLS = ['ucla_score', 'dass_depression', 'dass_anxiety', 'dass_stres
 MALE_TOKENS_EXACT = {"m", "male", "man", "men", "boy", "boys"}
 FEMALE_TOKENS_EXACT = {"f", "female", "woman", "women", "girl", "girls"}
 # Contains checks use Korean tokens after normalization (hangul only)
-MALE_TOKENS_CONTAINS = {"남성", "남자", "남", "남학생"}
-FEMALE_TOKENS_CONTAINS = {"여성", "여자", "여", "여학생"}
+MALE_TOKENS_CONTAINS = {"남성", "남자", "소년", "남학생"}
+FEMALE_TOKENS_CONTAINS = {"여성", "여자", "소녀", "여학생"}
 
 PARTICIPANT_ID_ALIASES = {"participant_id", "participantId", "participantid"}
 
@@ -230,18 +230,28 @@ def load_prp_summary():
 
     prp_trials = ensure_participant_id(prp_trials)
 
-    # Normalize RT column name
-    rt_col = 't2_rt' if 't2_rt' in prp_trials.columns else ('t2_rt_ms' if 't2_rt_ms' in prp_trials.columns else None)
+    # Normalize RT column name - prefer _ms columns (have more data)
+    rt_col = 't2_rt_ms' if 't2_rt_ms' in prp_trials.columns else ('t2_rt' if 't2_rt' in prp_trials.columns else None)
     if rt_col is None:
         raise KeyError("PRP trials missing T2 RT column ('t2_rt' or 't2_rt_ms').")
     if rt_col != 't2_rt':
+        # Drop the old empty t2_rt column if exists to avoid duplicates
+        if 't2_rt' in prp_trials.columns:
+            prp_trials = prp_trials.drop(columns=['t2_rt'])
         prp_trials = prp_trials.rename(columns={rt_col: 't2_rt'})
 
-    # Normalize SOA column name
-    soa_col = 'soa' if 'soa' in prp_trials.columns else ('soa_ms' if 'soa_ms' in prp_trials.columns else ('soa_nominal_ms' if 'soa_nominal_ms' in prp_trials.columns else None))
+    # Normalize SOA column name - prefer soa_nominal_ms (has more data)
+    soa_col = None
+    for cand in ['soa_nominal_ms', 'soa_ms', 'soa']:
+        if cand in prp_trials.columns:
+            soa_col = cand
+            break
     if soa_col is None:
         raise KeyError("PRP trials missing SOA column ('soa', 'soa_ms', or 'soa_nominal_ms').")
     if soa_col != 'soa':
+        # Drop the old empty soa column if exists to avoid duplicates
+        if 'soa' in prp_trials.columns:
+            prp_trials = prp_trials.drop(columns=['soa'])
         prp_trials = prp_trials.rename(columns={soa_col: 'soa'})
 
     # Normalize correctness/timeout columns
@@ -298,8 +308,8 @@ def load_stroop_summary():
 
     stroop_trials = ensure_participant_id(stroop_trials)
 
-    # Determine RT column name
-    rt_col = 'rt' if 'rt' in stroop_trials.columns else ('rt_ms' if 'rt_ms' in stroop_trials.columns else None)
+    # Determine RT column name (prefer rt_ms which has more data - same pattern as PRP fix)
+    rt_col = 'rt_ms' if 'rt_ms' in stroop_trials.columns else ('rt' if 'rt' in stroop_trials.columns else None)
     if rt_col is None:
         raise KeyError("Stroop trials missing RT column ('rt' or 'rt_ms').")
 

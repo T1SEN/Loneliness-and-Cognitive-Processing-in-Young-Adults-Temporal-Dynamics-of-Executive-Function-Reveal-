@@ -44,10 +44,11 @@ from pathlib import Path
 import scipy.stats as stats
 import statsmodels.formula.api as smf
 from statsmodels.stats.anova import anova_lm
+from statsmodels.stats.multitest import multipletests
 import matplotlib.pyplot as plt
 import seaborn as sns
 import warnings
-from data_loader_utils import load_master_dataset
+from analysis.utils.data_loader_utils import load_master_dataset
 warnings.filterwarnings('ignore')
 
 np.random.seed(42)
@@ -68,6 +69,8 @@ print("  Model 1: + DASS subscales (depression, anxiety, stress)")
 print("  Model 2: + UCLA loneliness")
 print("  Model 3: + UCLA × Gender interaction")
 print()
+print("  NOTE: Inference uses HC3 robust standard errors.")
+print()
 
 # ============================================================================
 # LOAD AND PREPARE DATA
@@ -75,16 +78,19 @@ print()
 
 print("[1/6] Loading data...")
 
-# Load master dataset via shared loader
-master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
-master = master.rename(columns={'gender_normalized': 'gender'})
-master['gender'] = master['gender'].fillna('').astype(str).str.strip().str.lower()
+# Load master dataset via shared loader (force rebuild to avoid stale cache)
+master = load_master_dataset(use_cache=False, force_rebuild=True, merge_cognitive_summary=True)
+# Use gender_normalized if available
+if 'gender_normalized' in master.columns:
+    master['gender'] = master['gender_normalized'].fillna('').astype(str).str.strip().str.lower()
+else:
+    master['gender'] = master['gender'].fillna('').astype(str).str.strip().str.lower()
 if 'ucla_total' not in master.columns and 'ucla_score' in master.columns:
     master['ucla_total'] = master['ucla_score']
 master['gender_male'] = (master['gender'] == 'male').astype(int)
 
 # Rename PE column if needed
-for col in ['pe_rate', 'perseverative_error_rate']:
+for col in ['pe_rate', 'pe_rate']:
     if col in master.columns and col != 'pe_rate':
         master = master.rename(columns={col: 'pe_rate'})
         break
@@ -134,19 +140,19 @@ def hierarchical_regression(data, outcome, label):
 
     # Model 0: Covariates only (age + gender)
     formula0 = f"{outcome} ~ z_age + C(gender_male)"
-    model0 = smf.ols(formula0, data=df).fit()
+    model0 = smf.ols(formula0, data=df).fit(cov_type="HC3")
 
     # Model 1: + DASS
     formula1 = f"{outcome} ~ z_age + C(gender_male) + z_dass_dep + z_dass_anx + z_dass_str"
-    model1 = smf.ols(formula1, data=df).fit()
+    model1 = smf.ols(formula1, data=df).fit(cov_type="HC3")
 
     # Model 2: + UCLA
     formula2 = f"{outcome} ~ z_age + C(gender_male) + z_dass_dep + z_dass_anx + z_dass_str + z_ucla"
-    model2 = smf.ols(formula2, data=df).fit()
+    model2 = smf.ols(formula2, data=df).fit(cov_type="HC3")
 
     # Model 3: + UCLA × Gender interaction
     formula3 = f"{outcome} ~ z_age + C(gender_male) + z_dass_dep + z_dass_anx + z_dass_str + z_ucla * C(gender_male)"
-    model3 = smf.ols(formula3, data=df).fit()
+    model3 = smf.ols(formula3, data=df).fit(cov_type="HC3")
 
     # Model comparison
     anova_1v0 = anova_lm(model0, model1)
@@ -246,7 +252,7 @@ for outcome_col, outcome_label, hypothesis in outcomes_to_test:
         hierarchical_results.append(result)
 
         # Print key findings
-        print(f"    N = {result['n']}")
+        print(f"    N (complete cases) = {result['n']}")
         print(f"    DASS contribution: ΔR² = {result['delta_r2_1v0']:.4f}, p = {result['p_1v0']:.4f}")
         print(f"    UCLA contribution: ΔR² = {result['delta_r2_2v1']:.4f}, p = {result['p_2v1']:.4f}")
         print(f"    UCLA×Gender: ΔR² = {result['delta_r2_3v2']:.4f}, p = {result['p_3v2']:.4f}")
@@ -261,8 +267,22 @@ for outcome_col, outcome_label, hypothesis in outcomes_to_test:
 
 # Save results
 hier_df = pd.DataFrame(hierarchical_results)
+
+# Multiple-comparison control (BH/FDR) across outcomes for UCLA main and interaction steps
+if not hier_df.empty:
+    for col in ['p_2v1', 'p_3v2']:
+        pvals = hier_df[col].to_numpy()
+        mask = np.isfinite(pvals)
+        adj = np.full_like(pvals, np.nan, dtype=float)
+        if mask.sum() > 0:
+            adj_vals = multipletests(pvals[mask], method='fdr_bh')[1]
+            adj[mask] = adj_vals
+        hier_df[f'{col}_fdr'] = adj
+
 hier_df.to_csv(OUTPUT_DIR / "hierarchical_regression_results.csv", index=False, encoding='utf-8-sig')
-print(f"  ✓ Saved: hierarchical_regression_results.csv")
+print("  Saved: hierarchical_regression_results.csv")
+if not hier_df.empty:
+    print("  Note: FDR-adjusted p-values are stored in p_2v1_fdr and p_3v2_fdr columns.")
 print()
 
 # ============================================================================
@@ -280,10 +300,14 @@ for _, row in hier_df.iterrows():
         'n': row['n'],
         'ucla_effect_controlled': row['ucla_beta'],
         'ucla_p_controlled': row['ucla_p'],
+        'ucla_p_controlled_fdr': row.get('p_2v1_fdr', np.nan),
         'significant_after_dass': row['ucla_p'] < 0.05,
+        'significant_after_dass_fdr': row.get('p_2v1_fdr', np.nan) < 0.05 if not np.isnan(row.get('p_2v1_fdr', np.nan)) else False,
         'interaction_beta': row['interaction_beta'],
         'interaction_p': row['interaction_p'],
+        'interaction_p_fdr': row.get('p_3v2_fdr', np.nan),
         'significant_interaction': row['interaction_p'] < 0.05,
+        'significant_interaction_fdr': row.get('p_3v2_fdr', np.nan) < 0.05 if not np.isnan(row.get('p_3v2_fdr', np.nan)) else False,
         'female_slope': row['female_ucla_beta'],
         'female_p': row['female_ucla_p'],
         'male_slope': row['male_ucla_beta'],

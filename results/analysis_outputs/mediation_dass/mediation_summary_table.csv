@@ -1,0 +1,5 @@
+﻿Outcome,Total Effect (c),Direct Effect (c'),Indirect Effect (a×b),Bootstrap 95% CI,Mediation Type,Proportion Mediated
+HMM: P(Lapse→Focus),-0.0485 (p=0.0289),-0.0581 (p=0.0449),0.0096 (p=0.6028),"[-0.0286, 0.0494]",No Mediation,-19.8%
+HMM: Lapsed Occupancy,0.0108 (p=0.2112),0.0099 (p=0.3819),0.0009 (p=0.8967),"[-0.0147, 0.0160]",No Total Effect,8.7%
+HMM: P(Focus→Lapse),0.0027 (p=0.6849),-0.0006 (p=0.9446),0.0033 (p=0.5532),"[-0.0082, 0.0142]",No Total Effect,122.4%
+HMM: RT Difference (Lapsed-Focused),186.1740 (p=0.7928),1119.8637 (p=0.2240),-933.6897 (p=0.1168),"[-2305.6589, 264.9617]",No Total Effect,-501.5%

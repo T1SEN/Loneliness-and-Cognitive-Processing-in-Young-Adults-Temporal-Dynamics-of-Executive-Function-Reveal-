@@ -14,7 +14,7 @@ import sys
 import os
 from pathlib import Path
 import pandas as pd
-from data_loader_utils import load_master_dataset
+from analysis.utils.data_loader_utils import load_master_dataset
 import numpy as np
 from scipy import stats
 from scipy.stats import pearsonr, spearmanr
@@ -43,8 +43,11 @@ print("="*80)
 # ============================================================================
 print("\n[?????]")
 master = load_master_dataset(use_cache=True, force_rebuild=True, merge_cognitive_summary=True)
-master = master.rename(columns={"gender_normalized": "gender"})
-master['gender'] = master['gender'].fillna('').astype(str).str.strip().str.lower()
+# Use gender_normalized if available
+if 'gender_normalized' in master.columns:
+    master['gender'] = master['gender_normalized'].fillna('').astype(str).str.strip().str.lower()
+else:
+    master['gender'] = master['gender'].fillna('').astype(str).str.strip().str.lower()
 master['gender'] = master['gender'].apply(lambda x: 'male' if x == 'male' else ('female' if x == 'female' else None))
 
 if 'ucla_total' not in master.columns and 'ucla_score' in master.columns:

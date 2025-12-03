@@ -1,0 +1,33 @@
+AGE × GENDER × UCLA THREE-WAY INTERACTION ANALYSIS
+================================================================================
+
+RESEARCH QUESTION
+--------------------------------------------------------------------------------
+Is male UCLA→WCST_PE vulnerability age-dependent?
+Hypothesis: Effect strongest in younger males (18-21), absent in older (22+)
+
+KEY FINDINGS
+--------------------------------------------------------------------------------
+
+1. CONTINUOUS THREE-WAY INTERACTION
+   UCLA × Gender × Age: p=0.2146
+   ✗ NOT significant: Age does not significantly modulate the effect
+
+2. MEDIAN-SPLIT AGE GROUPS
+   Younger (N=65): UCLA×Gender β=0.2218, p=0.1140 [No]
+   Older (N=84): UCLA×Gender β=0.0018, p=0.9855 [No]
+
+3. AGE QUARTILE ANALYSIS
+   ✗ Q1_Youngest (Age -20-19, N=65): β=0.2218, p=0.1140
+   ✗ Q2 (Age 20-20, N=22): β=-0.0903, p=0.6011
+   ✗ Q3 (Age 21-22, N=43): β=-0.0252, p=0.8875
+   ✗ Q4_Oldest (Age 23-29, N=19): β=-0.3148, p=0.3742
+
+INTERPRETATION
+--------------------------------------------------------------------------------
+✓ Age moderation is NOT significant
+   Male UCLA→PE effect appears stable across 18-36 age range
+   Effect is likely trait-like, not developmentally constrained
+
+================================================================================
+Results saved to: results\analysis_outputs\advanced_analyses\age_gender_ucla

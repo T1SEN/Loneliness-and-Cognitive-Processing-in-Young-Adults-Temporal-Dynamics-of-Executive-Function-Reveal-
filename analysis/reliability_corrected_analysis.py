@@ -93,7 +93,7 @@ corr_df = pd.read_csv(OUTPUT_DIR / "correlation_matrix.csv", index_col=0)
 
 observed_corrs = {
     'stroop': corr_df.loc['ucla_total', 'stroop_interference'],
-    'wcst': corr_df.loc['ucla_total', 'perseverative_error_rate'],
+    'wcst': corr_df.loc['ucla_total', 'pe_rate'],
     'prp': corr_df.loc['ucla_total', 'prp_bottleneck']
 }
 

@@ -1,0 +1,4 @@
+﻿Class,N,UCLA_beta,UCLA_p,Gender_beta,Gender_p,Interaction_beta,Interaction_p,R_squared,Bonf_Corrected_Alpha,UCLA_Bonf_Sig,UCLA_Orig_Sig,Gender_Bonf_Sig,Gender_Orig_Sig,Interaction_Bonf_Sig,Interaction_Orig_Sig
+1,26,-13.987469650142618,0.6816991783036122,,,,,0.1394818776320401,0.00033557046979865775,False,False,False,False,False,False
+2,30,72.32561004539728,0.0055508110470608,,,,,0.5405086970280009,0.00033557046979865775,False,True,False,False,False,False
+3,93,0.6534584524274057,0.9676502319871624,,,,,0.0196203435970598,0.00033557046979865775,False,False,False,False,False,False

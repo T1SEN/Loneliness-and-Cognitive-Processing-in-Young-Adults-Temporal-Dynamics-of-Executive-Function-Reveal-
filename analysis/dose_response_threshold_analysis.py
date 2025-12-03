@@ -25,7 +25,7 @@ import statsmodels.formula.api as smf
 from sklearn.metrics import roc_curve, auc, roc_auc_score
 import warnings
 
-from data_loader_utils import normalize_gender_series, load_master_dataset
+from analysis.utils.data_loader_utils import normalize_gender_series, load_master_dataset
 from analysis.utils.trial_data_loader import load_wcst_trials
 warnings.filterwarnings('ignore')
 
@@ -53,8 +53,11 @@ master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
 if "ucla_total" not in master.columns and "ucla_score" in master.columns:
     master["ucla_total"] = master["ucla_score"]
 
-master = master.rename(columns={"gender_normalized": "gender"})
-master["gender"] = master["gender"].fillna("").astype(str).str.strip().str.lower()
+# Use gender_normalized if available
+if 'gender_normalized' in master.columns:
+    master['gender'] = master['gender_normalized'].fillna('').astype(str).str.strip().str.lower()
+else:
+    master['gender'] = master['gender'].fillna('').astype(str).str.strip().str.lower()
 master["gender_male"] = (master["gender"] == "male").astype(int)
 master["age"] = pd.to_numeric(master["age"], errors="coerce")
 

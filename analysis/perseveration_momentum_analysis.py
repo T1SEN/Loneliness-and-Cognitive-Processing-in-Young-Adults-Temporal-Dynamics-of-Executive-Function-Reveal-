@@ -48,7 +48,7 @@ if not rt_col:
     raise KeyError("WCST trials missing reaction time column")
 
 if "isPE" in wcst_trials.columns:
-    wcst_trials["is_pe"] = wcst_trials["isPE"].astype(int)
+    wcst_trials["is_pe"] = wcst_trials["isPE"].fillna(0).astype(int)
 elif "is_pe" not in wcst_trials.columns:
     wcst_trials["is_pe"] = 0
 
@@ -60,8 +60,11 @@ master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
 if "ucla_total" not in master.columns and "ucla_score" in master.columns:
     master["ucla_total"] = master["ucla_score"]
 
-master = master.rename(columns={"gender_normalized": "gender"})
-master["gender"] = master["gender"].fillna("").astype(str).str.strip().str.lower()
+# Use gender_normalized if available
+if 'gender_normalized' in master.columns:
+    master['gender'] = master['gender_normalized'].fillna('').astype(str).str.strip().str.lower()
+else:
+    master['gender'] = master['gender'].fillna('').astype(str).str.strip().str.lower()
 master["gender_male"] = (master["gender"] == "male").astype(int)
 
 wcst_trials = wcst_trials.merge(master[["participant_id", "ucla_total", "gender_male", "age"]], on="participant_id", how="left")

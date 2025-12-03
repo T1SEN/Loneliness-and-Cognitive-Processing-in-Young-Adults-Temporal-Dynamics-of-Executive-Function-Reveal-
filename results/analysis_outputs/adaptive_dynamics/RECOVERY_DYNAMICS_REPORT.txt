@@ -1,0 +1,67 @@
+================================================================================
+ADAPTIVE RECOVERY DYNAMICS: SUMMARY REPORT
+================================================================================
+
+RESEARCH QUESTION:
+Do lonely individuals show impaired dynamic adjustment after setbacks?
+
+METHODOLOGY:
+- Post-error RT time-course: RT at lags 1-5 after error
+- Exponential recovery fit: RT(t) = baseline + delta * exp(-t/tau)
+- tau = recovery time constant (higher = slower recovery)
+- Proactive vs reactive control indices from Stroop CSE
+
+--------------------------------------------------------------------------------
+KEY FREQUENTIST RESULTS (p < 0.05):
+--------------------------------------------------------------------------------
+  Stroop Conflict Adaptation (CSE): z_ucla
+    beta = -36.4827, p = 0.0364
+    95% CI: [-70.6166, -2.3489]
+
+  Stroop Reactive Control Index: z_ucla
+    beta = -26.3356, p = 0.0020
+    95% CI: [-42.8422, -9.8290]
+
+
+--------------------------------------------------------------------------------
+BAYESIAN RESULTS (ROPE [-0.1, 0.1]):
+--------------------------------------------------------------------------------
+  WCST Recovery Time Constant: b_ucla
+    Posterior mean = -0.1907
+    HDI: [-0.5945, 0.2263]
+    ROPE: 24.7% in, Decision: UNDECIDED
+
+  WCST Recovery Time Constant: b_ucla_x_gender
+    Posterior mean = 0.0070
+    HDI: [-0.6423, 0.6351]
+    ROPE: 24.9% in, Decision: UNDECIDED
+
+  Stroop Conflict Adaptation (CSE): b_ucla
+    Posterior mean = -0.2398
+    HDI: [-0.4658, -0.0072]
+    ROPE: 11.4% in, Decision: UNDECIDED
+
+  Stroop Conflict Adaptation (CSE): b_ucla_x_gender
+    Posterior mean = 0.2147
+    HDI: [-0.0706, 0.5037]
+    ROPE: 20.8% in, Decision: UNDECIDED
+
+
+================================================================================
+INTERPRETATION:
+================================================================================
+
+If UCLA predicts RECOVERY TAU:
+  -> Loneliness leads to slower recovery after setbacks
+
+If UCLA predicts INITIAL SLOWING (delta):
+  -> Loneliness increases magnitude of post-error RT increase
+
+If UCLA predicts CSE (conflict adaptation):
+  -> Loneliness impairs trial-by-trial control adjustment
+
+Connection to variance effects:
+  - Slow recovery = prolonged periods of impaired performance
+  - Explains variance-without-mean: occasional slow recovery episodes
+
+================================================================================

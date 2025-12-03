@@ -1,0 +1,30 @@
+================================================================================
+CROSS-TASK CONSISTENCY ANALYSIS: SUMMARY REPORT
+================================================================================
+
+RESEARCH QUESTION:
+Are lonely individuals inconsistent ACROSS tasks or consistently impaired?
+
+--------------------------------------------------------------------------------
+CROSS-TASK CORRELATIONS:
+--------------------------------------------------------------------------------
+  pe_rate vs stroop_interference: r = 0.096 (n=151)
+  pe_rate vs prp_bottleneck: r = 0.114 (n=149)
+  stroop_interference vs prp_bottleneck: r = 0.166* (n=155)
+
+--------------------------------------------------------------------------------
+UCLA EFFECTS ON CROSS-TASK CONSISTENCY (p < 0.05):
+--------------------------------------------------------------------------------
+  No significant UCLA effects
+
+================================================================================
+INTERPRETATION:
+================================================================================
+
+If UCLA predicts CROSS-TASK CV:
+  -> Loneliness causes general dysregulation (unstable person)
+
+If correlations are LOW:
+  -> EF domains are independent; task-specific effects
+
+================================================================================

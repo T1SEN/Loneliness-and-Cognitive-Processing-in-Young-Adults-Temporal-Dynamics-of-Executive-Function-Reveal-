@@ -16,7 +16,7 @@ import arviz as az
 import pymc as pm
 from scipy import stats
 
-from data_loader_utils import load_master_dataset
+from analysis.utils.data_loader_utils import load_master_dataset
 from analysis.utils.trial_data_loader import load_wcst_trials
 
 BASE = Path(__file__).resolve().parent.parent

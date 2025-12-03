@@ -1,0 +1,3 @@
+﻿gender,wcst_magnitude,stroop_magnitude,prp_magnitude,wcst_stroop_ratio,wcst_prp_ratio,strongest_task,interpretation
+male,0.03456398634318649,0.039153556032472954,0.19198898639177348,0.8827802592060862,0.18003108924516684,PRP,PRP shows strongest effect
+female,0.15260199639136027,0.008583377438651193,0.04425007336422036,17.778782010003326,3.4486269691645504,WCST,WCST shows strongest effect

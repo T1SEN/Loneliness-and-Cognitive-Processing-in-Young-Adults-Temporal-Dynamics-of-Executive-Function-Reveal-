@@ -1,0 +1,76 @@
+================================================================================
+TIER 2.4: PRE-ERROR RT TRAJECTORY ANALYSIS - SUMMARY REPORT
+================================================================================
+
+RESEARCH QUESTION:
+Do errors follow distinctive RT patterns (pre-error speeding/slowing)?
+Does UCLA loneliness predict pre-error RT dynamics?
+
+================================================================================
+DATA SUMMARY
+================================================================================
+
+WCST:
+  Participants with errors: 155
+  Mean errors per participant: 16.0 (SD=13.9)
+  Mean pre-error slope: 35.76 ms/trial (SD=294.60)
+  Mean post-error slowing: 852.7 ms (SD=1048.4)
+
+PRP:
+  No error data available
+
+Stroop:
+  No error data available
+
+================================================================================
+REGRESSION RESULTS
+================================================================================
+
+Pre-Error Slope ~ UCLA (DASS-controlled):
+  WCST: β=55.3788, p=0.1036  (N=151)
+
+Post-Error Slowing ~ UCLA (DASS-controlled):
+  WCST: β=38.8341, p=0.7481  (N=151)
+
+================================================================================
+INTERPRETATION
+================================================================================
+
+Pre-Error Slope:
+  - NEGATIVE slope = Pre-error speeding (impulsivity/disengagement)
+  - POSITIVE slope = Pre-error slowing (fatigue/vigilance decrement)
+  - ZERO slope = No systematic RT change before errors
+
+If UCLA → MORE NEGATIVE slope:
+  → Loneliness predicts impulsive errors (rushing)
+
+If UCLA → MORE POSITIVE slope:
+  → Loneliness predicts fatigue-related errors (slowing then lapsing)
+
+Post-Error Slowing:
+  - Adaptive control mechanism: slow down after errors to avoid repeating
+  - If UCLA → LESS PES: Impaired error monitoring/reactive control
+
+================================================================================
+FILES GENERATED
+================================================================================
+CSV Files:
+  - wcst_peri_error_merged.csv (participant-level metrics)
+  - prp_peri_error_merged.csv
+  - stroop_peri_error_merged.csv
+  - regression_results.csv (all regression coefficients)
+
+Text Files:
+  - wcst_pre_error_slope_regression.txt (full model output)
+  - prp_pre_error_slope_regression.txt
+  - stroop_pre_error_slope_regression.txt
+
+Figures:
+  - wcst_peri_error_timecourse.png (RT trajectory ±3 trials around error)
+  - prp_peri_error_timecourse.png
+  - stroop_peri_error_timecourse.png
+  - pre_error_slope_vs_ucla.png (scatter plots)
+
+================================================================================
+END OF REPORT
+================================================================================

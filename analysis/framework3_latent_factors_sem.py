@@ -55,7 +55,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from data_loader_utils import load_master_dataset
+from analysis.utils.data_loader_utils import load_master_dataset
 import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy import stats
@@ -70,7 +70,7 @@ try:
     SEMOPY_AVAILABLE = True
 except ImportError:
     SEMOPY_AVAILABLE = False
-    print("⚠️  semopy not available - SEM features will be limited")
+    print("[WARNING]  semopy not available - SEM features will be limited")
 
 try:
     from factor_analyzer import FactorAnalyzer, calculate_bartlett_sphericity, calculate_kmo
@@ -78,11 +78,11 @@ try:
     FACTOR_ANALYZER_AVAILABLE = True
 except ImportError:
     FACTOR_ANALYZER_AVAILABLE = False
-    print("⚠️  factor_analyzer not available - using sklearn instead")
+    print("[WARNING] factor_analyzer not available - using sklearn instead")
 
 # Add utils to path
 sys.path.insert(0, str(Path(__file__).parent))
-from utils.publication_helpers import (
+from analysis.utils.publication_helpers import (
     set_publication_style,
     save_publication_figure,
     bootstrap_ci,
@@ -103,7 +103,7 @@ RANDOM_STATE = 42
 N_BOOTSTRAP = 2000
 
 EF_OUTCOMES = {
-    'wcst_pe_rate': 'WCST Perseverative Error Rate',
+    'pe_rate': 'WCST Perseverative Error Rate',
     'prp_bottleneck': 'PRP Bottleneck Effect',
     'stroop_interference': 'Stroop Interference'
 }
@@ -127,8 +127,11 @@ def load_item_level_data():
 
     # Load from master (includes survey items)
     master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
-    master = master.rename(columns={'gender_normalized': 'gender'})
-    master['gender'] = master['gender'].fillna('').astype(str).str.strip().str.lower()
+    # Use gender_normalized if available
+    if 'gender_normalized' in master.columns:
+        master['gender'] = master['gender_normalized'].fillna('').astype(str).str.strip().str.lower()
+    else:
+        master['gender'] = master['gender'].fillna('').astype(str).str.strip().str.lower()
 
     # Identify item columns
     ucla_cols = [c for c in master.columns if c.startswith('ucla_') and c[5:].isdigit()]
@@ -251,7 +254,7 @@ def exploratory_factor_analysis(data, n_factors=2, rotation='promax'):
     print("=" * 70)
 
     if not FACTOR_ANALYZER_AVAILABLE:
-        print("⚠️  Using sklearn FactorAnalysis (limited features)")
+        print("[WARNING]  Using sklearn FactorAnalysis (limited features)")
         fa = FactorAnalysis(n_components=n_factors, random_state=RANDOM_STATE)
         fa.fit(data)
 
@@ -270,19 +273,19 @@ def exploratory_factor_analysis(data, n_factors=2, rotation='promax'):
     print(f"\nPre-Analysis Diagnostics:")
     print(f"  Kaiser-Meyer-Olkin (KMO): {kmo_model:.3f}")
     if kmo_model < 0.6:
-        print("    ⚠️  KMO < 0.6: Data may not be suitable for FA")
+        print("    [WARNING]  KMO < 0.6: Data may not be suitable for FA")
     elif kmo_model < 0.7:
-        print("    ✓ KMO 0.6-0.7: Mediocre but acceptable")
+        print("    [OK] KMO 0.6-0.7: Mediocre but acceptable")
     elif kmo_model < 0.8:
-        print("    ✓ KMO 0.7-0.8: Middling")
+        print("    [OK] KMO 0.7-0.8: Middling")
     elif kmo_model < 0.9:
-        print("    ✓✓ KMO 0.8-0.9: Meritorious")
+        print("    [OK][OK] KMO 0.8-0.9: Meritorious")
     else:
-        print("    ✓✓✓ KMO > 0.9: Marvelous")
+        print("    [OK][OK][OK] KMO > 0.9: Marvelous")
 
     print(f"  Bartlett's test: χ²={chi_square:.1f}, {format_pvalue(p_value)}")
     if p_value < 0.05:
-        print("    ✓ Significant correlation among items")
+        print("    [OK] Significant correlation among items")
 
     # Fit FA
     fa = FactorAnalyzer(n_factors=n_factors, rotation=rotation, method='minres')
@@ -315,7 +318,7 @@ def exploratory_factor_analysis(data, n_factors=2, rotation='promax'):
 
     # Save loadings
     loadings.to_csv(OUTPUT_DIR / f'efa_loadings_{n_factors}factors.csv')
-    print(f"\n✓ Saved: {OUTPUT_DIR / f'efa_loadings_{n_factors}factors.csv'}")
+    print(f"\n[OK] Saved: {OUTPUT_DIR / f'efa_loadings_{n_factors}factors.csv'}")
 
     # Visualize loadings
     plot_factor_loadings(loadings, n_factors)
@@ -460,7 +463,7 @@ def fit_cfa_model(data, model_spec, model_name):
     dict : Fit results
     """
     if not SEMOPY_AVAILABLE:
-        print(f"⚠️  semopy not available, skipping {model_name}")
+        print(f"[WARNING]  semopy not available, skipping {model_name}")
         return None
 
     print(f"\n{'=' * 70}")
@@ -516,7 +519,7 @@ def fit_cfa_model(data, model_spec, model_name):
         }
 
     except Exception as e:
-        print(f"⚠️  Model fitting failed: {e}")
+        print(f"[WARNING]  Model fitting failed: {e}")
         return None
 
 
@@ -570,12 +573,12 @@ def compare_cfa_models(results_list):
         if not np.isnan(best_bic_idx):
             print(f"Best model by BIC: {comp_df.loc[best_bic_idx, 'Model']} (BIC = {comp_df.loc[best_bic_idx, 'BIC']:.1f})")
     else:
-        print("\n⚠️  No valid fit indices - all models failed to converge")
+        print("\n[WARNING]  No valid fit indices - all models failed to converge")
         best_cfi_idx = None
         best_bic_idx = None
 
     comp_df.to_csv(OUTPUT_DIR / 'cfa_model_comparison.csv', index=False)
-    print(f"\n✓ Saved: {OUTPUT_DIR / 'cfa_model_comparison.csv'}")
+    print(f"\n[OK] Saved: {OUTPUT_DIR / 'cfa_model_comparison.csv'}")
 
     return comp_df
 
@@ -600,7 +603,7 @@ def extract_latent_scores(model, data):
     pd.DataFrame : Latent scores for each participant
     """
     if not SEMOPY_AVAILABLE or model is None:
-        print("⚠️  Cannot extract latent scores")
+        print("[WARNING]  Cannot extract latent scores")
         return None
 
     print("\n" + "=" * 70)
@@ -615,7 +618,7 @@ def extract_latent_scores(model, data):
         params = model.inspect(mode='list')
 
         if params is None or len(params) == 0:
-            print("⚠️  No parameter estimates available")
+            print("[WARNING]  No parameter estimates available")
             return None
 
         # Build composite scores as weighted sums
@@ -663,7 +666,7 @@ def extract_latent_scores(model, data):
         return latent_df
 
     except Exception as e:
-        print(f"⚠️  Latent score extraction failed: {e}")
+        print(f"[WARNING]  Latent score extraction failed: {e}")
         import traceback
         traceback.print_exc()
         return None
@@ -728,19 +731,19 @@ def validate_against_framework1_2(latent_scores, df_master):
     try:
         fw1_file = Path("results/analysis_outputs/framework1_mixtures/class_profiles_table.csv")
         if fw1_file.exists():
-            print("\n✓ Framework 1 results found - will compare latent scores to mixture classes")
+            print("\n[OK] Framework 1 results found - will compare latent scores to mixture classes")
         else:
-            print("\n⚠️  Framework 1 results not found")
+            print("\n[WARNING]  Framework 1 results not found")
     except:
         pass
 
     # Load Framework 2 deviations (if available)
     try:
-        fw2_file = Path("results/analysis_outputs/framework2_normative/normative_deviations_wcst_pe_rate.csv")
+        fw2_file = Path("results/analysis_outputs/framework2_normative/normative_deviations_pe_rate.csv")
         if fw2_file.exists():
-            print("✓ Framework 2 results found - will correlate latent scores with deviations")
+            print("[OK] Framework 2 results found - will correlate latent scores with deviations")
         else:
-            print("⚠️  Framework 2 results not found")
+            print("[WARNING]  Framework 2 results not found")
     except:
         pass
 
@@ -824,14 +827,14 @@ def main():
                         latent_output = df_parceled[['participant_id', 'gender', 'age']].copy()
                         latent_output = pd.concat([latent_output, latent_scores], axis=1)
                         latent_output.to_csv(OUTPUT_DIR / 'latent_factor_scores.csv', index=False)
-                        print(f"\n✓ Saved: {OUTPUT_DIR / 'latent_factor_scores.csv'}")
+                        print(f"\n[OK] Saved: {OUTPUT_DIR / 'latent_factor_scores.csv'}")
                 else:
-                    print("\n⚠️  No valid best model - all BIC values are NaN")
+                    print("\n[WARNING]  No valid best model - all BIC values are NaN")
             else:
-                print("\n⚠️  All models failed convergence - cannot select best model")
+                print("\n[WARNING]  All models failed convergence - cannot select best model")
 
     else:
-        print("\n⚠️  semopy not available - skipping CFA and SEM")
+        print("\n[WARNING]  semopy not available - skipping CFA and SEM")
 
     # Step 6: Alternative - Use EFA Factor Scores (since CFA failed)
     print("\n" + "=" * 70)
@@ -861,7 +864,7 @@ def main():
     latent_output = df_items[['participant_id', 'gender', 'age']].copy()
     latent_output = pd.concat([latent_output, latent_df], axis=1)
     latent_output.to_csv(OUTPUT_DIR / 'latent_factor_scores.csv', index=False)
-    print(f"\n✓ Saved: {OUTPUT_DIR / 'latent_factor_scores.csv'}")
+    print(f"\n[OK] Saved: {OUTPUT_DIR / 'latent_factor_scores.csv'}")
 
     print(f"\nLatent Score Statistics:")
     print(latent_df.describe().round(2))
@@ -920,10 +923,10 @@ def main():
         f.write("- Larger sample (N>200) needed for full SEM analysis\n")
         f.write("- Consider this exploratory/hypothesis-generating\n\n")
 
-    print(f"\n✓ Saved: {OUTPUT_DIR / 'interpretation_summary.txt'}")
+    print(f"\n[OK] Saved: {OUTPUT_DIR / 'interpretation_summary.txt'}")
 
     print("\n" + "=" * 70)
-    print("✓ FRAMEWORK 3 COMPLETE")
+    print("[OK] FRAMEWORK 3 COMPLETE")
     print("=" * 70)
     print(f"\nAll outputs saved to: {OUTPUT_DIR}")
 

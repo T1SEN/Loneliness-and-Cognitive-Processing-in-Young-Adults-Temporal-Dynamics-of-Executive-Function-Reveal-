@@ -24,13 +24,13 @@ from typing import List, Tuple
 
 import numpy as np
 import pandas as pd
-from data_loader_utils import load_master_dataset
+from analysis.utils.data_loader_utils import load_master_dataset
 import statsmodels.formula.api as smf
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 
-from data_loader_utils import normalize_gender_series
-from statistical_utils import apply_multiple_comparison_correction
+from analysis.utils.data_loader_utils import normalize_gender_series
+from analysis.statistical_utils import apply_multiple_comparison_correction
 
 
 BASE = Path(__file__).resolve().parent.parent

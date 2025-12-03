@@ -23,7 +23,7 @@ if sys.platform.startswith("win") and hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding='utf-8')
 
 import pandas as pd
-from data_loader_utils import load_master_dataset
+from analysis.utils.data_loader_utils import load_master_dataset
 from analysis.utils.trial_data_loader import load_wcst_trials, load_stroop_trials, load_prp_trials
 import numpy as np
 from pathlib import Path
@@ -53,18 +53,30 @@ print("\n[1/6] Loading data...")
 
 # Demographics and psychometrics from master
 master_full = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
-master_full = master_full.rename(columns={'gender_normalized': 'gender'})
+if 'gender_normalized' in master_full.columns:
+    master_full['gender'] = master_full['gender_normalized']
 master_full['gender'] = master_full['gender'].fillna('').astype(str).str.strip().str.lower()
 participants = master_full[['participant_id','gender','age']].copy()
 participants['gender_male'] = (participants['gender'] == 'male').astype(int)
 
 if 'ucla_total' not in master_full.columns and 'ucla_score' in master_full.columns:
     master_full['ucla_total'] = master_full['ucla_score']
-ucla_data = master_full[['participant_id', 'ucla_total']].dropna()
+ucla_cols = ['participant_id', 'ucla_total']
+if 'pe_rate' in master_full.columns:
+    ucla_cols.append('pe_rate')
+ucla_data = master_full[ucla_cols].dropna(subset=['ucla_total'])
+# DASS scores - must include individual subscales per CLAUDE.md requirement
 dass_data = pd.DataFrame({
     'participant_id': master_full['participant_id'],
-    'dass_total': master_full.get('dass_depression', 0) + master_full.get('dass_anxiety', 0) + master_full.get('dass_stress', 0)
-}).dropna(subset=['dass_total'])
+    'dass_dep': master_full.get('dass_depression', np.nan),
+    'dass_anx': master_full.get('dass_anxiety', np.nan),
+    'dass_str': master_full.get('dass_stress', np.nan)
+})
+# Compute z-scores for DASS subscales
+for col in ['dass_dep', 'dass_anx', 'dass_str']:
+    if col in dass_data.columns:
+        dass_data[f'z_{col}'] = (dass_data[col] - dass_data[col].mean()) / dass_data[col].std()
+dass_data = dass_data.dropna(subset=['dass_dep', 'dass_anx', 'dass_str'])
 
 # Trial-level data via loaders
 wcst_trials, wcst_summary = load_wcst_trials(use_cache=True)
@@ -100,7 +112,7 @@ if rt_col_wcst:
         rt_col_wcst: ['mean', 'std', 'count'],
         'is_pe': 'mean'
     }).reset_index()
-    wcst_metrics.columns = ['participant_id', 'wcst_mean_rt', 'wcst_sd_rt', 'wcst_n_trials', 'wcst_pe_rate']
+    wcst_metrics.columns = ['participant_id', 'wcst_mean_rt', 'wcst_sd_rt', 'wcst_n_trials', 'pe_rate']
     wcst_metrics['wcst_cv'] = wcst_metrics['wcst_sd_rt'] / wcst_metrics['wcst_mean_rt']
     wcst_metrics['wcst_duration'] = wcst_metrics['wcst_n_trials'] * wcst_metrics['wcst_mean_rt'] / 1000
 else:
@@ -146,6 +158,7 @@ master = ucla_data.merge(dass_data, on='participant_id', how='left')
 master = master.merge(wcst_metrics, on='participant_id', how='left')
 master = master.merge(stroop_metrics, on='participant_id', how='left')
 master = master.merge(prp_metrics, on='participant_id', how='left')
+master = master.merge(participants[['participant_id', 'gender_male', 'age']], on='participant_id', how='left')
 master = master.dropna(subset=['ucla_total'])
 
 print(f"  Complete cases: {len(master)}")
@@ -188,11 +201,18 @@ for var in ['ucla_total', 'wcst_cv', 'wcst_duration']:
 
 moderation_results = []
 
-# Test WCST CV moderation
-if 'z_wcst_cv' in master.columns and 'wcst_pe_rate' in master.columns:
-    data_cv = master[['wcst_pe_rate', 'z_ucla_total', 'z_wcst_cv', 'gender_male', 'age']].dropna()
+# Test WCST CV moderation (with DASS-21 controls per CLAUDE.md)
+if 'z_wcst_cv' in master.columns and 'pe_rate' in master.columns:
+    # Include DASS z-scores as mandatory covariates
+    required_cols = ['pe_rate', 'z_ucla_total', 'z_wcst_cv', 'gender_male', 'age', 'z_dass_dep', 'z_dass_anx', 'z_dass_str']
+    available_cols = [c for c in required_cols if c in master.columns]
+    data_cv = master[available_cols].dropna()
     if len(data_cv) >= 30:
-        model_cv = smf.ols('wcst_pe_rate ~ z_ucla_total * z_wcst_cv + gender_male + age', data=data_cv).fit()
+        # Add DASS controls to formula per CLAUDE.md requirement
+        if 'z_dass_dep' in data_cv.columns:
+            model_cv = smf.ols('pe_rate ~ z_ucla_total * z_wcst_cv + gender_male + age + z_dass_dep + z_dass_anx + z_dass_str', data=data_cv).fit()
+        else:
+            model_cv = smf.ols('pe_rate ~ z_ucla_total * z_wcst_cv + gender_male + age', data=data_cv).fit()
         interaction_coef = model_cv.params['z_ucla_total:z_wcst_cv']
         interaction_p = model_cv.pvalues['z_ucla_total:z_wcst_cv']
 
@@ -205,15 +225,22 @@ if 'z_wcst_cv' in master.columns and 'wcst_pe_rate' in master.columns:
             'Sig': '***' if interaction_p < 0.001 else '**' if interaction_p < 0.01 else '*' if interaction_p < 0.05 else ''
         })
 
-        print(f"\n  WCST CV × UCLA → PE:")
+        print(f"\n  WCST CV × UCLA → PE (DASS-controlled):")
         print(f"    Interaction: β={interaction_coef:.3f}, p={interaction_p:.3f}")
         print(f"    N={len(data_cv)}")
 
-# Test WCST duration moderation
-if 'z_wcst_duration' in master.columns and 'wcst_pe_rate' in master.columns:
-    data_dur = master[['wcst_pe_rate', 'z_ucla_total', 'z_wcst_duration', 'gender_male', 'age']].dropna()
+# Test WCST duration moderation (with DASS-21 controls per CLAUDE.md)
+if 'z_wcst_duration' in master.columns and 'pe_rate' in master.columns:
+    # Include DASS z-scores as mandatory covariates
+    required_cols = ['pe_rate', 'z_ucla_total', 'z_wcst_duration', 'gender_male', 'age', 'z_dass_dep', 'z_dass_anx', 'z_dass_str']
+    available_cols = [c for c in required_cols if c in master.columns]
+    data_dur = master[available_cols].dropna()
     if len(data_dur) >= 30:
-        model_dur = smf.ols('wcst_pe_rate ~ z_ucla_total * z_wcst_duration + gender_male + age', data=data_dur).fit()
+        # Add DASS controls to formula per CLAUDE.md requirement
+        if 'z_dass_dep' in data_dur.columns:
+            model_dur = smf.ols('pe_rate ~ z_ucla_total * z_wcst_duration + gender_male + age + z_dass_dep + z_dass_anx + z_dass_str', data=data_dur).fit()
+        else:
+            model_dur = smf.ols('pe_rate ~ z_ucla_total * z_wcst_duration + gender_male + age', data=data_dur).fit()
         interaction_coef = model_dur.params['z_ucla_total:z_wcst_duration']
         interaction_p = model_dur.pvalues['z_ucla_total:z_wcst_duration']
 
@@ -226,7 +253,7 @@ if 'z_wcst_duration' in master.columns and 'wcst_pe_rate' in master.columns:
             'Sig': '***' if interaction_p < 0.001 else '**' if interaction_p < 0.01 else '*' if interaction_p < 0.05 else ''
         })
 
-        print(f"\n  WCST Duration × UCLA → PE:")
+        print(f"\n  WCST Duration × UCLA → PE (DASS-controlled):")
         print(f"    Interaction: β={interaction_coef:.3f}, p={interaction_p:.3f}")
         print(f"    N={len(data_dur)}")
 
@@ -284,22 +311,22 @@ if len(moderation_results) > 0:
 
     # CV moderation
     if 'z_wcst_cv' in master.columns:
-        data_plot = master[['wcst_pe_rate', 'ucla_total', 'wcst_cv']].dropna()
+        data_plot = master[['pe_rate', 'ucla_total', 'wcst_cv']].dropna()
 
         # Median split on CV
         cv_median = data_plot['wcst_cv'].median()
         low_cv = data_plot[data_plot['wcst_cv'] <= cv_median]
         high_cv = data_plot[data_plot['wcst_cv'] > cv_median]
 
-        axes[0].scatter(low_cv['ucla_total'], low_cv['wcst_pe_rate'],
+        axes[0].scatter(low_cv['ucla_total'], low_cv['pe_rate'],
                        alpha=0.6, label=f'Low CV (Proactive)', s=80, color='#2ECC71')
-        axes[0].scatter(high_cv['ucla_total'], high_cv['wcst_pe_rate'],
+        axes[0].scatter(high_cv['ucla_total'], high_cv['pe_rate'],
                        alpha=0.6, label=f'High CV (Reactive)', s=80, color='#E67E22')
 
         # Regression lines
         for data, color, label in [(low_cv, '#2ECC71', 'Low CV'), (high_cv, '#E67E22', 'High CV')]:
             if len(data) >= 10:
-                z = np.polyfit(data['ucla_total'], data['wcst_pe_rate'], 1)
+                z = np.polyfit(data['ucla_total'], data['pe_rate'], 1)
                 p = np.poly1d(z)
                 x_line = np.linspace(data['ucla_total'].min(), data['ucla_total'].max(), 100)
                 axes[0].plot(x_line, p(x_line), color=color, linewidth=2, alpha=0.7)
@@ -312,22 +339,22 @@ if len(moderation_results) > 0:
 
     # Duration moderation
     if 'z_wcst_duration' in master.columns:
-        data_plot = master[['wcst_pe_rate', 'ucla_total', 'wcst_duration']].dropna()
+        data_plot = master[['pe_rate', 'ucla_total', 'wcst_duration']].dropna()
 
         # Median split on duration
         dur_median = data_plot['wcst_duration'].median()
         short_dur = data_plot[data_plot['wcst_duration'] <= dur_median]
         long_dur = data_plot[data_plot['wcst_duration'] > dur_median]
 
-        axes[1].scatter(short_dur['ucla_total'], short_dur['wcst_pe_rate'],
+        axes[1].scatter(short_dur['ucla_total'], short_dur['pe_rate'],
                        alpha=0.6, label=f'Short Duration', s=80, color='#9B59B6')
-        axes[1].scatter(long_dur['ucla_total'], long_dur['wcst_pe_rate'],
+        axes[1].scatter(long_dur['ucla_total'], long_dur['pe_rate'],
                        alpha=0.6, label=f'Long Duration (Proactive)', s=80, color='#3498DB')
 
         # Regression lines
         for data, color in [(short_dur, '#9B59B6'), (long_dur, '#3498DB')]:
             if len(data) >= 10:
-                z = np.polyfit(data['ucla_total'], data['wcst_pe_rate'], 1)
+                z = np.polyfit(data['ucla_total'], data['pe_rate'], 1)
                 p = np.poly1d(z)
                 x_line = np.linspace(data['ucla_total'].min(), data['ucla_total'].max(), 100)
                 axes[1].plot(x_line, p(x_line), color=color, linewidth=2, alpha=0.7)

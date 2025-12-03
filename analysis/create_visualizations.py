@@ -22,7 +22,7 @@ from sklearn.metrics import roc_curve, auc
 import warnings
 warnings.filterwarnings('ignore')
 
-from data_loader_utils import load_master_dataset
+from analysis.utils.data_loader_utils import load_master_dataset
 
 # ============================================================================
 # Configuration
@@ -223,7 +223,7 @@ print("\n4. Creating Cross-Task Correlation Plot...")
 
 # Load Stroop Ex-Gaussian parameters
 try:
-    from data_loader_utils import load_exgaussian_params
+    from analysis.utils.data_loader_utils import load_exgaussian_params
     stroop_exg = load_exgaussian_params('stroop')
     master_plot = master.merge(stroop_exg[['participant_id', 'sigma']],
                                on='participant_id', how='left')

@@ -12,7 +12,7 @@ Outputs:
 
 import sys
 import pandas as pd
-from data_loader_utils import load_master_dataset
+from analysis.utils.data_loader_utils import load_master_dataset
 import numpy as np
 from pathlib import Path
 import statsmodels.formula.api as smf
@@ -37,8 +37,11 @@ print()
 
 # Load data via shared master
 master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
-master = master.rename(columns={'gender_normalized': 'gender'})
-master['gender'] = master['gender'].fillna('').astype(str).str.strip().str.lower()
+# Use gender_normalized if available
+if 'gender_normalized' in master.columns:
+    master['gender'] = master['gender_normalized'].fillna('').astype(str).str.strip().str.lower()
+else:
+    master['gender'] = master['gender'].fillna('').astype(str).str.strip().str.lower()
 if 'ucla_total' not in master.columns and 'ucla_score' in master.columns:
     master['ucla_total'] = master['ucla_score']
 master['gender_male'] = (master['gender'] == 'male').astype(int)
@@ -54,11 +57,11 @@ print("EXTRACTING LATENT META-CONTROL FACTOR (PCA)")
 print("-" * 80)
 
 # Variables (reverse-code so higher = better control)
-ef_vars = ['perseverative_error_rate', 'stroop_interference', 'prp_bottleneck']
+ef_vars = ['pe_rate', 'stroop_interference', 'prp_bottleneck']
 master_clean = master.dropna(subset=ef_vars).copy()
 
 # Reverse code (multiply by -1 so higher = better)
-master_clean['wcst_control'] = -master_clean['perseverative_error_rate']
+master_clean['wcst_control'] = -master_clean['pe_rate']
 master_clean['stroop_control'] = -master_clean['stroop_interference']
 master_clean['prp_control'] = -master_clean['prp_bottleneck']
 
@@ -122,7 +125,7 @@ print()
 
 # Path b: Meta-Control → WCST PE (controlling for UCLA)
 print("Path b: Meta-Control → WCST PE (independent of UCLA)")
-model_b = smf.ols("perseverative_error_rate ~ meta_control_factor",
+model_b = smf.ols("pe_rate ~ meta_control_factor",
                    data=master_clean).fit()
 path_b = model_b.params['meta_control_factor']
 path_b_p = model_b.pvalues['meta_control_factor']
@@ -131,7 +134,7 @@ print()
 
 # Path c': UCLA → WCST PE (direct effect, controlling for Meta-Control)
 print("Path c': UCLA → WCST PE (controlling for Meta-Control)")
-model_c_prime = smf.ols("perseverative_error_rate ~ z_ucla + meta_control_factor + C(gender_male) + z_dass_dep + z_dass_anx + z_dass_str + z_age",
+model_c_prime = smf.ols("pe_rate ~ z_ucla + meta_control_factor + C(gender_male) + z_dass_dep + z_dass_anx + z_dass_str + z_age",
                          data=master_clean).fit()
 path_c_prime = model_c_prime.params['z_ucla']
 path_c_prime_p = model_c_prime.pvalues['z_ucla']
@@ -181,10 +184,10 @@ axes[0].legend()
 axes[0].grid(alpha=0.3)
 
 # Plot 2: Meta-Control Factor vs WCST PE
-axes[1].scatter(master_clean['meta_control_factor'], master_clean['perseverative_error_rate'],
+axes[1].scatter(master_clean['meta_control_factor'], master_clean['pe_rate'],
                 color='gray', alpha=0.5, s=50)
 
-z = np.polyfit(master_clean['meta_control_factor'].values, master_clean['perseverative_error_rate'].values, 1)
+z = np.polyfit(master_clean['meta_control_factor'].values, master_clean['pe_rate'].values, 1)
 p = np.poly1d(z)
 x_line = np.linspace(master_clean['meta_control_factor'].min(), master_clean['meta_control_factor'].max(), 100)
 axes[1].plot(x_line, p(x_line), color='black', linewidth=2)

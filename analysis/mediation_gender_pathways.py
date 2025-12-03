@@ -16,7 +16,7 @@ Theoretical mechanisms:
 import sys
 from pathlib import Path
 import pandas as pd
-from data_loader_utils import load_master_dataset
+from analysis.utils.data_loader_utils import load_master_dataset
 import numpy as np
 import ast
 from scipy import stats
@@ -45,7 +45,8 @@ print("="*80)
 print("\n[1] Loading data...")
 
 master_full = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
-master_full = master_full.rename(columns={"gender_normalized": "gender"})
+if 'gender_normalized' in master_full.columns:
+    master_full['gender'] = master_full['gender_normalized']
 master_full["gender"] = master_full["gender"].fillna("").astype(str).str.strip().str.lower()
 
 print(f"  Loaded master rows: {len(master_full)}")
@@ -85,12 +86,12 @@ print(f"  Stress - Mean: {dass_subscales['dass_stress'].mean():.2f}, SD: {dass_s
 print("\n[4] WCST perseverative error rate (from master)...")
 
 if 'pe_rate' in master_full.columns:
-    wcst_pe_rate = master_full[['participant_id', 'pe_rate']].dropna(subset=['pe_rate']).copy()
+    pe_rate = master_full[['participant_id', 'pe_rate']].dropna(subset=['pe_rate']).copy()
 else:
-    wcst_pe_rate = pd.DataFrame(columns=['participant_id', 'pe_rate'])
+    pe_rate = pd.DataFrame(columns=['participant_id', 'pe_rate'])
 
-print(f"  WCST PE rate for {len(wcst_pe_rate)} participants")
-print(f"  Mean PE rate: {wcst_pe_rate['pe_rate'].mean():.2f}%, SD: {wcst_pe_rate['pe_rate'].std():.2f}%")
+print(f"  WCST PE rate for {len(pe_rate)} participants")
+print(f"  Mean PE rate: {pe_rate['pe_rate'].mean():.2f}%, SD: {pe_rate['pe_rate'].std():.2f}%")
 
 # ============================================================================
 # 5. MERGE MASTER DATASET
@@ -101,11 +102,7 @@ print("\n[5] Merging master dataset...")
 master = master_full[['participant_id', 'age', 'gender']].copy()
 master = master.merge(ucla_scores, on='participant_id', how='inner')
 master = master.merge(dass_subscales, on='participant_id', how='inner')
-master = master.merge(wcst_pe_rate[['participant_id', 'pe_rate']], on='participant_id', how='inner')
-
-# Drop missing values
-master = master.dropna(subset=['age', 'gender', 'ucla_total', 'dass_depression', 'dass_anxiety', 'dass_stress', 'pe_rate'])
-ate']], on='participant_id', how='inner')
+master = master.merge(pe_rate[['participant_id', 'pe_rate']], on='participant_id', how='inner')
 
 # Drop missing values
 master = master.dropna(subset=['age', 'gender', 'ucla_total', 'dass_depression', 'dass_anxiety', 'dass_stress', 'pe_rate'])

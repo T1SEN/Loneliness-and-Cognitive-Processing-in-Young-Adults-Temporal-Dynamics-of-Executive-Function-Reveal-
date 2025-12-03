@@ -58,10 +58,11 @@ try:
     PYGAM_AVAILABLE = True
 except ImportError:
     PYGAM_AVAILABLE = False
-    print("⚠️  pygam not available, will use Gaussian Process instead")
+    print("[WARNING] pygam not available, will use Gaussian Process instead")
 
 # Add utils to path
-sys.path.insert(0, str(Path(__file__).parent))
+_this_file = Path(__file__) if '__file__' in dir() else Path('analysis/framework2_normative_modeling.py')
+sys.path.insert(0, str(_this_file.parent))
 from utils.publication_helpers import (
     set_publication_style,
     save_publication_figure,
@@ -86,7 +87,7 @@ N_FOLDS = 10
 N_BOOTSTRAP = 2000
 
 EF_OUTCOMES = {
-    'wcst_pe_rate': 'WCST Perseverative Error Rate',
+    'pe_rate': 'WCST Perseverative Error Rate',
     'prp_bottleneck': 'PRP Bottleneck Effect (ms)',
     'stroop_interference': 'Stroop Interference (ms)'
 }
@@ -115,6 +116,11 @@ def load_normative_data():
         master['z_ucla'] = master['z_ucla_score']
     elif 'ucla_score' in master.columns:
         master['z_ucla'] = (master['ucla_score'] - master['ucla_score'].mean()) / master['ucla_score'].std()
+
+    # Ensure DASS z-scores are available for covariate control (per CLAUDE.md)
+    for src, dst in [('dass_depression', 'z_dass_dep'), ('dass_anxiety', 'z_dass_anx'), ('dass_stress', 'z_dass_str')]:
+        if src in master.columns and dst not in master.columns:
+            master[dst] = (master[src] - master[src].mean()) / master[src].std()
 
     print(f"\\nFinal sample size: N = {len(master)}")
     print(f"  Female: {(master['gender_male'] == 0).sum()}")
@@ -301,17 +307,25 @@ def test_ucla_deviation_effects(df, ef_outcome):
 
     deviation_col = f'{ef_outcome}_deviation_z'
 
+    # Note: Deviation scores already control for DASS in Stage 1 normative model,
+    # but we add DASS covariates here explicitly per CLAUDE.md for robustness.
+    # Check if DASS z-scores are available
+    has_dass = all(col in df.columns for col in ['z_dass_dep', 'z_dass_anx', 'z_dass_str'])
+
+    # Prepare DASS covariate string
+    dass_covs = ' + z_dass_dep + z_dass_anx + z_dass_str' if has_dass else ''
+
     # Model 1: Intercept only (should be ~0)
     model1 = smf.ols(f'{deviation_col} ~ 1', data=df).fit()
 
-    # Model 2: UCLA main effect
-    model2 = smf.ols(f'{deviation_col} ~ z_ucla', data=df).fit()
+    # Model 2: UCLA main effect (+ DASS controls per CLAUDE.md)
+    model2 = smf.ols(f'{deviation_col} ~ z_ucla{dass_covs}', data=df).fit()
 
-    # Model 3: UCLA + Gender
-    model3 = smf.ols(f'{deviation_col} ~ z_ucla + C(gender_male)', data=df).fit()
+    # Model 3: UCLA + Gender (+ DASS controls)
+    model3 = smf.ols(f'{deviation_col} ~ z_ucla + C(gender_male){dass_covs}', data=df).fit()
 
-    # Model 4: UCLA * Gender interaction
-    model4 = smf.ols(f'{deviation_col} ~ z_ucla * C(gender_male)', data=df).fit()
+    # Model 4: UCLA * Gender interaction (+ DASS controls)
+    model4 = smf.ols(f'{deviation_col} ~ z_ucla * C(gender_male){dass_covs}', data=df).fit()
 
     # Model comparison
     print("\nHierarchical Regression Results:")

@@ -17,7 +17,7 @@ from pathlib import Path
 from scipy import stats
 import statsmodels.formula.api as smf
 import warnings
-from data_loader_utils import load_master_dataset
+from analysis.utils.data_loader_utils import load_master_dataset
 warnings.filterwarnings('ignore')
 
 RESULTS_DIR = Path("results")
@@ -36,15 +36,18 @@ print("=" * 80)
 print("\n?????...")
 
 # Master dataset ?? (shared loader)
-from data_loader_utils import load_master_dataset
+from analysis.utils.data_loader_utils import load_master_dataset
 master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
-master = master.rename(columns={'gender_normalized': 'gender'})
-master['gender'] = master['gender'].fillna('').astype(str).str.strip().str.lower()
+# Use gender_normalized if available
+if 'gender_normalized' in master.columns:
+    master['gender'] = master['gender_normalized'].fillna('').astype(str).str.strip().str.lower()
+else:
+    master['gender'] = master['gender'].fillna('').astype(str).str.strip().str.lower()
 master['gender_male'] = (master['gender'] == 'male').astype(int)
 if 'ucla_total' not in master.columns and 'ucla_score' in master.columns:
     master['ucla_total'] = master['ucla_score']
-if 'perseverative_error_rate' in master.columns and 'pe_rate' not in master.columns:
-    master['pe_rate'] = master['perseverative_error_rate']
+if 'pe_rate' in master.columns and 'pe_rate' not in master.columns:
+    master['pe_rate'] = master['pe_rate']
 
 
 def zscore(series):

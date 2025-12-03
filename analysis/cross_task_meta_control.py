@@ -28,7 +28,7 @@ import statsmodels.formula.api as smf
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 
-from data_loader_utils import load_master_dataset
+from analysis.utils.data_loader_utils import load_master_dataset
 
 # Unicode handling
 if sys.platform.startswith("win") and hasattr(sys.stdout, "reconfigure"):
@@ -51,8 +51,8 @@ print("\n[1/6] Loading data...")
 master = load_master_dataset(use_cache=True)
 
 # Rename columns
-if 'pe_rate' in master.columns and 'wcst_pe_rate' not in master.columns:
-    master['wcst_pe_rate'] = master['pe_rate']
+if 'pe_rate' in master.columns and 'pe_rate' not in master.columns:
+    master['pe_rate'] = master['pe_rate']
 
 if 'prp_bottleneck' in master.columns:
     master['prp_bottleneck_effect'] = master['prp_bottleneck']
@@ -68,7 +68,7 @@ if 'dass_total' not in master.columns:
     master['dass_total'] = master['dass_anxiety'] + master['dass_stress'] + master['dass_depression']
 
 # Filter complete cases
-ef_vars = ['wcst_pe_rate', 'prp_bottleneck_effect', 'stroop_interference_effect']
+ef_vars = ['pe_rate', 'prp_bottleneck_effect', 'stroop_interference_effect']
 master = master.dropna(subset=ef_vars + ['ucla_total', 'dass_total'])
 
 print(f"  Complete cases: {len(master)} participants")
@@ -209,8 +209,8 @@ print(f"\n  Correlation matrix:")
 print(corr_matrix.round(3))
 
 # Test if tasks are related
-wcst_prp_corr = stats.pearsonr(master['wcst_pe_rate'], master['prp_bottleneck_effect'])
-wcst_stroop_corr = stats.pearsonr(master['wcst_pe_rate'], master['stroop_interference_effect'])
+wcst_prp_corr = stats.pearsonr(master['pe_rate'], master['prp_bottleneck_effect'])
+wcst_stroop_corr = stats.pearsonr(master['pe_rate'], master['stroop_interference_effect'])
 prp_stroop_corr = stats.pearsonr(master['prp_bottleneck_effect'], master['stroop_interference_effect'])
 
 print(f"\n  Pairwise correlations:")

@@ -22,11 +22,12 @@ from analysis.utils.trial_data_loader import (
     load_stroop_trials,
     load_wcst_trials,
 )
-from data_loader_utils import load_master_dataset
+from analysis.utils.data_loader_utils import load_master_dataset
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 
-BASE_DIR = Path(__file__).resolve().parent.parent
+_this_file = Path(__file__) if '__file__' in dir() else Path('analysis/trial_level_mixed_effects.py')
+BASE_DIR = _this_file.resolve().parent.parent
 RESULTS_DIR = BASE_DIR / "results"
 OUT_PATH = RESULTS_DIR / "analysis_outputs" / "trial_level_mixedlm_summary.txt"
 OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -34,8 +35,11 @@ OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
 
 def build_predictor_table() -> pd.DataFrame:
     master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
-    master = master.rename(columns={"gender_normalized": "gender"})
-    master["gender"] = master["gender"].fillna("").astype(str).str.strip().str.lower()
+    # Use gender_normalized if available
+    if "gender_normalized" in master.columns:
+        master["gender"] = master["gender_normalized"].fillna("").astype(str).str.strip().str.lower()
+    else:
+        master["gender"] = master["gender"].fillna("").astype(str).str.strip().str.lower()
 
     if "ucla_total" not in master.columns and "ucla_score" in master.columns:
         master["ucla_total"] = master["ucla_score"]

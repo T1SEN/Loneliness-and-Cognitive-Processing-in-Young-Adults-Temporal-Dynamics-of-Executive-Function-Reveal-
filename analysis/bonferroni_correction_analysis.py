@@ -148,7 +148,7 @@ try:
 
     results_corrected = []
 
-    for outcome in ['wcst_pe_rate', 'prp_bottleneck', 'stroop_interference']:
+    for outcome in ['pe_rate', 'prp_bottleneck', 'stroop_interference']:
         csv_file = fw1_dir / f"class_regressions_{outcome}.csv"
 
         if not csv_file.exists():

@@ -363,7 +363,8 @@ def simple_slope_test(
     se_main: float,
     se_interaction: float,
     cov_main_interaction: float,
-    moderator_value: float
+    moderator_value: float,
+    df_resid: Optional[int] = None
 ) -> Tuple[float, float, float, float]:
     """
     Test simple slope at a specific moderator value
@@ -382,6 +383,8 @@ def simple_slope_test(
         Covariance between main and interaction terms
     moderator_value : float
         Value of moderator to test (e.g., 0 for female, 1 for male)
+    df_resid : int, optional
+        Residual degrees of freedom for t-test. If None, fall back to normal approximation.
 
     Returns:
     --------
@@ -403,11 +406,20 @@ def simple_slope_test(
         (moderator_value**2) * se_interaction**2 +
         2 * moderator_value * cov_main_interaction
     )
+    if var_simple <= 0 or np.isnan(var_simple):
+        return simple_slope, np.nan, np.nan, np.nan
+
     se_simple = np.sqrt(var_simple)
 
     # t-test
-    t_stat = simple_slope / se_simple
-    p_value = 2 * (1 - stats.t.cdf(abs(t_stat), df=100))  # Conservative df
+    t_stat = simple_slope / se_simple if se_simple != 0 else np.nan
+    if np.isnan(t_stat):
+        p_value = np.nan
+    else:
+        if df_resid is not None and df_resid > 0:
+            p_value = 2 * (1 - stats.t.cdf(abs(t_stat), df=df_resid))
+        else:
+            p_value = 2 * (1 - stats.norm.cdf(abs(t_stat)))  # large-sample normal approximation
 
     return simple_slope, se_simple, t_stat, p_value
 

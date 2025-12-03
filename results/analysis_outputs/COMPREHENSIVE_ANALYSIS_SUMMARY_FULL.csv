@@ -1,0 +1,53 @@
+﻿섹션,분석유형,가설/지표,종속변수,독립변수,N,효과크기(β/r/d),SE,95%CI_Lower,95%CI_Upper,p-value,FDR-p,유의성,R²,출처디렉토리,비고
+1. 핵심 확인적 분석,DASS통제 회귀,H1,WCST PE Rate,UCLA,-0.030,150,-0.030,0.585,-1.18,1.12,0.960,0.960,NS,0.034,master_dass_controlled,DASS 통제 후 효과 사라짐
+1. 핵심 확인적 분석,DASS통제 회귀,H2,WCST Accuracy,UCLA,0.537,150,0.537,1.353,-2.13,3.21,0.692,0.848,NS,0.037,master_dass_controlled,DASS 통제 후 효과 사라짐
+1. 핵심 확인적 분석,DASS통제 회귀,H3,Stroop Interference,UCLA,10.850,158,10.850,11.615,-12.05,33.75,0.352,0.810,NS,0.030,master_dass_controlled,DASS 통제 후 효과 사라짐
+1. 핵심 확인적 분석,DASS통제 회귀,H4,PRP Bottleneck,UCLA,14.144,154,14.144,18.187,-21.73,50.02,0.437,0.810,NS,0.087,master_dass_controlled,DASS 통제 후 효과 사라짐
+1. 핵심 확인적 분석,상호작용,H1,WCST PE Rate,UCLA×Gender,0.986,150,0.986,0.875,-0.74,2.71,0.173,0.523,NS,0.043,master_dass_controlled,HC3 보정 시 p=0.262
+1. 핵심 확인적 분석,상호작용,H2,WCST Accuracy,UCLA×Gender,-1.290,150,-1.290,1.742,-4.73,2.15,0.364,0.580,NS,0.037,master_dass_controlled,
+1. 핵심 확인적 분석,상호작용,H3,Stroop Interference,UCLA×Gender,9.789,158,9.789,17.655,-25.09,44.67,0.564,0.580,NS,0.032,master_dass_controlled,
+1. 핵심 확인적 분석,상호작용,H4,PRP Bottleneck,UCLA×Gender,38.140,154,38.140,25.550,-12.36,88.64,0.100,0.523,경계선,0.101,master_dass_controlled,HC3 보정 시 p=0.176
+1. 핵심 확인적 분석,베이지안,H1,WCST PE Rate,UCLA,BF=0.230,,-0.013,0.689,,,,귀무지지,,deep_dive_analysis,Moderate evidence for null
+1. 핵심 확인적 분석,베이지안,H2,WCST Accuracy,UCLA,BF=0.457,,-0.041,1.371,,,,불확정,,deep_dive_analysis,Inconclusive
+2. 성별층화,Simple Slope,여성,WCST PE Rate,UCLA,-0.309,95,-0.309,0.782,-1.86,1.24,0.694,,NS,0.049,synthesis_analysis,
+2. 성별층화,Simple Slope,남성,WCST PE Rate,UCLA,0.549,55,0.549,0.771,-1.00,2.10,0.480,,NS,0.026,synthesis_analysis,
+2. 성별층화,Simple Slope,여성,Stroop Interference,UCLA,2.275,100,2.275,14.693,-26.90,31.45,0.877,,NS,0.016,synthesis_analysis,
+2. 성별층화,Simple Slope,남성,Stroop Interference,UCLA,33.130,58,33.130,19.303,-5.60,71.86,0.092,,경계선,0.162,synthesis_analysis,다중비교 보정 후 NS
+2. 성별층화,Simple Slope,여성,PRP Bottleneck,UCLA,4.452,97,4.452,21.587,-38.43,47.33,0.837,,NS,0.047,synthesis_analysis,
+2. 성별층화,Simple Slope,남성,PRP Bottleneck,UCLA,21.391,57,21.391,24.427,-27.65,70.43,0.385,,NS,0.276,synthesis_analysis,
+3. 다변량,MANOVA,UCLA주효과,All 3 EF,UCLA,Wilks=0.996,,,,,,0.912,,NS,,multivariate_ef_analysis,
+3. 다변량,MANOVA,Gender주효과,All 3 EF,Gender,Wilks=0.921,,,,,,0.010,,유의*,,multivariate_ef_analysis,성별은 EF 프로파일에 영향
+3. 다변량,MANOVA,상호작용,All 3 EF,UCLA×Gender,Wilks=0.972,,,,,,0.264,,NS,,multivariate_ef_analysis,
+4. 동적 메커니즘,갈등적응,CSE,Stroop,UCLA,-36.48,,-36.48,17.08,,,,0.036,,유의*,,adaptive_dynamics,외로움→갈등적응↓
+4. 동적 메커니즘,반응적통제,Reactive Control,Stroop,UCLA,-26.34,,-26.34,8.29,,,,0.002,,유의**,,adaptive_dynamics,외로움→반응통제↓
+4. 동적 메커니즘,오류군집,Clustering Coef,WCST,Gender,-0.083,,-0.083,,,,,0.016,,유의*,,error_burst,남성이 오류 군집화↓
+4. 동적 메커니즘,주의이탈,Lapse Prob,Stroop,UCLA,0.040,,0.040,,,,,0.020,,유의*,,attentional_lapse,외로움→주의이탈↑
+4. 동적 메커니즘,주의이탈,Lapse Prob,WCST,Gender,-0.043,,-0.043,,,,,0.025,,유의*,,attentional_lapse,여성 이탈확률↑
+5. 분산분석,위치-척도,RMSSD,WCST,UCLA,0.656,,0.656,,,,,0.005,,유의**,,paper1_distributional,RT 변동성 증가
+5. 분산분석,위치-척도,σ(long SOA),PRP,UCLA,0.716,,0.716,,,,,0.006,,유의**,,paper1_distributional,RT 분산 증가
+5. 분산분석,위치-척도,τ,WCST,UCLA,0.737,,0.737,,,,,0.004,,유의**,,paper1_distributional,주의이탈 증가
+5. 분산분석,Ex-Gaussian,τ×Gender,PRP,UCLA×Gender,50.68,,50.68,,,,,0.043,,유의*,,prp_exgaussian_dass_controlled,남성에서 UCLA-τ 관계 강함
+6. 프로파일링,군집화,Gender×Cluster,EF Vulnerability,Gender,χ²=4.249,,,,,,0.039,,유의*,,ef_vulnerability_clustering,여성이 느린군집에 편중
+6. 프로파일링,메타통제,UCLA→PC1,Meta-Control,UCLA,-0.118,,-0.118,,,,,0.346,,NS,,advanced_analyses/meta_control,
+7. 검증,신뢰도,Split-half,WCST PE Rate,,,r=0.66,,,0.50,0.76,,,,0.79,synthesis_analysis,Spearman-Brown 후 양호
+7. 검증,신뢰도,Split-half,Stroop Interference,,,r=0.41,,,0.25,0.54,,,,0.58,synthesis_analysis,약한 신뢰도
+7. 검증,복제,PE×Gender,WCST PE Rate,UCLA×Gender,현재β=0.98,,vs 선행β=2.59,,,,0.173,,복제실패,,replication_verification,164% 과대추정
+7. 검증,복제,저불안조절,WCST PE Rate,저불안조절,현재β=0.58,,vs 선행β=4.28,,,,0.647,,복제실패,,replication_verification,638% 과대추정
+7. 검증,강건성,HC3 보정,WCST PE Rate,UCLA×Gender,,,OLS p=0.262,,HC3 p=0.176,,,,,synthesis_analysis,이분산 보정 시 NS
+8. 기계학습,분류,AUC,UCLA High/Low,EF metrics,0.508,,0.508,0.180,,,,우연수준,,loneliness_classification,RF 분류 실패
+8. 기계학습,시행수준,AUC,Error Prediction,Trial features,0.786,,0.786,0.014,,,,유의,,trial_mvpa,동적 예측 가능
+9. 조절효과,연령,UCLA×Age,WCST PE Rate,UCLA×Age,0.604,,0.604,,,,,0.083,,경계선,,advanced_comprehensive/age_gam,젊은 남성에서 효과 강화 경향
+9. 조절효과,통제유형,반응적통제,Reactive Control,UCLA,r=-0.26,,-0.26,,,,,0.002,,유의**,,advanced_analyses/proactive_reactive,반응적 통제만 관련
+10. 다중비교,Bonferroni,UCLA 주효과,All DVs,UCLA,,,,,,,,,0개 유의,bonferroni_correction,
+10. 다중비교,Bonferroni,UCLA×Gender,All DVs,UCLA×Gender,,,,,,,,,0개 유의,bonferroni_correction,
+11. 효과크기,Cohen's d,고/저UCLA,WCST PE Rate,,d≈0.05,,,,,,무시할수준,,extended_analyses/effect_size_summary,
+11. 효과크기,Cohen's d,고/저UCLA,Stroop Interference,,d≈0.10,,,,,,작음,,extended_analyses/effect_size_summary,
+11. 효과크기,Cohen's d,고/저UCLA,PRP Bottleneck,,d≈0.15,,,,,,작음,,extended_analyses/effect_size_summary,
+11. 효과크기,상관,UCLA-EF,WCST PE Rate,UCLA,r=-0.03,,-0.03,,,,,,,0.001,synthesis_analysis,0.1% 설명분산
+11. 효과크기,상관,UCLA-EF,Stroop Interference,UCLA,r=0.05,,0.05,,,,,,,0.003,synthesis_analysis,0.3% 설명분산
+11. 효과크기,상관,UCLA-EF,PRP Bottleneck,UCLA,r=0.08,,0.08,,,,,,,0.006,synthesis_analysis,0.6% 설명분산
+12. 교차검증,CV,모델비교,WCST PE Rate,Base vs Full,ΔR²=-0.010,,,,,,0.126,,개선없음,,validation_analyses,
+12. 교차검증,CV,모델비교,Stroop Interference,Base vs Full,ΔR²=-0.013,,,,,,0.580,,개선없음,,validation_analyses,
+12. 교차검증,CV,모델비교,PRP Bottleneck,Base vs Full,ΔR²=-0.055,,,,,,0.122,,개선없음,,validation_analyses,
+13. 매개분석,DASS매개,남성우울,WCST PE Rate,UCLA→Dep→PE,간접=-0.29,,,-1.50,1.02,,,NS,,mediation,CI가 0 포함
+13. 매개분석,DASS매개,여성우울,WCST PE Rate,UCLA→Dep→PE,간접=-0.67,,,-1.62,0.06,,,경계선,,mediation,CI가 0 포함

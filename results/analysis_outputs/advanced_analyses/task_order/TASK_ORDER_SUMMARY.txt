@@ -1,0 +1,55 @@
+TASK ORDER EFFECTS ANALYSIS - KEY FINDINGS
+================================================================================
+
+RESEARCH QUESTION
+--------------------------------------------------------------------------------
+Does task completion order confound UCLA×Gender→EF findings?
+If WCST is consistently done first (or last), observed effects may be
+artifacts of practice, fatigue, or carryover effects.
+
+KEY FINDINGS
+--------------------------------------------------------------------------------
+⚠️ CRITICAL: Task order is essentially FIXED
+
+  • 78 out of 78 participants (100%) completed tasks in order:
+    1st: WCST (82/87 participants)
+    2nd: PRP (82/87 participants)
+    3rd: Stroop (82/87 participants)
+
+IMPLICATION:
+  - Task order is CONFOUNDED with task identity
+  - Cannot separately test 'fatigue effects' vs 'task-specific effects'
+  - WCST is always done first (fresh state)
+  - Stroop is always done last (potentially fatigued state)
+
+WITHIN-TASK POSITION EFFECTS:
+--------------------------------------------------------------------------------
+✓ No significant within-task position effects.
+  For the few participants who did tasks in different orders, performance
+  did not significantly differ by position.
+
+INTERPRETATION:
+--------------------------------------------------------------------------------
+✓ GOOD NEWS: UCLA×Gender→WCST effect unlikely to be pure fatigue artifact
+  - If effect was due to 'WCST done first', we'd expect it to disappear
+    in participants who did WCST later (N=5). Too small to test formally.
+
+⚠️ CAUTION: Cannot rule out practice/carryover effects
+  - WCST→PRP→Stroop order may have systematically affected performance
+  - Would need counterbalanced design to test this
+
+RECOMMENDATION:
+--------------------------------------------------------------------------------
+1. Report task order as fixed in methods section
+2. Discuss as limitation (cannot isolate fatigue from task-specific effects)
+3. Main findings likely robust, but future studies should counterbalance
+
+
+INTERACTION WITH TASK POSITION
+--------------------------------------------------------------------------------
+  WCST_PE_Rate: p=nan
+  PRP_T2_RT: p=0.6889
+  Stroop_Interference: p=0.4719
+
+================================================================================
+Full results saved to: results\analysis_outputs\advanced_analyses\task_order

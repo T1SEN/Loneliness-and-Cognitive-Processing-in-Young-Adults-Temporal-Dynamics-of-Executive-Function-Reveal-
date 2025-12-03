@@ -67,7 +67,7 @@ if sys.platform.startswith("win") and hasattr(sys.stdout, "reconfigure"):
 
 import numpy as np
 import pandas as pd
-from data_loader_utils import load_master_dataset
+from analysis.utils.data_loader_utils import load_master_dataset
 import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy import stats
@@ -87,10 +87,11 @@ try:
     NETWORKX_AVAILABLE = True
 except ImportError:
     NETWORKX_AVAILABLE = False
-    print("⚠️  NetworkX not available - cannot visualize DAGs")
+    print("[WARNING] NetworkX not available - cannot visualize DAGs")
 
 # Add utils to path
-sys.path.insert(0, str(Path(__file__).parent))
+_this_file = Path(__file__) if '__file__' in dir() else Path('analysis/framework4_causal_dag_simulation.py')
+sys.path.insert(0, str(_this_file.parent))
 from utils.publication_helpers import (
     set_publication_style,
     save_publication_figure,
@@ -117,7 +118,7 @@ N_SIMULATIONS = 1000  # Posterior predictive simulations
 
 # Focus on WCST first (the key finding from Frameworks 1-3)
 EF_OUTCOMES = {
-    'wcst_pe_rate': 'WCST Perseverative Error Rate',
+    'pe_rate': 'WCST Perseverative Error Rate',
     # 'prp_bottleneck': 'PRP Bottleneck Effect',  # Run separately if needed
     # 'stroop_interference': 'Stroop Interference'  # Run separately if needed
 }
@@ -138,8 +139,11 @@ def load_dag_data():
     master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
     if "ucla_total" not in master.columns and "ucla_score" in master.columns:
         master["ucla_total"] = master["ucla_score"]
-    master = master.rename(columns={"gender_normalized": "gender"})
-    master["gender"] = master["gender"].fillna("").astype(str).str.strip().str.lower()
+    # Use gender_normalized if available
+    if 'gender_normalized' in master.columns:
+        master['gender'] = master['gender_normalized'].fillna('').astype(str).str.strip().str.lower()
+    else:
+        master['gender'] = master['gender'].fillna('').astype(str).str.strip().str.lower()
     master["gender_male"] = (master["gender"] == "male").astype(int)
 
     # Ensure EF metrics present (fallback to compute if missing)
@@ -167,7 +171,7 @@ def load_dag_data():
 def compute_ef_metrics_dag(master):
     """Ensure EF metrics exist; compute from shared trial loaders when missing."""
     # WCST PE
-    if "wcst_pe_rate" not in master.columns:
+    if "pe_rate" not in master.columns:
         try:
             wcst_trials, _ = load_wcst_trials(use_cache=True)
             if "isPE" in wcst_trials.columns:
@@ -183,7 +187,7 @@ def compute_ef_metrics_dag(master):
                         return {}
                 wcst_trials["extra_dict"] = wcst_trials["extra"].apply(_parse_wcst_extra) if "extra" in wcst_trials.columns else {}
                 wcst_trials["is_pe"] = wcst_trials.get("extra_dict", {}).apply(lambda x: x.get("isPE", False) if isinstance(x, dict) else False)
-            pe_rate = wcst_trials.groupby("participant_id")["is_pe"].mean().reset_index().rename(columns={"is_pe": "wcst_pe_rate"})
+            pe_rate = wcst_trials.groupby("participant_id")["is_pe"].mean().reset_index().rename(columns={"is_pe": "pe_rate"})
             master = master.merge(pe_rate, on="participant_id", how="left")
         except Exception:
             pass

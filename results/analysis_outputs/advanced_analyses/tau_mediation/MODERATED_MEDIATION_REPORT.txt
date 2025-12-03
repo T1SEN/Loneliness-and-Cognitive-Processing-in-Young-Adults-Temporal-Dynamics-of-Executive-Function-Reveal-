@@ -1,0 +1,38 @@
+================================================================================
+MODERATED MEDIATION: τ MEDIATES UCLA → WCST PE
+================================================================================
+
+RESEARCH QUESTION
+--------------------------------------------------------------------------------
+Does Ex-Gaussian τ (attentional lapses) mediate the UCLA → WCST PE
+relationship, and is this pathway moderated by gender?
+
+SAMPLE
+--------------------------------------------------------------------------------
+N = 149
+Males: 56
+Females: 93
+
+GENDER-STRATIFIED RESULTS
+--------------------------------------------------------------------------------
+
+Gender  N    a_path     a_se      a_p    b_path     b_se    c_path      c_p   c_prime  indirect  indirect_ci_lower  indirect_ci_upper indirect_sig  prop_mediated
+  Male 56 -1.491154 1.572046 0.347079 -0.003662 0.003962  0.011615 0.800349  0.006154  0.005461          -0.007554           0.029999           No       0.470142
+Female 93 -3.734710 1.642573 0.025336  0.002763 0.003404 -0.078941 0.141526 -0.068621 -0.010320          -0.033221           0.007658           No       0.130734
+
+MODERATION TESTS
+--------------------------------------------------------------------------------
+Path a moderation (UCLA × Gender → τ): β=2.244, p=0.361
+Path b moderation (τ × Gender → PE): β=-0.007, p=0.225
+
+Index of Moderated Mediation: 0.0158
+  (Male indirect - Female indirect)
+
+INTERPRETATION
+--------------------------------------------------------------------------------
+[NS] MALES: Non-significant mediation (indirect = 0.0055)
+
+[NS] FEMALES: Non-significant mediation (indirect = -0.0103)
+
+================================================================================
+Full results saved to: results\analysis_outputs\advanced_analyses\tau_mediation

@@ -1,0 +1,27 @@
+                            OLS Regression Results                            
+==============================================================================
+Dep. Variable:            rt_cv_ratio   R-squared:                       0.004
+Model:                            OLS   Adj. R-squared:                 -0.015
+Method:                 Least Squares   F-statistic:                    0.2279
+Date:                Tue, 02 Dec 2025   Prob (F-statistic):              0.877
+Time:                        23:10:38   Log-Likelihood:                -45.268
+No. Observations:                 160   AIC:                             98.54
+Df Residuals:                     156   BIC:                             110.8
+Df Model:                           3                                         
+Covariance Type:            nonrobust                                         
+==========================================================================================
+                             coef    std err          t      P>|t|      [0.025      0.975]
+------------------------------------------------------------------------------------------
+Intercept                  1.1121      0.131      8.507      0.000       0.854       1.370
+ucla_total                 0.0013      0.003      0.440      0.661      -0.005       0.007
+gender_male                0.0910      0.203      0.449      0.654      -0.309       0.491
+ucla_total:gender_male    -0.0013      0.005     -0.260      0.795      -0.011       0.008
+==============================================================================
+Omnibus:                       26.507   Durbin-Watson:                   2.086
+Prob(Omnibus):                  0.000   Jarque-Bera (JB):               34.555
+Skew:                           0.994   Prob(JB):                     3.14e-08
+Kurtosis:                       4.109   Cond. No.                         396.
+==============================================================================
+
+Notes:
+[1] Standard Errors assume that the covariance matrix of the errors is correctly specified.

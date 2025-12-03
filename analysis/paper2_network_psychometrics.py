@@ -100,7 +100,7 @@ nodes = {
     'DASS_Str': 'dass_stress',
 
     # EF Mean Performance
-    'WCST_PE': 'perseverative_error_rate',  # Perseverative error rate (CORRECTED)
+    'WCST_PE': 'pe_rate',  # Perseverative error rate (CORRECTED)
     'PRP_RT': 'prp_mean_rt',  # Mean RT (overall)
     'Stroop_Int': 'stroop_interference',  # Interference effect
 

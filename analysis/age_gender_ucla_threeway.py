@@ -20,7 +20,7 @@ Date: 2025
 import sys
 from pathlib import Path
 import pandas as pd
-from data_loader_utils import load_master_dataset
+from analysis.utils.data_loader_utils import load_master_dataset
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -28,7 +28,7 @@ from scipy import stats
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
 
-from data_loader_utils import normalize_gender_series
+from analysis.utils.data_loader_utils import normalize_gender_series
 
 # Unicode handling for Windows
 if sys.platform.startswith("win") and hasattr(sys.stdout, "reconfigure"):
@@ -62,14 +62,14 @@ participants['gender'] = normalize_gender_series(participants['gender'])
 
 # Rename columns
 if 'pe_rate' in master.columns:
-    master['wcst_pe_rate'] = master['pe_rate']
+    master['pe_rate'] = master['pe_rate']
 
 # Calculate DASS total
 if 'dass_total' not in master.columns:
     master['dass_total'] = master['dass_anxiety'] + master['dass_stress'] + master['dass_depression']
 
 # Filter complete cases
-master = master.dropna(subset=['ucla_total', 'wcst_pe_rate', 'gender', 'age'])
+master = master.dropna(subset=['ucla_total', 'pe_rate', 'gender', 'age'])
 print(f"  Complete cases: {len(master)} participants")
 
 # Create variables
@@ -98,7 +98,7 @@ print(master.groupby(['age_group', 'gender']).size().unstack(fill_value=0))
 print("\n[2/5] Testing continuous Age × Gender × UCLA interaction...")
 
 # Model 1: Two-way (baseline - from existing analyses)
-model_2way = smf.ols('wcst_pe_rate ~ ucla_total * gender_male + age_centered + dass_depression + dass_anxiety + dass_stress',
+model_2way = smf.ols('pe_rate ~ ucla_total * gender_male + age_centered + dass_depression + dass_anxiety + dass_stress',
                       data=master).fit()
 
 print("\n  Model 1 (Two-way): UCLA × Gender")
@@ -106,7 +106,7 @@ print(f"    UCLA × Gender: β={model_2way.params['ucla_total:gender_male']:.4f}
 print(f"    R² = {model_2way.rsquared:.4f}")
 
 # Model 2: Three-way interaction
-model_3way = smf.ols('wcst_pe_rate ~ ucla_total * gender_male * age_centered + dass_depression + dass_anxiety + dass_stress',
+model_3way = smf.ols('pe_rate ~ ucla_total * gender_male * age_centered + dass_depression + dass_anxiety + dass_stress',
                       data=master).fit()
 
 print("\n  Model 2 (Three-way): UCLA × Gender × Age")
@@ -137,7 +137,7 @@ else:
 print("\n[3/5] Testing median-split age groups...")
 
 # Run 2×2 ANCOVA: Age_group × Gender → PE (controlling UCLA)
-model_age_group = smf.ols('wcst_pe_rate ~ C(age_group) * C(gender) * ucla_total + dass_depression + dass_anxiety + dass_stress',
+model_age_group = smf.ols('pe_rate ~ C(age_group) * C(gender) * ucla_total + dass_depression + dass_anxiety + dass_stress',
                           data=master).fit()
 
 print("\n  2×2×continuous ANCOVA: Age_group × Gender × UCLA")
@@ -165,7 +165,7 @@ for age_group in ['Younger', 'Older']:
     subset = master[master['age_group'] == age_group].copy()
     print(f"\n    [{age_group} (N={len(subset)})]")
 
-    model = smf.ols('wcst_pe_rate ~ ucla_total * gender_male + dass_depression + dass_anxiety + dass_stress', data=subset).fit()
+    model = smf.ols('pe_rate ~ ucla_total * gender_male + dass_depression + dass_anxiety + dass_stress', data=subset).fit()
 
     if 'ucla_total:gender_male' in model.params:
         beta = model.params['ucla_total:gender_male']
@@ -185,11 +185,11 @@ for age_group in ['Younger', 'Older']:
         females = subset[subset['gender_male'] == 0]
 
         if len(males) >= 10:
-            model_m = smf.ols('wcst_pe_rate ~ ucla_total + dass_depression + dass_anxiety + dass_stress', data=males).fit()
+            model_m = smf.ols('pe_rate ~ ucla_total + dass_depression + dass_anxiety + dass_stress', data=males).fit()
             print(f"        Males (N={len(males)}): UCLA slope β={model_m.params['ucla_total']:.4f}, p={model_m.pvalues['ucla_total']:.4f}")
 
         if len(females) >= 10:
-            model_f = smf.ols('wcst_pe_rate ~ ucla_total + dass_depression + dass_anxiety + dass_stress', data=females).fit()
+            model_f = smf.ols('pe_rate ~ ucla_total + dass_depression + dass_anxiety + dass_stress', data=females).fit()
             print(f"        Females (N={len(females)}): UCLA slope β={model_f.params['ucla_total']:.4f}, p={model_f.pvalues['ucla_total']:.4f}")
 
 stratified_df = pd.DataFrame(results_stratified)
@@ -208,7 +208,7 @@ for quartile in ['Q1_Youngest', 'Q2', 'Q3', 'Q4_Oldest']:
     if len(subset) < 10:
         continue
 
-    model = smf.ols('wcst_pe_rate ~ ucla_total * gender_male + dass_depression + dass_anxiety + dass_stress', data=subset).fit()
+    model = smf.ols('pe_rate ~ ucla_total * gender_male + dass_depression + dass_anxiety + dass_stress', data=subset).fit()
 
     if 'ucla_total:gender_male' in model.params:
         beta = model.params['ucla_total:gender_male']
@@ -244,12 +244,12 @@ for i, age_group in enumerate(['Younger', 'Older']):
         gender_data = subset[subset['gender'] == gender]
 
         # Scatter
-        axes[i].scatter(gender_data['ucla_total'], gender_data['wcst_pe_rate'],
+        axes[i].scatter(gender_data['ucla_total'], gender_data['pe_rate'],
                        label=gender.capitalize(), alpha=0.6, s=50)
 
         # Regression line
         if len(gender_data) >= 5:
-            z = np.polyfit(gender_data['ucla_total'], gender_data['wcst_pe_rate'], 1)
+            z = np.polyfit(gender_data['ucla_total'], gender_data['pe_rate'], 1)
             p = np.poly1d(z)
             x_line = np.linspace(gender_data['ucla_total'].min(), gender_data['ucla_total'].max(), 100)
             axes[i].plot(x_line, p(x_line), linestyle='--', linewidth=2)
@@ -294,7 +294,7 @@ if len(males) >= 20:
     males['age_bin'] = pd.cut(males['age'], bins=5)
     age_bin_centers = males.groupby('age_bin')['age'].mean()
     ucla_pe_corr = males.groupby('age_bin').apply(
-        lambda x: x[['ucla_total', 'wcst_pe_rate']].corr().iloc[0, 1]
+        lambda x: x[['ucla_total', 'pe_rate']].corr().iloc[0, 1]
     )
 
     ax.scatter(age_bin_centers, ucla_pe_corr, s=100, alpha=0.7)

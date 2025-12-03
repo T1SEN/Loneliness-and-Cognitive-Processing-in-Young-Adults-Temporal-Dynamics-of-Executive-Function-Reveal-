@@ -25,18 +25,19 @@ from typing import Dict, List, Optional
 
 import numpy as np
 import pandas as pd
-from data_loader_utils import load_master_dataset
+from analysis.utils.data_loader_utils import load_master_dataset
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 import statsmodels.formula.api as smf
 
-from data_loader_utils import normalize_gender_series
+from analysis.utils.data_loader_utils import normalize_gender_series
 
 
 # ---------------------------------------------------------------------------
 # Data loading helpers
 # ---------------------------------------------------------------------------
-BASE_DIR = Path(__file__).resolve().parent.parent
+_this_file = Path(__file__) if '__file__' in dir() else Path('analysis/loneliness_exec_models.py')
+BASE_DIR = _this_file.resolve().parent.parent
 RESULTS_DIR = BASE_DIR / "results"
 OUTPUT_DIR = RESULTS_DIR / "analysis_outputs"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)

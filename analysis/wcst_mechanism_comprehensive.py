@@ -17,7 +17,7 @@ import sys
 import os
 from pathlib import Path
 import pandas as pd
-from data_loader_utils import load_master_dataset
+from analysis.utils.data_loader_utils import load_master_dataset
 import numpy as np
 from scipy import stats
 from scipy.stats import pearsonr, spearmanr
@@ -48,55 +48,34 @@ print("\n[데이터 로딩]")
 master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
 if "ucla_total" not in master.columns and "ucla_score" in master.columns:
     master["ucla_total"] = master["ucla_score"]
-master = master.rename(columns={"gender_normalized": "gender"})
-master["gender"] = master["gender"].fillna("").astype(str).str.strip().str.lower()
+# Use gender_normalized if available
+if 'gender_normalized' in master.columns:
+    master['gender'] = master['gender_normalized'].fillna('').astype(str).str.strip().str.lower()
+else:
+    master['gender'] = master['gender'].fillna('').astype(str).str.strip().str.lower()
 master["gender_male"] = (master["gender"] == "male").astype(int)
 
 participants = master[['participant_id','gender','age']]
 ucla = master[['participant_id', 'ucla_total']].dropna()
-dass_df = master[['participant_id', 'dass_anxiety', 'dass_stress', 'dass_depression', 'dass_total']].dropna()
+# Compute dass_total if not present
+if 'dass_total' not in master.columns and all(c in master.columns for c in ['dass_depression', 'dass_anxiety', 'dass_stress']):
+    master['dass_total'] = master['dass_depression'] + master['dass_anxiety'] + master['dass_stress']
+dass_cols = ['participant_id', 'dass_anxiety', 'dass_stress', 'dass_depression']
+if 'dass_total' in master.columns:
+    dass_cols.append('dass_total')
+dass_df = master[dass_cols].dropna()
 
 wcst_trials, _ = load_wcst_trials(use_cache=True)
 if 'participantId' in wcst_trials.columns and 'participant_id' not in wcst_trials.columns:
     wcst_trials = wcst_trials.rename(columns={'participantId': 'participant_id'})
 
-# UCLA & DASS
-ucla = surveys[surveys['surveyName'] == 'ucla'][['participantId', 'score']].dropna()
-ucla.columns = ['participantId', 'ucla_total']
-
-dass = surveys[surveys['surveyName'] == 'dass'].copy()
-# DASS subscales 추출 (A, S, D)
-dass_scores = []
-for _, row in dass.iterrows():
-    pid = row['participantId']
-    # score_A (anxiety), score_S (stress), score_D (depression)
-    anxiety = row.get('score_A', np.nan)
-    stress = row.get('score_S', np.nan)
-    depression = row.get('score_D', np.nan)
-    total = row.get('score', np.nan)
-
-    # total이 NaN이면 합계 계산
-    if pd.isna(total) and not pd.isna(anxiety) and not pd.isna(stress) and not pd.isna(depression):
-        total = anxiety + stress + depression
-
-    dass_scores.append({
-        'participantId': pid,
-        'dass_anxiety': anxiety,
-        'dass_stress': stress,
-        'dass_depression': depression,
-        'dass_total': total
-    })
-
-dass_df = pd.DataFrame(dass_scores).dropna(subset=['dass_anxiety', 'dass_stress', 'dass_depression'])
+# Use participant_id consistently
+wcst_trials['participantId'] = wcst_trials['participant_id']
 
 print(f"   Participants: {len(participants)}")
 print(f"   UCLA: {len(ucla)}")
 print(f"   DASS: {len(dass_df)}")
 print(f"   WCST trials: {len(wcst_trials)}")
-
-# participantId normalize
-if 'participant_id' in wcst_trials.columns and 'participantId' not in wcst_trials.columns:
-    wcst_trials.rename(columns={'participant_id': 'participantId'}, inplace=True)
 
 # ============================================================================
 # 분석 1: 피드백 민감도
@@ -334,13 +313,17 @@ master = feedback_df.copy()
 master = master.merge(uncertainty_df, on='participantId', how='outer')
 master = master.merge(cascade_df, on='participantId', how='outer')
 if len(pes_wcst) > 0:
-    master = master.merge(pes_wcst, on='participantId', how='outer')
+    if 'participantId' in pes_wcst.columns and 'participant_id' not in pes_wcst.columns:
+        pes_wcst = pes_wcst.rename(columns={'participantId': 'participant_id'})
+    master = master.merge(pes_wcst, on='participant_id', how='outer')
 if len(hyper_df) > 0:
-    master = master.merge(hyper_df[['participantId', 'hypervigilance_score']], on='participantId', how='outer')
+    if 'participantId' in hyper_df.columns and 'participant_id' not in hyper_df.columns:
+        hyper_df = hyper_df.rename(columns={'participantId': 'participant_id'})
+    master = master.merge(hyper_df[['participant_id', 'hypervigilance_score']], on='participant_id', how='outer')
 
-# Merge 인구통계
-master = master.merge(ucla, on='participantId', how='left')
-master = master.merge(dass_df, on='participantId', how='left')
+# Merge 인구통계 (ucla and dass_df already use participant_id)
+master = master.merge(ucla, on='participant_id', how='left')
+master = master.merge(dass_df, on='participant_id', how='left')
 
 # Drop missing
 master = master.dropna(subset=['gender', 'ucla_total'])

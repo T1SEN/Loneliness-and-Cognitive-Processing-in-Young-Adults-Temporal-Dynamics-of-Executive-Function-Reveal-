@@ -18,7 +18,7 @@ if sys.platform.startswith("win") and hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding='utf-8')
 
 import pandas as pd
-from data_loader_utils import load_master_dataset
+from analysis.utils.data_loader_utils import load_master_dataset
 import numpy as np
 from pathlib import Path
 import scipy.stats as stats
@@ -91,7 +91,7 @@ master['gender'] = master['gender'].map(gender_map)
 master['gender_male'] = (master['gender'] == 'male').astype(int)
 
 # Find PE column
-for col in ['pe_rate', 'perseverative_error_rate']:
+for col in ['pe_rate', 'pe_rate']:
     if col in master.columns:
         master = master.rename(columns={col: 'pe_rate'})
         break

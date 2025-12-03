@@ -65,15 +65,24 @@ def load_prp_trials(
     df = pd.read_csv(BASE_RESULTS / "4a_prp_trials.csv", encoding="utf-8")
     df = ensure_participant_id(df)
 
-    rt_col = "t2_rt" if "t2_rt" in df.columns else "t2_rt_ms" if "t2_rt_ms" in df.columns else None
+    # Prefer _ms columns (have more data) over legacy columns
+    rt_col = "t2_rt_ms" if "t2_rt_ms" in df.columns else "t2_rt" if "t2_rt" in df.columns else None
     if rt_col and rt_col != "t2_rt":
+        # Drop the old empty t2_rt column if exists to avoid duplicates
+        if "t2_rt" in df.columns:
+            df = df.drop(columns=["t2_rt"])
         df = df.rename(columns={rt_col: "t2_rt"})
-    soa_col = "soa"
-    if soa_col not in df.columns:
-        for cand in ["soa_ms", "soa_nominal_ms"]:
-            if cand in df.columns:
-                df = df.rename(columns={cand: "soa"})
-                break
+    # Prefer soa_nominal_ms (has more data) over legacy soa
+    soa_col = None
+    for cand in ["soa_nominal_ms", "soa_ms", "soa"]:
+        if cand in df.columns:
+            soa_col = cand
+            break
+    if soa_col and soa_col != "soa":
+        # Drop the old empty soa column if exists to avoid duplicates
+        if "soa" in df.columns:
+            df = df.drop(columns=["soa"])
+        df = df.rename(columns={soa_col: "soa"})
     if "t1_correct" not in df.columns:
         raise KeyError("PRP trials missing t1_correct column")
     if "t2_rt" not in df.columns or "soa" not in df.columns:
@@ -130,10 +139,14 @@ def load_stroop_trials(
     df = pd.read_csv(BASE_RESULTS / "4c_stroop_trials.csv", encoding="utf-8")
     df = ensure_participant_id(df)
 
-    rt_col = "rt" if "rt" in df.columns else "rt_ms" if "rt_ms" in df.columns else None
+    # Prefer rt_ms (has more data) over legacy rt column - same pattern as PRP fix
+    rt_col = "rt_ms" if "rt_ms" in df.columns else "rt" if "rt" in df.columns else None
     if not rt_col:
         raise KeyError("Stroop trials missing rt/rt_ms column")
     if rt_col != "rt":
+        # Drop the old empty rt column if exists to avoid duplicates
+        if "rt" in df.columns:
+            df = df.drop(columns=["rt"])
         df = df.rename(columns={rt_col: "rt"})
 
     cond_col = None

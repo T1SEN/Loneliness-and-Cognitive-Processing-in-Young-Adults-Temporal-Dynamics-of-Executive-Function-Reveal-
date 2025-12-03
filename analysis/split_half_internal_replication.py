@@ -26,7 +26,7 @@ if sys.platform.startswith("win") and hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding='utf-8')
 
 import pandas as pd
-from data_loader_utils import load_master_dataset
+from analysis.utils.data_loader_utils import load_master_dataset
 import numpy as np
 from pathlib import Path
 import scipy.stats as stats
@@ -65,18 +65,21 @@ if 'participantId' in participants.columns:
 ucla_data = master[['participant_id']].copy()
 ucla_data['ucla_total'] = master['ucla_score'] if 'ucla_score' in master.columns else master.get('ucla_total')
 
-# DASS scores (for covariate control)
+# DASS scores (for covariate control) - MUST include individual subscales per CLAUDE.md
 dass_data = master[['participant_id']].copy()
-for src, dst in [('dass_anxiety', 'score_A'), ('dass_stress', 'score_S'), ('dass_depression', 'score_D')]:
+for src, dst in [('dass_anxiety', 'dass_anx'), ('dass_stress', 'dass_str'), ('dass_depression', 'dass_dep')]:
     if src in master.columns:
         dass_data[dst] = master[src]
-dass_data['dass_total'] = dass_data[['score_A', 'score_S', 'score_D']].sum(axis=1)
-dass_data = dass_data[['participant_id', 'dass_total']].dropna()
+# Compute z-scores for DASS subscales (required for DASS-controlled analysis)
+for col in ['dass_dep', 'dass_anx', 'dass_str']:
+    if col in dass_data.columns:
+        dass_data[f'z_{col}'] = (dass_data[col] - dass_data[col].mean()) / dass_data[col].std()
+dass_data = dass_data.dropna(subset=['dass_dep', 'dass_anx', 'dass_str'])
 
 # WCST perseverative errors
 wcst_data = master[['participant_id']].copy()
 pe_col = None
-for col in ['wcst_pe_rate', 'pe_rate', 'perseverative_error_rate', 'pe_rate_percent']:
+for col in ['pe_rate', 'pe_rate', 'pe_rate', 'pe_rate_percent']:
     if col in master.columns:
         pe_col = col
         wcst_data[pe_col] = master[col]
@@ -87,7 +90,7 @@ if pe_col is None:
     sys.exit(1)
 
 wcst_data = wcst_data[['participant_id', pe_col]].copy()
-wcst_data.columns = ['participant_id', 'wcst_pe_rate']
+wcst_data.columns = ['participant_id', 'pe_rate']
 
 # ============================================================================
 # 2. MERGE MASTER DATASET
@@ -98,8 +101,8 @@ master = ucla_data.merge(participants[['participant_id', 'gender_male', 'age']],
 master = master.merge(wcst_data, on='participant_id', how='inner')
 master = master.merge(dass_data, on='participant_id', how='left')
 
-# Drop missing on key variables
-master = master.dropna(subset=['ucla_total', 'wcst_pe_rate', 'gender_male'])
+# Drop missing on key variables (including DASS controls per CLAUDE.md requirement)
+master = master.dropna(subset=['ucla_total', 'pe_rate', 'gender_male', 'z_dass_dep', 'z_dass_anx', 'z_dass_str'])
 
 n_total = len(master)
 n_male = (master['gender_male'] == 1).sum()
@@ -119,13 +122,18 @@ if n_total < 40:
 print("\n[3/6] Running single split-half replication...")
 
 def test_interaction(data, sample_name=""):
-    """Test UCLA × Gender interaction in a sample"""
+    """Test UCLA × Gender interaction in a sample with DASS-21 controls (per CLAUDE.md)"""
 
-    # Model: PE ~ UCLA × Gender (+ age as covariate)
-    if 'age' in data.columns:
-        formula = 'wcst_pe_rate ~ ucla_total * gender_male + age'
+    # Model: PE ~ UCLA × Gender + DASS controls (+ age as covariate)
+    # CRITICAL: Must include DASS-21 subscales to control for mood/anxiety confounding
+    if 'age' in data.columns and 'z_dass_dep' in data.columns:
+        formula = 'pe_rate ~ ucla_total * gender_male + z_dass_dep + z_dass_anx + z_dass_str + age'
+    elif 'z_dass_dep' in data.columns:
+        formula = 'pe_rate ~ ucla_total * gender_male + z_dass_dep + z_dass_anx + z_dass_str'
+    elif 'age' in data.columns:
+        formula = 'pe_rate ~ ucla_total * gender_male + age'
     else:
-        formula = 'wcst_pe_rate ~ ucla_total * gender_male'
+        formula = 'pe_rate ~ ucla_total * gender_male'
 
     model = smf.ols(formula, data=data).fit()
 
@@ -138,19 +146,25 @@ def test_interaction(data, sample_name=""):
     # Effect size (partial eta squared for interaction)
     r_squared = model.rsquared
 
-    # Simple slopes
+    # Simple slopes (with DASS controls per CLAUDE.md)
     males = data[data['gender_male'] == 1]
     females = data[data['gender_male'] == 0]
 
+    # Determine simple slope formula based on available covariates
+    if 'z_dass_dep' in data.columns:
+        simple_formula = 'pe_rate ~ ucla_total + z_dass_dep + z_dass_anx + z_dass_str'
+    else:
+        simple_formula = 'pe_rate ~ ucla_total'
+
     if len(males) > 5:
-        male_model = smf.ols('wcst_pe_rate ~ ucla_total', data=males).fit()
+        male_model = smf.ols(simple_formula, data=males).fit()
         male_slope = male_model.params['ucla_total']
         male_p = male_model.pvalues['ucla_total']
     else:
         male_slope, male_p = np.nan, np.nan
 
     if len(females) > 5:
-        female_model = smf.ols('wcst_pe_rate ~ ucla_total', data=females).fit()
+        female_model = smf.ols(simple_formula, data=females).fit()
         female_slope = female_model.params['ucla_total']
         female_p = female_model.pvalues['ucla_total']
     else:

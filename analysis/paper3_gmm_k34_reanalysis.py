@@ -17,7 +17,7 @@ ANALYSIS PLAN:
 import sys
 from pathlib import Path
 import pandas as pd
-from data_loader_utils import load_master_dataset
+from analysis.utils.data_loader_utils import load_master_dataset
 import numpy as np
 from sklearn.mixture import GaussianMixture
 from scipy import stats

@@ -23,7 +23,7 @@ import pandas as pd
 import pymc as pm
 import arviz as az
 
-from data_loader_utils import load_master_dataset
+from analysis.utils.data_loader_utils import load_master_dataset
 from analysis.utils.trial_data_loader import load_stroop_trials, load_prp_trials
 
 
@@ -67,7 +67,8 @@ def load_covariates() -> pd.DataFrame:
 
 
 def prepare_stroop(cov: pd.DataFrame) -> pd.DataFrame:
-    trials, _ = load_stroop_trials(use_cache=True, rt_min=200, rt_max=3000, drop_timeouts=True, require_correct_for_rt=True)
+    # Use standard RT filtering per CLAUDE.md (DEFAULT_RT_MIN=100, STROOP_RT_MAX=3000)
+    trials, _ = load_stroop_trials(use_cache=True, rt_min=100, rt_max=3000, drop_timeouts=True, require_correct_for_rt=True)
     cond_col = None
     for cand in ("type", "condition", "cond"):
         if cand in trials.columns:
@@ -93,10 +94,11 @@ def prepare_stroop(cov: pd.DataFrame) -> pd.DataFrame:
 
 
 def prepare_prp(cov: pd.DataFrame) -> pd.DataFrame:
+    # Use standard RT filtering per CLAUDE.md (DEFAULT_RT_MIN=100, PRP_RT_MAX=3000)
     trials, _ = load_prp_trials(
         use_cache=True,
-        rt_min=200,
-        rt_max=4000,
+        rt_min=100,   # Updated from 200 to match DEFAULT_RT_MIN
+        rt_max=3000,  # Updated from 4000 to match PRP_RT_MAX
         require_t1_correct=False,
         require_t2_correct_for_rt=False,
         enforce_short_long_only=False,

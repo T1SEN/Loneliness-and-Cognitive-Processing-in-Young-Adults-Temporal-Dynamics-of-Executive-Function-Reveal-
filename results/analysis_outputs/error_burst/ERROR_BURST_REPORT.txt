@@ -1,0 +1,75 @@
+================================================================================
+ERROR BURST CLUSTERING ANALYSIS: SUMMARY REPORT
+================================================================================
+
+RESEARCH QUESTION:
+Do lonely individuals show temporally clustered errors (error bursts)?
+
+METHODOLOGY:
+- Runs Test: Tests whether error positions are random or clustered
+- Markov Transitions: P(Error_t | Error_{t-1}) vs P(Error_t | Correct_{t-1})
+- Error Transition Ratio: >1 means errors cluster together
+- Clustering Coefficient: >1 means more clustered than expected
+
+--------------------------------------------------------------------------------
+ERROR CLUSTERING SUMMARY BY TASK:
+--------------------------------------------------------------------------------
+
+  WCST:
+    Mean error rate: 0.110
+    Mean P(Error|Error): 0.199
+    Mean P(Error|Correct): 0.097
+    Mean transition ratio: 2.20
+    % with significant clustering (runs test p<.05): 28.0%
+
+--------------------------------------------------------------------------------
+KEY FREQUENTIST RESULTS (p < 0.05):
+--------------------------------------------------------------------------------
+  WCST Clustering Coefficient: C(gender_male)[T.1.0]
+    beta = -0.0830, p = 0.0161
+    95% CI: [-0.1503, -0.0157]
+
+
+--------------------------------------------------------------------------------
+BAYESIAN RESULTS (ROPE [-0.1, 0.1]):
+--------------------------------------------------------------------------------
+  WCST Error Transition Ratio: b_ucla
+    Posterior mean = -0.0985
+    HDI: [-0.3382, 0.1420]
+    ROPE: 44.7% in, Decision: UNDECIDED
+
+  WCST Error Transition Ratio: b_ucla_x_gender
+    Posterior mean = -0.0915
+    HDI: [-0.4262, 0.2160]
+    ROPE: 41.8% in, Decision: UNDECIDED
+
+  WCST Clustering Coefficient: b_ucla
+    Posterior mean = -0.2211
+    HDI: [-0.4578, 0.0151]
+    ROPE: 16.2% in, Decision: UNDECIDED
+
+  WCST Clustering Coefficient: b_ucla_x_gender
+    Posterior mean = 0.0634
+    HDI: [-0.2442, 0.3731]
+    ROPE: 43.2% in, Decision: UNDECIDED
+
+
+================================================================================
+INTERPRETATION:
+================================================================================
+
+If UCLA predicts ERROR TRANSITION RATIO:
+  -> Loneliness increases error-to-error transitions (perseveration)
+
+If UCLA predicts CLUSTERING COEFFICIENT:
+  -> Loneliness leads to bursts of momentary disengagement
+
+If UCLA predicts MAX ERROR RUN LENGTH:
+  -> Loneliness leads to extended periods of cognitive failure
+
+Connection to tau (Ex-Gaussian tail):
+  - Tau captures slow responses generally
+  - Error bursts capture temporal clustering specifically
+  - If both predict UCLA: confirms attentional lapse mechanism
+
+================================================================================

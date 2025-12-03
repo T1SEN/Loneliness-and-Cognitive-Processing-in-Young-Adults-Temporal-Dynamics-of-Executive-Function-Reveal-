@@ -210,7 +210,7 @@ def parse_wcst_extra(extra_str):
 
 print("[1/8] Loading base datasets...")
 
-from data_loader_utils import load_master_dataset
+from analysis.utils.data_loader_utils import load_master_dataset
 from analysis.utils.trial_data_loader import load_prp_trials, load_wcst_trials, load_stroop_trials
 
 # Load master dataset via shared loader
@@ -219,8 +219,11 @@ if "ucla_total" not in master.columns and "ucla_score" in master.columns:
     master["ucla_total"] = master["ucla_score"]
 
 # Normalize gender
-master = master.rename(columns={"gender_normalized": "gender"})
-master["gender"] = master["gender"].fillna("").astype(str).str.strip().str.lower()
+# Use gender_normalized if available
+if 'gender_normalized' in master.columns:
+    master['gender'] = master['gender_normalized'].fillna('').astype(str).str.strip().str.lower()
+else:
+    master['gender'] = master['gender'].fillna('').astype(str).str.strip().str.lower()
 master["gender_male"] = (master["gender"] == "male").astype(int)
 
 print(f"  Master dataset: N = {len(master)}")

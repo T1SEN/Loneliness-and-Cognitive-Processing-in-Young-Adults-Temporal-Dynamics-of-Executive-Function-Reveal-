@@ -1,0 +1,4 @@
+﻿task1,task2,correlation,n,p_value
+pe_rate,stroop_interference,0.09562476281328215,151,0.24281852822305772
+pe_rate,prp_bottleneck,0.11438337848864967,149,0.16482312280146827
+stroop_interference,prp_bottleneck,0.16622693271306613,155,0.038718984084766817

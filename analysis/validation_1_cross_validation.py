@@ -45,7 +45,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
 from scipy import stats
 import warnings
-from data_loader_utils import load_master_dataset
+from analysis.utils.data_loader_utils import load_master_dataset
 warnings.filterwarnings('ignore')
 
 np.random.seed(42)
@@ -76,8 +76,11 @@ print("\n[1/4] Loading data...")
 
 # Load master dataset
 master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
-master = master.rename(columns={'gender_normalized': 'gender'})
-master['gender'] = master['gender'].fillna('').astype(str).str.strip().str.lower()
+# Use gender_normalized if available
+if 'gender_normalized' in master.columns:
+    master['gender'] = master['gender_normalized'].fillna('').astype(str).str.strip().str.lower()
+else:
+    master['gender'] = master['gender'].fillna('').astype(str).str.strip().str.lower()
 if 'ucla_total' not in master.columns and 'ucla_score' in master.columns:
     master['ucla_total'] = master['ucla_score']
 master['gender_male'] = (master['gender'] == 'male').astype(int)
@@ -100,8 +103,8 @@ if 'participantId' in master.columns:
     master = master.rename(columns={'participantId': 'participant_id'})
 
 # Rename WCST PE if needed
-if 'perseverative_error_rate' in master.columns:
-    master = master.rename(columns={'perseverative_error_rate': 'pe_rate'})
+if 'pe_rate' in master.columns:
+    master = master.rename(columns={'pe_rate': 'pe_rate'})
 
 # Gender mapping
 gender_map = {'남성': 'male', '여성': 'female', 'Male': 'male', 'Female': 'female'}

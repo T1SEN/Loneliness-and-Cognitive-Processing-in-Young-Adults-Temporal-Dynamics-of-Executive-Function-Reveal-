@@ -15,7 +15,7 @@ RATIONALE:
 import sys
 from pathlib import Path
 import pandas as pd
-from data_loader_utils import load_master_dataset
+from analysis.utils.data_loader_utils import load_master_dataset
 import numpy as np
 from sklearn.covariance import GraphicalLassoCV
 from scipy import stats
@@ -44,8 +44,11 @@ paper1_results = pd.read_csv(paper1_dir / "paper1_participant_variability_metric
 master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
 if "ucla_total" not in master.columns and "ucla_score" in master.columns:
     master["ucla_total"] = master["ucla_score"]
-master = master.rename(columns={"gender_normalized": "gender"})
-master["gender"] = master["gender"].fillna("").astype(str).str.strip().str.lower()
+# Use gender_normalized if available
+if 'gender_normalized' in master.columns:
+    master['gender'] = master['gender_normalized'].fillna('').astype(str).str.strip().str.lower()
+else:
+    master['gender'] = master['gender'].fillna('').astype(str).str.strip().str.lower()
 master["gender_male"] = (master["gender"] == "male").astype(int)
 
 # Merge master with Paper 1 metrics
@@ -76,7 +79,7 @@ node_vars = {
     'DASS_Dep': 'dass_depression',
     'DASS_Anx': 'dass_anxiety',
     'DASS_Str': 'dass_stress',
-    'WCST_PE': 'perseverative_error_rate',
+    'WCST_PE': 'pe_rate',
     'PRP_RT': 'prp_mean_rt',
     'Stroop_Int': 'stroop_interference',
     'PRP_tau': 'prp_tau_long',

@@ -11,7 +11,7 @@ Outputs:
 
 import sys
 import pandas as pd
-from data_loader_utils import load_master_dataset
+from analysis.utils.data_loader_utils import load_master_dataset
 import numpy as np
 from pathlib import Path
 import statsmodels.formula.api as smf
@@ -34,8 +34,11 @@ print()
 
 # Load data from shared master
 master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
-master = master.rename(columns={'gender_normalized': 'gender'})
-master['gender'] = master['gender'].fillna('').astype(str).str.strip().str.lower()
+# Use gender_normalized if available
+if 'gender_normalized' in master.columns:
+    master['gender'] = master['gender_normalized'].fillna('').astype(str).str.strip().str.lower()
+else:
+    master['gender'] = master['gender'].fillna('').astype(str).str.strip().str.lower()
 if 'ucla_total' not in master.columns and 'ucla_score' in master.columns:
     master['ucla_total'] = master['ucla_score']
 master['gender_male'] = (master['gender'] == 'male').astype(int)
@@ -63,7 +66,7 @@ print()
 print("POLYNOMIAL REGRESSION: PE ~ Age + Age² + UCLA × Gender × Age")
 print("-" * 80)
 
-formula_poly = ("perseverative_error_rate ~ age_mc + age_mc2 + "
+formula_poly = ("pe_rate ~ age_mc + age_mc2 + "
                 "z_ucla * C(gender_male) * age_mc + "
                 "z_dass_dep + z_dass_anx + z_dass_str")
 

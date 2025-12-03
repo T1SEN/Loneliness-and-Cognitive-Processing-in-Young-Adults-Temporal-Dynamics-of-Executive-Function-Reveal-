@@ -182,13 +182,29 @@ All analysis outputs go to `results/analysis_outputs/`:
 
 ## Shared Utility Modules
 
-### `analysis/data_loader_utils.py`
-Central data loading module used by all analysis scripts:
-- `load_master_dataset()` - Builds/caches unified dataset from all CSVs
+### `analysis/utils/data_loader_utils.py`
+Central data loading module (note: `analysis/data_loader_utils.py` is a backward-compat shim that re-exports from here):
+- `load_master_dataset()` - Builds/caches unified dataset (cached at `results/analysis_outputs/master_dataset.parquet`)
 - `load_participants()`, `load_ucla_scores()`, `load_dass_scores()` - Individual loaders
 - `load_wcst_summary()`, `load_prp_summary()`, `load_stroop_summary()` - Task metrics
 - `ensure_participant_id()` - Normalizes participant ID column names
 - `normalize_gender_series()` - Maps Korean/English gender to 'male'/'female'
+
+**RT Filtering Constants** (use these consistently):
+```python
+DEFAULT_RT_MIN = 100      # ms; drop anticipations
+PRP_RT_MAX = 3000         # ms; PRP task timeout
+STROOP_RT_MAX = 3000      # ms; Stroop task timeout
+DEFAULT_RT_MAX = 5000     # ms; legacy upper bound (WCST etc.)
+DEFAULT_SOA_SHORT = 150   # ms; PRP short bin upper bound
+DEFAULT_SOA_LONG = 1200   # ms; PRP long bin lower bound
+```
+
+### `analysis/utils/trial_data_loader.py`
+Trial-level data loaders with standardized preprocessing (cached at `results/analysis_outputs/trial_cache/`):
+- `load_prp_trials()` - PRP trial data with RT filtering and SOA binning
+- `load_stroop_trials()` - Stroop trial data with congruency flags
+- `load_wcst_trials()` - WCST trial data with perseverative error parsing
 
 ### `analysis/utils/publication_helpers.py`
 Helper functions for publication-quality outputs:
