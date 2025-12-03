@@ -1,6 +1,0 @@
-﻿Test,Metric,Comparison,F_statistic,p_value,Significant,LR_statistic
-Task Position Main Effect,PRP_T2_RT,Position 1 vs 2 vs 3,0.46330897390857545,0.49708417165347996,No,
-Task Position Main Effect,Stroop_Interference,Position 1 vs 2 vs 3,0.6219189955200658,0.5382140103329776,No,
-Position × UCLA×Gender Interaction,WCST_PE_Rate,Skipped - no variation,,,N/A (confounded),
-Position × UCLA×Gender Interaction,PRP_T2_RT,Full model vs base model,,0.6889188698481203,No,2.255299433027176
-Position × UCLA×Gender Interaction,Stroop_Interference,Full model vs base model,,0.4719249099576771,No,6.597768157789233

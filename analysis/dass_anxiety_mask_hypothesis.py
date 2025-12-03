@@ -153,8 +153,22 @@ print("\n[3/6] Testing 3-way interaction: UCLA × Gender × Anxiety...")
 master['z_ucla'] = (master['ucla_total'] - master['ucla_total'].mean()) / master['ucla_total'].std()
 master['z_anxiety'] = (master['dass_anxiety'] - master['dass_anxiety'].mean()) / master['dass_anxiety'].std()
 
-# 3-way interaction model
-formula_3way = 'pe_rate ~ z_ucla * gender_male * z_anxiety'
+# Add DASS depression/stress and age standardization for proper control (P1 fix)
+if 'dass_depression' in master.columns:
+    master['z_dass_dep'] = (master['dass_depression'] - master['dass_depression'].mean()) / master['dass_depression'].std()
+else:
+    master['z_dass_dep'] = 0
+if 'dass_stress' in master.columns:
+    master['z_dass_str'] = (master['dass_stress'] - master['dass_stress'].mean()) / master['dass_stress'].std()
+else:
+    master['z_dass_str'] = 0
+if 'age' in master.columns:
+    master['z_age'] = (master['age'] - master['age'].mean()) / master['age'].std()
+else:
+    master['z_age'] = 0
+
+# 3-way interaction model (DASS depression/stress controlled per CLAUDE.md requirements)
+formula_3way = 'pe_rate ~ z_ucla * gender_male * z_anxiety + z_dass_dep + z_dass_str + z_age'
 model_3way = smf.ols(formula_3way, data=master).fit()
 
 print("\n3-Way Interaction Model:")
@@ -189,8 +203,8 @@ for anx_group, anx_label in [(0, 'Low Anxiety'), (1, 'High Anxiety')]:
     print(f"\n{anx_label} (N={len(subset)}):")
     print("-"*80)
 
-    # UCLA × Gender interaction
-    formula_int = 'pe_rate ~ z_ucla * gender_male'
+    # UCLA × Gender interaction (DASS depression/stress controlled per CLAUDE.md - anxiety is stratification variable)
+    formula_int = 'pe_rate ~ z_ucla * gender_male + z_dass_dep + z_dass_str + z_age'
     model_int = smf.ols(formula_int, data=subset).fit()
 
     interaction_beta = model_int.params['z_ucla:gender_male']

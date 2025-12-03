@@ -1,0 +1,157 @@
+# Analysis Script Classification
+# ================================
+# Machine-readable classification of all analysis scripts.
+# Used by scripts/check_dass_control.py and documentation generators.
+
+version: "2.0"
+updated: "2025-12-03"
+
+# =============================================================================
+# GOLD STANDARD (Publication-Ready)
+# =============================================================================
+gold_standard:
+  description: "Confirmatory analyses with full DASS-21 control"
+  dass_control: required
+  robust_se: HC3
+  scripts:
+    - name: gold_standard/pipeline.py
+      description: "Unified Gold Standard pipeline"
+      outputs: results/gold_standard/
+
+    - name: master_dass_controlled_analysis.py
+      description: "Primary hierarchical regression"
+      outcomes:
+        - wcst_pe
+        - wcst_accuracy
+        - stroop_interference
+        - prp_bottleneck
+      outputs: results/analysis_outputs/master_dass_controlled/
+
+    - name: prp_comprehensive_dass_controlled.py
+      description: "PRP comprehensive analysis"
+      outcomes:
+        - prp_bottleneck
+        - prp_soa_slope
+        - prp_cv_short
+      outputs: results/analysis_outputs/prp_comprehensive_dass_controlled/
+
+    - name: loneliness_exec_models.py
+      description: "Hierarchical regression with PCA meta-control"
+      outputs: results/analysis_outputs/
+
+    - name: trial_level_mixed_effects.py
+      description: "Trial-level mixed effects models"
+      outputs: results/analysis_outputs/trial_level_mixed/
+
+    - name: prp_exgaussian_dass_controlled.py
+      description: "Ex-Gaussian RT decomposition"
+      outcomes:
+        - prp_mu
+        - prp_sigma
+        - prp_tau
+      outputs: results/analysis_outputs/prp_exgaussian_dass_controlled/
+
+# =============================================================================
+# EXPLORATORY SUITES
+# =============================================================================
+exploratory:
+  description: "Exploratory analyses for hypothesis generation"
+  dass_control: recommended
+  suites:
+    prp_suite:
+      script: exploratory/prp_suite.py
+      source_scripts:
+        - prp_bottleneck_shape.py
+        - prp_response_order_analysis.py
+        - prp_rt_variability_extended.py
+        - prp_post_error_adjustments.py
+      analyses:
+        - bottleneck_shape
+        - response_order
+        - rt_variability
+        - post_error
+      outputs: results/analysis_outputs/prp_suite/
+
+    stroop_suite:
+      script: exploratory/stroop_suite.py
+      source_scripts:
+        - stroop_conflict_adaptation.py
+        - stroop_neutral_baseline.py
+        - stroop_post_error_adjustments.py
+      analyses:
+        - conflict_adaptation
+        - neutral_baseline
+        - post_error
+      outputs: results/analysis_outputs/stroop_suite/
+
+    wcst_suite:
+      script: exploratory/wcst_suite.py
+      source_scripts:
+        - wcst_learning_trajectory.py
+        - wcst_error_type_decomposition.py
+        - wcst_post_error_adaptation_quick.py
+      analyses:
+        - learning_trajectory
+        - error_decomposition
+        - post_error
+      outputs: results/analysis_outputs/wcst_suite/
+
+# =============================================================================
+# MEDIATION
+# =============================================================================
+mediation:
+  description: "Mediation analyses where DASS is the mediator (not covariate)"
+  pathway: "UCLA → DASS → Executive Function"
+  dass_role: mediator
+  suite:
+    script: mediation/mediation_suite.py
+    source_scripts:
+      - dass_mediation_bootstrapped.py
+      - mechanism_mediation_analysis.py
+      - mediation_dass_complete.py
+      - mediation_gender_pathways.py
+    analyses:
+      - dass_bootstrap
+      - gender_stratified
+      - moderated_mediation
+    outputs: results/analysis_outputs/mediation_suite/
+
+# =============================================================================
+# UTILITIES
+# =============================================================================
+utilities:
+  description: "Shared utility modules (no hypothesis testing)"
+  scripts:
+    - utils/data_loader_utils.py
+    - utils/trial_data_loader.py
+    - utils/modeling.py
+    - utils/plotting.py
+    - utils/publication_helpers.py
+    - derive_trial_features.py
+    - ml_nested_tuned.py
+
+# =============================================================================
+# FORMULA TEMPLATES
+# =============================================================================
+formulas:
+  gold_standard: "{outcome} ~ z_ucla * C(gender_male) + z_dass_dep + z_dass_anx + z_dass_str + z_age"
+  covariates_only: "{outcome} ~ z_age + C(gender_male)"
+  dass_only: "{outcome} ~ z_age + C(gender_male) + z_dass_dep + z_dass_anx + z_dass_str"
+  ucla_main: "{outcome} ~ z_age + C(gender_male) + z_dass_dep + z_dass_anx + z_dass_str + z_ucla"
+
+# =============================================================================
+# DELETED SCRIPTS (Paper-specific)
+# =============================================================================
+deleted:
+  date: "2025-12-03"
+  reason: "Consolidated into suites; no longer needed"
+  scripts:
+    - paper1_create_scatter_plots.py
+    - paper1_distributional_variance_analysis.py
+    - paper2_network_psychometrics.py
+    - paper2_precision_verification.py
+    - paper2_robustness_extensions.py
+    - paper3_gmm_k34_reanalysis.py
+    - paper3_latent_profile_analysis.py
+    - paper4_drift_diffusion_analysis.py
+    - paper4_mean_sd_analysis.py

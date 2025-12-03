@@ -1,5 +1,0 @@
-﻿outcome,outcome_label,parameter,posterior_mean,posterior_sd,hdi_3%,hdi_97%,rope_in,rope_below,rope_above,prob_direction,n_obs
-wcst_error_transition_ratio,WCST Error Transition Ratio,b_ucla,-0.09847702574484214,0.12749944428591622,-0.33818935609744677,0.14200952695204272,0.447,0.4895,0.0635,0.795,140
-wcst_error_transition_ratio,WCST Error Transition Ratio,b_ucla_x_gender,-0.09145648773391954,0.16619284107532545,-0.4261816741811865,0.21595297533304528,0.418,0.467,0.115,0.7204999999999999,140
-wcst_clustering_coef,WCST Clustering Coefficient,b_ucla,-0.22109337264605822,0.12542226184790842,-0.457832485519089,0.015093098665413642,0.1625,0.835,0.0025,0.9585,140
-wcst_clustering_coef,WCST Clustering Coefficient,b_ucla_x_gender,0.0634312999827943,0.16501917336354613,-0.24419048941468469,0.37310725467771133,0.4325,0.159,0.4085,0.651,140

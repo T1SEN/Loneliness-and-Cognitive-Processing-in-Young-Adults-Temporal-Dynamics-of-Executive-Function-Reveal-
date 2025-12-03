@@ -1,0 +1,126 @@
+# Gold Standard Analysis Configuration
+# =====================================
+# All analyses use the formula template:
+#   {outcome} ~ z_ucla * C(gender_male) + z_dass_dep + z_dass_anx + z_dass_str + z_age
+#
+# Common settings:
+#   - family: ols (Ordinary Least Squares)
+#   - robust: HC3 (heteroscedasticity-consistent standard errors)
+#   - min_n: 30 (minimum sample size)
+
+# --------------------------------------------------------------------------
+# Primary Confirmatory Analyses (from master_dass_controlled_analysis.py)
+# --------------------------------------------------------------------------
+wcst_pe:
+  description: "WCST Perseverative Error Rate"
+  outcome_column: "pe_rate"
+  hypothesis: "H1_PRIMARY"
+  source_script: "master_dass_controlled_analysis.py"
+  family: ols
+  robust: HC3
+  min_n: 30
+
+wcst_accuracy:
+  description: "WCST Accuracy"
+  outcome_column: "wcst_accuracy"
+  hypothesis: "H2"
+  source_script: "master_dass_controlled_analysis.py"
+  family: ols
+  robust: HC3
+  min_n: 30
+
+stroop_interference:
+  description: "Stroop Interference Effect (Incongruent - Congruent RT)"
+  outcome_column: "stroop_interference"
+  hypothesis: "H3"
+  source_script: "master_dass_controlled_analysis.py"
+  family: ols
+  robust: HC3
+  min_n: 30
+
+prp_bottleneck:
+  description: "PRP Bottleneck Effect (Short SOA - Long SOA)"
+  outcome_column: "prp_bottleneck"
+  hypothesis: "H4"
+  source_script: "master_dass_controlled_analysis.py"
+  family: ols
+  robust: HC3
+  min_n: 30
+
+# --------------------------------------------------------------------------
+# Extended PRP Analyses (from prp_comprehensive_dass_controlled.py)
+# --------------------------------------------------------------------------
+prp_soa_slope:
+  description: "PRP SOA Slope (linear trend in T2 RT across SOA)"
+  outcome_column: "prp_soa_slope"
+  hypothesis: "H4_EXT"
+  source_script: "prp_comprehensive_dass_controlled.py"
+  family: ols
+  robust: HC3
+  min_n: 25
+
+prp_cv_short:
+  description: "PRP Coefficient of Variation at Short SOA"
+  outcome_column: "prp_cv_short"
+  hypothesis: "H4_VARIABILITY"
+  source_script: "prp_comprehensive_dass_controlled.py"
+  family: ols
+  robust: HC3
+  min_n: 25
+
+# --------------------------------------------------------------------------
+# Ex-Gaussian Decomposition (from prp_exgaussian_dass_controlled.py)
+# NOTE: Requires running prp_exgaussian_dass_controlled.py first to generate columns
+# --------------------------------------------------------------------------
+# prp_tau:
+#   description: "PRP Ex-Gaussian Tau (attentional lapses)"
+#   outcome_column: "prp_tau"
+#   hypothesis: "H5_LAPSE"
+#   source_script: "prp_exgaussian_dass_controlled.py"
+#   family: ols
+#   robust: HC3
+#   min_n: 25
+
+# prp_mu:
+#   description: "PRP Ex-Gaussian Mu (processing speed)"
+#   outcome_column: "prp_mu"
+#   hypothesis: "H5_SPEED"
+#   source_script: "prp_exgaussian_dass_controlled.py"
+#   family: ols
+#   robust: HC3
+#   min_n: 25
+
+# prp_sigma:
+#   description: "PRP Ex-Gaussian Sigma (response variability)"
+#   outcome_column: "prp_sigma"
+#   hypothesis: "H5_VARIABILITY"
+#   source_script: "prp_exgaussian_dass_controlled.py"
+#   family: ols
+#   robust: HC3
+#   min_n: 25
+
+# --------------------------------------------------------------------------
+# Latent Meta-Control Factor (from loneliness_exec_models.py)
+# NOTE: Requires running loneliness_exec_models.py first to generate PCA scores
+# --------------------------------------------------------------------------
+# meta_control:
+#   description: "Latent Meta-Control Factor (PCA across EF tasks)"
+#   outcome_column: "meta_control_score"
+#   hypothesis: "H6_METACONTROL"
+#   source_script: "loneliness_exec_models.py"
+#   family: ols
+#   robust: HC3
+#   min_n: 20
+#   requires_pca: true
+
+# --------------------------------------------------------------------------
+# Trial-Level Mixed Effects (from trial_level_mixed_effects.py)
+# Note: These use different modeling approach (mixed effects)
+# --------------------------------------------------------------------------
+# trial_level_rt:
+#   description: "Trial-level RT with random participant effects"
+#   outcome_column: "rt"
+#   hypothesis: "TRIAL_LEVEL"
+#   source_script: "trial_level_mixed_effects.py"
+#   family: mixed
+#   min_n: 30

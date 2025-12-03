@@ -35,11 +35,25 @@ FEMALE_TOKENS_CONTAINS = {"여성", "여자", "소녀", "여학생"}
 PARTICIPANT_ID_ALIASES = {"participant_id", "participantId", "participantid"}
 
 
-def ensure_participant_id(df: pd.DataFrame) -> pd.DataFrame:
+def ensure_participant_id(df: pd.DataFrame, warn_threshold: float = 1.0) -> pd.DataFrame:
     """
     Ensure there is exactly one 'participant_id' column.
     Prefers an existing participant_id column, otherwise renames common aliases.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input dataframe
+    warn_threshold : float
+        Warn if more than this percentage of participant_id values are NaN (default: 1%)
+
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame with normalized participant_id column
     """
+    import warnings
+
     canonical = "participant_id"
     if canonical not in df.columns:
         for col in df.columns:
@@ -48,6 +62,17 @@ def ensure_participant_id(df: pd.DataFrame) -> pd.DataFrame:
                 break
     if canonical not in df.columns:
         raise KeyError("No participant id column found in dataframe.")
+
+    # Validate that participant_id column has actual data
+    missing_count = df[canonical].isna().sum()
+    missing_pct = missing_count / len(df) * 100 if len(df) > 0 else 0
+
+    if missing_pct > warn_threshold:
+        warnings.warn(
+            f"participant_id column has {missing_pct:.1f}% missing values ({missing_count}/{len(df)} rows). "
+            "This may cause silent data loss in downstream analyses.",
+            UserWarning
+        )
 
     aliases = [col for col in df.columns if col in PARTICIPANT_ID_ALIASES and col != canonical]
     if aliases:
@@ -212,6 +237,17 @@ def load_wcst_summary():
 
     # Determine RT column
     rt_col = 'rt_ms' if 'rt_ms' in wcst_trials.columns else 'reactionTimeMs'
+
+    # Apply RT filtering for consistency with PRP/Stroop (P1 fix)
+    # Filter valid RT range before computing summary metrics
+    before_filter = len(wcst_trials)
+    wcst_trials = wcst_trials[
+        (wcst_trials[rt_col] > DEFAULT_RT_MIN) &
+        (wcst_trials[rt_col] < DEFAULT_RT_MAX)
+    ].copy()
+    after_filter = len(wcst_trials)
+    if before_filter != after_filter:
+        print(f"  WCST RT filtering: {before_filter} -> {after_filter} trials ({(before_filter - after_filter) / before_filter * 100:.1f}% removed)")
 
     wcst_summary = wcst_trials.groupby('participant_id').agg(
         pe_count=('is_pe', 'sum'),

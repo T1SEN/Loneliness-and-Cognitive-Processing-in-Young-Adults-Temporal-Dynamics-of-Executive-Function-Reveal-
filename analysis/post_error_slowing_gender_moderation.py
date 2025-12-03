@@ -326,17 +326,29 @@ for task in all_pes['task'].unique():
         r_fem, p_fem = np.nan, np.nan
         r_fem_acc, p_fem_acc = np.nan, np.nan
 
-    # Interaction 회귀
+    # Interaction 회귀 (DASS-controlled per CLAUDE.md requirements - P1 fix)
     from sklearn.preprocessing import StandardScaler
+    import statsmodels.formula.api as smf
     scaler = StandardScaler()
 
     task_data['ucla_z'] = scaler.fit_transform(task_data[['ucla_total']])
     task_data['gender_male_z'] = scaler.fit_transform(task_data[['gender_male']])
     task_data['interaction'] = task_data['ucla_z'] * task_data['gender_male_z']
 
-    # OLS
+    # Add DASS controls
+    if 'dass_total' in task_data.columns:
+        task_data['dass_z'] = scaler.fit_transform(task_data[['dass_total']])
+    else:
+        task_data['dass_z'] = 0
+
+    if 'age' in task_data.columns and task_data['age'].notna().sum() > 0:
+        task_data['age_z'] = scaler.fit_transform(task_data[['age']].fillna(task_data['age'].mean()))
+    else:
+        task_data['age_z'] = 0
+
+    # OLS with DASS control
     import statsmodels.api as sm
-    X = task_data[['ucla_z', 'gender_male_z', 'interaction']]
+    X = task_data[['ucla_z', 'gender_male_z', 'interaction', 'dass_z', 'age_z']]
     X = sm.add_constant(X)
     y = task_data['pes_ms']
 
@@ -344,7 +356,9 @@ for task in all_pes['task'].unique():
         model = sm.OLS(y, X).fit()
         beta_interaction = model.params['interaction']
         p_interaction = model.pvalues['interaction']
-    except:
+    except (ValueError, np.linalg.LinAlgError) as e:
+        import warnings
+        warnings.warn(f"OLS fitting failed for {task}: {e}")
         beta_interaction = np.nan
         p_interaction = np.nan
 

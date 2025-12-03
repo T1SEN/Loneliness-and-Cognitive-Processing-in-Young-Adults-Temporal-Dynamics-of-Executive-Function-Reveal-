@@ -1,2 +1,0 @@
-﻿task,n_participants,mean_error_rate,mean_p_error_given_error,mean_p_error_given_correct,mean_transition_ratio,pct_significant_clustering
-WCST,143,0.11006634678418556,0.19866731676245727,0.09717507586521945,2.1975647991379597,27.972027972027973
