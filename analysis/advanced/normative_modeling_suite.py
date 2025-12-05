@@ -61,7 +61,7 @@ from sklearn.preprocessing import StandardScaler
 
 # Project imports
 from analysis.preprocessing import (
-    load_master_dataset, ANALYSIS_OUTPUT_DIR
+    load_master_dataset, ANALYSIS_OUTPUT_DIR, find_interaction_term
 )
 from analysis.utils.modeling import standardize_predictors
 
@@ -338,9 +338,10 @@ def test_ucla_deviation_effects(
     gender_beta = model3.params.get('C(gender_male)[T.1]', np.nan)
     gender_p = model3.pvalues.get('C(gender_male)[T.1]', np.nan)
 
-    interaction_beta = model3.params.get('z_ucla:C(gender_male)[T.1]', np.nan)
-    interaction_p = model3.pvalues.get('z_ucla:C(gender_male)[T.1]', np.nan)
-    interaction_se = model3.bse.get('z_ucla:C(gender_male)[T.1]', np.nan)
+    int_term = find_interaction_term(model3.params.index)
+    interaction_beta = model3.params.get(int_term, np.nan) if int_term else np.nan
+    interaction_p = model3.pvalues.get(int_term, np.nan) if int_term else np.nan
+    interaction_se = model3.bse.get(int_term, np.nan) if int_term else np.nan
 
     if verbose:
         print(f"\n    Final Model Coefficients (Model 3):")
@@ -397,7 +398,8 @@ def bootstrap_deviation_regression(
             ).fit()
 
             ucla_betas.append(model.params.get('z_ucla', np.nan))
-            interaction_betas.append(model.params.get('z_ucla:C(gender_male)[T.1]', np.nan))
+            int_term = find_interaction_term(model.params.index)
+            interaction_betas.append(model.params.get(int_term, np.nan) if int_term else np.nan)
         except:
             continue
 

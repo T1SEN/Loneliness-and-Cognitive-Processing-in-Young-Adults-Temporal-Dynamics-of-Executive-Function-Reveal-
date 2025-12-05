@@ -51,7 +51,7 @@ import seaborn as sns
 # Project imports
 from analysis.preprocessing import (
     load_master_dataset, RESULTS_DIR, ANALYSIS_OUTPUT_DIR,
-    DEFAULT_RT_MIN, DEFAULT_RT_MAX
+    DEFAULT_RT_MIN, DEFAULT_RT_MAX, find_interaction_term
 )
 from analysis.utils.modeling import standardize_predictors
 
@@ -244,12 +244,16 @@ def analyze_error_burst(verbose: bool = True) -> pd.DataFrame:
             model = smf.ols(formula, data=merged).fit(cov_type='HC3')
 
             # Extract coefficients
-            for term in ['z_ucla', 'C(gender_male)[T.1]', 'z_ucla:C(gender_male)[T.1]']:
+            int_term = find_interaction_term(model.params.index)
+            terms_to_check = ['z_ucla', 'C(gender_male)[T.1]']
+            if int_term:
+                terms_to_check.append(int_term)
+            for term in terms_to_check:
                 if term in model.params:
                     beta = model.params[term]
                     p = model.pvalues[term]
 
-                    label = term.replace('z_ucla', 'UCLA').replace('C(gender_male)[T.1]', 'Male').replace(':', ' x ')
+                    label = term.replace('z_ucla', 'UCLA').replace(':C(gender_male)[T.1]', ' x Male').replace('C(gender_male)[T.1]', 'Male').replace(':', ' x ')
 
                     if verbose:
                         sig = "*" if p < 0.05 else ""
@@ -440,12 +444,16 @@ def analyze_rule_learning(verbose: bool = True) -> pd.DataFrame:
             formula = get_dass_controlled_formula(metric)
             model = smf.ols(formula, data=merged).fit(cov_type='HC3')
 
-            for term in ['z_ucla', 'z_ucla:C(gender_male)[T.1]']:
+            int_term = find_interaction_term(model.params.index)
+            terms_to_check = ['z_ucla']
+            if int_term:
+                terms_to_check.append(int_term)
+            for term in terms_to_check:
                 if term in model.params:
                     beta = model.params[term]
                     p = model.pvalues[term]
 
-                    label = term.replace('z_ucla', 'UCLA').replace('C(gender_male)[T.1]', 'Male').replace(':', ' x ')
+                    label = term.replace('z_ucla', 'UCLA').replace(':C(gender_male)[T.1]', ' x Male').replace('C(gender_male)[T.1]', 'Male').replace(':', ' x ')
 
                     if verbose:
                         sig = "*" if p < 0.05 else ""
@@ -568,12 +576,16 @@ def analyze_strategy_patterns(verbose: bool = True) -> pd.DataFrame:
             formula = get_dass_controlled_formula(metric)
             model = smf.ols(formula, data=merged_clean).fit(cov_type='HC3')
 
-            for term in ['z_ucla', 'z_ucla:C(gender_male)[T.1]']:
+            int_term = find_interaction_term(model.params.index)
+            terms_to_check = ['z_ucla']
+            if int_term:
+                terms_to_check.append(int_term)
+            for term in terms_to_check:
                 if term in model.params:
                     beta = model.params[term]
                     p = model.pvalues[term]
 
-                    label = term.replace('z_ucla', 'UCLA').replace('C(gender_male)[T.1]', 'Male').replace(':', ' x ')
+                    label = term.replace('z_ucla', 'UCLA').replace(':C(gender_male)[T.1]', ' x Male').replace('C(gender_male)[T.1]', 'Male').replace(':', ' x ')
 
                     if verbose:
                         sig = "*" if p < 0.05 else ""
@@ -726,12 +738,16 @@ def analyze_post_error_adjustment(verbose: bool = True) -> pd.DataFrame:
             formula = get_dass_controlled_formula(metric)
             model = smf.ols(formula, data=merged_clean).fit(cov_type='HC3')
 
-            for term in ['z_ucla', 'z_ucla:C(gender_male)[T.1]']:
+            int_term = find_interaction_term(model.params.index)
+            terms_to_check = ['z_ucla']
+            if int_term:
+                terms_to_check.append(int_term)
+            for term in terms_to_check:
                 if term in model.params:
                     beta = model.params[term]
                     p = model.pvalues[term]
 
-                    label = term.replace('z_ucla', 'UCLA').replace('C(gender_male)[T.1]', 'Male').replace(':', ' x ')
+                    label = term.replace('z_ucla', 'UCLA').replace(':C(gender_male)[T.1]', ' x Male').replace('C(gender_male)[T.1]', 'Male').replace(':', ' x ')
 
                     if verbose:
                         sig = "*" if p < 0.05 else ""
@@ -840,12 +856,16 @@ def analyze_rule_dimension(verbose: bool = True) -> pd.DataFrame:
             formula = get_dass_controlled_formula(pe_col)
             model = smf.ols(formula, data=merged_clean).fit(cov_type='HC3')
 
-            for term in ['z_ucla', 'z_ucla:C(gender_male)[T.1]']:
+            int_term = find_interaction_term(model.params.index)
+            terms_to_check = ['z_ucla']
+            if int_term:
+                terms_to_check.append(int_term)
+            for term in terms_to_check:
                 if term in model.params:
                     beta = model.params[term]
                     p = model.pvalues[term]
 
-                    label = term.replace('z_ucla', 'UCLA').replace('C(gender_male)[T.1]', 'Male').replace(':', ' x ')
+                    label = term.replace('z_ucla', 'UCLA').replace(':C(gender_male)[T.1]', ' x Male').replace('C(gender_male)[T.1]', 'Male').replace(':', ' x ')
 
                     if verbose:
                         sig = "*" if p < 0.05 else ""

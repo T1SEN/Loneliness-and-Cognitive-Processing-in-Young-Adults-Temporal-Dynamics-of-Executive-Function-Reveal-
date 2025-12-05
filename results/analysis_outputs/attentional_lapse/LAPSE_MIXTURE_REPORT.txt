@@ -1,0 +1,142 @@
+================================================================================
+ATTENTIONAL LAPSE MIXTURE MODEL: SUMMARY REPORT
+================================================================================
+
+RESEARCH QUESTION:
+Can we identify discrete 'lapse states' in RT distributions, and does
+loneliness increase the frequency of these lapses?
+
+METHODOLOGY:
+- Fit 2-component Gaussian Mixture Model to RT distributions per participant
+- Component 1: Engaged state (faster, lower variance)
+- Component 2: Lapse state (slower, higher variance)
+- Extracted: Lapse probability, state separation, engaged/lapse means
+- Tested UCLA associations controlling for DASS-21
+
+--------------------------------------------------------------------------------
+MODEL COMPARISON (2-component vs 1-component GMM):
+--------------------------------------------------------------------------------
+  PRP: 73.4% favor 2-component (mean BIC diff = 11.3)
+  Stroop: 81.8% favor 2-component (mean BIC diff = 17.1)
+  WCST: 98.9% favor 2-component (mean BIC diff = 42.5)
+
+--------------------------------------------------------------------------------
+KEY FREQUENTIST RESULTS (p < 0.05):
+--------------------------------------------------------------------------------
+  PRP State Separation: C(gender_male)[T.1.0]
+    beta = -99.8804, p = 0.0003
+    95% CI: [-152.9543, -46.8066]
+
+  PRP Engaged Mean RT: C(gender_male)[T.1.0]
+    beta = -92.7409, p = 0.0011
+    95% CI: [-147.7149, -37.7670]
+
+  PRP Lapse Mean RT: C(gender_male)[T.1.0]
+    beta = -192.6214, p = 0.0001
+    95% CI: [-285.8438, -99.3989]
+
+  Stroop Lapse Probability: z_dass_depression
+    beta = -0.0408, p = 0.0139
+    95% CI: [-0.0732, -0.0084]
+
+  Stroop State Separation: C(gender_male)[T.1.0]
+    beta = 83.2372, p = 0.0486
+    95% CI: [0.5130, 165.9614]
+
+  Stroop Engaged Mean RT: C(gender_male)[T.1.0]
+    beta = -70.1807, p = 0.0058
+    95% CI: [-119.7171, -20.6442]
+
+  Stroop Engaged Mean RT: z_dass_anxiety
+    beta = -41.2439, p = 0.0303
+    95% CI: [-78.5121, -3.9758]
+
+  WCST Lapse Probability: C(gender_male)[T.1.0]
+    beta = -0.0379, p = 0.0366
+    95% CI: [-0.0734, -0.0024]
+
+  WCST Engaged Mean RT: C(gender_male)[T.1.0]
+    beta = -139.3263, p = 0.0006
+    95% CI: [-217.5934, -61.0592]
+
+
+--------------------------------------------------------------------------------
+BAYESIAN RESULTS (ROPE [-0.1, 0.1]):
+--------------------------------------------------------------------------------
+  PRP Lapse Probability: b_ucla
+    Posterior mean = 0.0241
+    HDI: [-0.1945, 0.2470]
+    ROPE: 60.5% in, Decision: UNDECIDED
+
+  PRP Lapse Probability: b_ucla_x_gender
+    Posterior mean = 0.1509
+    HDI: [-0.1408, 0.4321]
+    ROPE: 30.5% in, Decision: UNDECIDED
+
+  PRP State Separation: b_ucla
+    Posterior mean = 0.0709
+    HDI: [-0.1386, 0.2890]
+    ROPE: 52.9% in, Decision: UNDECIDED
+
+  PRP State Separation: b_ucla_x_gender
+    Posterior mean = 0.0504
+    HDI: [-0.2253, 0.3200]
+    ROPE: 48.6% in, Decision: UNDECIDED
+
+  Stroop Lapse Probability: b_ucla
+    Posterior mean = 0.2143
+    HDI: [0.0002, 0.4251]
+    ROPE: 14.4% in, Decision: UNDECIDED
+
+  Stroop Lapse Probability: b_ucla_x_gender
+    Posterior mean = 0.0149
+    HDI: [-0.2434, 0.2892]
+    ROPE: 50.0% in, Decision: UNDECIDED
+
+  Stroop State Separation: b_ucla
+    Posterior mean = 0.0210
+    HDI: [-0.2033, 0.2386]
+    ROPE: 60.9% in, Decision: UNDECIDED
+
+  Stroop State Separation: b_ucla_x_gender
+    Posterior mean = -0.0931
+    HDI: [-0.3810, 0.1888]
+    ROPE: 39.7% in, Decision: UNDECIDED
+
+  WCST Lapse Probability: b_ucla
+    Posterior mean = 0.0432
+    HDI: [-0.1792, 0.2656]
+    ROPE: 57.8% in, Decision: UNDECIDED
+
+  WCST Lapse Probability: b_ucla_x_gender
+    Posterior mean = 0.2512
+    HDI: [-0.0361, 0.5297]
+    ROPE: 14.9% in, Decision: UNDECIDED
+
+  WCST State Separation: b_ucla
+    Posterior mean = 0.0799
+    HDI: [-0.1336, 0.2956]
+    ROPE: 50.9% in, Decision: UNDECIDED
+
+  WCST State Separation: b_ucla_x_gender
+    Posterior mean = -0.1948
+    HDI: [-0.4743, 0.0885]
+    ROPE: 24.2% in, Decision: UNDECIDED
+
+
+================================================================================
+INTERPRETATION:
+================================================================================
+
+If UCLA predicts LAPSE PROBABILITY:
+  -> Loneliness increases discrete attentional disengagement episodes
+
+If UCLA predicts STATE SEPARATION:
+  -> Loneliness increases magnitude of lapses when they occur
+
+Comparison with Ex-Gaussian tau:
+  - Lapse probability = discrete state transitions
+  - Tau = continuous distribution tail
+  - If lapse_prob predicts UCLA better than tau: discrete model preferred
+
+================================================================================

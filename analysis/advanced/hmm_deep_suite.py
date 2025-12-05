@@ -45,7 +45,7 @@ import seaborn as sns
 
 # Project imports
 from analysis.preprocessing import (
-    load_master_dataset, RESULTS_DIR, ANALYSIS_OUTPUT_DIR
+    load_master_dataset, RESULTS_DIR, ANALYSIS_OUTPUT_DIR, find_interaction_term
 )
 from analysis.utils.modeling import standardize_predictors
 
@@ -547,9 +547,13 @@ def analyze_transitions(verbose: bool = True) -> pd.DataFrame:
                 'n': len(merged),
             }
 
-            for param in ['z_ucla', 'z_ucla:C(gender_male)[T.1]', 'C(gender_male)[T.1]']:
+            int_term = find_interaction_term(model.params.index)
+            params_to_check = ['z_ucla', 'C(gender_male)[T.1]']
+            if int_term:
+                params_to_check.insert(1, int_term)
+            for param in params_to_check:
                 if param in model.params:
-                    short_name = param.replace('z_', '').replace('C(gender_male)[T.1]', 'gender').replace(':gender', '_x_gender')
+                    short_name = param.replace('z_', '').replace('C(gender_male)[T.1]', 'gender').replace(':C(gender_male)[T.1]', '_x_gender').replace(':gender', '_x_gender')
                     result[f'beta_{short_name}'] = model.params[param]
                     result[f'se_{short_name}'] = model.bse[param]
                     result[f'p_{short_name}'] = model.pvalues[param]
@@ -757,7 +761,11 @@ def analyze_state_duration(verbose: bool = True) -> pd.DataFrame:
                 'n': len(merged),
             }
 
-            for param in ['z_ucla', 'z_ucla:C(gender_male)[T.1]']:
+            int_term = find_interaction_term(model.params.index)
+            params_to_check = ['z_ucla']
+            if int_term:
+                params_to_check.append(int_term)
+            for param in params_to_check:
                 if param in model.params:
                     short_name = param.replace('z_', '').replace(':C(gender_male)[T.1]', '_x_gender')
                     result[f'beta_{short_name}'] = model.params[param]
@@ -967,7 +975,11 @@ def analyze_recovery_dynamics(verbose: bool = True) -> pd.DataFrame:
                 'n': len(merged),
             }
 
-            for param in ['z_ucla', 'z_ucla:C(gender_male)[T.1]']:
+            int_term = find_interaction_term(model.params.index)
+            params_to_check = ['z_ucla']
+            if int_term:
+                params_to_check.append(int_term)
+            for param in params_to_check:
                 if param in model.params:
                     short_name = param.replace('z_', '').replace(':C(gender_male)[T.1]', '_x_gender')
                     result[f'beta_{short_name}'] = model.params[param]

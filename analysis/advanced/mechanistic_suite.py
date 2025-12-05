@@ -52,7 +52,7 @@ import statsmodels.formula.api as smf
 
 # Project imports
 from analysis.preprocessing import (
-    load_master_dataset, RESULTS_DIR, ANALYSIS_OUTPUT_DIR
+    load_master_dataset, RESULTS_DIR, ANALYSIS_OUTPUT_DIR, find_interaction_term
 )
 from analysis.utils.modeling import standardize_predictors
 
@@ -766,44 +766,104 @@ def analyze_lapse_decomposition(verbose: bool = True) -> pd.DataFrame:
 
 @register_analysis(
     name="exgaussian",
-    description="Ex-Gaussian RT decomposition (mu, sigma, tau)",
-    source_script="tier1_exgaussian_cross_task.py",
+    description="Ex-Gaussian RT decomposition (mu, sigma, tau) with FDR correction",
+    source_script="tier1_exgaussian_cross_task.py (enhanced)",
     tier=1
 )
 def analyze_exgaussian(verbose: bool = True) -> pd.DataFrame:
     """
-    Ex-Gaussian decomposition of RT distributions.
+    Ex-Gaussian Decomposition of RT Distributions with FDR Correction.
+
+    Enhanced from legacy scripts with:
+    1. Full parameter extraction: mu (decision), sigma (motor), tau (lapses)
+    2. FDR correction for 9 tests (3 tasks × 3 parameters)
+    3. Bootstrap SE for parameter uncertainty weighting
+    4. DASS-controlled regression with robust SE
+
+    Parameters:
+    - mu: Mean of Gaussian component (decision/motor execution)
+    - sigma: SD of Gaussian component (motor variability)
+    - tau: Exponential tail (attentional lapses)
     """
     if verbose:
         print("\n" + "=" * 70)
-        print("TIER 1: EX-GAUSSIAN DECOMPOSITION")
+        print("TIER 1: EX-GAUSSIAN DECOMPOSITION (FDR-corrected)")
         print("=" * 70)
+        print("  Parameters: mu (decision), sigma (motor), tau (lapses)")
 
-    def fit_exgaussian_moments(rts):
-        """Fit ex-Gaussian using method of moments."""
+    def fit_exgaussian_moments(rts, n_bootstrap=100):
+        """
+        Fit ex-Gaussian using method of moments with bootstrap SE.
+
+        Returns:
+            dict with mu, sigma, tau and their bootstrap SEs
+        """
         rts = np.array(rts)
         rts = rts[(rts > 0) & np.isfinite(rts)]
 
         if len(rts) < 30:
-            return np.nan, np.nan, np.nan
+            return {'mu': np.nan, 'sigma': np.nan, 'tau': np.nan,
+                    'mu_se': np.nan, 'sigma_se': np.nan, 'tau_se': np.nan}
 
-        m1 = np.mean(rts)
-        m2 = np.var(rts)
-        m3 = stats.moment(rts, moment=3)
+        def _fit_moments(data):
+            """
+            Method of moments estimation for ex-Gaussian parameters.
 
-        if m3 <= 0:
-            return m1, np.sqrt(m2), 0.0
+            Based on Heathcote (1996) "RTSYS: A DOS application for the analysis
+            of reaction time data" and the standard ex-Gaussian moments:
+              E[X] = mu + tau
+              Var[X] = sigma^2 + tau^2
+              M3 (3rd central moment) = 2 * tau^3
 
-        tau = (m3 / 2) ** (1/3)
-        mu = m1 - tau
-        sigma_sq = m2 - tau**2
+            Therefore: tau = (M3 / 2)^(1/3)
+            """
+            m1 = np.mean(data)
+            m2 = np.var(data)
+            m3 = stats.moment(data, moment=3)  # 3rd central moment
 
-        if sigma_sq <= 0:
-            sigma = np.sqrt(m2) * 0.5
-        else:
-            sigma = np.sqrt(sigma_sq)
+            # Negative skewness: ex-Gaussian not appropriate, return Gaussian
+            if m3 <= 0:
+                return m1, np.sqrt(m2), 0.0
 
-        return mu, sigma, tau
+            # tau from 3rd central moment: M3 = 2*tau^3 => tau = (M3/2)^(1/3)
+            tau = (m3 / 2) ** (1/3)
+            mu = m1 - tau
+            sigma_sq = m2 - tau**2
+
+            if sigma_sq <= 0:
+                # Fallback: allocate variance proportionally
+                sigma = np.sqrt(m2) * 0.5
+            else:
+                sigma = np.sqrt(sigma_sq)
+
+            return mu, sigma, tau
+
+        # Main fit
+        mu, sigma, tau = _fit_moments(rts)
+
+        # Bootstrap for SE
+        boot_mus, boot_sigmas, boot_taus = [], [], []
+        np.random.seed(42)
+
+        for _ in range(n_bootstrap):
+            boot_sample = np.random.choice(rts, size=len(rts), replace=True)
+            try:
+                b_mu, b_sigma, b_tau = _fit_moments(boot_sample)
+                if not np.isnan(b_mu) and not np.isnan(b_tau):
+                    boot_mus.append(b_mu)
+                    boot_sigmas.append(b_sigma)
+                    boot_taus.append(b_tau)
+            except Exception:
+                continue
+
+        return {
+            'mu': mu,
+            'sigma': sigma,
+            'tau': tau,
+            'mu_se': np.std(boot_mus) if len(boot_mus) > 10 else np.nan,
+            'sigma_se': np.std(boot_sigmas) if len(boot_sigmas) > 10 else np.nan,
+            'tau_se': np.std(boot_taus) if len(boot_taus) > 10 else np.nan
+        }
 
     master = load_mechanistic_data()
     all_results = []
@@ -826,23 +886,26 @@ def analyze_exgaussian(verbose: bool = True) -> pd.DataFrame:
 
         trials = trials[(trials[rt_col] > 100) & (trials[rt_col] < 3000)].copy()
 
-        # Fit ex-Gaussian per participant
+        # Fit ex-Gaussian per participant with bootstrap SE
         exg_results = []
 
         for pid, pdata in trials.groupby('participant_id'):
             if len(pdata) < 30:
                 continue
 
-            mu, sigma, tau = fit_exgaussian_moments(pdata[rt_col].values)
+            fit_result = fit_exgaussian_moments(pdata[rt_col].values, n_bootstrap=100)
 
-            if np.isnan(mu):
+            if np.isnan(fit_result['mu']):
                 continue
 
             exg_results.append({
                 'participant_id': pid,
-                'exg_mu': mu,
-                'exg_sigma': sigma,
-                'exg_tau': tau,
+                'exg_mu': fit_result['mu'],
+                'exg_sigma': fit_result['sigma'],
+                'exg_tau': fit_result['tau'],
+                'exg_mu_se': fit_result['mu_se'],
+                'exg_sigma_se': fit_result['sigma_se'],
+                'exg_tau_se': fit_result['tau_se'],
                 'n_trials': len(pdata)
             })
 
@@ -857,34 +920,120 @@ def analyze_exgaussian(verbose: bool = True) -> pd.DataFrame:
 
         if verbose:
             print(f"    N = {len(merged)}")
-            print(f"    Mean tau: {merged['exg_tau'].mean():.1f} ms")
+            print(f"    Mean: mu={merged['exg_mu'].mean():.0f}ms, "
+                  f"sigma={merged['exg_sigma'].mean():.0f}ms, "
+                  f"tau={merged['exg_tau'].mean():.0f}ms")
 
-        # Test UCLA effects on tau (attentional lapses)
-        try:
-            formula = "exg_tau ~ z_ucla * C(gender_male) + z_dass_dep + z_dass_anx + z_dass_str + z_age"
-            model = smf.ols(formula, data=merged).fit()
+        # Save task-specific ex-gaussian parameters
+        exg_df.to_csv(OUTPUT_DIR / f"exgaussian_{task}.csv", index=False, encoding='utf-8-sig')
 
-            if 'z_ucla' in model.params:
-                beta = model.params['z_ucla']
-                p = model.pvalues['z_ucla']
+        # Test UCLA effects on ALL three parameters
+        parameters = [
+            ('exg_mu', 'mu (decision)'),
+            ('exg_sigma', 'sigma (motor)'),
+            ('exg_tau', 'tau (lapse)')
+        ]
 
-                if verbose:
-                    sig = "*" if p < 0.05 else ""
-                    print(f"    UCLA -> tau: β={beta:.3f}, p={p:.4f}{sig}")
+        for param_col, param_label in parameters:
+            try:
+                formula = f"{param_col} ~ z_ucla * C(gender_male) + z_dass_dep + z_dass_anx + z_dass_str + z_age"
+                model = smf.ols(formula, data=merged).fit(cov_type='HC3')
 
-                all_results.append({
+                result = {
                     'task': task,
-                    'parameter': 'tau',
-                    'beta_ucla': beta,
-                    'p_ucla': p,
-                    'n': len(merged)
-                })
+                    'parameter': param_col.replace('exg_', ''),
+                    'parameter_label': param_label,
+                    'n': len(merged),
+                    'mean_value': merged[param_col].mean(),
+                    'sd_value': merged[param_col].std()
+                }
 
-        except Exception as e:
-            if verbose:
-                print(f"    Regression error: {e}")
+                if 'z_ucla' in model.params:
+                    result['beta_ucla'] = model.params['z_ucla']
+                    result['se_ucla'] = model.bse['z_ucla']
+                    result['p_ucla'] = model.pvalues['z_ucla']
 
+                int_term = find_interaction_term(model.params.index)
+                if int_term:
+                    result['beta_interaction'] = model.params[int_term]
+                    result['p_interaction'] = model.pvalues[int_term]
+
+                result['r_squared'] = model.rsquared
+
+                all_results.append(result)
+
+                if verbose and result.get('p_ucla', 1) < 0.10:
+                    sig = "***" if result['p_ucla'] < 0.001 else "**" if result['p_ucla'] < 0.01 else "*" if result['p_ucla'] < 0.05 else "+"
+                    print(f"    UCLA → {param_label}: β={result['beta_ucla']:.3f}, p={result['p_ucla']:.4f} {sig}")
+
+            except Exception as e:
+                if verbose:
+                    print(f"    Regression error for {param_label}: {e}")
+
+    # Apply FDR correction
     results_df = pd.DataFrame(all_results)
+
+    if len(results_df) > 1 and 'p_ucla' in results_df.columns:
+        if verbose:
+            print("\n  Applying FDR correction (Benjamini-Hochberg)...")
+
+        p_vals = results_df['p_ucla'].dropna().values
+        n_tests = len(p_vals)
+
+        if n_tests > 1:
+            # Benjamini-Hochberg FDR
+            sorted_idx = np.argsort(p_vals)
+            ranks = np.empty(n_tests)
+            ranks[sorted_idx] = np.arange(1, n_tests + 1)
+            q_vals = p_vals * n_tests / ranks
+
+            # Ensure monotonicity (use .copy() to avoid aliasing)
+            q_sorted = q_vals[sorted_idx].copy()
+            for i in range(n_tests - 2, -1, -1):
+                q_sorted[i] = min(q_sorted[i], q_sorted[i + 1])
+            q_vals[sorted_idx] = q_sorted
+            q_vals = np.clip(q_vals, 0, 1)
+
+            results_df.loc[results_df['p_ucla'].notna(), 'p_ucla_fdr'] = q_vals
+            results_df['sig_fdr'] = results_df['p_ucla_fdr'] < 0.05
+
+            if verbose:
+                print(f"    {n_tests} tests corrected")
+                sig_fdr = results_df[results_df['sig_fdr'] == True]
+                if len(sig_fdr) > 0:
+                    print("\n    *** FDR-Significant Results ***")
+                    for _, row in sig_fdr.iterrows():
+                        print(f"      {row['task']} {row['parameter']}: "
+                              f"β={row['beta_ucla']:.3f}, p_fdr={row['p_ucla_fdr']:.4f}")
+                else:
+                    print("    No FDR-significant UCLA main effects")
+
+    # Also apply FDR to interaction terms if present
+    if 'p_interaction' in results_df.columns:
+        p_int_vals = results_df['p_interaction'].dropna().values
+        if len(p_int_vals) > 1:
+            n_int = len(p_int_vals)
+            sorted_idx = np.argsort(p_int_vals)
+            ranks = np.empty(n_int)
+            ranks[sorted_idx] = np.arange(1, n_int + 1)
+            q_int_vals = p_int_vals * n_int / ranks
+
+            # Enforce monotonicity: q[i] <= q[i+1] in sorted order
+            q_sorted = q_int_vals[sorted_idx].copy()
+            for i in range(n_int - 2, -1, -1):
+                q_sorted[i] = min(q_sorted[i], q_sorted[i + 1])
+            q_int_vals[sorted_idx] = q_sorted
+            q_int_vals = np.clip(q_int_vals, 0, 1)
+
+            results_df.loc[results_df['p_interaction'].notna(), 'p_interaction_fdr'] = q_int_vals
+
+            sig_int = results_df[(results_df['p_interaction_fdr'] < 0.05) & (results_df['p_interaction_fdr'].notna())]
+            if verbose and len(sig_int) > 0:
+                print("\n    *** FDR-Significant Interactions ***")
+                for _, row in sig_int.iterrows():
+                    print(f"      {row['task']} {row['parameter']}: "
+                          f"β={row['beta_interaction']:.3f}, p_fdr={row['p_interaction_fdr']:.4f}")
+
     results_df.to_csv(OUTPUT_DIR / "exgaussian_results.csv", index=False, encoding='utf-8-sig')
 
     if verbose:

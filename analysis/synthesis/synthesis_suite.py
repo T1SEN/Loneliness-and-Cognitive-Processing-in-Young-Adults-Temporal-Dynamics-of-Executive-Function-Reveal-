@@ -52,7 +52,7 @@ import seaborn as sns
 
 # Project imports
 from analysis.preprocessing import (
-    load_master_dataset, RESULTS_DIR, ANALYSIS_OUTPUT_DIR
+    load_master_dataset, RESULTS_DIR, ANALYSIS_OUTPUT_DIR, find_interaction_term
 )
 
 np.random.seed(42)
@@ -309,8 +309,8 @@ def analyze_forest_plot(verbose: bool = True) -> pd.DataFrame:
                     print(f"    UCLA: beta={beta:.3f}, 95%CI=[{ci_low:.3f}, {ci_high:.3f}], p={p:.4f}{sig}")
 
             # Extract interaction term
-            int_term = 'z_ucla:C(gender_male)[T.1]'
-            if int_term in model.params:
+            int_term = find_interaction_term(model.params.index)
+            if int_term:
                 beta = model.params[int_term]
                 se = model.bse[int_term]
                 p = model.pvalues[int_term]
@@ -798,12 +798,12 @@ def analyze_power(verbose: bool = True) -> pd.DataFrame:
         try:
             model = smf.ols(formula, data=df).fit()
 
-            interaction_term = 'z_ucla:C(gender_male)[T.1]'
-            if interaction_term not in model.params.index:
+            int_term = find_interaction_term(model.params.index)
+            if not int_term:
                 continue
 
-            beta = model.params[interaction_term]
-            se = model.bse[interaction_term]
+            beta = model.params[int_term]
+            se = model.bse[int_term]
             t_stat = abs(beta / se)
 
             # Post-hoc power calculation
@@ -897,7 +897,6 @@ def analyze_robust_sensitivity(verbose: bool = True, n_bootstrap: int = 500) -> 
         # Bootstrap
         boot_betas = []
         boot_pvals = []
-        interaction_term = 'z_ucla:C(gender_male)[T.1]'
 
         for i in range(n_bootstrap):
             boot_idx = np.random.choice(n, size=n, replace=True)
@@ -905,9 +904,10 @@ def analyze_robust_sensitivity(verbose: bool = True, n_bootstrap: int = 500) -> 
 
             try:
                 model_boot = smf.ols(formula, data=df_boot).fit()
-                if interaction_term in model_boot.params.index:
-                    boot_betas.append(model_boot.params[interaction_term])
-                    boot_pvals.append(model_boot.pvalues[interaction_term])
+                int_term = find_interaction_term(model_boot.params.index)
+                if int_term:
+                    boot_betas.append(model_boot.params[int_term])
+                    boot_pvals.append(model_boot.pvalues[int_term])
             except:
                 continue
 

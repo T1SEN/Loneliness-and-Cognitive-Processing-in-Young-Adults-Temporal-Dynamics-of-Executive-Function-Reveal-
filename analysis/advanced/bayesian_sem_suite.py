@@ -49,7 +49,7 @@ import seaborn as sns
 
 # Project imports
 from analysis.preprocessing import (
-    load_master_dataset, ANALYSIS_OUTPUT_DIR
+    load_master_dataset, ANALYSIS_OUTPUT_DIR, find_interaction_term
 )
 from analysis.utils.modeling import standardize_predictors
 
@@ -280,7 +280,8 @@ def _run_bootstrap_approximation(df, outcome, label, all_results, verbose):
             ).fit()
             coeffs['ucla'].append(model.params.get('z_ucla', np.nan))
             coeffs['gender'].append(model.params.get('C(gender_male)[T.1]', np.nan))
-            coeffs['interaction'].append(model.params.get('z_ucla:C(gender_male)[T.1]', np.nan))
+            int_term = find_interaction_term(model.params.index)
+            coeffs['interaction'].append(model.params.get(int_term, np.nan) if int_term else np.nan)
         except:
             continue
 
@@ -497,7 +498,8 @@ def analyze_sensitivity(verbose: bool = True) -> pd.DataFrame:
 
                 # Apply soft "prior" via shrinkage
                 ucla_coef = model.params.get('z_ucla', 0)
-                interaction_coef = model.params.get('z_ucla:C(gender_male)[T.1]', 0)
+                int_term = find_interaction_term(model.params.index)
+                interaction_coef = model.params.get(int_term, 0) if int_term else 0
 
                 # Bayesian shrinkage approximation
                 # posterior_mean ≈ likelihood_mean * (prior_var / (prior_var + likelihood_var))
@@ -642,7 +644,8 @@ def analyze_equivalence(verbose: bool = True) -> pd.DataFrame:
                     data=boot_df
                 ).fit()
                 ucla_coeffs.append(model.params.get('z_ucla', np.nan))
-                interaction_coeffs.append(model.params.get('z_ucla:C(gender_male)[T.1]', np.nan))
+                int_term = find_interaction_term(model.params.index)
+                interaction_coeffs.append(model.params.get(int_term, np.nan) if int_term else np.nan)
             except:
                 continue
 

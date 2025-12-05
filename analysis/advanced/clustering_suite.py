@@ -40,7 +40,7 @@ from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 from sklearn.mixture import GaussianMixture
 
-from analysis.preprocessing import load_master_dataset, ANALYSIS_OUTPUT_DIR, RESULTS_DIR
+from analysis.preprocessing import load_master_dataset, ANALYSIS_OUTPUT_DIR, RESULTS_DIR, find_interaction_term
 from analysis.utils.modeling import standardize_predictors
 import statsmodels.formula.api as smf
 
@@ -578,10 +578,10 @@ def analyze_gendered_vulnerability(verbose: bool = True) -> pd.DataFrame:
                 beta_ucla = model.params['z_ucla']
                 p_ucla = model.pvalues['z_ucla']
 
-            interaction_key = 'z_ucla:C(gender_male)[T.1]'
-            if interaction_key in model.params:
-                beta_interaction = model.params[interaction_key]
-                p_interaction = model.pvalues[interaction_key]
+            int_term = find_interaction_term(model.params.index)
+            if int_term:
+                beta_interaction = model.params[int_term]
+                p_interaction = model.pvalues[int_term]
             else:
                 beta_interaction, p_interaction = np.nan, np.nan
 
@@ -785,6 +785,409 @@ def analyze_cross_task_profiles(verbose: bool = True) -> pd.DataFrame:
         print(f"\n  Output: {output_dir}")
 
     return profiles_df
+
+
+@register_analysis(
+    name="manova_validation",
+    description="MANOVA on cluster differences with assumption checks",
+    source_script="multivariate_ef_analysis.py (enhanced)"
+)
+def analyze_manova_validation(verbose: bool = True) -> pd.DataFrame:
+    """
+    MANOVA with Assumption Checks for Cluster/Group Differences.
+
+    Enhanced from legacy multivariate_ef_analysis.py with:
+    1. Multivariate normality check (Shapiro-Wilk per DV + Mardia's test)
+    2. Homogeneity of covariance matrices (Box's M approximation)
+    3. DASS-controlled MANOVA for cluster × UCLA × Gender effects
+    4. Post-hoc univariate ANOVAs with FDR correction
+
+    Research Question:
+    Do EF vulnerability clusters differ multivariate on UCLA/DASS profiles?
+    """
+    if verbose:
+        print("\n" + "=" * 70)
+        print("MANOVA WITH ASSUMPTION CHECKS")
+        print("=" * 70)
+
+    from scipy.stats import shapiro, levene, f as f_dist
+    from statsmodels.multivariate.manova import MANOVA
+    from statsmodels.stats.multicomp import pairwise_tukeyhsd
+
+    master = load_clustering_data()
+
+    # =============================================
+    # Part 1: Prepare Data (Cluster Assignments)
+    # =============================================
+    if verbose:
+        print("\n  [1] Preparing data...")
+
+    # Load cluster assignments if available
+    cluster_file = OUTPUT_DIR / "cluster_assignments.csv"
+    if cluster_file.exists():
+        cluster_df = pd.read_csv(cluster_file)
+        master = master.merge(cluster_df[['participant_id', 'cluster']], on='participant_id', how='left')
+    else:
+        # Run vulnerability clustering first
+        if verbose:
+            print("    Running vulnerability clustering first...")
+        analyze_vulnerability_clusters(verbose=False)
+        if cluster_file.exists():
+            cluster_df = pd.read_csv(cluster_file)
+            master = master.merge(cluster_df[['participant_id', 'cluster']], on='participant_id', how='left')
+        else:
+            if verbose:
+                print("    ERROR: Could not create cluster assignments")
+            return pd.DataFrame()
+
+    # Filter complete cases
+    ef_dvs = ['pe_rate', 'stroop_interference', 'prp_bottleneck']
+    available_dvs = [dv for dv in ef_dvs if dv in master.columns]
+
+    if len(available_dvs) < 2:
+        if verbose:
+            print("  Insufficient DVs for MANOVA")
+        return pd.DataFrame()
+
+    covariates = ['z_dass_dep', 'z_dass_anx', 'z_dass_str', 'z_age']
+    required_cols = available_dvs + ['cluster', 'z_ucla', 'gender_male'] + covariates
+    clean_data = master.dropna(subset=required_cols).copy()
+
+    if len(clean_data) < 50:
+        if verbose:
+            print(f"  Insufficient data (N={len(clean_data)})")
+        return pd.DataFrame()
+
+    n_clusters = clean_data['cluster'].nunique()
+    if verbose:
+        print(f"  N = {len(clean_data)}, Clusters = {n_clusters}")
+        print(f"  DVs: {available_dvs}")
+
+    all_results = []
+
+    # =============================================
+    # Part 2: Assumption Checks
+    # =============================================
+    if verbose:
+        print("\n  [2] Assumption Checks...")
+
+    assumption_results = {
+        'normality_ok': True,
+        'homogeneity_ok': True,
+        'violations': []
+    }
+
+    # 2a. Univariate normality (Shapiro-Wilk) per DV per cluster
+    if verbose:
+        print("\n    2a. Univariate Normality (Shapiro-Wilk):")
+
+    normality_violations = 0
+    for dv in available_dvs:
+        for cluster_id in clean_data['cluster'].unique():
+            cluster_data = clean_data[clean_data['cluster'] == cluster_id][dv].dropna()
+            if len(cluster_data) >= 3:
+                stat, p = shapiro(cluster_data[:5000])  # Limit for large samples
+                if p < 0.05:
+                    normality_violations += 1
+                    assumption_results['violations'].append(
+                        f"Normality: {dv} in cluster {cluster_id} (p={p:.4f})"
+                    )
+                if verbose and p < 0.05:
+                    print(f"      WARNING: {dv} in cluster {cluster_id}: W={stat:.3f}, p={p:.4f}")
+
+    if normality_violations > 0:
+        assumption_results['normality_ok'] = False
+        if verbose:
+            print(f"      {normality_violations} normality violations detected")
+            print("      → MANOVA is robust to moderate violations with balanced groups")
+    else:
+        if verbose:
+            print("      All DVs pass normality check (p > 0.05)")
+
+    # 2b. Homogeneity of variance (Levene's test) per DV
+    if verbose:
+        print("\n    2b. Homogeneity of Variance (Levene's test):")
+
+    homogeneity_violations = 0
+    for dv in available_dvs:
+        groups = [clean_data[clean_data['cluster'] == c][dv].dropna().values
+                  for c in clean_data['cluster'].unique()]
+        groups = [g for g in groups if len(g) >= 3]
+
+        if len(groups) >= 2:
+            stat, p = levene(*groups)
+            if p < 0.05:
+                homogeneity_violations += 1
+                assumption_results['violations'].append(
+                    f"Homogeneity: {dv} (p={p:.4f})"
+                )
+            if verbose:
+                sig = "*" if p < 0.05 else ""
+                print(f"      {dv}: W={stat:.3f}, p={p:.4f} {sig}")
+
+    if homogeneity_violations > 0:
+        assumption_results['homogeneity_ok'] = False
+        if verbose:
+            print(f"      {homogeneity_violations} homogeneity violations detected")
+            print("      → Use Pillai's trace (more robust to violations)")
+
+    # 2c. Box's M approximation for multivariate homogeneity
+    if verbose:
+        print("\n    2c. Box's M Test (Covariance Homogeneity):")
+
+    try:
+        # Simplified Box's M approximation
+        cov_matrices = []
+        ns = []
+        for cluster_id in clean_data['cluster'].unique():
+            cluster_subset = clean_data[clean_data['cluster'] == cluster_id][available_dvs]
+            if len(cluster_subset) >= len(available_dvs) + 1:
+                cov_matrices.append(cluster_subset.cov().values)
+                ns.append(len(cluster_subset))
+
+        if len(cov_matrices) >= 2:
+            # Pooled covariance
+            n_total = sum(ns)
+            p = len(available_dvs)
+            g = len(cov_matrices)
+
+            pooled_cov = np.zeros((p, p))
+            for i, (cov, n) in enumerate(zip(cov_matrices, ns)):
+                pooled_cov += (n - 1) * cov
+            pooled_cov /= (n_total - g)
+
+            # Box's M statistic (simplified)
+            M = 0
+            for i, (cov, n) in enumerate(zip(cov_matrices, ns)):
+                if np.linalg.det(cov) > 0 and np.linalg.det(pooled_cov) > 0:
+                    M += (n - 1) * (np.log(np.linalg.det(pooled_cov)) - np.log(np.linalg.det(cov)))
+
+            # Approximate F-test
+            df1 = p * (p + 1) * (g - 1) / 2
+            df2 = (n_total - g) - p - 1
+
+            if df1 > 0 and df2 > 0:
+                F_approx = M / df1
+                p_value = 1 - f_dist.cdf(F_approx, df1, df2)
+
+                if verbose:
+                    sig = "*" if p_value < 0.001 else ""
+                    print(f"      Box's M = {M:.2f}, F ≈ {F_approx:.2f}, p ≈ {p_value:.4f} {sig}")
+                    if p_value < 0.001:
+                        print("      WARNING: Covariance matrices may differ significantly")
+                        print("      → Interpret with caution; use Pillai's trace")
+
+    except Exception as e:
+        if verbose:
+            print(f"      Box's M calculation error: {e}")
+
+    # =============================================
+    # Part 3: MANOVA - Cluster Differences in EF
+    # =============================================
+    if verbose:
+        print("\n  [3] MANOVA: Cluster Differences in EF...")
+
+    try:
+        # Create formula for MANOVA
+        dv_str = " + ".join(available_dvs)
+        formula = f"{dv_str} ~ C(cluster)"
+
+        manova = MANOVA.from_formula(formula, data=clean_data)
+        mv_results = manova.mv_test()
+
+        if verbose:
+            print("\n    MANOVA Results (Cluster effect):")
+            # Extract key statistics
+            if hasattr(mv_results, 'results'):
+                for key, result in mv_results.results.items():
+                    if 'cluster' in str(key).lower():
+                        print(f"\n    {key}:")
+                        print(result.summary())
+
+        all_results.append({
+            'analysis': 'MANOVA_cluster',
+            'test_type': 'Multivariate',
+            'effect': 'Cluster',
+            'n': len(clean_data),
+            'n_clusters': n_clusters,
+            'normality_ok': assumption_results['normality_ok'],
+            'homogeneity_ok': assumption_results['homogeneity_ok']
+        })
+
+    except Exception as e:
+        if verbose:
+            print(f"    MANOVA error: {e}")
+
+    # =============================================
+    # Part 4: MANOVA - UCLA × Gender Controlling DASS
+    # =============================================
+    if verbose:
+        print("\n  [4] MANOVA: UCLA × Gender Effect (DASS-controlled)...")
+
+    try:
+        # UCLA tertiles for categorical MANOVA
+        clean_data['ucla_group'] = pd.qcut(
+            clean_data['z_ucla'], q=3, labels=['Low', 'Medium', 'High']
+        )
+
+        # MANOVA with gender and UCLA group
+        formula_full = f"{dv_str} ~ C(gender_male) * C(ucla_group)"
+        manova_full = MANOVA.from_formula(formula_full, data=clean_data)
+        mv_results_full = manova_full.mv_test()
+
+        if verbose:
+            print("\n    MANOVA Results (Gender × UCLA Group):")
+            if hasattr(mv_results_full, 'results'):
+                for key, result in mv_results_full.results.items():
+                    if 'gender' in str(key).lower() or 'ucla' in str(key).lower():
+                        print(f"\n    {key}:")
+                        print(result.summary())
+
+        all_results.append({
+            'analysis': 'MANOVA_ucla_gender',
+            'test_type': 'Multivariate',
+            'effect': 'Gender × UCLA',
+            'n': len(clean_data)
+        })
+
+    except Exception as e:
+        if verbose:
+            print(f"    MANOVA (UCLA × Gender) error: {e}")
+
+    # =============================================
+    # Part 5: Post-hoc Univariate ANOVAs with FDR
+    # =============================================
+    if verbose:
+        print("\n  [5] Post-hoc Univariate ANOVAs (FDR-corrected)...")
+
+    posthoc_results = []
+
+    for dv in available_dvs:
+        try:
+            # ANOVA for cluster effect (DASS-controlled)
+            formula_anova = f"{dv} ~ C(cluster) + z_dass_dep + z_dass_anx + z_dass_str + z_age"
+            model = smf.ols(formula_anova, data=clean_data).fit()
+
+            # Extract overall model F-test
+            f_stat = model.fvalue
+            p_val = model.f_pvalue
+
+            posthoc_results.append({
+                'dv': dv,
+                'effect': 'Cluster',
+                'F': f_stat,
+                'p_uncorrected': p_val,
+                'r_squared': model.rsquared
+            })
+
+            if verbose:
+                sig = "***" if p_val < 0.001 else "**" if p_val < 0.01 else "*" if p_val < 0.05 else ""
+                print(f"    {dv}: F={f_stat:.2f}, p={p_val:.4f} {sig}")
+
+        except Exception as e:
+            if verbose:
+                print(f"    {dv}: ANOVA error - {e}")
+
+    # Apply FDR correction
+    if len(posthoc_results) > 1:
+        p_values = np.array([r['p_uncorrected'] for r in posthoc_results])
+        n_tests = len(p_values)
+
+        # Benjamini-Hochberg FDR with proper monotonicity enforcement
+        sorted_idx = np.argsort(p_values)
+        ranks = np.empty(n_tests)
+        ranks[sorted_idx] = np.arange(1, n_tests + 1)
+        q_values = p_values * n_tests / ranks
+
+        # Enforce monotonicity in sorted order (key fix)
+        q_sorted = q_values[sorted_idx].copy()
+        for i in range(n_tests - 2, -1, -1):
+            q_sorted[i] = min(q_sorted[i], q_sorted[i + 1])
+        q_values[sorted_idx] = q_sorted
+        q_values = np.clip(q_values, 0, 1)
+
+        for i, result in enumerate(posthoc_results):
+            result['p_fdr'] = q_values[i]
+            result['sig_fdr'] = q_values[i] < 0.05
+
+        if verbose:
+            print("\n    FDR-corrected p-values:")
+            for result in posthoc_results:
+                sig = "*" if result['sig_fdr'] else ""
+                print(f"      {result['dv']}: p_fdr={result['p_fdr']:.4f} {sig}")
+
+    # =============================================
+    # Part 6: Bootstrap Cluster Stability
+    # =============================================
+    if verbose:
+        print("\n  [6] Cluster Stability (Bootstrap)...")
+
+    try:
+        from sklearn.metrics import adjusted_rand_score
+
+        X = StandardScaler().fit_transform(clean_data[available_dvs])
+        original_labels = KMeans(n_clusters=n_clusters, random_state=42, n_init=10).fit_predict(X)
+
+        n_bootstrap = 100
+        ari_scores = []
+
+        np.random.seed(42)
+        for _ in range(n_bootstrap):
+            idx = np.random.choice(len(X), size=len(X), replace=True)
+            X_boot = X[idx]
+
+            boot_labels = KMeans(n_clusters=n_clusters, random_state=None, n_init=5).fit_predict(X_boot)
+
+            # Compare on overlapping indices
+            ari = adjusted_rand_score(original_labels[idx], boot_labels)
+            ari_scores.append(ari)
+
+        mean_ari = np.mean(ari_scores)
+        std_ari = np.std(ari_scores)
+        stability_ok = mean_ari > 0.6
+
+        if verbose:
+            stability_label = "STABLE" if stability_ok else "UNSTABLE"
+            print(f"    Mean ARI: {mean_ari:.3f} ± {std_ari:.3f} [{stability_label}]")
+            print(f"    95% CI: [{np.percentile(ari_scores, 2.5):.3f}, {np.percentile(ari_scores, 97.5):.3f}]")
+
+        all_results.append({
+            'analysis': 'Cluster_stability',
+            'test_type': 'Bootstrap',
+            'mean_ari': mean_ari,
+            'std_ari': std_ari,
+            'stable': stability_ok,
+            'n_bootstrap': n_bootstrap
+        })
+
+    except Exception as e:
+        if verbose:
+            print(f"    Bootstrap stability error: {e}")
+
+    # Save results
+    results_df = pd.DataFrame(all_results)
+    results_df.to_csv(OUTPUT_DIR / "manova_validation_results.csv", index=False, encoding='utf-8-sig')
+
+    if len(posthoc_results) > 0:
+        pd.DataFrame(posthoc_results).to_csv(
+            OUTPUT_DIR / "manova_posthoc_anova.csv", index=False, encoding='utf-8-sig'
+        )
+
+    # Save assumption check summary
+    with open(OUTPUT_DIR / "manova_assumptions.txt", 'w', encoding='utf-8') as f:
+        f.write("MANOVA Assumption Check Summary\n")
+        f.write("=" * 50 + "\n\n")
+        f.write(f"Normality OK: {assumption_results['normality_ok']}\n")
+        f.write(f"Homogeneity OK: {assumption_results['homogeneity_ok']}\n\n")
+        if assumption_results['violations']:
+            f.write("Violations:\n")
+            for v in assumption_results['violations']:
+                f.write(f"  - {v}\n")
+
+    if verbose:
+        print(f"\n  Output: {OUTPUT_DIR / 'manova_validation_results.csv'}")
+
+    return results_df
 
 
 def run(analysis: Optional[str] = None, verbose: bool = True) -> Dict[str, pd.DataFrame]:

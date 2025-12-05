@@ -86,9 +86,14 @@ analysis/
 ├── mediation/              # DASS as mediator (not covariate)
 ├── validation/             # CV, robustness, Type M/S error
 ├── synthesis/              # Integration and summary
-├── advanced/               # Mechanistic, latent, clustering
+├── advanced/               # Mechanistic, latent, clustering (enhanced)
+│   ├── mechanistic_suite.py    # Ex-Gaussian, fatigue, autocorrelation (FDR-corrected)
+│   ├── sequential_dynamics_suite.py  # Adaptive recovery, error cascade
+│   ├── clustering_suite.py     # MANOVA validation, GMM profiles
+│   ├── latent_suite.py         # Network analysis (GraphicalLASSO, NCT)
+│   └── ...                     # See run.py for full list
 ├── ml/                     # Machine learning pipelines
-└── archive/                # Legacy scripts (reference only)
+└── archive/                # Legacy scripts (DEPRECATED - see README.md)
 ```
 
 ## ⚠️ CRITICAL: DASS-21 Covariate Control
@@ -212,6 +217,42 @@ def _parse_wcst_extra(extra_str):
 ### 기록 예시
 | 2025-01-16 | WCST PE regression | pe_rate | UCLA × Gender | β=0.15 | p=0.025 | η²=0.04 |
 
+## Advanced Suite Statistical Enhancements
+
+The `analysis/advanced/` suites have been enhanced with rigorous statistical methods:
+
+### 1. FDR Correction (Benjamini-Hochberg)
+- **`mechanistic_suite.py`**: 9 tests (3 tasks × 3 ex-Gaussian parameters)
+- **`sequential_dynamics_suite.py`**: Adaptive recovery outcomes
+- **`clustering_suite.py`**: Post-hoc ANOVAs
+
+### 2. Network Analysis (`latent_suite.py`)
+```python
+# GraphicalLASSO for regularized partial correlations
+from sklearn.covariance import GraphicalLassoCV
+
+# Network Comparison Test (NCT) for gender differences
+# - 1000 permutations for global strength/edge differences
+# - Bootstrap edge stability (500 iterations)
+```
+
+### 3. Exponential Recovery Fitting (`sequential_dynamics_suite.py`)
+```python
+# RT(t) = baseline + delta * exp(-t/tau)
+# tau: recovery time constant (higher = slower recovery)
+# Bootstrap SE for tau (200 iterations)
+```
+
+### 4. MANOVA Assumption Checks (`clustering_suite.py`)
+- Shapiro-Wilk normality per DV per cluster
+- Levene's test for homogeneity
+- Box's M approximation for covariance homogeneity
+- Bootstrap cluster stability (ARI)
+
+### 5. Bayesian Analysis
+- 4 chains × 2000 draws (improved from 2 × 1000)
+- ROPE interval: [-0.1, 0.1] for practical equivalence
+
 ## Key Findings
 
 - **UCLA Main Effects**: Non-significant after DASS control (all p > 0.35)
@@ -226,4 +267,4 @@ pandas, numpy, scipy, statsmodels, scikit-learn, pymc, arviz, matplotlib, seabor
 - **Platform**: Windows (path separators, encoding)
 - **Firebase credentials**: `serviceAccountKey.json` required but not committed
 - **Trial filtering**: Always filter `timeout == False` and `rt_ms > DEFAULT_RT_MIN`
-- **Archive**: Legacy scripts in `analysis/archive/` - see `analysis/archive/README.md` for migration status
+- **Archive**: Legacy scripts in `analysis/archive/legacy_advanced/` are DEPRECATED - see `analysis/archive/legacy_advanced/README.md` for migration mapping to production suites

@@ -1,0 +1,10 @@
+SEQUENTIAL DYNAMICS ANALYSIS SUMMARY
+======================================================================
+
+1. RT Autocorrelation (Lag-1):
+   WCST: 0.225 ± 0.161
+
+2. Learning Curve Summary:
+
+3. UCLA Effects on Autocorrelation:
+   WCST: r = 0.038, p = 0.6137

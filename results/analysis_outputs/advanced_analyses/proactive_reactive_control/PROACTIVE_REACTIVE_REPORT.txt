@@ -1,0 +1,26 @@
+================================================================================
+PROACTIVE VS REACTIVE CONTROL ANALYSIS - SUMMARY
+================================================================================
+
+RESEARCH QUESTION
+--------------------------------------------------------------------------------
+Do lonely individuals differ in cognitive control strategy?
+Does control strategy (proactive vs reactive) moderate UCLA→EF effects?
+
+THEORY
+--------------------------------------------------------------------------------
+Proactive control: Sustained, preparatory (longer duration, low CV)
+Reactive control: Stimulus-driven, just-in-time (shorter, high CV)
+
+KEY FINDINGS
+--------------------------------------------------------------------------------
+
+UCLA × CONTROL STRATEGY:
+     Variable         r        p   N Sig
+wcst_duration  0.065649 0.385311 177    
+      wcst_cv  0.029632 0.695413 177    
+    stroop_cv  0.036071 0.633617 177    
+       prp_cv -0.025192 0.742886 172    
+
+================================================================================
+Full results saved to: results\analysis_outputs\advanced_analyses\proactive_reactive_control

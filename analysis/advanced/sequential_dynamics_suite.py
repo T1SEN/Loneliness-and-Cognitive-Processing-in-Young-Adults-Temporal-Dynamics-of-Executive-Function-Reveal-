@@ -39,14 +39,23 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 from scipy import stats
+from scipy.optimize import curve_fit
 import statsmodels.formula.api as smf
 import statsmodels.api as sm
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+# Bayesian imports (optional)
+try:
+    import pymc as pm
+    import arviz as az
+    HAS_PYMC = True
+except ImportError:
+    HAS_PYMC = False
+
 # Project imports
 from analysis.preprocessing import (
-    load_master_dataset, RESULTS_DIR, ANALYSIS_OUTPUT_DIR
+    load_master_dataset, RESULTS_DIR, ANALYSIS_OUTPUT_DIR, find_interaction_term
 )
 from analysis.utils.modeling import standardize_predictors
 
@@ -294,8 +303,611 @@ def compute_momentum_metrics(
 
 
 # =============================================================================
+# EXPONENTIAL RECOVERY FITTING UTILITIES
+# =============================================================================
+
+def _exponential_decay(t: np.ndarray, delta: float, tau: float) -> np.ndarray:
+    """Exponential decay function: delta * exp(-t/tau)"""
+    return delta * np.exp(-t / tau)
+
+
+def fit_exponential_recovery(
+    lag_rts: List[float],
+    n_bootstrap: int = 200,
+    random_state: int = 42
+) -> Dict[str, float]:
+    """
+    Fit exponential decay to post-event RT recovery with bootstrap SE.
+
+    RT(t) = baseline + delta * exp(-t/tau)
+    - delta: Initial slowing magnitude (ms)
+    - tau: Recovery time constant (higher = slower recovery)
+
+    Parameters
+    ----------
+    lag_rts : list
+        RT deviations from baseline at lags 1, 2, 3, ...
+    n_bootstrap : int
+        Number of bootstrap iterations for SE estimation
+    random_state : int
+        Random seed for reproducibility
+
+    Returns
+    -------
+    dict with keys:
+        - tau: Recovery time constant
+        - tau_se: Bootstrap SE of tau
+        - delta: Initial slowing magnitude
+        - delta_se: Bootstrap SE of delta
+        - r_squared: Fit quality
+        - converged: Whether fitting converged
+    """
+    np.random.seed(random_state)
+
+    # Filter NaN values
+    valid_rts = [(i+1, rt) for i, rt in enumerate(lag_rts) if pd.notna(rt)]
+
+    if len(valid_rts) < 3:
+        return {
+            'tau': np.nan, 'tau_se': np.nan,
+            'delta': np.nan, 'delta_se': np.nan,
+            'r_squared': np.nan, 'converged': False
+        }
+
+    lags = np.array([v[0] for v in valid_rts])
+    rts = np.array([v[1] for v in valid_rts])
+
+    try:
+        # Initial guess
+        delta_init = max(rts[0], 10) if rts[0] > 0 else 50
+        tau_init = 2.0
+
+        popt, pcov = curve_fit(
+            _exponential_decay, lags, rts,
+            p0=[delta_init, tau_init],
+            bounds=([0, 0.5], [500, 10]),
+            maxfev=1000
+        )
+
+        # R-squared
+        predicted = _exponential_decay(lags, *popt)
+        ss_res = np.sum((rts - predicted) ** 2)
+        ss_tot = np.sum((rts - np.mean(rts)) ** 2)
+        r_squared = 1 - (ss_res / ss_tot) if ss_tot > 0 else np.nan
+
+        # Bootstrap for SE estimation
+        bootstrap_taus = []
+        bootstrap_deltas = []
+
+        for _ in range(n_bootstrap):
+            # Resample with replacement
+            idx = np.random.choice(len(lags), size=len(lags), replace=True)
+            boot_lags = lags[idx]
+            boot_rts = rts[idx]
+
+            try:
+                boot_popt, _ = curve_fit(
+                    _exponential_decay, boot_lags, boot_rts,
+                    p0=popt,
+                    bounds=([0, 0.5], [500, 10]),
+                    maxfev=500
+                )
+                bootstrap_deltas.append(boot_popt[0])
+                bootstrap_taus.append(boot_popt[1])
+            except Exception:
+                continue
+
+        tau_se = np.std(bootstrap_taus) if len(bootstrap_taus) > 10 else np.nan
+        delta_se = np.std(bootstrap_deltas) if len(bootstrap_deltas) > 10 else np.nan
+
+        return {
+            'tau': popt[1],
+            'tau_se': tau_se,
+            'delta': popt[0],
+            'delta_se': delta_se,
+            'r_squared': r_squared,
+            'converged': True
+        }
+
+    except Exception:
+        return {
+            'tau': np.nan, 'tau_se': np.nan,
+            'delta': np.nan, 'delta_se': np.nan,
+            'r_squared': np.nan, 'converged': False
+        }
+
+
+def compute_proactive_reactive_indices(
+    trial_df: pd.DataFrame,
+    cond_col: str,
+    rt_col: str
+) -> pd.DataFrame:
+    """
+    Compute proactive vs reactive control indices from Stroop task.
+
+    Proactive control: Sustained slowing (overall mean RT)
+    Reactive control: Transient slowing after incongruent (CSE effect)
+
+    Parameters
+    ----------
+    trial_df : DataFrame
+        Trial-level Stroop data with condition and RT columns
+    cond_col : str
+        Column name for trial condition (congruent/incongruent)
+    rt_col : str
+        Column name for reaction time
+
+    Returns
+    -------
+    DataFrame with participant-level indices
+    """
+    results = []
+
+    for pid, grp in trial_df.groupby('participant_id'):
+        # Sort by trial order
+        sort_col = None
+        for cand in ['trialindex', 'trial_index', 'timestamp']:
+            if cand in grp.columns:
+                sort_col = cand
+                break
+
+        if sort_col:
+            grp = grp.sort_values(sort_col).reset_index(drop=True)
+        else:
+            grp = grp.reset_index(drop=True)
+
+        if len(grp) < 30:
+            continue
+
+        # Normalize condition names
+        grp['cond_norm'] = grp[cond_col].astype(str).str.lower().str.strip()
+        grp['prev_cond'] = grp['cond_norm'].shift(1)
+
+        # CSE: (iI - cI) vs (iC - cC)
+        # iI: incongruent following incongruent
+        # cI: incongruent following congruent
+        iI = grp[(grp['cond_norm'] == 'incongruent') &
+                 (grp['prev_cond'] == 'incongruent')][rt_col]
+        cI = grp[(grp['cond_norm'] == 'incongruent') &
+                 (grp['prev_cond'] == 'congruent')][rt_col]
+
+        if len(iI) >= 5 and len(cI) >= 5:
+            cse = iI.mean() - cI.mean()  # Negative = conflict adaptation
+        else:
+            cse = np.nan
+
+        # Overall slowing (proactive index)
+        mean_rt = grp[rt_col].mean()
+
+        # Reactive index: RT after incongruent vs after congruent
+        post_inc = grp[grp['prev_cond'] == 'incongruent'][rt_col].mean()
+        post_con = grp[grp['prev_cond'] == 'congruent'][rt_col].mean()
+        reactive_index = post_inc - post_con if pd.notna(post_inc) and pd.notna(post_con) else np.nan
+
+        # Proactive index: overall mean RT relative to task difficulty
+        congruent_rt = grp[grp['cond_norm'] == 'congruent'][rt_col].mean()
+        proactive_index = mean_rt - congruent_rt if pd.notna(congruent_rt) else np.nan
+
+        results.append({
+            'participant_id': pid,
+            'stroop_cse': cse,
+            'stroop_mean_rt': mean_rt,
+            'stroop_reactive_index': reactive_index,
+            'stroop_proactive_index': proactive_index,
+            'stroop_n_trials': len(grp)
+        })
+
+    return pd.DataFrame(results)
+
+
+# =============================================================================
 # ANALYSES
 # =============================================================================
+
+@register_analysis(
+    name="adaptive_recovery",
+    description="Exponential recovery dynamics with tau fitting and proactive/reactive indices",
+    priority=1
+)
+def analyze_adaptive_recovery(verbose: bool = True) -> pd.DataFrame:
+    """
+    Adaptive Recovery Dynamics Analysis.
+
+    Enhanced from legacy adaptive_recovery_dynamics.py with:
+    1. Exponential fitting: RT(t) = baseline + delta * exp(-t/tau)
+    2. Bootstrap SE for tau (for inverse-variance weighting)
+    3. Proactive/reactive control indices from Stroop CSE
+    4. FDR correction for multiple outcomes
+    5. Optional Bayesian analysis with 4 chains × 2000 draws
+
+    Research Question:
+    Do lonely individuals show impaired dynamic adjustment after setbacks?
+    """
+    if verbose:
+        print("\n" + "=" * 70)
+        print("ADAPTIVE RECOVERY DYNAMICS ANALYSIS")
+        print("=" * 70)
+        print("  Exponential fitting: RT(t) = baseline + delta * exp(-t/tau)")
+        print("  tau = recovery time constant (higher = slower recovery)")
+
+    master = load_master_data()
+    all_results = []
+
+    # ===========================
+    # Part 1: Post-Error Recovery (WCST, Stroop)
+    # ===========================
+    if verbose:
+        print("\n  [1] Computing post-error recovery trajectories...")
+
+    for task in ['wcst', 'stroop']:
+        trials = load_trial_data(task)
+
+        if len(trials) < 100:
+            if verbose:
+                print(f"    {task.upper()}: Insufficient data")
+            continue
+
+        # Get columns
+        rt_col = 'rt_ms' if 'rt_ms' in trials.columns else 'rt'
+        correct_col = None
+        for c in ['correct', 'iscorrect', 'is_correct', 'accuracy']:
+            if c in trials.columns:
+                correct_col = c
+                break
+
+        if correct_col is None:
+            continue
+
+        # Sort trials
+        sort_cols = ['participant_id']
+        for cand in ['trialindex', 'trial_index', 'timestamp']:
+            if cand in trials.columns:
+                sort_cols.append(cand)
+                break
+        trials = trials.sort_values(sort_cols)
+
+        # Filter valid trials
+        trials = trials[(trials[rt_col] > 100) & (trials[rt_col] < 3000)].copy()
+
+        recovery_results = []
+
+        for pid, pdata in trials.groupby('participant_id'):
+            if len(pdata) < 30:
+                continue
+
+            pdata = pdata.reset_index(drop=True)
+            errors = (pdata[correct_col] == 0).values
+            rts = pdata[rt_col].values
+
+            # Find error positions
+            error_positions = np.where(errors)[0]
+            if len(error_positions) < 3:
+                continue
+
+            # Compute baseline RT (correct trials only)
+            baseline_rt = np.median(rts[~errors])
+
+            # Collect RT deviations at each lag after error
+            max_lag = 5
+            lag_rts_list = {lag: [] for lag in range(1, max_lag + 1)}
+
+            for err_idx in error_positions:
+                for lag in range(1, max_lag + 1):
+                    next_idx = err_idx + lag
+                    if next_idx < len(rts) and not np.isnan(rts[next_idx]):
+                        # RT deviation from baseline
+                        lag_rts_list[lag].append(rts[next_idx] - baseline_rt)
+
+            # Mean RT deviation at each lag
+            lag_rt_devs = []
+            for lag in range(1, max_lag + 1):
+                if len(lag_rts_list[lag]) >= 3:
+                    lag_rt_devs.append(np.mean(lag_rts_list[lag]))
+                else:
+                    lag_rt_devs.append(np.nan)
+
+            # Fit exponential recovery
+            fit_result = fit_exponential_recovery(lag_rt_devs, n_bootstrap=200)
+
+            recovery_results.append({
+                'participant_id': pid,
+                'task': task,
+                'n_trials': len(pdata),
+                'n_errors': len(error_positions),
+                'baseline_rt': baseline_rt,
+                'initial_slowing': lag_rt_devs[0] if pd.notna(lag_rt_devs[0]) else np.nan,
+                'recovery_tau': fit_result['tau'],
+                'recovery_tau_se': fit_result['tau_se'],
+                'recovery_delta': fit_result['delta'],
+                'recovery_delta_se': fit_result['delta_se'],
+                'recovery_r2': fit_result['r_squared'],
+                'recovery_converged': fit_result['converged'],
+                **{f'rt_lag{i+1}': lag_rt_devs[i] for i in range(len(lag_rt_devs))}
+            })
+
+        if len(recovery_results) < 20:
+            continue
+
+        recovery_df = pd.DataFrame(recovery_results)
+
+        if verbose:
+            converged = recovery_df['recovery_converged'].sum()
+            print(f"    {task.upper()}: N={len(recovery_df)}, Converged={converged}")
+            print(f"      Mean tau={recovery_df['recovery_tau'].mean():.2f}, "
+                  f"Mean delta={recovery_df['recovery_delta'].mean():.1f}ms")
+
+        # Merge with master
+        merged = master.merge(recovery_df, on='participant_id', how='inner')
+
+        # Regression on recovery outcomes
+        outcomes = [
+            ('recovery_tau', f'{task.upper()} Recovery Time Constant'),
+            ('recovery_delta', f'{task.upper()} Initial Slowing Magnitude'),
+            ('initial_slowing', f'{task.upper()} Post-Error Slowing (lag 1)')
+        ]
+
+        for outcome, label in outcomes:
+            if outcome not in merged.columns or merged[outcome].isna().all():
+                continue
+
+            clean_data = merged.dropna(subset=[
+                'z_ucla', 'z_dass_dep', 'z_dass_anx', 'z_dass_str', 'z_age', outcome
+            ])
+
+            if len(clean_data) < 25:
+                continue
+
+            try:
+                formula = f"{outcome} ~ z_ucla * C(gender_male) + z_dass_dep + z_dass_anx + z_dass_str + z_age"
+                model = smf.ols(formula, data=clean_data).fit(cov_type='HC3')
+
+                result = {
+                    'task': task,
+                    'outcome': outcome,
+                    'outcome_label': label,
+                    'n': len(clean_data),
+                    'beta_ucla': model.params.get('z_ucla', np.nan),
+                    'se_ucla': model.bse.get('z_ucla', np.nan),
+                    'p_ucla': model.pvalues.get('z_ucla', np.nan),
+                    'r_squared': model.rsquared
+                }
+                # Dynamic interaction term detection
+                int_term = find_interaction_term(model.params.index)
+                result['beta_ucla_x_gender'] = model.params.get(int_term, np.nan) if int_term else np.nan
+                result['p_ucla_x_gender'] = model.pvalues.get(int_term, np.nan) if int_term else np.nan
+
+                all_results.append(result)
+
+                if verbose and result['p_ucla'] < 0.10:
+                    sig = "***" if result['p_ucla'] < 0.001 else "**" if result['p_ucla'] < 0.01 else "*" if result['p_ucla'] < 0.05 else "+"
+                    print(f"      UCLA → {label}: β={result['beta_ucla']:.3f}, p={result['p_ucla']:.4f} {sig}")
+
+            except Exception as e:
+                if verbose:
+                    print(f"      {label}: ERROR - {e}")
+
+        # Save task-specific recovery data
+        recovery_df.to_csv(OUTPUT_DIR / f"adaptive_recovery_{task}.csv",
+                           index=False, encoding='utf-8-sig')
+
+    # ===========================
+    # Part 2: Proactive/Reactive Control (Stroop)
+    # ===========================
+    if verbose:
+        print("\n  [2] Computing proactive/reactive control indices...")
+
+    stroop_trials = load_trial_data('stroop')
+
+    if len(stroop_trials) > 100:
+        rt_col = 'rt_ms' if 'rt_ms' in stroop_trials.columns else 'rt'
+        cond_col = None
+        for c in ['type', 'condition', 'congruency']:
+            if c in stroop_trials.columns:
+                cond_col = c
+                break
+
+        if cond_col:
+            stroop_trials = stroop_trials[(stroop_trials[rt_col] > 100) &
+                                          (stroop_trials[rt_col] < 3000)].copy()
+
+            control_df = compute_proactive_reactive_indices(stroop_trials, cond_col, rt_col)
+
+            if len(control_df) >= 20:
+                if verbose:
+                    print(f"    Stroop control indices: N={len(control_df)}")
+                    print(f"      Mean CSE={control_df['stroop_cse'].mean():.1f}ms")
+
+                merged = master.merge(control_df, on='participant_id', how='inner')
+
+                outcomes = [
+                    ('stroop_cse', 'Stroop Conflict Adaptation (CSE)'),
+                    ('stroop_reactive_index', 'Stroop Reactive Control Index'),
+                    ('stroop_proactive_index', 'Stroop Proactive Control Index')
+                ]
+
+                for outcome, label in outcomes:
+                    if outcome not in merged.columns or merged[outcome].isna().all():
+                        continue
+
+                    clean_data = merged.dropna(subset=[
+                        'z_ucla', 'z_dass_dep', 'z_dass_anx', 'z_dass_str', 'z_age', outcome
+                    ])
+
+                    if len(clean_data) < 25:
+                        continue
+
+                    try:
+                        formula = f"{outcome} ~ z_ucla * C(gender_male) + z_dass_dep + z_dass_anx + z_dass_str + z_age"
+                        model = smf.ols(formula, data=clean_data).fit(cov_type='HC3')
+
+                        result = {
+                            'task': 'stroop',
+                            'outcome': outcome,
+                            'outcome_label': label,
+                            'n': len(clean_data),
+                            'beta_ucla': model.params.get('z_ucla', np.nan),
+                            'se_ucla': model.bse.get('z_ucla', np.nan),
+                            'p_ucla': model.pvalues.get('z_ucla', np.nan),
+                            'r_squared': model.rsquared
+                        }
+                        # Dynamic interaction term detection
+                        int_term = find_interaction_term(model.params.index)
+                        result['beta_ucla_x_gender'] = model.params.get(int_term, np.nan) if int_term else np.nan
+                        result['p_ucla_x_gender'] = model.pvalues.get(int_term, np.nan) if int_term else np.nan
+
+                        all_results.append(result)
+
+                        if verbose and result['p_ucla'] < 0.10:
+                            sig = "***" if result['p_ucla'] < 0.001 else "**" if result['p_ucla'] < 0.01 else "*" if result['p_ucla'] < 0.05 else "+"
+                            print(f"      UCLA → {label}: β={result['beta_ucla']:.3f}, p={result['p_ucla']:.4f} {sig}")
+
+                    except Exception as e:
+                        if verbose:
+                            print(f"      {label}: ERROR - {e}")
+
+                # Save control indices
+                control_df.to_csv(OUTPUT_DIR / "adaptive_recovery_control_indices.csv",
+                                  index=False, encoding='utf-8-sig')
+
+    # ===========================
+    # Part 3: FDR Correction
+    # ===========================
+    results_df = pd.DataFrame(all_results)
+
+    if len(results_df) > 1:
+        if verbose:
+            print("\n  [3] Applying FDR correction...")
+
+        # FDR for UCLA main effects using Benjamini-Hochberg
+        p_vals = results_df['p_ucla'].dropna().values
+        if len(p_vals) > 1:
+            # Manual BH correction (more reliable than scipy version)
+            n = len(p_vals)
+            sorted_idx = np.argsort(p_vals)
+            ranks = np.empty(n)
+            ranks[sorted_idx] = np.arange(1, n + 1)
+            q_vals = p_vals * n / ranks
+
+            # Enforce monotonicity: q[i] <= q[i+1] in sorted order
+            q_sorted = q_vals[sorted_idx].copy()
+            for i in range(n - 2, -1, -1):
+                q_sorted[i] = min(q_sorted[i], q_sorted[i + 1])
+            q_vals[sorted_idx] = q_sorted
+            q_vals = np.clip(q_vals, 0, 1)
+
+            results_df.loc[results_df['p_ucla'].notna(), 'p_ucla_fdr'] = q_vals
+
+    # ===========================
+    # Part 4: Bayesian Analysis (Optional)
+    # ===========================
+    if HAS_PYMC and len(results_df) > 0:
+        if verbose:
+            print("\n  [4] Running Bayesian analysis (4 chains × 2000 draws)...")
+
+        # Select key outcomes for Bayesian analysis
+        key_outcomes = ['recovery_tau', 'stroop_cse']
+
+        for task in ['wcst', 'stroop']:
+            trials = load_trial_data(task)
+            if len(trials) < 100:
+                continue
+
+            # Load recovery data for this task
+            recovery_path = OUTPUT_DIR / f"adaptive_recovery_{task}.csv"
+            if not recovery_path.exists():
+                continue
+
+            recovery_df = pd.read_csv(recovery_path)
+            merged = master.merge(recovery_df, on='participant_id', how='inner')
+
+            for outcome in ['recovery_tau']:
+                if outcome not in merged.columns:
+                    continue
+
+                clean_data = merged.dropna(subset=[
+                    'z_ucla', 'gender_male', 'z_dass_dep', 'z_dass_anx',
+                    'z_dass_str', 'z_age', outcome
+                ])
+
+                if len(clean_data) < 30:
+                    continue
+
+                try:
+                    y = clean_data[outcome].values
+                    y_std = (y - np.mean(y)) / np.std(y) if np.std(y) > 0 else y
+
+                    with pm.Model() as model:
+                        # Priors
+                        intercept = pm.Normal('intercept', mu=0, sigma=1)
+                        b_ucla = pm.Normal('b_ucla', mu=0, sigma=0.5)
+                        b_gender = pm.Normal('b_gender', mu=0, sigma=0.5)
+                        b_interaction = pm.Normal('b_ucla_x_gender', mu=0, sigma=0.5)
+                        b_dass_d = pm.Normal('b_dass_d', mu=0, sigma=0.5)
+                        b_dass_a = pm.Normal('b_dass_a', mu=0, sigma=0.5)
+                        b_dass_s = pm.Normal('b_dass_s', mu=0, sigma=0.5)
+                        b_age = pm.Normal('b_age', mu=0, sigma=0.5)
+                        sigma = pm.HalfNormal('sigma', sigma=1)
+
+                        mu = (intercept +
+                              b_ucla * clean_data['z_ucla'].values +
+                              b_gender * clean_data['gender_male'].values +
+                              b_interaction * clean_data['z_ucla'].values * clean_data['gender_male'].values +
+                              b_dass_d * clean_data['z_dass_dep'].values +
+                              b_dass_a * clean_data['z_dass_anx'].values +
+                              b_dass_s * clean_data['z_dass_str'].values +
+                              b_age * clean_data['z_age'].values)
+
+                        likelihood = pm.Normal('y', mu=mu, sigma=sigma, observed=y_std)
+
+                        # Sample with improved settings
+                        trace = pm.sample(
+                            draws=2000,
+                            tune=1000,
+                            chains=4,
+                            cores=1,
+                            random_seed=42,
+                            progressbar=False,
+                            return_inferencedata=True
+                        )
+
+                    # Extract results
+                    posterior_ucla = trace.posterior['b_ucla'].values.flatten()
+                    rope_interval = (-0.1, 0.1)
+                    in_rope = np.mean((posterior_ucla >= rope_interval[0]) &
+                                      (posterior_ucla <= rope_interval[1]))
+
+                    if verbose:
+                        print(f"    {task.upper()} {outcome}:")
+                        print(f"      Posterior mean = {np.mean(posterior_ucla):.3f}")
+                        print(f"      94% HDI = [{np.percentile(posterior_ucla, 3):.3f}, "
+                              f"{np.percentile(posterior_ucla, 97):.3f}]")
+                        print(f"      ROPE in = {in_rope*100:.1f}%")
+
+                except Exception as e:
+                    if verbose:
+                        print(f"    Bayesian error for {task} {outcome}: {e}")
+
+    # Save results
+    if len(results_df) > 0:
+        results_df.to_csv(OUTPUT_DIR / "adaptive_recovery_regression.csv",
+                          index=False, encoding='utf-8-sig')
+
+    if verbose:
+        print(f"\n  Output: {OUTPUT_DIR / 'adaptive_recovery_regression.csv'}")
+
+        # Summary
+        sig_main = results_df[results_df['p_ucla'] < 0.05] if 'p_ucla' in results_df.columns else pd.DataFrame()
+        sig_int = results_df[results_df['p_ucla_x_gender'] < 0.05] if 'p_ucla_x_gender' in results_df.columns else pd.DataFrame()
+
+        if len(sig_main) > 0 or len(sig_int) > 0:
+            print("\n  *** SIGNIFICANT RESULTS ***")
+            for _, row in sig_main.iterrows():
+                print(f"    {row['outcome_label']}: UCLA β={row['beta_ucla']:.3f}, p={row['p_ucla']:.4f}")
+            for _, row in sig_int.iterrows():
+                print(f"    {row['outcome_label']}: UCLA×Gender β={row['beta_ucla_x_gender']:.3f}, p={row['p_ucla_x_gender']:.4f}")
+
+    return results_df
+
 
 @register_analysis(
     name="error_cascade",
@@ -420,9 +1032,11 @@ def analyze_error_cascade(verbose: bool = True) -> pd.DataFrame:
                     result['beta_ucla'] = model.params['z_ucla']
                     result['p_ucla'] = model.pvalues['z_ucla']
 
-                if 'z_ucla:C(gender_male)[T.1]' in model.params:
-                    result['beta_ucla_x_gender'] = model.params['z_ucla:C(gender_male)[T.1]']
-                    result['p_ucla_x_gender'] = model.pvalues['z_ucla:C(gender_male)[T.1]']
+                # Dynamic interaction term detection
+                int_term = find_interaction_term(model.params.index)
+                if int_term:
+                    result['beta_ucla_x_gender'] = model.params[int_term]
+                    result['p_ucla_x_gender'] = model.pvalues[int_term]
 
                 result['r_squared'] = model.rsquared
                 all_results.append(result)
@@ -682,7 +1296,7 @@ def analyze_momentum(verbose: bool = True) -> pd.DataFrame:
         if 'trial_index' not in trials.columns:
             for cand in ['trialindex', 'timestamp']:
                 if cand in trials.columns:
-                    trials['trial_index'] = cand
+                    trials['trial_index'] = trials[cand]  # Fixed: was assigning string literal
                     break
 
         # Filter
@@ -718,9 +1332,11 @@ def analyze_momentum(verbose: bool = True) -> pd.DataFrame:
                     result['beta_ucla'] = model.params['z_ucla']
                     result['p_ucla'] = model.pvalues['z_ucla']
 
-                if 'z_ucla:C(gender_male)[T.1]' in model.params:
-                    result['beta_ucla_x_gender'] = model.params['z_ucla:C(gender_male)[T.1]']
-                    result['p_ucla_x_gender'] = model.pvalues['z_ucla:C(gender_male)[T.1]']
+                # Dynamic interaction term detection
+                int_term = find_interaction_term(model.params.index)
+                if int_term:
+                    result['beta_ucla_x_gender'] = model.params[int_term]
+                    result['p_ucla_x_gender'] = model.pvalues[int_term]
 
                 result['r_squared'] = model.rsquared
                 all_results.append(result)
@@ -925,10 +1541,13 @@ def analyze_resilience(verbose: bool = True) -> Tuple[pd.DataFrame, List[Dict]]:
                     'n': len(clean_data),
                     'beta_ucla': model.params.get('z_ucla', np.nan),
                     'p_ucla': model.pvalues.get('z_ucla', np.nan),
-                    'beta_ucla_x_gender': model.params.get('z_ucla:C(gender_male)[T.1]', np.nan),
-                    'p_ucla_x_gender': model.pvalues.get('z_ucla:C(gender_male)[T.1]', np.nan),
                     'r_squared': model.rsquared
                 }
+                # Dynamic interaction term detection
+                int_term = find_interaction_term(model.params.index)
+                result['beta_ucla_x_gender'] = model.params.get(int_term, np.nan) if int_term else np.nan
+                result['p_ucla_x_gender'] = model.pvalues.get(int_term, np.nan) if int_term else np.nan
+
                 all_results.append(result)
 
                 # Check significance

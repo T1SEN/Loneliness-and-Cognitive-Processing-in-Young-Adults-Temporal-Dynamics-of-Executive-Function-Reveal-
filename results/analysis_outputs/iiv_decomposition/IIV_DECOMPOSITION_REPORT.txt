@@ -1,0 +1,121 @@
+================================================================================
+IIV DECOMPOSITION ANALYSIS: SUMMARY REPORT
+================================================================================
+
+RESEARCH QUESTION:
+Does UCLA loneliness predict learning rate (slope) vs random noise (residual SD)?
+
+METHODOLOGY:
+- Decomposed RT into: Intercept (baseline), Slope (learning), Residual SD (noise)
+- Tested UCLA associations controlling for DASS-21 (depression, anxiety, stress)
+- Both Frequentist (OLS) and Bayesian (PyMC with ROPE) approaches
+
+--------------------------------------------------------------------------------
+KEY FREQUENTIST RESULTS (p < 0.05):
+--------------------------------------------------------------------------------
+  PRP Baseline RT: C(gender_male)[T.1.0]
+    beta = -171.6043, p = 0.0001
+    95% CI: [-253.7879, -89.4207]
+
+  PRP Baseline RT: z_dass_anxiety
+    beta = -81.9954, p = 0.0090
+    95% CI: [-143.2213, -20.7694]
+
+  PRP Baseline RT: z_dass_stress
+    beta = 69.3933, p = 0.0300
+    95% CI: [6.8204, 131.9661]
+
+  PRP Learning Rate: z_dass_anxiety
+    beta = 96.3468, p = 0.0037
+    95% CI: [31.7614, 160.9322]
+
+  PRP Residual Noise: C(gender_male)[T.1.0]
+    beta = -54.3078, p = 0.0002
+    95% CI: [-82.0935, -26.5221]
+
+  WCST Baseline RT: C(gender_male)[T.1.0]
+    beta = -223.4210, p = 0.0007
+    95% CI: [-351.3039, -95.5382]
+
+
+--------------------------------------------------------------------------------
+BAYESIAN RESULTS (ROPE [-0.1, 0.1]):
+--------------------------------------------------------------------------------
+  PRP Learning Rate: b_ucla
+    Posterior mean = 0.0170
+    HDI: [-0.2043, 0.2386]
+    ROPE: 57.8% in, Decision: UNDECIDED
+
+  PRP Learning Rate: b_ucla_x_gender
+    Posterior mean = -0.0583
+    HDI: [-0.3402, 0.2228]
+    ROPE: 46.7% in, Decision: UNDECIDED
+
+  PRP Residual Noise: b_ucla
+    Posterior mean = 0.0954
+    HDI: [-0.1178, 0.3220]
+    ROPE: 47.8% in, Decision: UNDECIDED
+
+  PRP Residual Noise: b_ucla_x_gender
+    Posterior mean = 0.0906
+    HDI: [-0.2009, 0.3732]
+    ROPE: 40.4% in, Decision: UNDECIDED
+
+  Stroop Learning Rate: b_ucla
+    Posterior mean = -0.1163
+    HDI: [-0.3328, 0.1002]
+    ROPE: 41.4% in, Decision: UNDECIDED
+
+  Stroop Learning Rate: b_ucla_x_gender
+    Posterior mean = 0.2298
+    HDI: [-0.0477, 0.5141]
+    ROPE: 17.9% in, Decision: UNDECIDED
+
+  Stroop Residual Noise: b_ucla
+    Posterior mean = 0.1434
+    HDI: [-0.0724, 0.3672]
+    ROPE: 33.2% in, Decision: UNDECIDED
+
+  Stroop Residual Noise: b_ucla_x_gender
+    Posterior mean = -0.0249
+    HDI: [-0.3205, 0.2558]
+    ROPE: 47.9% in, Decision: UNDECIDED
+
+  WCST Learning Rate: b_ucla
+    Posterior mean = -0.0140
+    HDI: [-0.2494, 0.2109]
+    ROPE: 58.1% in, Decision: UNDECIDED
+
+  WCST Learning Rate: b_ucla_x_gender
+    Posterior mean = -0.0522
+    HDI: [-0.3404, 0.2399]
+    ROPE: 45.4% in, Decision: UNDECIDED
+
+  WCST Residual Noise: b_ucla
+    Posterior mean = 0.1209
+    HDI: [-0.0932, 0.3404]
+    ROPE: 40.7% in, Decision: UNDECIDED
+
+  WCST Residual Noise: b_ucla_x_gender
+    Posterior mean = 0.1494
+    HDI: [-0.1355, 0.4356]
+    ROPE: 33.1% in, Decision: UNDECIDED
+
+
+================================================================================
+INTERPRETATION:
+================================================================================
+
+If UCLA predicts SLOPE but not RESIDUAL_SD:
+  -> Loneliness impairs learning/adaptation capacity
+
+If UCLA predicts RESIDUAL_SD but not SLOPE:
+  -> Loneliness increases random noise (attentional lapses)
+
+If UCLA predicts BOTH:
+  -> Multiple mechanisms (learning + noise)
+
+If UCLA predicts NEITHER:
+  -> Variance effects may be through other pathways (tau, error clustering)
+
+================================================================================

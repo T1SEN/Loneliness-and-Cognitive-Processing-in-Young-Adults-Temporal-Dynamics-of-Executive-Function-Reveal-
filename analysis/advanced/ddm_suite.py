@@ -59,7 +59,7 @@ import statsmodels.formula.api as smf
 # Project imports
 from analysis.preprocessing import (
     load_master_dataset, RESULTS_DIR, ANALYSIS_OUTPUT_DIR,
-    DEFAULT_RT_MIN, STROOP_RT_MAX
+    DEFAULT_RT_MIN, STROOP_RT_MAX, find_interaction_term
 )
 from analysis.utils.modeling import standardize_predictors
 
@@ -526,10 +526,10 @@ def analyze_ucla_relationship(verbose: bool = True) -> pd.DataFrame:
                     })
 
                 # Check interaction
-                interaction_term = 'z_ucla:C(gender_male)[T.1]'
-                if interaction_term in model.params:
-                    beta_int = model.params[interaction_term]
-                    p_int = model.pvalues[interaction_term]
+                int_term = find_interaction_term(model.params.index)
+                if int_term:
+                    beta_int = model.params[int_term]
+                    p_int = model.pvalues[int_term]
 
                     if p_int < 0.10 and verbose:
                         sig = "*" if p_int < 0.05 else "†"
@@ -539,7 +539,7 @@ def analyze_ucla_relationship(verbose: bool = True) -> pd.DataFrame:
                         'param_type': param_type,
                         'parameter': f'{param}_interaction',
                         'beta_ucla': beta_int,
-                        'se_ucla': model.bse.get(interaction_term, np.nan),
+                        'se_ucla': model.bse.get(int_term, np.nan),
                         'p_ucla': p_int,
                         'r_squared': model.rsquared,
                         'n': len(merged)

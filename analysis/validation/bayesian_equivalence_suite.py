@@ -33,7 +33,7 @@ import pandas as pd
 from scipy import stats
 
 from analysis.preprocessing import (
-    load_master_dataset, ANALYSIS_OUTPUT_DIR
+    load_master_dataset, ANALYSIS_OUTPUT_DIR, find_interaction_term
 )
 from analysis.utils.modeling import standardize_predictors
 
@@ -210,9 +210,12 @@ def analyze_rope_equivalence(verbose: bool = True) -> Tuple[pd.DataFrame, List[D
                 'ucla_se': se,
                 'ucla_p': model.pvalues.get('z_ucla', np.nan),
                 **rope_result,
-                'interaction_beta': model.params.get('z_ucla:C(gender_male)[T.1]', np.nan),
-                'interaction_p': model.pvalues.get('z_ucla:C(gender_male)[T.1]', np.nan)
             }
+            int_term = find_interaction_term(model.params.index)
+            result.update({
+                'interaction_beta': model.params.get(int_term, np.nan) if int_term else np.nan,
+                'interaction_p': model.pvalues.get(int_term, np.nan) if int_term else np.nan
+            })
             all_results.append(result)
 
             if verbose:

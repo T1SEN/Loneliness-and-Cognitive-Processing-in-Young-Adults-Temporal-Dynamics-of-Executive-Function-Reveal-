@@ -1,0 +1,45 @@
+
+Ex-Gaussian Decomposition Results:
+==================================
+
+Overall RT Components (N=172):
+- μ (Gaussian mean): 622.7 ms (routine processing)
+- σ (Gaussian SD): 178.2 ms (trial-to-trial variability)
+- τ (Exponential tail): 401.5 ms (attentional lapses)
+
+Key Question: Which component drives male UCLA → RT variability?
+
+Findings:
+---------
+
+No significant interactions found at p < 0.10
+Possible reasons:
+  1. Insufficient sample size (N=172)
+  2. Overall RT variability (IQR) is composite of μ, σ, τ effects
+  3. Need trial-level mixed models for more power
+
+
+Cross-Reference to Previous Finding:
+------------------------------------
+- Previous analysis: Males show UCLA → T2 RT IQR (β = 76.98, p = 0.032*)
+- Current analysis: Decomposes IQR into Ex-Gaussian components
+- Interpretation depends on which parameter(s) show interaction
+
+Theoretical Implications:
+-------------------------
+IF σ interaction: Males have inconsistent processing speed (reactive control failure)
+IF τ interaction: Males have more attentional lapses (sustained attention failure)
+IF BOTH: Males show dual deficit in speed consistency AND attention maintenance
+
+Next Steps:
+-----------
+1. Trial-level mixed-effects models (more power than participant-level)
+2. Larger sample size (current N=172 may be underpowered for Ex-Gaussian)
+3. Neural correlates: EEG markers of attention (P3) and motor preparation (CNV)
+4. Functional outcomes: Does σ or τ better predict real-world dual-tasking?
+
+Files Generated:
+----------------
+1. prp_exgaussian_parameters.csv - Ex-Gaussian parameters for each participant
+2. prp_exgaussian_master.csv - Parameters merged with UCLA/DASS/demographics
+3. prp_exgaussian_dass_controlled_results.csv - Regression results

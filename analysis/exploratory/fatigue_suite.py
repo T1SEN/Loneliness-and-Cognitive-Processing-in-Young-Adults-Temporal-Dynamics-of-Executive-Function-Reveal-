@@ -34,7 +34,7 @@ import statsmodels.formula.api as smf
 
 from analysis.preprocessing import (
     load_master_dataset, ensure_participant_id,
-    RESULTS_DIR, ANALYSIS_OUTPUT_DIR
+    RESULTS_DIR, ANALYSIS_OUTPUT_DIR, find_interaction_term
 )
 from analysis.utils.modeling import standardize_predictors
 
@@ -239,10 +239,13 @@ def analyze_fatigue_slopes(verbose: bool = True) -> Tuple[pd.DataFrame, List[Dic
                     'ucla_beta': model.params.get('z_ucla', np.nan),
                     'ucla_se': model.bse.get('z_ucla', np.nan),
                     'ucla_p': model.pvalues.get('z_ucla', np.nan),
-                    'interaction_beta': model.params.get('z_ucla:C(gender_male)[T.1]', np.nan),
-                    'interaction_p': model.pvalues.get('z_ucla:C(gender_male)[T.1]', np.nan),
-                    'r_squared': model.rsquared
                 }
+                int_term = find_interaction_term(model.params.index)
+                result.update({
+                    'interaction_beta': model.params.get(int_term, np.nan) if int_term else np.nan,
+                    'interaction_p': model.pvalues.get(int_term, np.nan) if int_term else np.nan,
+                    'r_squared': model.rsquared
+                })
                 all_results.append(result)
 
                 sig = "*" if result['ucla_p'] < 0.05 else ""
@@ -391,9 +394,12 @@ def analyze_fatigue_moderation(verbose: bool = True) -> Tuple[pd.DataFrame, List
                         'n': len(clean_data),
                         'ucla_beta': model.params.get('z_ucla', np.nan),
                         'ucla_p': model.pvalues.get('z_ucla', np.nan),
-                        'interaction_beta': model.params.get('z_ucla:C(gender_male)[T.1]', np.nan),
-                        'interaction_p': model.pvalues.get('z_ucla:C(gender_male)[T.1]', np.nan)
                     }
+                    int_term = find_interaction_term(model.params.index)
+                    result.update({
+                        'interaction_beta': model.params.get(int_term, np.nan) if int_term else np.nan,
+                        'interaction_p': model.pvalues.get(int_term, np.nan) if int_term else np.nan
+                    })
                     all_results.append(result)
 
                     sig = "*" if result['ucla_p'] < 0.05 else ""

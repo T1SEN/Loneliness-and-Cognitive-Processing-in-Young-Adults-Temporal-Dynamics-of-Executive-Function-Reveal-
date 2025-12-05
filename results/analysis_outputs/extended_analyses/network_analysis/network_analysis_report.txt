@@ -1,0 +1,35 @@
+NETWORK PSYCHOMETRICS SUMMARY REPORT
+======================================================================
+
+1. Network Structure (Full Sample):
+   N = 169
+   Variables: 8
+   Edges (|pcor| > 0.1): 8
+
+2. Centrality Rankings:
+   Strength:
+     - dass_depression: 1.219
+     - dass_anxiety: 1.045
+     - wcst_accuracy: 0.987
+   Expected_influence:
+     - dass_anxiety: 1.045
+     - dass_stress: 0.879
+     - ucla_score: 0.848
+   Betweenness:
+     - dass_depression: 0.714
+     - ucla_score: 0.476
+     - dass_anxiety: 0.476
+
+3. Bridge Centrality:
+   - wcst_accuracy: 0.783
+   - pe_rate: 0.674
+   - ucla_score: 0.646
+   - dass_depression: 0.510
+   - prp_bottleneck: 0.136
+   - dass_anxiety: 0.108
+   - dass_stress: 0.000
+   - stroop_interference: 0.000
+
+4. Gender Network Comparison:
+   Global strength difference: 3.331, p = 0.0439
+   Max edge difference: 0.493, p = 0.0918

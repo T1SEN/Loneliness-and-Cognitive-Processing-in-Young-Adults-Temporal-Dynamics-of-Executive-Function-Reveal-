@@ -34,7 +34,7 @@ import statsmodels.formula.api as smf
 import statsmodels.api as sm
 
 from analysis.preprocessing import (
-    load_master_dataset, ANALYSIS_OUTPUT_DIR
+    load_master_dataset, ANALYSIS_OUTPUT_DIR, find_interaction_term
 )
 from analysis.utils.modeling import standardize_predictors
 
@@ -156,13 +156,16 @@ def analyze_age_stratified_effects(verbose: bool = True) -> Tuple[pd.DataFrame, 
                     'ucla_beta': model.params.get('z_ucla', np.nan),
                     'ucla_se': model.bse.get('z_ucla', np.nan),
                     'ucla_p': model.pvalues.get('z_ucla', np.nan),
-                    'interaction_beta': model.params.get('z_ucla:C(gender_male)[T.1]', np.nan),
-                    'interaction_se': model.bse.get('z_ucla:C(gender_male)[T.1]', np.nan),
-                    'interaction_p': model.pvalues.get('z_ucla:C(gender_male)[T.1]', np.nan),
+                }
+                int_term = find_interaction_term(model.params.index)
+                result.update({
+                    'interaction_beta': model.params.get(int_term, np.nan) if int_term else np.nan,
+                    'interaction_se': model.bse.get(int_term, np.nan) if int_term else np.nan,
+                    'interaction_p': model.pvalues.get(int_term, np.nan) if int_term else np.nan,
                     'gender_beta': model.params.get('C(gender_male)[T.1]', np.nan),
                     'gender_p': model.pvalues.get('C(gender_male)[T.1]', np.nan),
                     'r_squared': model.rsquared
-                }
+                })
                 all_results.append(result)
 
                 # Check significance
@@ -244,8 +247,14 @@ def analyze_threeway_interaction(verbose: bool = True) -> Tuple[pd.DataFrame, Li
             formula_2way = f"{outcome} ~ z_ucla * C(gender_male) + z_age + z_dass_dep + z_dass_anx + z_dass_str"
             model_2way = smf.ols(formula_2way, data=clean_data).fit(cov_type='HC3')
 
-            # 3원 상호작용 항
-            threeway_term = 'z_ucla:C(gender_male)[T.1]:z_age'
+            # 2-way와 3-way interaction 동적 탐지
+            int_term = find_interaction_term(model.params.index)  # z_ucla:C(gender_male)[T.1]
+            # 3-way: ucla, gender, age 모두 포함
+            threeway_term = None
+            for term in model.params.index:
+                if 'ucla' in term and 'gender' in term and 'age' in term.lower() and term.count(':') >= 2:
+                    threeway_term = term
+                    break
 
             result = {
                 'outcome': outcome,
@@ -259,8 +268,8 @@ def analyze_threeway_interaction(verbose: bool = True) -> Tuple[pd.DataFrame, Li
                 'age_beta': model.params.get('z_age', np.nan),
                 'age_p': model.pvalues.get('z_age', np.nan),
                 # 2-way interactions
-                'ucla_gender_beta': model.params.get('z_ucla:C(gender_male)[T.1]', np.nan),
-                'ucla_gender_p': model.pvalues.get('z_ucla:C(gender_male)[T.1]', np.nan),
+                'ucla_gender_beta': model.params.get(int_term, np.nan) if int_term else np.nan,
+                'ucla_gender_p': model.pvalues.get(int_term, np.nan) if int_term else np.nan,
                 'ucla_age_beta': model.params.get('z_ucla:z_age', np.nan),
                 'ucla_age_p': model.pvalues.get('z_ucla:z_age', np.nan),
                 'gender_age_beta': model.params.get('C(gender_male)[T.1]:z_age', np.nan),
@@ -365,10 +374,11 @@ def analyze_johnson_neyman(verbose: bool = True) -> Tuple[pd.DataFrame, List[Dic
                     model = smf.ols(formula, data=clean_data).fit(cov_type='HC3')
 
                     # 이 연령에서의 UCLA × Gender 조건부 효과
-                    # age_test_centered = 0일 때의 z_ucla:C(gender_male)[T.1] 계수
-                    cond_beta = model.params.get('z_ucla:C(gender_male)[T.1]', np.nan)
-                    cond_se = model.bse.get('z_ucla:C(gender_male)[T.1]', np.nan)
-                    cond_p = model.pvalues.get('z_ucla:C(gender_male)[T.1]', np.nan)
+                    # age_test_centered = 0일 때의 interaction 계수
+                    int_term = find_interaction_term(model.params.index)
+                    cond_beta = model.params.get(int_term, np.nan) if int_term else np.nan
+                    cond_se = model.bse.get(int_term, np.nan) if int_term else np.nan
+                    cond_p = model.pvalues.get(int_term, np.nan) if int_term else np.nan
 
                     conditional_effects.append({
                         'age': test_age,

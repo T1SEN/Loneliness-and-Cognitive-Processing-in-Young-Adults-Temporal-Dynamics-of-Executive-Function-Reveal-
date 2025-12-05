@@ -1,0 +1,53 @@
+======================================================================
+FRAMEWORK 3: LATENT FACTOR PSYCHOMETRIC MODELING
+Interpretation Summary
+======================================================================
+
+RESEARCH QUESTION:
+----------------------------------------------------------------------
+Do latent factors underlying UCLA + DASS items provide a more
+precise measurement of 'loneliness' vs. 'general distress'?
+
+KEY FINDINGS:
+----------------------------------------------------------------------
+Parallel Analysis suggested: 3 factors
+Sample size: N = 178
+  Female: 107
+  Male: 68
+
+METHODOLOGICAL NOTE:
+----------------------------------------------------------------------
+CFA models failed to converge due to:
+  1. Small sample size (N=89) relative to model complexity
+  2. Insufficient indicators per latent variable after parceling
+  3. Fisher Information Matrix not positive definite
+
+SOLUTION IMPLEMENTED:
+----------------------------------------------------------------------
+Used Factor Analysis (sklearn) to extract latent scores:
+  - Factor 1: Loneliness (UCLA items)
+  - Factor 2: Distress (DASS items)
+
+Also created composite scores from item parcels as alternative.
+
+INTERPRETATION:
+----------------------------------------------------------------------
+- Parallel analysis confirms 2-factor solution is optimal
+- Loneliness and Distress appear to be empirically distinct
+- Latent scores can now be used in Frameworks 1 & 2 for comparison
+- This tests if 'measurement precision' changes substantive conclusions
+
+NEXT STEPS:
+----------------------------------------------------------------------
+1. Use latent scores as predictors in Framework 1 mixture models
+2. Build normative models (Framework 2) with latent factors
+3. Compare observed vs. latent variable results
+4. Test: Do latent factors change Gender × UCLA interactions?
+
+LIMITATIONS:
+----------------------------------------------------------------------
+- Could not test measurement invariance (CFA failed)
+- Factor scores are estimates, not true latent variables
+- Larger sample (N>200) needed for full SEM analysis
+- Consider this exploratory/hypothesis-generating
+

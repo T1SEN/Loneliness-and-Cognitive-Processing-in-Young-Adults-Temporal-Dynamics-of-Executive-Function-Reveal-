@@ -1,0 +1,56 @@
+======================================================================
+FRAMEWORK 4: CAUSAL DAG SIMULATION
+Interpretation Guide
+======================================================================
+
+RESEARCH QUESTION:
+----------------------------------------------------------------------
+Which causal model best explains Gender × UCLA → EF patterns?
+
+COMPETING MODELS:
+----------------------------------------------------------------------
+Model A: Mood-Driven (DASS → EF only, UCLA spurious)
+Model B: Full Mediation (UCLA → DASS → EF)
+Model C: Parallel Paths (UCLA → EF + DASS → EF)
+Model D: Moderated Mediation (Gender moderates paths)
+
+MODEL SELECTION CRITERIA:
+----------------------------------------------------------------------
+- LOO (Leave-One-Out Cross-Validation): Lower is better
+- WAIC (Widely Applicable Information Criterion): Lower is better
+- Difference >4: Substantial evidence for better model
+- Difference <4: Models are similar
+
+INTERPRETATION:
+----------------------------------------------------------------------
+If Model A (Mood-Driven) wins:
+  → UCLA effects are spurious (confounded with DASS)
+  → Intervention: Target mood, not loneliness
+
+If Model B (Full Mediation) wins:
+  → UCLA affects EF ONLY through DASS
+  → Intervention: Either target loneliness OR mood
+
+If Model C (Parallel Paths) wins:
+  → UCLA has DIRECT effect on EF (beyond mood)
+  → Intervention: Must target both loneliness AND mood
+
+If Model D (Moderated Mediation) wins:
+  → Gender-specific mechanisms
+  → Intervention: Personalize by gender
+
+LIMITATIONS:
+----------------------------------------------------------------------
+- Cross-sectional data: Cannot establish temporal precedence
+- Unobserved confounders: May bias results
+- Model fit ≠ causal truth: Multiple models may fit equally
+- Results are HYPOTHESIS-GENERATING, not confirmatory
+- Need longitudinal/experimental data for causal claims
+
+NEXT STEPS:
+----------------------------------------------------------------------
+1. Longitudinal study to test temporal ordering
+2. Experimental manipulation of UCLA/DASS
+3. Measure additional confounders (personality, SES, etc.)
+4. Cross-validate best model in independent sample
+

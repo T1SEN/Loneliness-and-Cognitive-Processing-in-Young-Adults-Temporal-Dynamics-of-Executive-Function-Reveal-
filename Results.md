@@ -252,6 +252,21 @@
 
 **FDR 보정 후 모든 효과 비유의** (all p_fdr > 0.35)
 
+## Legacy Advanced Scripts (2025-12-06 재분석)
+
+| Script / Output | Key Outcome | Effect | Test / p-value | Notes |
+|-----------------|-------------|--------|----------------|-------|
+| `adaptive_recovery_dynamics` | Stroop Reactive Control Index | UCLA β = -26.76 | DASS-controlled regression, p = 0.0011 | Lonelier participants show sharply reduced reactive control even after covariates. |
+| `post_error_slowing_gender_moderation` | WCST PES / accuracy | Male r = +0.320; Female r = +0.196 | Pearson (N=68 / 104), p = 0.0077 / 0.0466 | PES couples with UCLA only in males, whereas females show accuracy coupling. |
+| `ef_vulnerability_clustering` | Cluster × Gender | χ²(1) = 8.26 | p = 0.0040 | Two-cluster solution; Cluster 0 (perseverative) is strongly female-dominant. |
+| `framework1_regression_mixtures` | PRP latent class slope | β = +97.5 (Class 3) | Within-class regression, p = 0.027 | Highlights a subgroup where UCLA strongly predicts PRP bottleneck magnitude. |
+| `gendered_temporal_vulnerability` | Epoch / gender effects | WCST epoch p = 0.0009; Stroop gender p = 0.0086; Stroop epoch p = 0.0001 | Mixed-effects | Temporal recovery speed differs by gender/epoch despite null UCLA interactions. |
+| `latent_metacontrol_sem` | Meta-control → WCST PE | β = -2.535 | p < 0.0001 | Confirms latent control factor mediates perseverative errors more than UCLA direct path. |
+| `network_psychometrics` | Gender network similarity | r = 0.665 | p = 0.0010 | Male/female partial-correlation networks share architecture (high similarity). |
+| `network_psychometrics_extended` | Global strength difference | Δ = 3.331 | p = 0.0439 | Male network denser; largest edge shift is dass_stress—prp_bottleneck (Δ = 0.493). |
+| `multivariate_ef_analysis` | MANOVA gender main | Wilks’ λ = 0.911 | F(3,162) = 5.26, p = 0.0017 | EF vector differs by gender while UCLA and interactions remain null. |
+| `prp_exgaussian_dass_controlled` | Gender main (μ, σ, Δμ_short) | β = -160 to -40 | p = 0.0001–0.0400 | Even with DASS covariates, males show consistently shorter mean/variance components. |
+
 ### HMM Deep Analysis
 
 | 분석 | 결과변수 | UCLA β | p-value | 해석 |

@@ -47,7 +47,7 @@ from sklearn.gaussian_process.kernels import RBF, WhiteKernel, ConstantKernel
 from sklearn.model_selection import KFold
 import statsmodels.formula.api as smf
 
-from analysis.preprocessing import load_master_dataset, ANALYSIS_OUTPUT_DIR
+from analysis.preprocessing import load_master_dataset, ANALYSIS_OUTPUT_DIR, find_interaction_term
 from analysis.utils.modeling import standardize_predictors
 
 np.random.seed(42)
@@ -168,6 +168,321 @@ def analyze_network(verbose: bool = True) -> pd.DataFrame:
         print(f"\n  Output: {OUTPUT_DIR / 'network_edges.csv'}")
 
     return edges_df
+
+
+@register_analysis(
+    name="network_extended",
+    description="Extended network analysis with GraphicalLASSO regularization and NCT gender comparison",
+    source_script="network_psychometrics_extended.py"
+)
+def analyze_network_extended(verbose: bool = True) -> pd.DataFrame:
+    """
+    Enhanced network analysis with statistical improvements:
+    1. GraphicalLASSO for regularized partial correlations (more stable)
+    2. Network Comparison Test (NCT) for gender comparison with permutation p-values
+    3. Bootstrap edge stability analysis
+    4. Centrality measures (strength, expected influence, betweenness)
+
+    Statistical improvements over basic network analysis:
+    - Regularization prevents overfitting in partial correlation estimation
+    - Permutation testing provides valid p-values for network comparisons
+    - Bootstrap CIs indicate edge reliability
+    """
+    if verbose:
+        print("\n" + "=" * 70)
+        print("EXTENDED NETWORK ANALYSIS (GraphicalLASSO + NCT)")
+        print("=" * 70)
+
+    try:
+        from sklearn.covariance import GraphicalLassoCV
+    except ImportError:
+        if verbose:
+            print("  sklearn.covariance.GraphicalLassoCV not available")
+        return pd.DataFrame()
+
+    master = load_latent_data()
+
+    # Variables for network
+    vars_list = ['ucla_total', 'dass_depression', 'dass_anxiety', 'dass_stress',
+                 'pe_rate', 'stroop_interference', 'prp_bottleneck']
+
+    available = [v for v in vars_list if v in master.columns and master[v].notna().sum() >= 50]
+
+    if len(available) < 4:
+        if verbose:
+            print("  Insufficient variables for network analysis")
+        return pd.DataFrame()
+
+    # Complete cases
+    df = master[available + ['gender_male']].dropna()
+
+    if len(df) < 50:
+        if verbose:
+            print(f"  Insufficient data (N={len(df)})")
+        return pd.DataFrame()
+
+    if verbose:
+        print(f"  N = {len(df)}")
+        print(f"  Variables: {available}")
+
+    # ==== 1. GraphicalLASSO for regularized partial correlations ====
+    def compute_regularized_partial_correlations(data: pd.DataFrame) -> pd.DataFrame:
+        """Compute partial correlations using GraphicalLASSO regularization."""
+        scaler = StandardScaler()
+        data_scaled = scaler.fit_transform(data)
+
+        try:
+            # cv=3 for stability with smaller samples (N/p ratio ~7-10)
+            gl_model = GraphicalLassoCV(cv=3, assume_centered=True, max_iter=500)
+            gl_model.fit(data_scaled)
+
+            precision = gl_model.precision_
+            d = np.sqrt(np.diag(precision))
+
+            # Convert precision to partial correlations
+            pcor = np.zeros_like(precision)
+            for i in range(len(d)):
+                for j in range(len(d)):
+                    if i == j:
+                        pcor[i, j] = 1.0
+                    else:
+                        if d[i] > 0 and d[j] > 0:
+                            pcor[i, j] = -precision[i, j] / (d[i] * d[j])
+                        else:
+                            pcor[i, j] = 0
+
+            return pd.DataFrame(pcor, index=data.columns, columns=data.columns)
+        except Exception as e:
+            if verbose:
+                print(f"    GraphicalLASSO failed: {e}, using pseudo-inverse")
+            # Fallback to regularized pseudo-inverse
+            corr = data.corr()
+            try:
+                precision = np.linalg.pinv(corr.values + np.eye(len(corr)) * 0.01)
+            except:
+                return pd.DataFrame()
+
+            d = np.sqrt(np.abs(np.diag(precision)))
+            pcor = np.zeros_like(precision)
+            for i in range(len(d)):
+                for j in range(len(d)):
+                    if i == j:
+                        pcor[i, j] = 1.0
+                    elif d[i] > 0 and d[j] > 0:
+                        pcor[i, j] = -precision[i, j] / (d[i] * d[j])
+
+            return pd.DataFrame(pcor, index=data.columns, columns=data.columns)
+
+    # Full sample partial correlation network
+    pcor_matrix = compute_regularized_partial_correlations(df[available])
+
+    if pcor_matrix.empty:
+        if verbose:
+            print("  Failed to compute partial correlations")
+        return pd.DataFrame()
+
+    pcor_matrix.to_csv(OUTPUT_DIR / "network_extended_partial_correlations.csv", encoding='utf-8-sig')
+
+    if verbose:
+        print(f"\n  Regularized Partial Correlation Matrix (GraphicalLASSO):")
+        print(pcor_matrix.round(3).to_string())
+
+    # ==== 2. Centrality measures ====
+    def compute_centrality(pcor: pd.DataFrame) -> pd.DataFrame:
+        """Compute node centrality measures."""
+        nodes = pcor.columns
+        centrality = []
+
+        for node in nodes:
+            row = pcor.loc[node, :].drop(node)
+
+            # Strength: sum of absolute edge weights
+            strength = row.abs().sum()
+
+            # Expected Influence: sum of signed edge weights
+            ei = row.sum()
+
+            centrality.append({
+                'node': node,
+                'strength': strength,
+                'expected_influence': ei
+            })
+
+        return pd.DataFrame(centrality)
+
+    centrality_df = compute_centrality(pcor_matrix)
+    centrality_df.to_csv(OUTPUT_DIR / "network_extended_centrality.csv", index=False, encoding='utf-8-sig')
+
+    if verbose:
+        print(f"\n  Centrality Measures:")
+        for _, row in centrality_df.sort_values('strength', ascending=False).iterrows():
+            print(f"    {row['node']}: strength={row['strength']:.3f}, EI={row['expected_influence']:.3f}")
+
+    # ==== 3. Gender-specific networks ====
+    male_data = df[df['gender_male'] == 1][available]
+    female_data = df[df['gender_male'] == 0][available]
+
+    # Minimum N=50 per group for stable GraphicalLASSO with 7 variables
+    # (recommended N/p ratio >= 7)
+    gender_networks = {}
+    if len(male_data) >= 50:
+        gender_networks['male'] = compute_regularized_partial_correlations(male_data)
+        gender_networks['male'].to_csv(OUTPUT_DIR / "network_extended_male.csv", encoding='utf-8-sig')
+    if len(female_data) >= 50:
+        gender_networks['female'] = compute_regularized_partial_correlations(female_data)
+        gender_networks['female'].to_csv(OUTPUT_DIR / "network_extended_female.csv", encoding='utf-8-sig')
+
+    if verbose:
+        print(f"\n  Gender samples: Male N={len(male_data)}, Female N={len(female_data)}")
+
+    # ==== 4. Network Comparison Test (NCT) ====
+    nct_results = {}
+
+    # NCT requires minimum N=40 per group for reliable permutation inference
+    if len(male_data) >= 40 and len(female_data) >= 40 and 'male' in gender_networks and 'female' in gender_networks:
+        if verbose:
+            print(f"\n  Running Network Comparison Test (1000 permutations)...")
+
+        net_m = gender_networks['male']
+        net_f = gender_networks['female']
+
+        # Observed differences
+        obs_global_strength_diff = net_m.abs().sum().sum() - net_f.abs().sum().sum()
+        obs_max_edge_diff = (net_m - net_f).abs().max().max()
+
+        # Permutation test
+        combined = pd.concat([male_data, female_data])
+        n_male = len(male_data)
+        n_permutations = 1000
+
+        perm_global_diffs = []
+        perm_max_edge_diffs = []
+
+        # Use local RandomState for reproducibility within this block
+        rng_perm = np.random.RandomState(42)
+        for _ in range(n_permutations):
+            perm_idx = rng_perm.permutation(len(combined))
+            perm_male = combined.iloc[perm_idx[:n_male]]
+            perm_female = combined.iloc[perm_idx[n_male:]]
+
+            try:
+                perm_net_m = compute_regularized_partial_correlations(perm_male)
+                perm_net_f = compute_regularized_partial_correlations(perm_female)
+
+                if not perm_net_m.empty and not perm_net_f.empty:
+                    perm_global_diffs.append(
+                        perm_net_m.abs().sum().sum() - perm_net_f.abs().sum().sum()
+                    )
+                    perm_max_edge_diffs.append(
+                        (perm_net_m - perm_net_f).abs().max().max()
+                    )
+            except:
+                continue
+
+        # Calculate p-values (require 80% success rate: 800/1000 permutations)
+        if len(perm_global_diffs) >= 800:
+            p_global = (np.sum(np.abs(perm_global_diffs) >= np.abs(obs_global_strength_diff)) + 1) / (len(perm_global_diffs) + 1)
+            p_edge = (np.sum(np.array(perm_max_edge_diffs) >= obs_max_edge_diff) + 1) / (len(perm_max_edge_diffs) + 1)
+
+            nct_results = {
+                'global_strength_diff': obs_global_strength_diff,
+                'p_global_strength': p_global,
+                'max_edge_diff': obs_max_edge_diff,
+                'p_max_edge': p_edge,
+                'n_male': len(male_data),
+                'n_female': len(female_data),
+                'n_permutations': len(perm_global_diffs)
+            }
+
+            if verbose:
+                sig_global = "*" if p_global < 0.05 else ""
+                sig_edge = "*" if p_edge < 0.05 else ""
+                print(f"\n  NCT Results:")
+                print(f"    Global strength diff: {obs_global_strength_diff:.3f}, p={p_global:.4f}{sig_global}")
+                print(f"    Max edge diff: {obs_max_edge_diff:.3f}, p={p_edge:.4f}{sig_edge}")
+        else:
+            if verbose:
+                print(f"    NCT failed: insufficient valid permutations ({len(perm_global_diffs)})")
+
+    # ==== 5. Bootstrap edge stability (simplified) ====
+    if verbose:
+        print(f"\n  Computing bootstrap edge stability (500 iterations)...")
+
+    n_bootstrap = 500
+    edge_counts = {}
+
+    for v1_idx, v1 in enumerate(available):
+        for v2_idx, v2 in enumerate(available):
+            if v1_idx < v2_idx:
+                edge_counts[(v1, v2)] = []
+
+    # Use local RandomState for reproducibility within this block
+    rng_boot = np.random.RandomState(42)
+    for _ in range(n_bootstrap):
+        boot_idx = rng_boot.choice(len(df), size=len(df), replace=True)
+        boot_data = df.iloc[boot_idx][available]
+
+        try:
+            boot_pcor = compute_regularized_partial_correlations(boot_data)
+            if not boot_pcor.empty:
+                for (v1, v2) in edge_counts.keys():
+                    edge_counts[(v1, v2)].append(boot_pcor.loc[v1, v2])
+        except:
+            continue
+
+    # Compute bootstrap CIs
+    edge_stability = []
+    for (v1, v2), values in edge_counts.items():
+        if len(values) >= 100:
+            values = np.array(values)
+            edge_stability.append({
+                'node1': v1,
+                'node2': v2,
+                'pcor_mean': np.mean(values),
+                'pcor_median': np.median(values),
+                'ci_lower': np.percentile(values, 2.5),
+                'ci_upper': np.percentile(values, 97.5),
+                'significant': (np.percentile(values, 2.5) > 0) or (np.percentile(values, 97.5) < 0)
+            })
+
+    edge_stability_df = pd.DataFrame(edge_stability)
+    edge_stability_df.to_csv(OUTPUT_DIR / "network_extended_edge_stability.csv", index=False, encoding='utf-8-sig')
+
+    n_significant = edge_stability_df['significant'].sum() if len(edge_stability_df) > 0 else 0
+    if verbose:
+        print(f"    Significant edges (95% CI excludes 0): {n_significant}/{len(edge_stability_df)}")
+
+    # ==== Compile results ====
+    results = []
+
+    # Edges from main analysis
+    for i, v1 in enumerate(available):
+        for j, v2 in enumerate(available):
+            if i < j:
+                results.append({
+                    'node1': v1,
+                    'node2': v2,
+                    'pcor': pcor_matrix.loc[v1, v2],
+                    'type': 'full_sample'
+                })
+
+    # Add NCT results
+    if nct_results:
+        results.append({
+            'type': 'NCT',
+            'global_strength_diff': nct_results.get('global_strength_diff'),
+            'p_global_strength': nct_results.get('p_global_strength'),
+            'max_edge_diff': nct_results.get('max_edge_diff'),
+            'p_max_edge': nct_results.get('p_max_edge')
+        })
+
+    results_df = pd.DataFrame(results)
+    results_df.to_csv(OUTPUT_DIR / "network_extended_results.csv", index=False, encoding='utf-8-sig')
+
+    if verbose:
+        print(f"\n  Output: {OUTPUT_DIR / 'network_extended_results.csv'}")
+
+    return results_df
 
 
 @register_analysis(
@@ -487,8 +802,9 @@ def analyze_normative_modeling(verbose: bool = True) -> pd.DataFrame:
 
                 ucla_beta = model.params.get('z_ucla', np.nan)
                 ucla_p = model.pvalues.get('z_ucla', np.nan)
-                interaction_beta = model.params.get('z_ucla:C(gender_male)[T.1]', np.nan)
-                interaction_p = model.pvalues.get('z_ucla:C(gender_male)[T.1]', np.nan)
+                int_term = find_interaction_term(model.params.index)
+                interaction_beta = model.params.get(int_term, np.nan) if int_term else np.nan
+                interaction_p = model.pvalues.get(int_term, np.nan) if int_term else np.nan
 
                 all_results.append({
                     'outcome': ef_outcome,
@@ -695,8 +1011,9 @@ def analyze_causal_dag(verbose: bool = True) -> pd.DataFrame:
                         data=df).fit()
             aic3 = m3.aic
             r2_3 = m3.rsquared
-            interaction_beta = m3.params.get('z_ucla:C(gender_male)[T.1]', np.nan)
-            interaction_p = m3.pvalues.get('z_ucla:C(gender_male)[T.1]', np.nan)
+            int_term = find_interaction_term(m3.params.index)
+            interaction_beta = m3.params.get(int_term, np.nan) if int_term else np.nan
+            interaction_p = m3.pvalues.get(int_term, np.nan) if int_term else np.nan
         except:
             aic3, r2_3, interaction_beta, interaction_p = np.nan, np.nan, np.nan, np.nan
 
