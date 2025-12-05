@@ -1,0 +1,30 @@
+UCLA RESIDUALIZATION (UCLA ~ DASS)
+============================================================
+
+                            OLS Regression Results                            
+==============================================================================
+Dep. Variable:             ucla_total   R-squared:                       0.452
+Model:                            OLS   Adj. R-squared:                  0.442
+Method:                 Least Squares   F-statistic:                     45.63
+Date:                Fri, 05 Dec 2025   Prob (F-statistic):           1.47e-21
+Time:                        20:07:00   Log-Likelihood:                -599.56
+No. Observations:                 170   AIC:                             1207.
+Df Residuals:                     166   BIC:                             1220.
+Df Model:                           3                                         
+Covariance Type:            nonrobust                                         
+===================================================================================
+                      coef    std err          t      P>|t|      [0.025      0.975]
+-----------------------------------------------------------------------------------
+Intercept          33.0424      1.061     31.148      0.000      30.948      35.137
+dass_depression     0.7963      0.109      7.297      0.000       0.581       1.012
+dass_anxiety        0.0657      0.174      0.379      0.705      -0.277       0.408
+dass_stress         0.1794      0.134      1.343      0.181      -0.084       0.443
+==============================================================================
+Omnibus:                        4.740   Durbin-Watson:                   1.888
+Prob(Omnibus):                  0.093   Jarque-Bera (JB):                4.467
+Skew:                           0.338   Prob(JB):                        0.107
+Kurtosis:                       2.583   Cond. No.                         29.0
+==============================================================================
+
+Notes:
+[1] Standard Errors assume that the covariance matrix of the errors is correctly specified.

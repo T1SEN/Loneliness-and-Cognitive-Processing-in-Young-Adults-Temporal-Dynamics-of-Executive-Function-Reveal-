@@ -1,0 +1,6 @@
+fold,model,mdl__max_depth,mdl__min_samples_leaf,mdl__n_estimators,mdl__alpha
+1,rf,8.0,3.0,400.0,
+2,rf,8.0,1.0,800.0,
+3,rf,8.0,1.0,400.0,
+4,ridge,,,,10.0
+5,rf,8.0,3.0,400.0,

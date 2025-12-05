@@ -1,0 +1,21 @@
+CAUSAL INFERENCE SUITE SUMMARY
+============================================================
+
+
+E-Value Sensitivity Analysis
+----------------------------------------
+stroop_interference: E-value=13727.63
+pe_rate: E-value=1.62
+
+DAG Model Comparison
+----------------------------------------
+Best model: direct_only
+
+Causal Bounds
+----------------------------------------
+
+Mediation Sensitivity
+----------------------------------------
+
+Instrumental Variable Exploration
+----------------------------------------

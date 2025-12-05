@@ -1,0 +1,4 @@
+﻿outcome,outcome_label,n,n_splits,beta_correlation,same_sign_rate,both_significant_rate
+pe_rate,WCST Perseverative Error Rate,170,100,-0.85598453699603,0.58,0.0
+prp_bottleneck,PRP Bottleneck Effect,166,100,-0.8411767091982317,0.87,0.0
+stroop_interference,Stroop Interference,170,100,-0.7973010822054605,0.49,0.0

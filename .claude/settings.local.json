@@ -1,22 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(grep:*)",
-      "Bash(.\\venv\\Scripts\\python.exe:*)",
-      "Bash(C:\\Users\\ansel\\my_research_exporter\\venv\\Scripts\\python.exe:*)",
-      "Bash(PYTHONPATH=. .\\venv\\Scripts\\python.exe:*)",
+      "Bash(./venv/Scripts/pip.exe install:*)",
+      "Bash(PYTHONIOENCODING=utf-8 ./venv/Scripts/python.exe:*)",
       "Bash(./venv/Scripts/python.exe:*)",
-      "Bash(wc:*)",
-      "Bash(python:*)",
-      "Bash(PYTHONPATH=. ./venv/Scripts/python.exe:*)",
-      "Bash(dir:*)",
-      "Bash(findstr:*)",
-      "Bash(done)",
-      "Bash(ls:*)",
-      "Bash(python3:*)",
-      "Bash(C:/Users/ansel/my_research_exporter/venv/Scripts/python.exe:*)",
-      "Bash(.\\venv\\Scripts\\python.exe -m analysis.gold_standard.pipeline:*)",
-      "Bash(C:/Users/ansel/my_research_exporter/venv/Scripts/pip.exe install:*)"
+      "Bash(cd:*)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []

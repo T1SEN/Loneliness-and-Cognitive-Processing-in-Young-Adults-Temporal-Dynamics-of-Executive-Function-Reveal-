@@ -10,7 +10,7 @@ import ast
 import re
 from typing import Optional
 
-RESULTS_DIR = Path("results")
+RESULTS_DIR = Path("results/complete_only")
 ANALYSIS_OUTPUT_DIR = Path("results/analysis_outputs")
 
 # Standardized shared rules across analyses
@@ -497,8 +497,22 @@ def load_master_dataset(
 def load_exgaussian_params(task='stroop'):
     """
     Load Ex-Gaussian parameters
-    task: 'stroop' or 'prp'
+
+    .. deprecated::
+        This function is deprecated and only used by legacy archive scripts.
+        Use analysis.utils.exgaussian.fit_exgaussian_by_participant() instead.
+
+    Parameters
+    ----------
+    task : str
+        'stroop' or 'prp'
     """
+    import warnings
+    warnings.warn(
+        "load_exgaussian_params is deprecated. Use analysis.utils.exgaussian.fit_exgaussian_by_participant() instead.",
+        DeprecationWarning,
+        stacklevel=2
+    )
     if task == 'stroop':
         file_path = "results/analysis_outputs/mechanism_analysis/exgaussian/exgaussian_parameters.csv"
     elif task == 'prp':

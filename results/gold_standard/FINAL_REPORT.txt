@@ -1,0 +1,24 @@
+================================================================================
+GOLD STANDARD ANALYSIS REPORT
+================================================================================
+
+METHODOLOGY
+----------------------------------------
+All analyses control for:
+  - DASS-21 subscales (depression, anxiety, stress)
+  - Age
+  - Gender (main effect + interaction with UCLA)
+  - HC3 robust standard errors
+  - FDR correction for multiple comparisons
+
+RESULTS SUMMARY
+----------------------------------------
+Total hypotheses tested: 10
+UCLA main effects surviving p < 0.05: 0
+UCLA × Gender interactions p < 0.05: 0
+
+================================================================================
+CONCLUSION
+================================================================================
+No UCLA effects survived DASS control.
+Loneliness effects appear confounded with mood/anxiety.

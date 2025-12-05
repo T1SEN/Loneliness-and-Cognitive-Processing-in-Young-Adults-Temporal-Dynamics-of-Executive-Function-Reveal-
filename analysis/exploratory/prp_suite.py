@@ -40,7 +40,8 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 from scipy import stats
-from scipy.optimize import curve_fit
+from scipy.stats import exponnorm
+from scipy.optimize import curve_fit, minimize
 import statsmodels.formula.api as smf
 from sklearn.preprocessing import StandardScaler
 
@@ -481,6 +482,187 @@ def analyze_post_error(verbose: bool = True) -> pd.DataFrame:
         print(f"  Saved to: {output_dir}")
 
     return pes_df
+
+
+# =============================================================================
+# ANALYSIS 5: EX-GAUSSIAN DECOMPOSITION
+# =============================================================================
+
+def _fit_exgaussian_prp(rts: np.ndarray) -> dict:
+    """
+    Fit Ex-Gaussian distribution using MLE.
+
+    Returns mu, sigma, tau parameters.
+    """
+    if len(rts) < 20:
+        return {'mu': np.nan, 'sigma': np.nan, 'tau': np.nan, 'n': len(rts)}
+
+    rts = np.array(rts)
+
+    # Method of moments initial estimates
+    m = np.mean(rts)
+    s = np.std(rts)
+    skew = np.mean(((rts - m) / s) ** 3) if s > 0 else 0
+
+    tau_init = max(10, (abs(skew) / 2) ** (1/3) * s) if skew > 0 else 50
+    mu_init = max(100, m - tau_init)
+    sigma_init = max(10, np.sqrt(max(0, s**2 - tau_init**2)))
+
+    def neg_loglik(params):
+        mu, sigma, tau = params
+        if sigma <= 0 or tau <= 0:
+            return 1e10
+        K = tau / sigma
+        try:
+            loglik = np.sum(exponnorm.logpdf(rts, K, loc=mu, scale=sigma))
+            return -loglik if np.isfinite(loglik) else 1e10
+        except:
+            return 1e10
+
+    try:
+        result = minimize(
+            neg_loglik,
+            x0=[mu_init, sigma_init, tau_init],
+            method='L-BFGS-B',
+            bounds=[(100, 4000), (5, 1000), (5, 2000)]
+        )
+
+        if result.success:
+            mu, sigma, tau = result.x
+            return {'mu': mu, 'sigma': sigma, 'tau': tau, 'n': len(rts)}
+    except:
+        pass
+
+    return {'mu': np.nan, 'sigma': np.nan, 'tau': np.nan, 'n': len(rts)}
+
+
+@register_analysis(
+    name="exgaussian",
+    description="Ex-Gaussian RT decomposition by SOA condition",
+    source_script="prp_exgaussian_decomposition.py"
+)
+def analyze_exgaussian(verbose: bool = True) -> pd.DataFrame:
+    """
+    Ex-Gaussian RT decomposition for PRP task.
+
+    Decomposes T2 RT distributions into:
+    - μ (mu): Gaussian mean (routine processing speed)
+    - σ (sigma): Gaussian SD (processing variability)
+    - τ (tau): Exponential component (attentional lapses)
+
+    Tests whether UCLA × Gender affects Ex-Gaussian parameters at different SOA levels.
+    """
+    output_dir = OUTPUT_DIR / "exgaussian"
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    if verbose:
+        print("\n[EXGAUSSIAN] Fitting Ex-Gaussian distributions by SOA...")
+
+    trials = load_prp_trials()
+    master = load_master_with_prp()
+
+    # SOA categorization
+    def categorize_soa(soa):
+        if soa <= 150:
+            return 'short'
+        elif 300 <= soa <= 600:
+            return 'medium'
+        elif soa >= 1200:
+            return 'long'
+        return 'other'
+
+    trials['soa_cat'] = trials['soa'].apply(categorize_soa)
+    trials = trials[trials['soa_cat'] != 'other']
+
+    # Fit for each participant × SOA category
+    results = []
+    for pid in trials['participant_id'].unique():
+        pdata = trials[trials['participant_id'] == pid]
+
+        row = {'participant_id': pid}
+
+        for soa_cat in ['short', 'medium', 'long']:
+            soa_trials = pdata[pdata['soa_cat'] == soa_cat]
+
+            params = _fit_exgaussian_prp(soa_trials['t2_rt'].values)
+            row[f'{soa_cat}_mu'] = params['mu']
+            row[f'{soa_cat}_sigma'] = params['sigma']
+            row[f'{soa_cat}_tau'] = params['tau']
+            row[f'{soa_cat}_n'] = params['n']
+
+        results.append(row)
+
+    exgauss_df = pd.DataFrame(results)
+
+    # Compute bottleneck effects in Ex-Gaussian space
+    exgauss_df['mu_bottleneck'] = exgauss_df['short_mu'] - exgauss_df['long_mu']
+    exgauss_df['sigma_bottleneck'] = exgauss_df['short_sigma'] - exgauss_df['long_sigma']
+    exgauss_df['tau_bottleneck'] = exgauss_df['short_tau'] - exgauss_df['long_tau']
+
+    analysis_df = exgauss_df.merge(master, on='participant_id', how='inner')
+
+    valid_count = analysis_df['short_mu'].notna().sum()
+    if verbose:
+        print(f"  Fitted N={valid_count} participants")
+        if valid_count > 0:
+            print(f"  Short SOA - μ: {analysis_df['short_mu'].mean():.1f}, σ: {analysis_df['short_sigma'].mean():.1f}, τ: {analysis_df['short_tau'].mean():.1f}")
+            print(f"  Long SOA  - μ: {analysis_df['long_mu'].mean():.1f}, σ: {analysis_df['long_sigma'].mean():.1f}, τ: {analysis_df['long_tau'].mean():.1f}")
+
+    # Gender-stratified correlations for tau (attentional lapses)
+    corr_results = []
+    for gender_val, gender_label in [(1, 'male'), (0, 'female')]:
+        subset = analysis_df[analysis_df['gender_male'] == gender_val]
+
+        for soa_cat in ['short', 'long']:
+            for param in ['mu', 'sigma', 'tau']:
+                col = f'{soa_cat}_{param}'
+                valid = subset.dropna(subset=['ucla_total', col])
+
+                if len(valid) >= 10:
+                    r, p = stats.pearsonr(valid['ucla_total'], valid[col])
+                    corr_results.append({
+                        'gender': gender_label,
+                        'soa': soa_cat,
+                        'parameter': param,
+                        'n': len(valid),
+                        'r': r,
+                        'p': p,
+                        'mean': valid[col].mean()
+                    })
+
+    corr_df = pd.DataFrame(corr_results)
+
+    if verbose and len(corr_df) > 0:
+        sig_effects = corr_df[corr_df['p'] < 0.10]
+        if len(sig_effects) > 0:
+            print("  Marginal effects (p < 0.10):")
+            for _, row in sig_effects.iterrows():
+                print(f"    {row['gender']} {row['soa']} {row['parameter']}: r={row['r']:.3f}, p={row['p']:.4f}")
+
+    # DASS-controlled regression on tau bottleneck
+    analysis_clean = analysis_df.dropna(subset=['z_ucla', 'z_dass_dep', 'tau_bottleneck'])
+    if len(analysis_clean) >= 30:
+        formula = "tau_bottleneck ~ z_ucla * C(gender_male) + z_dass_dep + z_dass_anx + z_dass_str + z_age"
+        model = smf.ols(formula, data=analysis_clean).fit(cov_type='HC3')
+
+        if verbose:
+            print(f"  UCLA → τ bottleneck: β={model.params.get('z_ucla', np.nan):.3f}, p={model.pvalues.get('z_ucla', np.nan):.4f}")
+
+        pd.DataFrame({
+            'predictor': model.params.index,
+            'beta': model.params.values,
+            'se': model.bse.values,
+            'p': model.pvalues.values
+        }).to_csv(output_dir / "tau_bottleneck_regression.csv", index=False, encoding='utf-8-sig')
+
+    exgauss_df.to_csv(output_dir / "exgaussian_parameters.csv", index=False, encoding='utf-8-sig')
+    if len(corr_df) > 0:
+        corr_df.to_csv(output_dir / "exgaussian_correlations.csv", index=False, encoding='utf-8-sig')
+
+    if verbose:
+        print(f"  Saved to: {output_dir}")
+
+    return exgauss_df
 
 
 # =============================================================================

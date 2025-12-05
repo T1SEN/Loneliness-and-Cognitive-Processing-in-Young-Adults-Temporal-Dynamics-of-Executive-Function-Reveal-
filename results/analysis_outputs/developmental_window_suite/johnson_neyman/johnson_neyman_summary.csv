@@ -1,0 +1,5 @@
+﻿outcome,outcome_label,n,min_age,max_age,mean_age,n_sig_ages,sig_ages_range,nonsig_ages_range
+pe_rate,WCST PE Rate,170,-20,29,20.341176470588234,11,18-36,20-27
+wcst_accuracy,WCST Accuracy,170,-20,29,20.341176470588234,0,None,18-36
+stroop_interference,Stroop Interference,170,-20,29,20.341176470588234,0,None,18-36
+prp_bottleneck,PRP Bottleneck,166,-20,29,20.343373493975903,2,21-22,18-36

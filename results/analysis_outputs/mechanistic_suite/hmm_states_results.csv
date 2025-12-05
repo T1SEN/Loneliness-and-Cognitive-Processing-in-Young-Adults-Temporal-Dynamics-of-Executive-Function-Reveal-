@@ -1,0 +1,3 @@
+﻿metric,beta_ucla_logit,p_ucla,n,cov_type,weight_var
+lapse_occupancy,0.052818199506896944,0.602852035200403,171,HC3,n_trials
+trans_to_lapse,-0.08059638628952866,0.3798143149980986,171,HC3,n_trials

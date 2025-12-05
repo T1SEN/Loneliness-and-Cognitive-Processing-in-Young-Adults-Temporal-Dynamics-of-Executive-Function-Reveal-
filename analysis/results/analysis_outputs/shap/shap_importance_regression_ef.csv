@@ -1,0 +1,13 @@
+feature,mean_abs_shap
+prp_bottleneck,2.4880793
+wcst_conceptual_pct,1.7900103
+stroop_effect,1.4375921
+prp_mrt_t1,1.2336061
+mrt_cong,1.1596425
+wcst_persev_errors,1.1555146
+wcst_total_errors,1.1010619
+prp_acc_t1,0.7705742
+mrt_incong,0.6518753
+prp_mrt_t2,0.46491814
+prp_acc_t2,0.44828117
+stroop_accuracy,0.23665768

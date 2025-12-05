@@ -1,0 +1,24 @@
+======================================================================
+NORMATIVE MODELING INTERPRETATION GUIDE
+======================================================================
+
+RESEARCH QUESTION:
+----------------------------------------------------------------------
+Does loneliness predict EF impairment BEYOND what is expected
+given age, mood (DASS), and gender?
+
+APPROACH:
+----------------------------------------------------------------------
+Stage 1: Build normative model EF ~ f(Age, DASS, Gender)
+Stage 2: Compute personalized deviations (Observed - Expected)
+Stage 3: Test Deviation ~ UCLA * Gender
+
+INTERPRETATION:
+----------------------------------------------------------------------
+- Positive UCLA beta: Loneliness predicts WORSE-than-expected EF
+- Positive Interaction beta: Effect stronger in males
+- Negative beta: Loneliness predicts BETTER-than-expected EF
+- Beta near 0: No UCLA effect beyond demographics/mood
+
+KEY RESULTS:
+----------------------------------------------------------------------

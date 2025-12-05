@@ -54,69 +54,59 @@ OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 # =============================================================================
 
 def bootstrap_mediation(
-    X: np.ndarray,
-    M: np.ndarray,
-    Y: np.ndarray,
+    df: pd.DataFrame,
+    x_col: str,
+    m_col: str,
+    y_col: str,
+    covariates: Optional[List[str]] = None,
     n_bootstrap: int = 5000,
-    ci: float = 0.95
+    ci: float = 0.95,
+    seed: int = 42
 ) -> Dict[str, float]:
     """
-    Bootstrap mediation analysis.
+    Bootstrap mediation with optional covariate control.
 
-    Tests pathway: X → M → Y
-
-    Args:
-        X: Independent variable (UCLA)
-        M: Mediator (DASS subscale)
-        Y: Dependent variable (EF metric)
-        n_bootstrap: Number of bootstrap samples
-        ci: Confidence interval (e.g., 0.95)
-
-    Returns:
-        Dict with a, b, c, c', indirect, direct effects and CIs
+    Tests pathway: X ?? M ?? Y controlling for covariates.
     """
-    n = len(X)
-    indirect_effects = []
+    covariates = covariates or []
+    cov_str = (" + " + " + ".join(covariates)) if covariates else ""
 
-    # Original estimates
-    # a path: X → M
-    a_model = smf.ols("M ~ X", data=pd.DataFrame({'X': X, 'M': M})).fit()
-    a = a_model.params['X']
+    formula_a = f"{m_col} ~ {x_col}{cov_str}"
+    formula_b = f"{y_col} ~ {x_col} + {m_col}{cov_str}"
+    formula_c = f"{y_col} ~ {x_col}{cov_str}"
 
-    # b path and c' path: M → Y controlling for X
-    bc_model = smf.ols("Y ~ X + M", data=pd.DataFrame({'X': X, 'M': M, 'Y': Y})).fit()
-    b = bc_model.params['M']
-    c_prime = bc_model.params['X']
+    a_model = smf.ols(formula_a, data=df).fit()
+    bc_model = smf.ols(formula_b, data=df).fit()
+    c_model = smf.ols(formula_c, data=df).fit()
 
-    # c path (total): X → Y
-    c_model = smf.ols("Y ~ X", data=pd.DataFrame({'X': X, 'Y': Y})).fit()
-    c = c_model.params['X']
+    a = a_model.params.get(x_col, np.nan)
+    b = bc_model.params.get(m_col, np.nan)
+    c_prime = bc_model.params.get(x_col, np.nan)
+    c = c_model.params.get(x_col, np.nan)
 
-    # Indirect effect
     indirect = a * b
+    indirect_effects = []
+    alpha = (1 - ci) / 2
+    n = len(df)
+    rng = np.random.default_rng(seed)
 
-    # Bootstrap
-    rng = np.random.default_rng(42)
     for _ in range(n_bootstrap):
-        idx = rng.choice(n, size=n, replace=True)
-        X_boot = X[idx]
-        M_boot = M[idx]
-        Y_boot = Y[idx]
-
+        sample = df.sample(n=n, replace=True, random_state=int(rng.integers(0, 1e9)))
         try:
-            a_boot = smf.ols("M ~ X", data=pd.DataFrame({'X': X_boot, 'M': M_boot})).fit().params['X']
-            b_boot = smf.ols("Y ~ X + M", data=pd.DataFrame({'X': X_boot, 'M': M_boot, 'Y': Y_boot})).fit().params['M']
-            indirect_effects.append(a_boot * b_boot)
+            a_boot = smf.ols(formula_a, data=sample).fit().params.get(x_col, np.nan)
+            b_boot = smf.ols(formula_b, data=sample).fit().params.get(m_col, np.nan)
+            if np.isfinite(a_boot) and np.isfinite(b_boot):
+                indirect_effects.append(a_boot * b_boot)
         except Exception:
             continue
 
     indirect_effects = np.array(indirect_effects)
-    alpha = (1 - ci) / 2
-    ci_low = np.percentile(indirect_effects, alpha * 100)
-    ci_high = np.percentile(indirect_effects, (1 - alpha) * 100)
+    ci_low = np.percentile(indirect_effects, alpha * 100) if len(indirect_effects) else np.nan
+    ci_high = np.percentile(indirect_effects, (1 - alpha) * 100) if len(indirect_effects) else np.nan
 
-    # Significance: CI does not include 0
-    significant = (ci_low > 0) or (ci_high < 0)
+    significant = False
+    if np.isfinite(ci_low) and np.isfinite(ci_high):
+        significant = (ci_low > 0) or (ci_high < 0)
 
     return {
         'a': a,
@@ -127,9 +117,11 @@ def bootstrap_mediation(
         'indirect_ci_low': ci_low,
         'indirect_ci_high': ci_high,
         'indirect_significant': significant,
-        'proportion_mediated': indirect / c if c != 0 else np.nan,
-        'n_bootstrap': len(indirect_effects)
+        'proportion_mediated': indirect / c if c not in (0, np.nan) else np.nan,
+        'n_bootstrap': len(indirect_effects),
+        'covariates_used': covariates
     }
+
 
 
 def sobel_test(a: float, b: float, se_a: float, se_b: float) -> Tuple[float, float]:
@@ -189,28 +181,31 @@ def analyze_dass_mediation(verbose: bool = True) -> pd.DataFrame:
 
     mediators = ['dass_depression', 'dass_anxiety', 'dass_stress']
     outcomes = ['pe_rate', 'stroop_interference', 'prp_bottleneck']
+    covariates = ['z_age', 'z_dass_dep', 'z_dass_anx', 'z_dass_str', 'gender_male']
 
     results = []
 
     for mediator in mediators:
         for outcome in outcomes:
-            # Get complete cases
             cols = ['ucla_total', mediator, outcome]
-            subset = df.dropna(subset=cols)
+            subset = df.dropna(subset=cols + covariates)
 
             if len(subset) < 50:
                 if verbose:
-                    print(f"  [SKIP] {mediator} → {outcome}: N={len(subset)} < 50")
+                    print(f"  [SKIP] {mediator} -> {outcome}: N={len(subset)} < 50")
                 continue
 
-            X = subset['ucla_total'].values
-            M = subset[mediator].values
-            Y = subset[outcome].values
-
             if verbose:
-                print(f"  Testing: UCLA → {mediator} → {outcome} (N={len(subset)})")
+                print(f"  Testing: UCLA -> {mediator} -> {outcome} (N={len(subset)})")
 
-            med_results = bootstrap_mediation(X, M, Y, n_bootstrap=5000)
+            med_results = bootstrap_mediation(
+                subset,
+                x_col='ucla_total',
+                m_col=mediator,
+                y_col=outcome,
+                covariates=covariates,
+                n_bootstrap=5000
+            )
 
             results.append({
                 'predictor': 'UCLA',
@@ -221,7 +216,7 @@ def analyze_dass_mediation(verbose: bool = True) -> pd.DataFrame:
             })
 
             if verbose:
-                sig = "*" if med_results['indirect_significant'] else ""
+                sig = '*' if med_results['indirect_significant'] else ''
                 print(f"    Indirect: {med_results['indirect']:.4f} [{med_results['indirect_ci_low']:.4f}, {med_results['indirect_ci_high']:.4f}]{sig}")
 
     results_df = pd.DataFrame(results)
@@ -252,6 +247,7 @@ def analyze_gender_stratified(verbose: bool = True) -> pd.DataFrame:
     df = load_mediation_data()
 
     results = []
+    covariates = ['z_age', 'z_dass_dep', 'z_dass_anx', 'z_dass_str']
 
     for gender_val, gender_name in [(0, 'female'), (1, 'male')]:
         gender_df = df[df['gender_male'] == gender_val]
@@ -262,16 +258,19 @@ def analyze_gender_stratified(verbose: bool = True) -> pd.DataFrame:
         for mediator in ['dass_depression', 'dass_anxiety', 'dass_stress']:
             for outcome in ['pe_rate', 'stroop_interference']:
                 cols = ['ucla_total', mediator, outcome]
-                subset = gender_df.dropna(subset=cols)
+                subset = gender_df.dropna(subset=cols + covariates)
 
                 if len(subset) < 30:
                     continue
 
-                X = subset['ucla_total'].values
-                M = subset[mediator].values
-                Y = subset[outcome].values
-
-                med_results = bootstrap_mediation(X, M, Y, n_bootstrap=5000)
+                med_results = bootstrap_mediation(
+                    subset,
+                    x_col='ucla_total',
+                    m_col=mediator,
+                    y_col=outcome,
+                    covariates=covariates,
+                    n_bootstrap=5000
+                )
 
                 results.append({
                     'gender': gender_name,
@@ -282,20 +281,16 @@ def analyze_gender_stratified(verbose: bool = True) -> pd.DataFrame:
                 })
 
                 if verbose and med_results['indirect_significant']:
-                    print(f"    * {mediator} → {outcome}: indirect={med_results['indirect']:.4f}")
+                    print(f"    * {mediator} -> {outcome}: indirect={med_results['indirect']:.4f}")
 
     results_df = pd.DataFrame(results)
     results_df.to_csv(output_dir / "gender_stratified_mediation.csv", index=False, encoding='utf-8-sig')
 
     if verbose:
-        print(f"\n  Saved to: {output_dir}")
+        print(f"  Saved to: {output_dir}")
 
     return results_df
 
-
-# =============================================================================
-# ANALYSIS 3: MODERATED MEDIATION
-# =============================================================================
 
 def analyze_moderated_mediation(verbose: bool = True) -> pd.DataFrame:
     """
@@ -308,18 +303,18 @@ def analyze_moderated_mediation(verbose: bool = True) -> pd.DataFrame:
         print("\n[MODERATED MEDIATION] Testing gender moderation of indirect effects...")
 
     df = load_mediation_data()
+    covariates = ['z_age', 'z_dass_dep', 'z_dass_anx', 'z_dass_str']
 
     results = []
 
     for mediator in ['dass_depression', 'dass_anxiety', 'dass_stress']:
         for outcome in ['pe_rate', 'stroop_interference']:
             cols = ['ucla_total', mediator, outcome, 'gender_male']
-            subset = df.dropna(subset=cols)
+            subset = df.dropna(subset=cols + covariates)
 
             if len(subset) < 60:
                 continue
 
-            # Compute indirect effects by gender
             male_df = subset[subset['gender_male'] == 1]
             female_df = subset[subset['gender_male'] == 0]
 
@@ -327,20 +322,23 @@ def analyze_moderated_mediation(verbose: bool = True) -> pd.DataFrame:
                 continue
 
             male_med = bootstrap_mediation(
-                male_df['ucla_total'].values,
-                male_df[mediator].values,
-                male_df[outcome].values,
+                male_df,
+                x_col='ucla_total',
+                m_col=mediator,
+                y_col=outcome,
+                covariates=covariates,
                 n_bootstrap=5000
             )
 
             female_med = bootstrap_mediation(
-                female_df['ucla_total'].values,
-                female_df[mediator].values,
-                female_df[outcome].values,
+                female_df,
+                x_col='ucla_total',
+                m_col=mediator,
+                y_col=outcome,
+                covariates=covariates,
                 n_bootstrap=5000
             )
 
-            # Difference in indirect effects
             diff_indirect = male_med['indirect'] - female_med['indirect']
 
             results.append({
@@ -356,7 +354,7 @@ def analyze_moderated_mediation(verbose: bool = True) -> pd.DataFrame:
             })
 
             if verbose:
-                print(f"  {mediator} → {outcome}:")
+                print(f"  {mediator} -> {outcome}:")
                 print(f"    Male indirect: {male_med['indirect']:.4f} {'*' if male_med['indirect_significant'] else ''}")
                 print(f"    Female indirect: {female_med['indirect']:.4f} {'*' if female_med['indirect_significant'] else ''}")
 
@@ -364,19 +362,19 @@ def analyze_moderated_mediation(verbose: bool = True) -> pd.DataFrame:
     results_df.to_csv(output_dir / "moderated_mediation_results.csv", index=False, encoding='utf-8-sig')
 
     if verbose:
-        print(f"\n  Saved to: {output_dir}")
+        print(f"  Saved to: {output_dir}")
 
     return results_df
 
 
 # =============================================================================
-# MAIN RUNNER
+# ANALYSIS REGISTRY
 # =============================================================================
 
 ANALYSES = {
-    'dass_bootstrap': ('Bootstrap mediation: UCLA → DASS → EF', analyze_dass_mediation),
-    'gender_stratified': ('Gender-stratified mediation models', analyze_gender_stratified),
-    'moderated_mediation': ('Moderated mediation by gender', analyze_moderated_mediation),
+    'dass_bootstrap': ('DASS bootstrap mediation', analyze_dass_mediation),
+    'gender_stratified': ('Gender-stratified mediation', analyze_gender_stratified),
+    'moderated_mediation': ('Moderated mediation (gender)', analyze_moderated_mediation),
 }
 
 

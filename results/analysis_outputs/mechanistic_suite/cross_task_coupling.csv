@@ -1,0 +1,7 @@
+﻿ucla_group,task1,task2,r,p,n
+High UCLA,pe_rate,stroop_interference,-0.03621379894615313,0.745160983609787,83
+High UCLA,pe_rate,prp_bottleneck,-0.05232768427314359,0.6384835573686873,83
+High UCLA,stroop_interference,prp_bottleneck,0.2535250965064808,0.020743751373060167,83
+Low UCLA,pe_rate,stroop_interference,0.2148974057741279,0.049639724060104584,84
+Low UCLA,pe_rate,prp_bottleneck,0.2533791488059391,0.020042579144810127,84
+Low UCLA,stroop_interference,prp_bottleneck,0.07542291774193285,0.4953168156099266,84

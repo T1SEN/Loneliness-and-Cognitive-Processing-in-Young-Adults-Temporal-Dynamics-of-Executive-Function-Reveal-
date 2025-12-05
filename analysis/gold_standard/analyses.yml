@@ -15,6 +15,7 @@ wcst_pe:
   description: "WCST Perseverative Error Rate"
   outcome_column: "pe_rate"
   hypothesis: "H1_PRIMARY"
+  tier: 1
   source_script: "master_dass_controlled_analysis.py"
   family: ols
   robust: HC3
@@ -24,6 +25,7 @@ wcst_accuracy:
   description: "WCST Accuracy"
   outcome_column: "wcst_accuracy"
   hypothesis: "H2"
+  tier: 1
   source_script: "master_dass_controlled_analysis.py"
   family: ols
   robust: HC3
@@ -33,6 +35,7 @@ stroop_interference:
   description: "Stroop Interference Effect (Incongruent - Congruent RT)"
   outcome_column: "stroop_interference"
   hypothesis: "H3"
+  tier: 1
   source_script: "master_dass_controlled_analysis.py"
   family: ols
   robust: HC3
@@ -42,6 +45,7 @@ prp_bottleneck:
   description: "PRP Bottleneck Effect (Short SOA - Long SOA)"
   outcome_column: "prp_bottleneck"
   hypothesis: "H4"
+  tier: 1
   source_script: "master_dass_controlled_analysis.py"
   family: ols
   robust: HC3
@@ -54,6 +58,7 @@ prp_soa_slope:
   description: "PRP SOA Slope (linear trend in T2 RT across SOA)"
   outcome_column: "prp_soa_slope"
   hypothesis: "H4_EXT"
+  tier: 2
   source_script: "prp_comprehensive_dass_controlled.py"
   family: ols
   robust: HC3
@@ -63,6 +68,7 @@ prp_cv_short:
   description: "PRP Coefficient of Variation at Short SOA"
   outcome_column: "prp_cv_short"
   hypothesis: "H4_VARIABILITY"
+  tier: 2
   source_script: "prp_comprehensive_dass_controlled.py"
   family: ols
   robust: HC3
@@ -70,52 +76,193 @@ prp_cv_short:
 
 # --------------------------------------------------------------------------
 # Ex-Gaussian Decomposition (from prp_exgaussian_dass_controlled.py)
-# NOTE: Requires running prp_exgaussian_dass_controlled.py first to generate columns
 # --------------------------------------------------------------------------
-# prp_tau:
-#   description: "PRP Ex-Gaussian Tau (attentional lapses)"
-#   outcome_column: "prp_tau"
-#   hypothesis: "H5_LAPSE"
-#   source_script: "prp_exgaussian_dass_controlled.py"
-#   family: ols
-#   robust: HC3
-#   min_n: 25
+prp_tau:
+  description: "PRP Ex-Gaussian Tau (attentional lapses)"
+  outcome_column: "prp_tau"
+  hypothesis: "H5_LAPSE"
+  tier: 2
+  source_script: "prp_exgaussian_dass_controlled.py"
+  family: ols
+  robust: HC3
+  min_n: 25
 
-# prp_mu:
-#   description: "PRP Ex-Gaussian Mu (processing speed)"
-#   outcome_column: "prp_mu"
-#   hypothesis: "H5_SPEED"
-#   source_script: "prp_exgaussian_dass_controlled.py"
-#   family: ols
-#   robust: HC3
-#   min_n: 25
+prp_mu:
+  description: "PRP Ex-Gaussian Mu (processing speed)"
+  outcome_column: "prp_mu"
+  hypothesis: "H5_SPEED"
+  tier: 2
+  source_script: "prp_exgaussian_dass_controlled.py"
+  family: ols
+  robust: HC3
+  min_n: 25
 
-# prp_sigma:
-#   description: "PRP Ex-Gaussian Sigma (response variability)"
-#   outcome_column: "prp_sigma"
-#   hypothesis: "H5_VARIABILITY"
-#   source_script: "prp_exgaussian_dass_controlled.py"
-#   family: ols
-#   robust: HC3
-#   min_n: 25
+prp_sigma:
+  description: "PRP Ex-Gaussian Sigma (response variability)"
+  outcome_column: "prp_sigma"
+  hypothesis: "H5_VARIABILITY"
+  tier: 2
+  source_script: "prp_exgaussian_dass_controlled.py"
+  family: ols
+  robust: HC3
+  min_n: 25
 
 # --------------------------------------------------------------------------
 # Latent Meta-Control Factor (from loneliness_exec_models.py)
-# NOTE: Requires running loneliness_exec_models.py first to generate PCA scores
 # --------------------------------------------------------------------------
-# meta_control:
-#   description: "Latent Meta-Control Factor (PCA across EF tasks)"
-#   outcome_column: "meta_control_score"
-#   hypothesis: "H6_METACONTROL"
-#   source_script: "loneliness_exec_models.py"
-#   family: ols
-#   robust: HC3
-#   min_n: 20
-#   requires_pca: true
+meta_control:
+  description: "Latent Meta-Control Factor (PCA across EF tasks)"
+  outcome_column: "meta_control_score"
+  hypothesis: "H6_METACONTROL"
+  tier: 2
+  source_script: "loneliness_exec_models.py"
+  family: ols
+  robust: HC3
+  min_n: 20
+  requires_pca: true
+
+# --------------------------------------------------------------------------
+# Additional WCST Metrics (Tier 2 exploratory)
+# --------------------------------------------------------------------------
+wcst_mean_rt:
+  description: "WCST Mean RT"
+  outcome_column: "wcst_mean_rt"
+  hypothesis: "H1_RT_MEAN"
+  tier: 2
+  source_script: "master_dass_controlled_analysis.py"
+  family: ols
+  robust: HC3
+  min_n: 30
+
+wcst_sd_rt:
+  description: "WCST RT SD"
+  outcome_column: "wcst_sd_rt"
+  hypothesis: "H1_RT_SD"
+  tier: 2
+  source_script: "master_dass_controlled_analysis.py"
+  family: ols
+  robust: HC3
+  min_n: 30
+
+wcst_pe_count:
+  description: "WCST Perseverative Error Count"
+  outcome_column: "pe_count"
+  hypothesis: "H1_PE_COUNT"
+  tier: 2
+  source_script: "master_dass_controlled_analysis.py"
+  family: ols
+  robust: HC3
+  min_n: 30
+
+wcst_perseverative_responses_percent:
+  description: "WCST Perseverative Responses (%)"
+  outcome_column: "perseverativeResponsesPercent"
+  hypothesis: "H1_PERSEV_RESP"
+  tier: 2
+  source_script: "master_dass_controlled_analysis.py"
+  family: ols
+  robust: HC3
+  min_n: 30
+
+wcst_conceptual_level_responses_percent:
+  description: "WCST Conceptual Level Responses (%)"
+  outcome_column: "conceptualLevelResponsesPercent"
+  hypothesis: "H1_CONCEPTUAL"
+  tier: 2
+  source_script: "master_dass_controlled_analysis.py"
+  family: ols
+  robust: HC3
+  min_n: 30
+
+# --------------------------------------------------------------------------
+# Additional Stroop Metrics (Tier 2 exploratory)
+# --------------------------------------------------------------------------
+stroop_rt_congruent:
+  description: "Stroop Congruent RT"
+  outcome_column: "rt_mean_congruent"
+  hypothesis: "H3_CONG_RT"
+  tier: 2
+  source_script: "master_dass_controlled_analysis.py"
+  family: ols
+  robust: HC3
+  min_n: 30
+
+stroop_rt_incongruent:
+  description: "Stroop Incongruent RT"
+  outcome_column: "rt_mean_incongruent"
+  hypothesis: "H3_INCONG_RT"
+  tier: 2
+  source_script: "master_dass_controlled_analysis.py"
+  family: ols
+  robust: HC3
+  min_n: 30
+
+stroop_acc_congruent:
+  description: "Stroop Congruent Accuracy"
+  outcome_column: "accuracy_congruent"
+  hypothesis: "H3_CONG_ACC"
+  tier: 2
+  source_script: "master_dass_controlled_analysis.py"
+  family: ols
+  robust: HC3
+  min_n: 30
+
+stroop_acc_incongruent:
+  description: "Stroop Incongruent Accuracy"
+  outcome_column: "accuracy_incongruent"
+  hypothesis: "H3_INCONG_ACC"
+  tier: 2
+  source_script: "master_dass_controlled_analysis.py"
+  family: ols
+  robust: HC3
+  min_n: 30
+
+# --------------------------------------------------------------------------
+# Additional PRP Metrics (Tier 2 exploratory)
+# --------------------------------------------------------------------------
+prp_rt_short:
+  description: "PRP T2 RT (Short SOA)"
+  outcome_column: "t2_rt_mean_short"
+  hypothesis: "H4_RT_SHORT"
+  tier: 2
+  source_script: "prp_comprehensive_dass_controlled.py"
+  family: ols
+  robust: HC3
+  min_n: 25
+
+prp_rt_long:
+  description: "PRP T2 RT (Long SOA)"
+  outcome_column: "t2_rt_mean_long"
+  hypothesis: "H4_RT_LONG"
+  tier: 2
+  source_script: "prp_comprehensive_dass_controlled.py"
+  family: ols
+  robust: HC3
+  min_n: 25
+
+prp_sd_short:
+  description: "PRP T2 RT SD (Short SOA)"
+  outcome_column: "t2_rt_sd_short"
+  hypothesis: "H4_SD_SHORT"
+  tier: 2
+  source_script: "prp_comprehensive_dass_controlled.py"
+  family: ols
+  robust: HC3
+  min_n: 25
+
+prp_sd_long:
+  description: "PRP T2 RT SD (Long SOA)"
+  outcome_column: "t2_rt_sd_long"
+  hypothesis: "H4_SD_LONG"
+  tier: 2
+  source_script: "prp_comprehensive_dass_controlled.py"
+  family: ols
+  robust: HC3
+  min_n: 25
 
 # --------------------------------------------------------------------------
 # Trial-Level Mixed Effects (from trial_level_mixed_effects.py)
-# Note: These use different modeling approach (mixed effects)
+# NOTE: Requires mixed effects modeling - not yet supported in pipeline
 # --------------------------------------------------------------------------
 # trial_level_rt:
 #   description: "Trial-level RT with random participant effects"

@@ -6,6 +6,9 @@ This directory contains all statistical analysis scripts for the UCLA Loneliness
 
 ```
 analysis/
+├── __main__.py             # Unified CLI entry point
+├── run.py                  # Suite runner module
+│
 ├── gold_standard/          # Publication-ready confirmatory analyses
 │   ├── pipeline.py         # Unified runner for all Gold Standard analyses
 │   └── analyses.yml        # Analysis configuration
@@ -13,50 +16,97 @@ analysis/
 ├── exploratory/            # Exploratory analyses (hypothesis generation)
 │   ├── prp_suite.py        # PRP task analyses
 │   ├── stroop_suite.py     # Stroop task analyses
-│   └── wcst_suite.py       # WCST task analyses
+│   ├── wcst_suite.py       # WCST task analyses
+│   └── cross_task_suite.py # Cross-task integration analyses
 │
 ├── mediation/              # Mediation analyses (DASS as mediator)
 │   └── mediation_suite.py  # Bootstrap mediation analyses
+│
+├── validation/             # Methodological validation
+│   └── validation_suite.py # CV, robustness, Type M/S error
+│
+├── synthesis/              # Integration and summary analyses
+│   └── synthesis_suite.py  # Group comparisons, forest plots
+│
+├── advanced/               # Advanced mechanistic analyses
+│   ├── mechanistic_suite.py  # Tier 1 & 2 decomposition
+│   ├── latent_suite.py       # SEM, network, factor analysis
+│   └── clustering_suite.py   # Vulnerability clustering
+│
+├── ml/                     # Machine learning analyses
+│   ├── nested_cv.py        # Nested CV with hyperparameter tuning
+│   ├── classification.py   # Loneliness classification
+│   └── feature_selection.py # Recursive feature elimination
 │
 ├── utils/                  # Shared utility modules
 │   ├── data_loader_utils.py    # Data loading and preprocessing
 │   ├── trial_data_loader.py    # Trial-level data loading
 │   ├── modeling.py             # Regression utilities
 │   ├── plotting.py             # Visualization utilities
-│   └── publication_helpers.py  # Formatting for publications
+│   ├── publication_helpers.py  # Formatting for publications
+│   ├── trial_features.py       # Trial-level feature derivation
+│   ├── exgaussian.py           # Ex-Gaussian RT fitting
+│   └── post_error.py           # Post-error slowing computation
 │
-└── [legacy scripts]        # Individual analysis scripts (being consolidated)
+└── archive/                # Deprecated/superseded scripts (reference only)
+    ├── README.md           # Archive documentation
+    ├── legacy_confirmatory/
+    ├── legacy_exploratory/
+    ├── legacy_mediation/
+    ├── legacy_validation/
+    ├── legacy_synthesis/
+    ├── legacy_mechanistic/
+    └── legacy_utils/
 ```
 
 ## Quick Start
 
-### Run Gold Standard Analyses (Publication-ready)
+### Unified CLI (Recommended)
 
 ```bash
-# Run all confirmatory analyses
-.\venv\Scripts\python.exe -m analysis.gold_standard.pipeline
+# List all available suites
+python -m analysis --list
 
-# Results saved to: results/gold_standard/
+# Run Gold Standard (confirmatory analyses)
+python -m analysis --suite gold_standard
+
+# Run specific exploratory suite
+python -m analysis --suite exploratory.wcst
+
+# Run specific analysis within a suite
+python -m analysis --suite exploratory.wcst --analysis learning_trajectory
+
+# Run all suites
+python -m analysis --all
 ```
 
-### Run Exploratory Analyses
+### Direct Suite Execution
 
 ```bash
-# PRP analyses
-.\venv\Scripts\python.exe -m analysis.exploratory.prp_suite
-.\venv\Scripts\python.exe -m analysis.exploratory.prp_suite --analysis bottleneck_shape
+# Gold Standard confirmatory analyses
+python -m analysis.gold_standard.pipeline
 
-# Stroop analyses
-.\venv\Scripts\python.exe -m analysis.exploratory.stroop_suite
+# Exploratory suites
+python -m analysis.exploratory.prp_suite
+python -m analysis.exploratory.stroop_suite
+python -m analysis.exploratory.wcst_suite
 
-# WCST analyses
-.\venv\Scripts\python.exe -m analysis.exploratory.wcst_suite
-```
+# Mediation
+python -m analysis.mediation.mediation_suite
 
-### Run Mediation Analyses
+# Validation
+python -m analysis.validation.validation_suite
 
-```bash
-.\venv\Scripts\python.exe -m analysis.mediation.mediation_suite
+# Synthesis
+python -m analysis.synthesis.synthesis_suite
+
+# Advanced
+python -m analysis.advanced.mechanistic_suite
+python -m analysis.advanced.latent_suite
+python -m analysis.advanced.clustering_suite
+
+# Machine Learning
+python -m analysis.ml.nested_cv --task classification --features demo_dass
 ```
 
 ## DASS-21 Covariate Control (CRITICAL)
@@ -92,8 +142,8 @@ python scripts/check_dass_control.py --gold-standard-only
 | Script | Description |
 |--------|-------------|
 | `gold_standard/pipeline.py` | Unified hierarchical regression with DASS control |
-| `master_dass_controlled_analysis.py` | Legacy: Primary confirmatory analysis |
-| `prp_comprehensive_dass_controlled.py` | Legacy: PRP with full DASS control |
+
+**Note:** Legacy scripts (`master_dass_controlled_analysis.py`, etc.) have been moved to `archive/legacy_confirmatory/`.
 
 ### Exploratory Suites
 
@@ -102,6 +152,7 @@ python scripts/check_dass_control.py --gold-standard-only
 | `prp_suite.py` | bottleneck_shape, response_order, rt_variability, post_error |
 | `stroop_suite.py` | conflict_adaptation, neutral_baseline, post_error |
 | `wcst_suite.py` | learning_trajectory, error_decomposition, post_error |
+| `cross_task_suite.py` | consistency, correlations, meta_control, order_effects |
 
 ### Mediation
 
@@ -109,13 +160,36 @@ python scripts/check_dass_control.py --gold-standard-only
 |-------|----------|
 | `mediation_suite.py` | dass_bootstrap, gender_stratified, moderated_mediation |
 
+### Validation
+
+| Suite | Analyses |
+|-------|----------|
+| `validation_suite.py` | cross_validation, robust_regression, quantile_regression, type_ms_simulation, split_half_replication |
+
+### Synthesis
+
+| Suite | Analyses |
+|-------|----------|
+| `synthesis_suite.py` | group_comparisons, forest_plot, gender_stratified, ucla_dass_correlations, variance_tests |
+
+### Advanced
+
+| Suite | Analyses |
+|-------|----------|
+| `mechanistic_suite.py` | fatigue, speed_accuracy, autocorrelation, pre_error_trajectories, cross_task_coupling |
+| `latent_suite.py` | network, factor_analysis, measurement_invariance |
+| `clustering_suite.py` | vulnerability, composite_index, gmm_profiles |
+
 ## Output Locations
 
 | Category | Output Directory |
 |----------|------------------|
 | Gold Standard | `results/gold_standard/` |
-| Exploratory | `results/analysis_outputs/{suite_name}/` |
+| Exploratory | `results/analysis_outputs/{prp,stroop,wcst,cross_task}_suite/` |
 | Mediation | `results/analysis_outputs/mediation_suite/` |
+| Validation | `results/analysis_outputs/validation_suite/` |
+| Synthesis | `results/analysis_outputs/synthesis_suite/` |
+| Advanced | `results/analysis_outputs/{mechanistic,latent,clustering}_suite/` |
 
 ## Key Findings
 

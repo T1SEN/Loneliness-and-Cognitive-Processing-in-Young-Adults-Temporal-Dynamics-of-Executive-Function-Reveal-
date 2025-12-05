@@ -1,0 +1,6 @@
+﻿effect_size_label,r,n_for_80_power,n_for_90_power
+Small (r=0.10),0.1,783,1047
+Small-Medium (r=0.20),0.2,194,259
+Medium (r=0.30),0.3,85,113
+Medium-Large (r=0.40),0.4,47,62
+Large (r=0.50),0.5,30,38

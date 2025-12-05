@@ -1,0 +1,10 @@
+﻿outcome,term,mean,sd,hdi_3,hdi_97,prob_direction,ci_excludes_0,n
+WCST PE Rate,UCLA,-0.395,0.591,-1.545,0.689,0.7435,False,170
+WCST PE Rate,Male,-0.781,0.795,-2.262,0.712,0.842,False,170
+WCST PE Rate,UCLA x Male,0.535,0.786,-0.928,1.968,0.7485,False,170
+Stroop Interference,UCLA,0.066,1.943,-3.231,3.987,0.5135,False,170
+Stroop Interference,Male,0.967,1.998,-2.691,4.621,0.6815,False,170
+Stroop Interference,UCLA x Male,0.033,2.086,-3.844,4.009,0.5055,False,170
+PRP Bottleneck,UCLA,0.153,1.996,-3.454,3.94,0.536,False,166
+PRP Bottleneck,Male,1.779,1.981,-1.835,5.575,0.8215,False,166
+PRP Bottleneck,UCLA x Male,-0.192,2.081,-4.164,3.668,0.548,False,166

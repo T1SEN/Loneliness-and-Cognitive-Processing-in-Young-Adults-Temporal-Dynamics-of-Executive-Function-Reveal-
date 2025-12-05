@@ -23,4 +23,4 @@ Usage:
     prp_suite.run()  # Run all PRP analyses
 """
 
-__all__ = ['prp_suite', 'stroop_suite', 'wcst_suite', 'post_error_suite']
+__all__ = ['prp_suite', 'stroop_suite', 'wcst_suite', 'post_error_suite', 'cross_task_suite']
