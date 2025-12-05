@@ -40,10 +40,10 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 import statsmodels.formula.api as smf
-from sklearn.preprocessing import StandardScaler
 
-from analysis.utils.data_loader_utils import load_master_dataset, ANALYSIS_OUTPUT_DIR
+from analysis.preprocessing import load_master_dataset, ANALYSIS_OUTPUT_DIR
 from analysis.utils.modeling import standardize_predictors
+from analysis.preprocessing import prepare_gender_variable
 
 OUTPUT_DIR = ANALYSIS_OUTPUT_DIR / "mediation_suite"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -89,16 +89,26 @@ def bootstrap_mediation(
     alpha = (1 - ci) / 2
     n = len(df)
     rng = np.random.default_rng(seed)
+    fail_count = 0
 
-    for _ in range(n_bootstrap):
+    for i in range(n_bootstrap):
         sample = df.sample(n=n, replace=True, random_state=int(rng.integers(0, 1e9)))
         try:
             a_boot = smf.ols(formula_a, data=sample).fit().params.get(x_col, np.nan)
             b_boot = smf.ols(formula_b, data=sample).fit().params.get(m_col, np.nan)
             if np.isfinite(a_boot) and np.isfinite(b_boot):
                 indirect_effects.append(a_boot * b_boot)
-        except Exception:
+            else:
+                fail_count += 1
+        except Exception as e:
+            fail_count += 1
+            if fail_count <= 3:
+                warnings.warn(f"Bootstrap iteration {i} failed: {e}")
             continue
+
+    # Warn if high failure rate
+    if fail_count > n_bootstrap * 0.1:
+        warnings.warn(f"High bootstrap failure rate: {fail_count}/{n_bootstrap} ({100*fail_count/n_bootstrap:.1f}%)")
 
     indirect_effects = np.array(indirect_effects)
     ci_low = np.percentile(indirect_effects, alpha * 100) if len(indirect_effects) else np.nan
@@ -144,12 +154,8 @@ def load_mediation_data() -> pd.DataFrame:
     """Load and prepare data for mediation analysis."""
     master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
 
-    # Normalize gender
-    if 'gender_normalized' in master.columns:
-        master['gender'] = master['gender_normalized'].fillna('').str.strip().str.lower()
-    else:
-        master['gender'] = master['gender'].fillna('').astype(str).str.strip().str.lower()
-    master['gender_male'] = (master['gender'] == 'male').astype(int)
+    # Normalize gender using shared utility
+    master = prepare_gender_variable(master)
 
     # Ensure ucla_total
     if 'ucla_total' not in master.columns and 'ucla_score' in master.columns:
@@ -181,11 +187,23 @@ def analyze_dass_mediation(verbose: bool = True) -> pd.DataFrame:
 
     mediators = ['dass_depression', 'dass_anxiety', 'dass_stress']
     outcomes = ['pe_rate', 'stroop_interference', 'prp_bottleneck']
-    covariates = ['z_age', 'z_dass_dep', 'z_dass_anx', 'z_dass_str', 'gender_male']
+
+    # Mapping from mediator name to its z-score column
+    mediator_to_z = {
+        'dass_depression': 'z_dass_dep',
+        'dass_anxiety': 'z_dass_anx',
+        'dass_stress': 'z_dass_str'
+    }
 
     results = []
 
     for mediator in mediators:
+        # CRITICAL FIX: When testing a DASS subscale as mediator,
+        # exclude that subscale from covariates to avoid blocking the mediation path.
+        # Include OTHER DASS subscales to control for their confounding effects.
+        other_dass = [z for name, z in mediator_to_z.items() if name != mediator]
+        covariates = ['z_age', 'gender_male'] + other_dass
+
         for outcome in outcomes:
             cols = ['ucla_total', mediator, outcome]
             subset = df.dropna(subset=cols + covariates)
@@ -197,6 +215,7 @@ def analyze_dass_mediation(verbose: bool = True) -> pd.DataFrame:
 
             if verbose:
                 print(f"  Testing: UCLA -> {mediator} -> {outcome} (N={len(subset)})")
+                print(f"    Covariates: {covariates} (excluding {mediator_to_z[mediator]})")
 
             med_results = bootstrap_mediation(
                 subset,
@@ -247,7 +266,13 @@ def analyze_gender_stratified(verbose: bool = True) -> pd.DataFrame:
     df = load_mediation_data()
 
     results = []
-    covariates = ['z_age', 'z_dass_dep', 'z_dass_anx', 'z_dass_str']
+
+    # Mapping from mediator name to its z-score column
+    mediator_to_z = {
+        'dass_depression': 'z_dass_dep',
+        'dass_anxiety': 'z_dass_anx',
+        'dass_stress': 'z_dass_str'
+    }
 
     for gender_val, gender_name in [(0, 'female'), (1, 'male')]:
         gender_df = df[df['gender_male'] == gender_val]
@@ -256,6 +281,10 @@ def analyze_gender_stratified(verbose: bool = True) -> pd.DataFrame:
             print(f"\n  {gender_name.upper()} (N={len(gender_df)})")
 
         for mediator in ['dass_depression', 'dass_anxiety', 'dass_stress']:
+            # Exclude tested mediator's z-score from covariates
+            other_dass = [z for name, z in mediator_to_z.items() if name != mediator]
+            covariates = ['z_age'] + other_dass
+
             for outcome in ['pe_rate', 'stroop_interference']:
                 cols = ['ucla_total', mediator, outcome]
                 subset = gender_df.dropna(subset=cols + covariates)
@@ -303,11 +332,21 @@ def analyze_moderated_mediation(verbose: bool = True) -> pd.DataFrame:
         print("\n[MODERATED MEDIATION] Testing gender moderation of indirect effects...")
 
     df = load_mediation_data()
-    covariates = ['z_age', 'z_dass_dep', 'z_dass_anx', 'z_dass_str']
+
+    # Mapping from mediator name to its z-score column
+    mediator_to_z = {
+        'dass_depression': 'z_dass_dep',
+        'dass_anxiety': 'z_dass_anx',
+        'dass_stress': 'z_dass_str'
+    }
 
     results = []
 
     for mediator in ['dass_depression', 'dass_anxiety', 'dass_stress']:
+        # Exclude tested mediator's z-score from covariates
+        other_dass = [z for name, z in mediator_to_z.items() if name != mediator]
+        covariates = ['z_age'] + other_dass
+
         for outcome in ['pe_rate', 'stroop_interference']:
             cols = ['ucla_total', mediator, outcome, 'gender_male']
             subset = df.dropna(subset=cols + covariates)

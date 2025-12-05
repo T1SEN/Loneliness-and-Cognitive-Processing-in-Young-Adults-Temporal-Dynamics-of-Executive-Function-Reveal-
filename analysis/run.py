@@ -36,8 +36,9 @@ SUITE_REGISTRY: Dict[str, str] = {
     'exploratory.prp': 'analysis.exploratory.prp_suite',
     'exploratory.stroop': 'analysis.exploratory.stroop_suite',
     'exploratory.wcst': 'analysis.exploratory.wcst_suite',
-    'exploratory.cross_task': 'analysis.exploratory.cross_task_suite',
+    'exploratory.cross_task': 'analysis.exploratory.cross_task',
     'exploratory.fatigue': 'analysis.exploratory.fatigue_suite',
+    'exploratory.extreme_group': 'analysis.exploratory.extreme_group_ancova',
 
     # Mediation
     'mediation': 'analysis.mediation.mediation_suite',
@@ -79,7 +80,7 @@ SUITE_REGISTRY: Dict[str, str] = {
 # Suite categories for organized listing
 SUITE_CATEGORIES = {
     'Gold Standard': ['gold_standard'],
-    'Exploratory': ['exploratory.prp', 'exploratory.stroop', 'exploratory.wcst', 'exploratory.cross_task', 'exploratory.fatigue'],
+    'Exploratory': ['exploratory.prp', 'exploratory.stroop', 'exploratory.wcst', 'exploratory.cross_task', 'exploratory.fatigue', 'exploratory.extreme_group'],
     'Mediation': ['mediation'],
     'Validation': ['validation', 'validation.bayesian_equivalence', 'validation.power'],
     'Synthesis': ['synthesis', 'synthesis.dass_specificity'],

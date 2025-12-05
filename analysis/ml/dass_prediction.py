@@ -28,7 +28,7 @@ from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
 from sklearn.inspection import permutation_importance
 from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error
 import statsmodels.formula.api as smf
-from analysis.utils.data_loader_utils import load_master_dataset
+from analysis.preprocessing import load_master_dataset
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent

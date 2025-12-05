@@ -47,7 +47,7 @@ try:
 except ImportError:
     HAS_XGBOOST = False
 
-from analysis.utils.data_loader_utils import load_master_dataset
+from analysis.preprocessing import load_master_dataset
 
 # Directories
 BASE_DIR = Path(__file__).resolve().parent.parent

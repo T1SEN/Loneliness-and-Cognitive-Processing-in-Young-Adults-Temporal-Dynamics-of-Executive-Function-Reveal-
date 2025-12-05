@@ -57,7 +57,7 @@ from scipy.optimize import minimize
 import statsmodels.formula.api as smf
 
 # Project imports
-from analysis.utils.data_loader_utils import (
+from analysis.preprocessing import (
     load_master_dataset, RESULTS_DIR, ANALYSIS_OUTPUT_DIR,
     DEFAULT_RT_MIN, STROOP_RT_MAX
 )

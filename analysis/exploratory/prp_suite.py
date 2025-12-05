@@ -43,16 +43,20 @@ from scipy import stats
 from scipy.stats import exponnorm
 from scipy.optimize import curve_fit, minimize
 import statsmodels.formula.api as smf
-from sklearn.preprocessing import StandardScaler
+import warnings
 
 # Project imports
-from analysis.utils.data_loader_utils import (
+from analysis.preprocessing import (
     load_master_dataset, ensure_participant_id,
     RESULTS_DIR, ANALYSIS_OUTPUT_DIR,
     DEFAULT_RT_MIN, PRP_RT_MAX
 )
 from analysis.utils.modeling import DASS_CONTROL_FORMULA, standardize_predictors
-from analysis.utils.plotting import set_publication_style, create_scatter_with_regression
+from analysis.preprocessing import (
+    prepare_gender_variable,
+    find_interaction_term
+)
+from analysis.visualization import set_publication_style, create_scatter_with_regression
 
 # Output directory
 OUTPUT_DIR = ANALYSIS_OUTPUT_DIR / "prp_suite"
@@ -124,12 +128,8 @@ def load_master_with_prp() -> pd.DataFrame:
     """Load master dataset with PRP metrics merged."""
     master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
 
-    # Normalize gender
-    if 'gender_normalized' in master.columns:
-        master['gender'] = master['gender_normalized'].fillna('').str.strip().str.lower()
-    else:
-        master['gender'] = master['gender'].fillna('').astype(str).str.strip().str.lower()
-    master['gender_male'] = (master['gender'] == 'male').astype(int)
+    # Normalize gender using shared utility
+    master = prepare_gender_variable(master)
 
     # Ensure ucla_total
     if 'ucla_total' not in master.columns and 'ucla_score' in master.columns:
@@ -516,7 +516,8 @@ def _fit_exgaussian_prp(rts: np.ndarray) -> dict:
         try:
             loglik = np.sum(exponnorm.logpdf(rts, K, loc=mu, scale=sigma))
             return -loglik if np.isfinite(loglik) else 1e10
-        except:
+        except Exception as e:
+            warnings.warn(f"Ex-Gaussian logpdf failed: {e}")
             return 1e10
 
     try:
@@ -530,8 +531,8 @@ def _fit_exgaussian_prp(rts: np.ndarray) -> dict:
         if result.success:
             mu, sigma, tau = result.x
             return {'mu': mu, 'sigma': sigma, 'tau': tau, 'n': len(rts)}
-    except:
-        pass
+    except Exception as e:
+        warnings.warn(f"Ex-Gaussian fit failed: {e}")
 
     return {'mu': np.nan, 'sigma': np.nan, 'tau': np.nan, 'n': len(rts)}
 
@@ -648,12 +649,13 @@ def analyze_exgaussian(verbose: bool = True) -> pd.DataFrame:
         if verbose:
             print(f"  UCLA → τ bottleneck: β={model.params.get('z_ucla', np.nan):.3f}, p={model.pvalues.get('z_ucla', np.nan):.4f}")
 
-        pd.DataFrame({
+        tau_df = pd.DataFrame({
             'predictor': model.params.index,
             'beta': model.params.values,
             'se': model.bse.values,
             'p': model.pvalues.values
-        }).to_csv(output_dir / "tau_bottleneck_regression.csv", index=False, encoding='utf-8-sig')
+        })
+        tau_df.to_csv(output_dir / "tau_bottleneck_regression.csv", index=False, encoding='utf-8-sig')
 
     exgauss_df.to_csv(output_dir / "exgaussian_parameters.csv", index=False, encoding='utf-8-sig')
     if len(corr_df) > 0:

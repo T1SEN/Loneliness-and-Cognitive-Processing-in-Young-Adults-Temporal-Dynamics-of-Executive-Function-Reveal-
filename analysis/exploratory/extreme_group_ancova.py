@@ -8,7 +8,7 @@ UCLA 외로움 상/하위 극단집단의 EF 차이를 공변량 통제하면서
 - 컷오프: 25%, 15% 둘 다 분석
 - 통제변수: DASS 3개 (우울/불안/스트레스), 나이, 성별
 - 결과변수: WCST 7개 + Stroop + PRP
-- p-value: 미보정 & FDR 보정 둘 다 출력
+- p-value: 미보정 (raw) p-value 출력 (탐색적 분석)
 
 Usage:
     python -m analysis.exploratory.extreme_group_ancova
@@ -27,9 +27,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import statsmodels.formula.api as smf
-from statsmodels.stats.multitest import multipletests
 
-from analysis.utils.data_loader_utils import load_master_dataset, ANALYSIS_OUTPUT_DIR
+from analysis.preprocessing import load_master_dataset, ANALYSIS_OUTPUT_DIR
 from analysis.utils.modeling import standardize_predictors, prepare_gender_variable
 
 OUTPUT_DIR = ANALYSIS_OUTPUT_DIR / "exploratory_suite"
@@ -150,30 +149,17 @@ def run_extreme_group_ancova(cutoff: float, master: pd.DataFrame) -> pd.DataFram
     # Convert to DataFrame
     df_results = pd.DataFrame(results)
 
-    # FDR correction
-    _, p_fdr, _, _ = multipletests(df_results['p'].values, method='fdr_bh')
-    df_results['p_fdr'] = p_fdr
-
     return df_results
 
 
-def format_sig(p, p_fdr):
+def format_sig(p):
     """Format significance marker."""
     if p < 0.001:
-        raw = '***'
+        return '***'
     elif p < 0.01:
-        raw = '**'
+        return '**'
     elif p < 0.05:
-        raw = '*'
-    else:
-        raw = ''
-
-    fdr_sig = p_fdr < 0.05
-
-    if raw and not fdr_sig:
-        return f"{raw} (ns)"
-    elif fdr_sig:
-        return f"{raw} (fdr*)"
+        return '*'
     else:
         return ''
 
@@ -181,11 +167,11 @@ def format_sig(p, p_fdr):
 def print_results_table(df: pd.DataFrame, title: str):
     """Print results in table format."""
     print(f"\n{title}")
-    print("-" * 130)
+    print("-" * 110)
 
-    header = f"{'변수':<28} | {'Low M (SD)':<16} | {'High M (SD)':<16} | {'β_adj':>9} | {'t':>7} | {'p':>8} | {'p_fdr':>8} | {'d':>6} | sig"
+    header = f"{'변수':<28} | {'Low M (SD)':<16} | {'High M (SD)':<16} | {'β_adj':>9} | {'t':>7} | {'p':>8} | {'d':>6} | sig"
     print(header)
-    print("-" * 130)
+    print("-" * 110)
 
     for _, row in df.iterrows():
         # Format based on magnitude
@@ -196,12 +182,12 @@ def print_results_table(df: pd.DataFrame, title: str):
             low_str = f"{row['low_mean']:.2f} ({row['low_sd']:.2f})"
             high_str = f"{row['high_mean']:.2f} ({row['high_sd']:.2f})"
 
-        sig = format_sig(row['p'], row['p_fdr'])
+        sig = format_sig(row['p'])
 
-        line = f"{row['label']:<28} | {low_str:<16} | {high_str:<16} | {row['beta']:>9.3f} | {row['t']:>7.2f} | {row['p']:>8.4f} | {row['p_fdr']:>8.4f} | {row['cohens_d']:>6.2f} | {sig}"
+        line = f"{row['label']:<28} | {low_str:<16} | {high_str:<16} | {row['beta']:>9.3f} | {row['t']:>7.2f} | {row['p']:>8.4f} | {row['cohens_d']:>6.2f} | {sig}"
         print(line)
 
-    print("-" * 130)
+    print("-" * 110)
 
 
 def main():
@@ -260,15 +246,14 @@ def main():
     print("\n" + "=" * 80)
     print("요약")
     print("=" * 80)
-    print(f"\n{'컷오프':<10} | {'N (Low/High)':<15} | {'p<.05 미보정':<15} | {'p_fdr<.05':<15}")
-    print("-" * 60)
+    print(f"\n{'컷오프':<10} | {'N (Low/High)':<15} | {'p<.05':<15}")
+    print("-" * 45)
 
     for pct, df in all_results.items():
         n_low = df['n_low'].iloc[0] if len(df) > 0 else 0
         n_high = df['n_high'].iloc[0] if len(df) > 0 else 0
         n_sig_raw = (df['p'] < 0.05).sum()
-        n_sig_fdr = (df['p_fdr'] < 0.05).sum()
-        print(f"{pct}%{'':<7} | {n_low}/{n_high:<13} | {n_sig_raw}개{'':<12} | {n_sig_fdr}개")
+        print(f"{pct}%{'':<7} | {n_low}/{n_high:<13} | {n_sig_raw}개")
 
     print("\n" + "=" * 80)
     print("분석 완료!")
@@ -276,6 +261,27 @@ def main():
     print("=" * 80)
 
     return all_results
+
+
+def run(analysis: str = None, verbose: bool = True):
+    """
+    Run extreme group ANCOVA analysis.
+
+    This is a wrapper for main() to conform to the suite interface.
+
+    Parameters
+    ----------
+    analysis : str, optional
+        Not used (single analysis only). Kept for interface compatibility.
+    verbose : bool
+        Print progress (always True for this analysis).
+
+    Returns
+    -------
+    dict
+        Results dictionary from main().
+    """
+    return main()
 
 
 if __name__ == "__main__":

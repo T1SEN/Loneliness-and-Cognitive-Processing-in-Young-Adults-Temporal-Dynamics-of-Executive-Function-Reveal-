@@ -47,7 +47,7 @@ from sklearn.gaussian_process.kernels import RBF, WhiteKernel, ConstantKernel
 from sklearn.model_selection import KFold
 import statsmodels.formula.api as smf
 
-from analysis.utils.data_loader_utils import load_master_dataset, ANALYSIS_OUTPUT_DIR
+from analysis.preprocessing import load_master_dataset, ANALYSIS_OUTPUT_DIR
 from analysis.utils.modeling import standardize_predictors
 
 np.random.seed(42)

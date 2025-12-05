@@ -1,13 +1,21 @@
 {
   "permissions": {
     "allow": [
-      "Bash(./venv/Scripts/pip.exe install:*)",
-      "Bash(PYTHONIOENCODING=utf-8 ./venv/Scripts/python.exe:*)",
-      "Bash(./venv/Scripts/python.exe:*)",
-      "Bash(cd:*)",
+      "Bash(.\\venv\\Scripts\\python.exe:*)",
+      "Bash(cmd /c:*)",
+      "Bash(C:/Users/ansel/my_research_exporter/venv/Scripts/python.exe:*)",
+      "Bash(find:*)",
+      "Bash(xargs:*)",
+      "Bash(dir /b \"C:\\Users\\ansel\\my_research_exporter\\analysis\")",
+      "Bash(git mv:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)",
-      "Bash(git push:*)"
+      "Bash(python:*)",
+      "Bash(done)",
+      "mcp__ide__getDiagnostics",
+      "Bash(git -C \"C:\\Users\\ansel\\my_research_exporter\" status --short)",
+      "Bash(git -C \"C:\\Users\\ansel\\my_research_exporter\" diff --stat HEAD)",
+      "Bash(git -C \"C:\\Users\\ansel\\my_research_exporter\" log --oneline -5)",
+      "Bash(git -C \"C:\\Users\\ansel\\my_research_exporter\" add -A)"
     ],
     "deny": [],
     "ask": []

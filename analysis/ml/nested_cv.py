@@ -24,7 +24,7 @@ from typing import Dict, List, Tuple, Any
 
 import numpy as np
 import pandas as pd
-from analysis.utils.data_loader_utils import load_master_dataset
+from analysis.preprocessing import load_master_dataset
 
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer

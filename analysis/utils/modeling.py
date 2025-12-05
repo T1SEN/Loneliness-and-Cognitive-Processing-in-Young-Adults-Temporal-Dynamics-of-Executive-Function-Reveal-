@@ -22,11 +22,20 @@ Usage:
 from __future__ import annotations
 
 from typing import Dict, Any, Optional, List, Tuple
+import warnings
 import numpy as np
 import pandas as pd
 import statsmodels.formula.api as smf
 from statsmodels.regression.linear_model import RegressionResultsWrapper
-from sklearn.preprocessing import StandardScaler
+
+# Import NaN-safe standardization from our standardization module
+from analysis.preprocessing import (
+    safe_zscore,
+    PREDICTOR_COLUMN_MAPPING,
+    find_interaction_term,
+    standardize_predictors as _standardize_predictors,
+    prepare_gender_variable as _prepare_gender_variable,
+)
 
 
 # =============================================================================
@@ -50,66 +59,16 @@ REQUIRED_PREDICTORS = ['z_ucla', 'z_dass_dep', 'z_dass_anx', 'z_dass_str', 'z_ag
 
 
 # =============================================================================
-# DATA PREPARATION
+# DATA PREPARATION (re-exported from standardization.py)
 # =============================================================================
 
+# Alias to the canonical implementations to avoid duplication/drift
 def standardize_predictors(df: pd.DataFrame, columns: Optional[List[str]] = None) -> pd.DataFrame:
-    """
-    Standardize predictor columns (z-score).
-
-    Args:
-        df: DataFrame with raw columns
-        columns: Columns to standardize (default: ucla_total, dass_*, age)
-
-    Returns:
-        DataFrame with z_ prefixed standardized columns added
-    """
-    result = df.copy()
-
-    if columns is None:
-        columns = ['ucla_total', 'dass_depression', 'dass_anxiety', 'dass_stress', 'age']
-
-    scaler = StandardScaler()
-
-    col_mapping = {
-        'ucla_total': 'z_ucla',
-        'dass_depression': 'z_dass_dep',
-        'dass_anxiety': 'z_dass_anx',
-        'dass_stress': 'z_dass_str',
-        'age': 'z_age'
-    }
-
-    for col in columns:
-        if col in result.columns:
-            z_col = col_mapping.get(col, f'z_{col}')
-            result[z_col] = scaler.fit_transform(result[[col]])
-
-    return result
+    return _standardize_predictors(df, columns=columns)
 
 
 def prepare_gender_variable(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Standardize gender coding.
-
-    Args:
-        df: DataFrame with 'gender' or 'gender_normalized' column
-
-    Returns:
-        DataFrame with 'gender_male' binary column (1=male, 0=female)
-    """
-    result = df.copy()
-
-    if 'gender_normalized' in result.columns:
-        gender_col = 'gender_normalized'
-    elif 'gender' in result.columns:
-        gender_col = 'gender'
-    else:
-        raise ValueError("No gender column found")
-
-    result['gender'] = result[gender_col].fillna('').astype(str).str.strip().str.lower()
-    result['gender_male'] = (result['gender'] == 'male').astype(int)
-
-    return result
+    return _prepare_gender_variable(df)
 
 
 # =============================================================================
@@ -222,6 +181,9 @@ def extract_ucla_effects(model: RegressionResultsWrapper) -> Dict[str, Any]:
     """
     Extract UCLA-specific effects from model.
 
+    Uses dynamic interaction term detection to handle different
+    statsmodels naming conventions (C(gender_male)[T.1] vs gender_male).
+
     Returns:
         Dict with ucla_beta, ucla_p, interaction_beta, interaction_p
     """
@@ -231,16 +193,19 @@ def extract_ucla_effects(model: RegressionResultsWrapper) -> Dict[str, Any]:
         'ucla_p': model.pvalues.get('z_ucla', np.nan),
     }
 
-    # Interaction term
-    int_term = 'z_ucla:C(gender_male)[T.1]'
-    if int_term in model.params:
+    # Dynamic interaction term detection
+    int_term = find_interaction_term(model.params.index, 'ucla', 'gender')
+
+    if int_term is not None and int_term in model.params:
         result['interaction_beta'] = model.params[int_term]
         result['interaction_se'] = model.bse[int_term]
         result['interaction_p'] = model.pvalues[int_term]
+        result['interaction_term'] = int_term  # Store actual term name for debugging
     else:
         result['interaction_beta'] = np.nan
         result['interaction_se'] = np.nan
         result['interaction_p'] = np.nan
+        result['interaction_term'] = None
 
     return result
 

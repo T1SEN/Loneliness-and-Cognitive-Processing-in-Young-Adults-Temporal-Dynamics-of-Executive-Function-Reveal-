@@ -1,6 +1,0 @@
-mean,sd,hdi_3%,hdi_97%,mcse_mean,mcse_sd,ess_bulk,ess_tail,r_hat,term,model
-0.137,0.005,0.128,0.147,0.0,0.0,8556.068,8432.614,1.001,condition,stroop_logrt
--0.115,0.077,-0.262,0.031,0.009,0.008,71.091,118.558,1.052,ucla,stroop_logrt
--0.216,0.088,-0.374,-0.041,0.017,0.007,26.412,82.079,1.151,dass_dep,stroop_logrt
--0.567,0.078,-0.698,-0.423,0.013,0.004,40.854,174.449,1.098,dass_anx,stroop_logrt
--0.0,0.005,-0.01,0.009,0.0,0.0,14509.004,9322.729,1.0,ucla:condition,stroop_logrt

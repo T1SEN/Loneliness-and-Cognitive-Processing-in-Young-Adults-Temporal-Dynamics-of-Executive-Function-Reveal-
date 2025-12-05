@@ -60,7 +60,7 @@ from sklearn.gaussian_process.kernels import RBF, WhiteKernel, ConstantKernel
 from sklearn.preprocessing import StandardScaler
 
 # Project imports
-from analysis.utils.data_loader_utils import (
+from analysis.preprocessing import (
     load_master_dataset, ANALYSIS_OUTPUT_DIR
 )
 from analysis.utils.modeling import standardize_predictors

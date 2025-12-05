@@ -33,7 +33,7 @@ from scipy import stats
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
 
-from analysis.utils.data_loader_utils import load_master_dataset
+from analysis.preprocessing import load_master_dataset
 
 
 # Output directory

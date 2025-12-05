@@ -35,12 +35,10 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 from scipy import stats
-from scipy.stats import false_discovery_control
 import statsmodels.formula.api as smf
-from statsmodels.stats.multitest import multipletests
 
 # Project imports
-from analysis.utils.data_loader_utils import (
+from analysis.preprocessing import (
     load_master_dataset, ANALYSIS_OUTPUT_DIR
 )
 from analysis.utils.modeling import standardize_predictors
@@ -198,41 +196,28 @@ def analyze_summary(verbose: bool = True) -> pd.DataFrame:
     # Sort by p-value
     effects_df = effects_df.sort_values('p_ucla')
 
-    # Apply FDR correction (Benjamini-Hochberg)
-    p_values = effects_df['p_ucla'].values
-    if len(p_values) > 0:
-        _, p_fdr, _, _ = multipletests(p_values, method='fdr_bh')
-        effects_df['p_fdr'] = p_fdr
-        effects_df['significant_fdr'] = effects_df['p_fdr'] < 0.05
-    else:
-        effects_df['p_fdr'] = np.nan
-        effects_df['significant_fdr'] = False
-
-    # Add significance markers (raw)
+    # Add significance markers (raw p-value only - exploratory analysis)
     effects_df['significant'] = effects_df['p_ucla'] < 0.05
     effects_df['marginal'] = (effects_df['p_ucla'] >= 0.05) & (effects_df['p_ucla'] < 0.10)
 
     # Summary statistics
     n_total = len(effects_df)
     n_sig = effects_df['significant'].sum()
-    n_sig_fdr = effects_df['significant_fdr'].sum()
     n_marginal = effects_df['marginal'].sum()
 
     if verbose:
-        print(f"\n  SUMMARY")
+        print(f"\n  SUMMARY (exploratory - raw p-values)")
         print("  " + "-" * 50)
         print(f"    Total effects tested: {n_total}")
-        print(f"    Significant (p < 0.05, raw): {n_sig}")
-        print(f"    Significant (FDR-corrected): {n_sig_fdr}")
+        print(f"    Significant (p < 0.05): {n_sig}")
         print(f"    Marginal (0.05 <= p < 0.10): {n_marginal}")
 
         if n_sig > 0:
-            print(f"\n  SIGNIFICANT EFFECTS (raw p < 0.05):")
+            print(f"\n  SIGNIFICANT EFFECTS (p < 0.05):")
             for _, row in effects_df[effects_df['significant']].iterrows():
                 d = f", d={row['cohens_d']:.2f}" if pd.notna(row['cohens_d']) else ""
-                fdr_sig = "✓" if row.get('significant_fdr', False) else "✗"
                 print(f"    {row['suite']}/{row['metric']}: beta={row['beta_ucla']:.4f}, "
-                      f"p={row['p_ucla']:.4f}, p_fdr={row['p_fdr']:.4f} [{fdr_sig}]{d}")
+                      f"p={row['p_ucla']:.4f}{d}")
 
     effects_df.to_csv(OUTPUT_DIR / "all_ucla_effects.csv", index=False, encoding='utf-8-sig')
 

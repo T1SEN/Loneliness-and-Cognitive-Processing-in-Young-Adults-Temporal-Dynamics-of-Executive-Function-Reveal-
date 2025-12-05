@@ -36,11 +36,15 @@ import pandas as pd
 from scipy import stats
 import statsmodels.formula.api as smf
 
-from analysis.utils.data_loader_utils import (
+from analysis.preprocessing import (
     load_master_dataset, ensure_participant_id,
     RESULTS_DIR, ANALYSIS_OUTPUT_DIR
 )
 from analysis.utils.modeling import standardize_predictors
+from analysis.preprocessing import (
+    prepare_gender_variable,
+    find_interaction_term
+)
 
 OUTPUT_DIR = ANALYSIS_OUTPUT_DIR / "wcst_suite"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -88,11 +92,8 @@ def load_master_with_wcst() -> pd.DataFrame:
     """Load master dataset with WCST metrics."""
     master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
 
-    if 'gender_normalized' in master.columns:
-        master['gender'] = master['gender_normalized'].fillna('').str.strip().str.lower()
-    else:
-        master['gender'] = master['gender'].fillna('').astype(str).str.strip().str.lower()
-    master['gender_male'] = (master['gender'] == 'male').astype(int)
+    # Normalize gender using shared utility
+    master = prepare_gender_variable(master)
 
     if 'ucla_total' not in master.columns and 'ucla_score' in master.columns:
         master['ucla_total'] = master['ucla_score']
@@ -225,15 +226,32 @@ def analyze_error_decomposition(verbose: bool = True) -> pd.DataFrame:
         print(f"  Mean NPE rate: {analysis_df['npe_rate'].mean():.1f}%")
 
     # Compare UCLA effects on PE vs NPE
+    reg_results = []
     if len(analysis_df) >= 30:
         for dv in ['pe_rate', 'npe_rate']:
             formula = f"{dv} ~ z_ucla * C(gender_male) + z_dass_dep + z_dass_anx + z_dass_str + z_age"
             model = smf.ols(formula, data=analysis_df.dropna(subset=['z_ucla', 'z_dass_dep', dv])).fit(cov_type='HC3')
 
+            int_term = find_interaction_term(model.params.index, 'ucla', 'gender')
+            reg_results.append({
+                'outcome': dv,
+                'ucla_beta': model.params.get('z_ucla', np.nan),
+                'ucla_p': model.pvalues.get('z_ucla', np.nan),
+                'interaction_beta': model.params.get(int_term, np.nan) if int_term else np.nan,
+                'interaction_p': model.pvalues.get(int_term, np.nan) if int_term else np.nan,
+                'n': int(model.nobs),
+                'r_squared': model.rsquared
+            })
+
             if verbose:
                 print(f"  UCLA → {dv}: β={model.params.get('z_ucla', np.nan):.3f}, p={model.pvalues.get('z_ucla', np.nan):.4f}")
 
     error_df.to_csv(output_dir / "error_decomposition_metrics.csv", index=False, encoding='utf-8-sig')
+
+    if reg_results:
+        reg_df = pd.DataFrame(reg_results)
+        reg_df.to_csv(output_dir / "error_decomposition_regression.csv", index=False, encoding='utf-8-sig')
+
     return error_df
 
 
@@ -288,11 +306,12 @@ def analyze_post_error_adaptation(verbose: bool = True) -> pd.DataFrame:
     if len(clean_df) >= 20:
         formula = "post_error_improvement ~ z_ucla * C(gender_male) + z_dass_dep + z_dass_anx + z_dass_str + z_age"
         model = smf.ols(formula, data=clean_df).fit(cov_type='HC3')
+        int_term = find_interaction_term(model.params.index, 'ucla', 'gender')
         reg_results = pd.DataFrame([{
             'ucla_beta': model.params.get('z_ucla', np.nan),
             'ucla_p': model.pvalues.get('z_ucla', np.nan),
-            'interaction_beta': model.params.get('z_ucla:C(gender_male)[T.1]', np.nan),
-            'interaction_p': model.pvalues.get('z_ucla:C(gender_male)[T.1]', np.nan),
+            'interaction_beta': model.params.get(int_term, np.nan) if int_term else np.nan,
+            'interaction_p': model.pvalues.get(int_term, np.nan) if int_term else np.nan,
             'n': len(clean_df),
             'formula': formula,
             'cov_type': 'HC3'
@@ -422,12 +441,13 @@ def analyze_switching_dynamics(verbose: bool = True) -> pd.DataFrame:
         if verbose:
             print(f"  UCLA → Switching: β={model.params.get('z_ucla', np.nan):.4f}, p={model.pvalues.get('z_ucla', np.nan):.4f}")
 
-        pd.DataFrame({
+        reg_df = pd.DataFrame({
             'predictor': model.params.index,
             'beta': model.params.values,
             'se': model.bse.values,
             'p': model.pvalues.values
-        }).to_csv(output_dir / "switching_regression.csv", index=False, encoding='utf-8-sig')
+        })
+        reg_df.to_csv(output_dir / "switching_regression.csv", index=False, encoding='utf-8-sig')
 
     switching_df.to_csv(output_dir / "switching_metrics.csv", index=False, encoding='utf-8-sig')
     return switching_df
@@ -543,12 +563,13 @@ def analyze_mechanism(verbose: bool = True) -> pd.DataFrame:
         if verbose:
             print(f"  UCLA → Adaptive Index: β={model.params.get('z_ucla', np.nan):.3f}, p={model.pvalues.get('z_ucla', np.nan):.4f}")
 
-        pd.DataFrame({
+        reg_df = pd.DataFrame({
             'predictor': model.params.index,
             'beta': model.params.values,
             'se': model.bse.values,
             'p': model.pvalues.values
-        }).to_csv(output_dir / "mechanism_regression.csv", index=False, encoding='utf-8-sig')
+        })
+        reg_df.to_csv(output_dir / "mechanism_regression.csv", index=False, encoding='utf-8-sig')
 
     mechanism_df.to_csv(output_dir / "mechanism_metrics.csv", index=False, encoding='utf-8-sig')
     return mechanism_df

@@ -33,7 +33,7 @@ from scipy import stats
 import statsmodels.formula.api as smf
 import statsmodels.api as sm
 
-from analysis.utils.data_loader_utils import (
+from analysis.preprocessing import (
     load_master_dataset, ANALYSIS_OUTPUT_DIR
 )
 from analysis.utils.modeling import standardize_predictors

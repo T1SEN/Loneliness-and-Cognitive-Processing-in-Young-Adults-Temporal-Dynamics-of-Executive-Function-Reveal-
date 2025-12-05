@@ -39,7 +39,7 @@ warnings.filterwarnings('ignore')
 
 import argparse
 from pathlib import Path
-from typing import Dict, Optional, Callable, Any
+from typing import Dict, Optional, Callable, Any, List
 from dataclasses import dataclass
 import numpy as np
 import pandas as pd
@@ -48,14 +48,18 @@ import statsmodels.formula.api as smf
 from statsmodels.robust.robust_linear_model import RLM
 from statsmodels.robust.norms import HuberT
 from sklearn.model_selection import KFold
-from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
 from sklearn.linear_model import QuantileRegressor
 from itertools import product
 
 # Project imports
-from analysis.utils.data_loader_utils import (
+from analysis.preprocessing import (
     load_master_dataset, RESULTS_DIR, ANALYSIS_OUTPUT_DIR
+)
+from analysis.preprocessing import (
+    safe_zscore,
+    prepare_gender_variable,
+    find_interaction_term
 )
 
 np.random.seed(42)
@@ -102,31 +106,25 @@ def load_validation_data() -> pd.DataFrame:
     """Load and prepare master dataset for validation analyses."""
     master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
 
-    # Normalize gender
-    if 'gender_normalized' in master.columns:
-        master['gender'] = master['gender_normalized'].fillna('').astype(str).str.strip().str.lower()
-    else:
-        master['gender'] = master['gender'].fillna('').astype(str).str.strip().str.lower()
+    # Normalize gender using shared utility
+    master = prepare_gender_variable(master)
 
     # Ensure ucla_total exists
     if 'ucla_total' not in master.columns and 'ucla_score' in master.columns:
         master['ucla_total'] = master['ucla_score']
 
-    master['gender_male'] = (master['gender'] == 'male').astype(int)
-
-    # Standardize predictors
-    scaler = StandardScaler()
+    # Standardize predictors using NaN-safe z-score (ddof=1)
     required_cols = ['age', 'ucla_total', 'dass_depression', 'dass_anxiety', 'dass_stress']
 
     for col in required_cols:
         if col not in master.columns:
             raise ValueError(f"Missing required column: {col}")
 
-    master['z_age'] = scaler.fit_transform(master[['age']])
-    master['z_ucla'] = scaler.fit_transform(master[['ucla_total']])
-    master['z_dass_dep'] = scaler.fit_transform(master[['dass_depression']])
-    master['z_dass_anx'] = scaler.fit_transform(master[['dass_anxiety']])
-    master['z_dass_str'] = scaler.fit_transform(master[['dass_stress']])
+    master['z_age'] = safe_zscore(master['age'])
+    master['z_ucla'] = safe_zscore(master['ucla_total'])
+    master['z_dass_dep'] = safe_zscore(master['dass_depression'])
+    master['z_dass_anx'] = safe_zscore(master['dass_anxiety'])
+    master['z_dass_str'] = safe_zscore(master['dass_stress'])
 
     return master
 
@@ -292,8 +290,11 @@ def analyze_robust_regression(verbose: bool = True) -> pd.DataFrame:
         formula = f"{outcome_col} ~ z_age + C(gender_male) + z_dass_dep + z_dass_anx + z_dass_str + z_ucla * C(gender_male)"
         ols_model = smf.ols(formula, data=df_clean).fit()
 
-        interaction_term = 'z_ucla:C(gender_male)[T.1]'
-        if interaction_term not in ols_model.params.index:
+        # Dynamic interaction term detection
+        interaction_term = find_interaction_term(ols_model.params.index, 'ucla', 'gender')
+        if interaction_term is None:
+            if verbose:
+                print(f"    WARNING: Interaction term not found in model. Skipping.")
             continue
 
         ols_beta = ols_model.params[interaction_term]
@@ -394,10 +395,16 @@ def analyze_quantile_regression(verbose: bool = True) -> pd.DataFrame:
             print(f"    {'tau':>6}  {'beta':>10}")
             print("    " + "-" * 20)
 
+        # Get feature names for coefficient mapping
+        feature_names = X.columns.tolist()
+
         for quantile in quantiles:
             qr = QuantileRegressor(quantile=quantile, solver='highs', alpha=0)
             qr.fit(X, y)
-            coef_interaction = qr.coef_[-1]
+
+            # Use name-based lookup instead of position-based
+            coef_dict = dict(zip(feature_names, qr.coef_))
+            coef_interaction = coef_dict.get('ucla_x_gender', np.nan)
 
             all_results.append({
                 'outcome': outcome_col,
@@ -428,20 +435,36 @@ def analyze_quantile_regression(verbose: bool = True) -> pd.DataFrame:
     description="Simulation-based Type M (magnitude) and Type S (sign) error analysis",
     source_script="validation_3_type_ms_simulation.py"
 )
-def analyze_type_ms_simulation(verbose: bool = True, n_simulations: int = 500) -> pd.DataFrame:
+def analyze_type_ms_simulation(
+    verbose: bool = True,
+    n_simulations: int = 500,
+    true_effect_multipliers: List[float] = None
+) -> pd.DataFrame:
     """
     Quantify the risk of effect size overestimation (Type M) and sign error (Type S).
+
+    Parameters
+    ----------
+    verbose : bool
+        Print progress messages.
+    n_simulations : int
+        Number of simulation iterations per multiplier.
+    true_effect_multipliers : list of float, optional
+        Multipliers for true effect size sensitivity analysis.
+        Default: [0.5, 0.7, 0.9] to test conservative to optimistic assumptions.
     """
+    if true_effect_multipliers is None:
+        true_effect_multipliers = [0.5, 0.7, 0.9]  # Sensitivity grid
+
     if verbose:
         print("\n" + "=" * 70)
         print("TYPE M/S ERROR SIMULATION")
         print("=" * 70)
         print(f"  Simulations: {n_simulations}")
+        print(f"  Effect multipliers: {true_effect_multipliers}")
 
     master = load_validation_data()
     outcomes = get_outcomes(master)
-
-    TRUE_EFFECT_MULTIPLIER = 0.70  # Conservative: true beta = 70% of observed
 
     all_results = []
 
@@ -463,96 +486,124 @@ def analyze_type_ms_simulation(verbose: bool = True, n_simulations: int = 500) -
         formula = f"{outcome_col} ~ z_age + C(gender_male) + z_dass_dep + z_dass_anx + z_dass_str + z_ucla * C(gender_male)"
         obs_model = smf.ols(formula, data=df_clean).fit()
 
-        interaction_term = 'z_ucla:C(gender_male)[T.1]'
-        if interaction_term not in obs_model.params.index:
+        # Dynamic interaction term detection
+        interaction_term = find_interaction_term(obs_model.params.index, 'ucla', 'gender')
+        if interaction_term is None:
+            if verbose:
+                print(f"    WARNING: Interaction term not found. Skipping.")
             continue
 
         observed_beta = obs_model.params[interaction_term]
         residual_std = np.sqrt(obs_model.mse_resid)
-        true_beta_interaction = observed_beta * TRUE_EFFECT_MULTIPLIER
 
         if verbose:
             print(f"    N = {n}")
             print(f"    Observed beta = {observed_beta:.4f}")
-            print(f"    True beta (conservative) = {true_beta_interaction:.4f}")
 
-        # Get true coefficients
+        # Get true coefficients (dynamically find gender term)
         true_intercept = obs_model.params['Intercept']
         true_age = obs_model.params['z_age']
-        true_gender = obs_model.params['C(gender_male)[T.1]']
+        gender_term = find_interaction_term(obs_model.params.index, 'gender', 'male')
+        if gender_term is None:
+            # If gender is numeric (e.g., gender_male), statsmodels names it without C()
+            if 'gender_male' in obs_model.params.index:
+                gender_term = 'gender_male'
+            else:
+                gender_term = 'C(gender_male)[T.1]'  # fallback
+        true_gender = obs_model.params.get(gender_term, 0)
         true_dass_dep = obs_model.params['z_dass_dep']
         true_dass_anx = obs_model.params['z_dass_anx']
         true_dass_str = obs_model.params['z_dass_str']
         true_ucla = obs_model.params['z_ucla']
 
-        # Run simulations
-        sim_results = []
         X = df_clean[['z_age', 'gender_male', 'z_dass_dep', 'z_dass_anx', 'z_dass_str', 'z_ucla']].values
 
-        for _ in range(n_simulations):
-            y_sim = (true_intercept +
-                     true_age * X[:, 0] +
-                     true_gender * X[:, 1] +
-                     true_dass_dep * X[:, 2] +
-                     true_dass_anx * X[:, 3] +
-                     true_dass_str * X[:, 4] +
-                     true_ucla * X[:, 5] +
-                     true_beta_interaction * X[:, 5] * X[:, 1] +
-                     np.random.normal(0, residual_std, n))
+        # Run sensitivity analysis across multipliers
+        for multiplier in true_effect_multipliers:
+            true_beta_interaction = observed_beta * multiplier
 
-            sim_df = pd.DataFrame({
-                'y': y_sim,
-                'z_age': X[:, 0],
-                'gender_male': X[:, 1],
-                'z_dass_dep': X[:, 2],
-                'z_dass_anx': X[:, 3],
-                'z_dass_str': X[:, 4],
-                'z_ucla': X[:, 5],
-                'ucla_x_gender': X[:, 5] * X[:, 1]
-            })
+            if verbose:
+                print(f"\n    Multiplier = {multiplier} (true beta = {true_beta_interaction:.4f})")
 
-            try:
-                sim_model = smf.ols("y ~ z_age + gender_male + z_dass_dep + z_dass_anx + z_dass_str + z_ucla + ucla_x_gender",
-                                   data=sim_df).fit()
-                beta_hat = sim_model.params['ucla_x_gender']
-                p_hat = sim_model.pvalues['ucla_x_gender']
+            # Run simulations
+            sim_results = []
+            fail_count = 0
 
-                sim_results.append({
-                    'beta_hat': beta_hat,
-                    'p_value': p_hat,
-                    'significant': p_hat < 0.05,
-                    'sign_correct': np.sign(beta_hat) == np.sign(true_beta_interaction)
+            for sim_i in range(n_simulations):
+                y_sim = (true_intercept +
+                         true_age * X[:, 0] +
+                         true_gender * X[:, 1] +
+                         true_dass_dep * X[:, 2] +
+                         true_dass_anx * X[:, 3] +
+                         true_dass_str * X[:, 4] +
+                         true_ucla * X[:, 5] +
+                         true_beta_interaction * X[:, 5] * X[:, 1] +
+                         np.random.normal(0, residual_std, n))
+
+                sim_df = pd.DataFrame({
+                    'y': y_sim,
+                    'z_age': X[:, 0],
+                    'gender_male': X[:, 1],
+                    'z_dass_dep': X[:, 2],
+                    'z_dass_anx': X[:, 3],
+                    'z_dass_str': X[:, 4],
+                    'z_ucla': X[:, 5],
+                    'ucla_x_gender': X[:, 5] * X[:, 1]
                 })
-            except:
+
+                try:
+                    sim_model = smf.ols("y ~ z_age + gender_male + z_dass_dep + z_dass_anx + z_dass_str + z_ucla + ucla_x_gender",
+                                       data=sim_df).fit()
+                    beta_hat = sim_model.params['ucla_x_gender']
+                    p_hat = sim_model.pvalues['ucla_x_gender']
+
+                    sim_results.append({
+                        'beta_hat': beta_hat,
+                        'p_value': p_hat,
+                        'significant': p_hat < 0.05,
+                        'sign_correct': np.sign(beta_hat) == np.sign(true_beta_interaction)
+                    })
+                except Exception as e:
+                    fail_count += 1
+                    if verbose and fail_count <= 3:
+                        warnings.warn(f"Simulation {sim_i} failed: {e}")
+                    continue
+
+            # Warn if high failure rate
+            if fail_count > n_simulations * 0.1:
+                warnings.warn(f"High simulation failure rate: {fail_count}/{n_simulations} ({fail_count/n_simulations*100:.1f}%)")
+
+            if len(sim_results) == 0:
                 continue
 
-        if len(sim_results) == 0:
-            continue
+            sim_df_results = pd.DataFrame(sim_results)
+            sig_results = sim_df_results[sim_df_results['significant']]
 
-        sim_df_results = pd.DataFrame(sim_results)
-        sig_results = sim_df_results[sim_df_results['significant']]
+            power = len(sig_results) / len(sim_df_results)
+            type_m_error = sig_results['beta_hat'].abs().mean() / abs(true_beta_interaction) if len(sig_results) > 0 else np.nan
+            type_s_error = (~sig_results['sign_correct']).mean() if len(sig_results) > 0 else np.nan
 
-        power = len(sig_results) / len(sim_df_results)
-        type_m_error = sig_results['beta_hat'].abs().mean() / abs(true_beta_interaction) if len(sig_results) > 0 else np.nan
-        type_s_error = (~sig_results['sign_correct']).mean() if len(sig_results) > 0 else np.nan
+            result = {
+                'outcome': outcome_col,
+                'outcome_label': outcome_label,
+                'n': n,
+                'effect_multiplier': multiplier,
+                'n_simulations': len(sim_df_results),
+                'n_failed': fail_count,
+                'observed_beta': observed_beta,
+                'true_beta': true_beta_interaction,
+                'power': power,
+                'type_m_error': type_m_error,
+                'type_s_error': type_s_error
+            }
+            all_results.append(result)
 
-        result = {
-            'outcome': outcome_col,
-            'outcome_label': outcome_label,
-            'n': n,
-            'n_simulations': len(sim_df_results),
-            'observed_beta': observed_beta,
-            'true_beta': true_beta_interaction,
-            'power': power,
-            'type_m_error': type_m_error,
-            'type_s_error': type_s_error
-        }
-        all_results.append(result)
-
-        if verbose:
-            print(f"    Power: {power:.3f}")
-            print(f"    Type M error: {type_m_error:.3f}" if not np.isnan(type_m_error) else "    Type M error: N/A")
-            print(f"    Type S error: {type_s_error:.3f}" if not np.isnan(type_s_error) else "    Type S error: N/A")
+            if verbose:
+                print(f"      Power: {power:.3f}")
+                print(f"      Type M error: {type_m_error:.3f}" if not np.isnan(type_m_error) else "      Type M error: N/A")
+                print(f"      Type S error: {type_s_error:.3f}" if not np.isnan(type_s_error) else "      Type S error: N/A")
+                if fail_count > 0:
+                    print(f"      (Failed: {fail_count}/{n_simulations})")
 
     results_df = pd.DataFrame(all_results)
     results_df.to_csv(OUTPUT_DIR / "type_ms_simulation_results.csv", index=False, encoding='utf-8-sig')
@@ -605,6 +656,7 @@ def analyze_split_half_replication(verbose: bool = True, n_splits: int = 100) ->
         half = n // 2
 
         split_results = []
+        fail_count = 0
 
         for split_idx in range(n_splits):
             # Random split
@@ -621,12 +673,15 @@ def analyze_split_half_replication(verbose: bool = True, n_splits: int = 100) ->
                 model1 = smf.ols(formula, data=df_half1).fit()
                 model2 = smf.ols(formula, data=df_half2).fit()
 
-                interaction_term = 'z_ucla:C(gender_male)[T.1]'
-                if interaction_term in model1.params.index and interaction_term in model2.params.index:
-                    beta1 = model1.params[interaction_term]
-                    beta2 = model2.params[interaction_term]
-                    p1 = model1.pvalues[interaction_term]
-                    p2 = model2.pvalues[interaction_term]
+                # Dynamic interaction term detection
+                int_term1 = find_interaction_term(model1.params.index, 'ucla', 'gender')
+                int_term2 = find_interaction_term(model2.params.index, 'ucla', 'gender')
+
+                if int_term1 is not None and int_term2 is not None:
+                    beta1 = model1.params[int_term1]
+                    beta2 = model2.params[int_term2]
+                    p1 = model1.pvalues[int_term1]
+                    p2 = model2.pvalues[int_term2]
 
                     split_results.append({
                         'split': split_idx,
@@ -637,8 +692,15 @@ def analyze_split_half_replication(verbose: bool = True, n_splits: int = 100) ->
                         'same_sign': np.sign(beta1) == np.sign(beta2),
                         'both_sig': (p1 < 0.05) and (p2 < 0.05)
                     })
-            except:
+            except Exception as e:
+                fail_count += 1
+                if verbose and fail_count <= 3:
+                    warnings.warn(f"Split {split_idx} failed: {e}")
                 continue
+
+        # Warn if high failure rate
+        if fail_count > n_splits * 0.1:
+            warnings.warn(f"High split failure rate: {fail_count}/{n_splits} ({fail_count/n_splits*100:.1f}%)")
 
         if len(split_results) == 0:
             continue
@@ -839,8 +901,10 @@ def analyze_robustness(verbose: bool = True) -> pd.DataFrame:
         formula = f"{outcome_col} ~ z_age + C(gender_male) + z_dass_dep + z_dass_anx + z_dass_str + z_ucla * C(gender_male)"
         full_model = smf.ols(formula, data=df_clean).fit()
 
-        interaction_term = 'z_ucla:C(gender_male)[T.1]'
-        if interaction_term not in full_model.params.index:
+        interaction_term = find_interaction_term(full_model.params.index, 'ucla', 'gender')
+        if interaction_term is None:
+            if verbose:
+                print("    WARNING: Interaction term not found. Skipping.")
             continue
 
         full_beta = full_model.params[interaction_term]
@@ -853,14 +917,19 @@ def analyze_robustness(verbose: bool = True) -> pd.DataFrame:
 
         # Leave-one-out analysis
         loo_betas = []
+        loo_fail = 0
 
         for i in range(n):
             df_loo = df_clean.drop(df_clean.index[i])
             try:
                 loo_model = smf.ols(formula, data=df_loo).fit()
-                if interaction_term in loo_model.params.index:
-                    loo_betas.append(loo_model.params[interaction_term])
-            except:
+                int_term_loo = find_interaction_term(loo_model.params.index, 'ucla', 'gender')
+                if int_term_loo is not None:
+                    loo_betas.append(loo_model.params[int_term_loo])
+            except Exception as e:
+                loo_fail += 1
+                if verbose and loo_fail <= 3:
+                    warnings.warn(f"LOO fit failed at i={i}: {e}")
                 continue
 
         if len(loo_betas) > 0:

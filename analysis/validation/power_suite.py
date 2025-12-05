@@ -42,13 +42,16 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 import statsmodels.formula.api as smf
-from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 
 # Project imports
-from analysis.utils.data_loader_utils import (
+from analysis.preprocessing import (
     load_master_dataset, RESULTS_DIR, ANALYSIS_OUTPUT_DIR,
     DEFAULT_RT_MIN, STROOP_RT_MAX, PRP_RT_MAX
+)
+from analysis.preprocessing import (
+    safe_zscore,
+    prepare_gender_variable
 )
 
 np.random.seed(42)
@@ -95,31 +98,25 @@ def load_power_data() -> pd.DataFrame:
     """Load and prepare master dataset for power analyses."""
     master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
 
-    # Normalize gender
-    if 'gender_normalized' in master.columns:
-        master['gender'] = master['gender_normalized'].fillna('').astype(str).str.strip().str.lower()
-    else:
-        master['gender'] = master['gender'].fillna('').astype(str).str.strip().str.lower()
+    # Normalize gender using shared utility
+    master = prepare_gender_variable(master)
 
     # Ensure ucla_total exists
     if 'ucla_total' not in master.columns and 'ucla_score' in master.columns:
         master['ucla_total'] = master['ucla_score']
 
-    master['gender_male'] = (master['gender'] == 'male').astype(int)
-
-    # Standardize predictors
-    scaler = StandardScaler()
+    # Standardize predictors using NaN-safe z-score (ddof=1)
     required_cols = ['age', 'ucla_total', 'dass_depression', 'dass_anxiety', 'dass_stress']
 
     for col in required_cols:
         if col not in master.columns:
             raise ValueError(f"Missing required column: {col}")
 
-    master['z_age'] = scaler.fit_transform(master[['age']])
-    master['z_ucla'] = scaler.fit_transform(master[['ucla_total']])
-    master['z_dass_dep'] = scaler.fit_transform(master[['dass_depression']])
-    master['z_dass_anx'] = scaler.fit_transform(master[['dass_anxiety']])
-    master['z_dass_str'] = scaler.fit_transform(master[['dass_stress']])
+    master['z_age'] = safe_zscore(master['age'])
+    master['z_ucla'] = safe_zscore(master['ucla_total'])
+    master['z_dass_dep'] = safe_zscore(master['dass_depression'])
+    master['z_dass_anx'] = safe_zscore(master['dass_anxiety'])
+    master['z_dass_str'] = safe_zscore(master['dass_stress'])
 
     return master
 

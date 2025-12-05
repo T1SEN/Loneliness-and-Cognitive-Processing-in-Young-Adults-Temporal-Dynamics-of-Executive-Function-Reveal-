@@ -54,8 +54,13 @@ import matplotlib.pyplot as plt
 from scipy.stats import linregress
 
 # Project imports
-from analysis.utils.data_loader_utils import load_master_dataset, RESULTS_DIR
-from analysis.utils.trial_data_loader import load_prp_trials
+from analysis.preprocessing import load_master_dataset, RESULTS_DIR
+from analysis.preprocessing import load_prp_trials
+from analysis.preprocessing import (
+    safe_zscore,
+    prepare_gender_variable,
+    find_interaction_term
+)
 from sklearn.decomposition import PCA
 
 # Paths
@@ -271,13 +276,8 @@ def prepare_data(force_rebuild: bool = False) -> pd.DataFrame:
 
     master = load_master_dataset(use_cache=not force_rebuild, force_rebuild=force_rebuild, merge_cognitive_summary=True)
 
-    # Normalize gender
-    if 'gender_normalized' in master.columns:
-        master['gender'] = master['gender_normalized'].fillna('').astype(str).str.strip().str.lower()
-    else:
-        master['gender'] = master['gender'].fillna('').astype(str).str.strip().str.lower()
-
-    master['gender_male'] = (master['gender'] == 'male').astype(int)
+    # Normalize gender using shared utility
+    master = prepare_gender_variable(master)
 
     # Ensure ucla_total exists
     if 'ucla_total' not in master.columns and 'ucla_score' in master.columns:
@@ -291,15 +291,14 @@ def prepare_data(force_rebuild: bool = False) -> pd.DataFrame:
     if missing:
         raise ValueError(f"Missing required columns: {missing}")
 
-    # Clean and standardize
+    # Clean and standardize using NaN-safe z-score
     df = master.dropna(subset=required).copy()
 
-    scaler = StandardScaler()
-    df['z_age'] = scaler.fit_transform(df[['age']])
-    df['z_ucla'] = scaler.fit_transform(df[['ucla_total']])
-    df['z_dass_dep'] = scaler.fit_transform(df[['dass_depression']])
-    df['z_dass_anx'] = scaler.fit_transform(df[['dass_anxiety']])
-    df['z_dass_str'] = scaler.fit_transform(df[['dass_stress']])
+    df['z_age'] = safe_zscore(df['age'])
+    df['z_ucla'] = safe_zscore(df['ucla_total'])
+    df['z_dass_dep'] = safe_zscore(df['dass_depression'])
+    df['z_dass_anx'] = safe_zscore(df['dass_anxiety'])
+    df['z_dass_str'] = safe_zscore(df['dass_stress'])
 
     print(f"  Total N = {len(df)}")
     print(f"    Males: {(df['gender_male'] == 1).sum()}")
@@ -342,7 +341,15 @@ def run_hierarchical_regression(
 
     # HC3-based Wald tests for key increments
     ucla_wald = models['model2'].wald_test('z_ucla = 0', use_f=True)
-    interaction_wald = models['model3'].wald_test('z_ucla:C(gender_male)[T.1] = 0', use_f=True)
+
+    # Dynamically detect interaction term for Wald test
+    int_term_for_wald = find_interaction_term(models['model3'].params.index, 'ucla', 'gender')
+    if int_term_for_wald is not None:
+        interaction_wald = models['model3'].wald_test(f'{int_term_for_wald} = 0', use_f=True)
+        interaction_wald_p = float(interaction_wald.pvalue)
+    else:
+        interaction_wald_p = np.nan
+        warnings.warn("Interaction term not found for Wald test")
 
     # Model comparisons
     anova_1v0 = anova_lm(models['model0'], models['model1'])
@@ -375,7 +382,7 @@ def run_hierarchical_regression(
         'p_ucla_ols': anova_2v1['Pr(>F)'][1],  # OLS-based (for reference)
 
         'delta_r2_interaction': models['model3'].rsquared - models['model2'].rsquared,
-        'p_interaction': float(interaction_wald.pvalue),  # HC3 Wald test (robust)
+        'p_interaction': interaction_wald_p,  # HC3 Wald test (robust)
         'p_interaction_ols': anova_3v2['Pr(>F)'][1],  # OLS-based (for reference)
 
         # UCLA main effect (from Model 2)
@@ -384,16 +391,18 @@ def run_hierarchical_regression(
         'ucla_p': models['model2'].pvalues.get('z_ucla', np.nan),
     }
 
-    # Interaction term (from Model 3)
-    int_term = 'z_ucla:C(gender_male)[T.1]'
-    if int_term in models['model3'].params:
+    # Interaction term (from Model 3) - dynamic detection
+    int_term = find_interaction_term(models['model3'].params.index, 'ucla', 'gender')
+    if int_term is not None and int_term in models['model3'].params:
         results['interaction_beta'] = models['model3'].params[int_term]
         results['interaction_se'] = models['model3'].bse[int_term]
         results['interaction_p'] = models['model3'].pvalues[int_term]
+        results['interaction_term'] = int_term  # Track actual term name
     else:
         results['interaction_beta'] = np.nan
         results['interaction_se'] = np.nan
         results['interaction_p'] = np.nan
+        results['interaction_term'] = None
 
     # Gender-stratified effects
     for gender, gender_val, label in [('female', 0, 'female'), ('male', 1, 'male')]:

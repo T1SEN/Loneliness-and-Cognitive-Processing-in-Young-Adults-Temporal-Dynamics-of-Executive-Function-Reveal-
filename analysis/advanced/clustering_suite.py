@@ -40,7 +40,7 @@ from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 from sklearn.mixture import GaussianMixture
 
-from analysis.utils.data_loader_utils import load_master_dataset, ANALYSIS_OUTPUT_DIR, RESULTS_DIR
+from analysis.preprocessing import load_master_dataset, ANALYSIS_OUTPUT_DIR, RESULTS_DIR
 from analysis.utils.modeling import standardize_predictors
 import statsmodels.formula.api as smf
 

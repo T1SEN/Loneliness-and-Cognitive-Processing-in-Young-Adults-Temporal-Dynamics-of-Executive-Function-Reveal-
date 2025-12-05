@@ -56,7 +56,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import warnings
 warnings.filterwarnings('ignore')
-from analysis.utils.data_loader_utils import load_master_dataset
+from analysis.preprocessing import load_master_dataset
 
 np.random.seed(42)
 

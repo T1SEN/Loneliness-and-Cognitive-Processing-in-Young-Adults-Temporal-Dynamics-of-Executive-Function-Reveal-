@@ -57,6 +57,20 @@ PYTHONIOENCODING=utf-8 .\venv\Scripts\python.exe export_alldata.py
 analysis/
 ├── __main__.py             # Unified CLI entry point
 ├── run.py                  # Suite runner
+├── preprocessing/          # Data loading and cleaning
+│   ├── loaders.py          # load_master_dataset, load_*_scores
+│   ├── trial_loaders.py    # load_prp_trials, load_stroop_trials, load_wcst_trials
+│   ├── standardization.py  # safe_zscore, standardize_predictors, prepare_gender_variable
+│   ├── features.py         # derive_all_features, derive_*_features
+│   └── constants.py        # RT thresholds, SOA constants
+├── statistics/             # Statistical utilities
+│   ├── exgaussian.py       # Ex-Gaussian RT fitting
+│   └── post_error.py       # Post-error slowing computation
+├── visualization/          # Plotting utilities
+│   ├── plotting.py         # set_publication_style, forest plots
+│   └── publication.py      # APA formatting, effect sizes
+├── utils/                  # Modeling only
+│   └── modeling.py         # DASS_CONTROL_FORMULA, fit_dass_controlled_model
 ├── gold_standard/          # Confirmatory analyses (DASS-controlled)
 │   ├── pipeline.py
 │   └── analyses.yml        # Analysis configuration
@@ -64,13 +78,16 @@ analysis/
 │   ├── prp_suite.py
 │   ├── stroop_suite.py
 │   ├── wcst_suite.py
-│   └── cross_task_suite.py
+│   └── cross_task/         # Cross-task analyses (split into modules)
+│       ├── consistency.py
+│       ├── age_gender.py
+│       ├── nonlinear.py
+│       └── residual_temporal.py
 ├── mediation/              # DASS as mediator (not covariate)
 ├── validation/             # CV, robustness, Type M/S error
 ├── synthesis/              # Integration and summary
 ├── advanced/               # Mechanistic, latent, clustering
 ├── ml/                     # Machine learning pipelines
-├── utils/                  # Shared utilities
 └── archive/                # Legacy scripts (reference only)
 ```
 
@@ -92,33 +109,59 @@ smf.ols("{outcome} ~ z_ucla * C(gender_male) + z_dass_dep + z_dass_anx + z_dass_
 
 ## Shared Utility Modules
 
-### `analysis/utils/data_loader_utils.py`
+### `analysis/preprocessing/` - Data Loading & Cleaning
 ```python
-from analysis.utils.data_loader_utils import (
+from analysis.preprocessing import (
+    # Data loaders
     load_master_dataset,      # Cached unified dataset (master_dataset.parquet)
     load_participants, load_ucla_scores, load_dass_scores,
     ensure_participant_id,    # Normalize participant ID column
     normalize_gender_value,   # Map Korean/English gender to 'male'/'female'
+    # Trial loaders
+    load_prp_trials, load_stroop_trials, load_wcst_trials,
+    # Standardization
+    safe_zscore, standardize_predictors, prepare_gender_variable,
+    apply_fdr_correction, find_interaction_term,
+    # Constants
+    RESULTS_DIR, ANALYSIS_OUTPUT_DIR,
+    DEFAULT_RT_MIN, PRP_RT_MAX, STROOP_RT_MAX,
 )
 ```
 
-### `analysis/utils/modeling.py`
+### `analysis/utils/modeling.py` - Regression Templates
 ```python
 from analysis.utils.modeling import (
     DASS_CONTROL_FORMULA,        # "{outcome} ~ z_ucla * C(gender_male) + z_dass_dep + z_dass_anx + z_dass_str + z_age"
     fit_dass_controlled_model,   # Fit OLS with HC3 robust SE
-    standardize_predictors,      # Add z_ prefixed columns
     verify_dass_control,         # Verify formula has required terms
+)
+```
+
+### `analysis/statistics/` - Statistical Utilities
+```python
+from analysis.statistics import (
+    fit_exgaussian, fit_exgaussian_by_condition,  # Ex-Gaussian RT fitting
+    compute_pes, compute_all_task_pes,            # Post-error slowing
+)
+```
+
+### `analysis/visualization/` - Plotting
+```python
+from analysis.visualization import (
+    set_publication_style, create_forest_plot,    # Plotting
+    bootstrap_ci, cohens_d, format_pvalue,        # Publication helpers
 )
 ```
 
 ### RT Filtering Constants
 ```python
-DEFAULT_RT_MIN = 100      # ms; drop anticipations
-PRP_RT_MAX = 3000         # ms; PRP task timeout
-STROOP_RT_MAX = 3000      # ms; Stroop task timeout
-DEFAULT_SOA_SHORT = 150   # ms; PRP short bin upper bound
-DEFAULT_SOA_LONG = 1200   # ms; PRP long bin lower bound
+from analysis.preprocessing import (
+    DEFAULT_RT_MIN,       # 100 ms; drop anticipations
+    PRP_RT_MAX,           # 3000 ms; PRP task timeout
+    STROOP_RT_MAX,        # 3000 ms; Stroop task timeout
+    DEFAULT_SOA_SHORT,    # 150 ms; PRP short bin upper bound
+    DEFAULT_SOA_LONG,     # 1200 ms; PRP long bin lower bound
+)
 ```
 
 ## Implementation Details

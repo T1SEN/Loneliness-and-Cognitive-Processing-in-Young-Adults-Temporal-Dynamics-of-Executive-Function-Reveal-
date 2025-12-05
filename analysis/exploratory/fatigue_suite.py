@@ -32,7 +32,7 @@ import pandas as pd
 from scipy import stats
 import statsmodels.formula.api as smf
 
-from analysis.utils.data_loader_utils import (
+from analysis.preprocessing import (
     load_master_dataset, ensure_participant_id,
     RESULTS_DIR, ANALYSIS_OUTPUT_DIR
 )

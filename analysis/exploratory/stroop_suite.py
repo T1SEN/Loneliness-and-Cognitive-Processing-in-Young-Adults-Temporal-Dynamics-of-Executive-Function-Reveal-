@@ -38,12 +38,16 @@ from scipy.stats import exponnorm
 from scipy.optimize import minimize
 import statsmodels.formula.api as smf
 
-from analysis.utils.data_loader_utils import (
+from analysis.preprocessing import (
     load_master_dataset, ensure_participant_id,
     RESULTS_DIR, ANALYSIS_OUTPUT_DIR,
     DEFAULT_RT_MIN, STROOP_RT_MAX
 )
 from analysis.utils.modeling import standardize_predictors
+from analysis.preprocessing import (
+    prepare_gender_variable,
+    find_interaction_term
+)
 
 OUTPUT_DIR = ANALYSIS_OUTPUT_DIR / "stroop_suite"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -92,11 +96,8 @@ def load_master_with_stroop() -> pd.DataFrame:
     """Load master dataset with Stroop metrics."""
     master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
 
-    if 'gender_normalized' in master.columns:
-        master['gender'] = master['gender_normalized'].fillna('').str.strip().str.lower()
-    else:
-        master['gender'] = master['gender'].fillna('').astype(str).str.strip().str.lower()
-    master['gender_male'] = (master['gender'] == 'male').astype(int)
+    # Normalize gender using shared utility
+    master = prepare_gender_variable(master)
 
     if 'ucla_total' not in master.columns and 'ucla_score' in master.columns:
         master['ucla_total'] = master['ucla_score']
@@ -172,11 +173,12 @@ def analyze_conflict_adaptation(verbose: bool = True) -> pd.DataFrame:
         if verbose:
             print(f"  UCLA → CSE: β={model.params.get('z_ucla', np.nan):.3f}, p={model.pvalues.get('z_ucla', np.nan):.4f}")
 
-        pd.DataFrame({
+        coef_df = pd.DataFrame({
             'predictor': model.params.index,
             'beta': model.params.values,
             'p': model.pvalues.values
-        }).to_csv(output_dir / "cse_regression.csv", index=False, encoding='utf-8-sig')
+        })
+        coef_df.to_csv(output_dir / "cse_regression_coefficients.csv", index=False, encoding='utf-8-sig')
 
     cse_df.to_csv(output_dir / "cse_metrics.csv", index=False, encoding='utf-8-sig')
     return cse_df
@@ -257,13 +259,14 @@ def analyze_neutral_baseline(verbose: bool = True) -> pd.DataFrame:
             formula = f"{outcome} ~ z_ucla * C(gender_male) + z_dass_dep + z_dass_anx + z_dass_str + z_age"
             model = smf.ols(formula, data=valid).fit(cov_type='HC3')
 
+            int_term = find_interaction_term(model.params.index, 'ucla', 'gender')
             regression_results.append({
                 'outcome': label,
                 'n': len(valid),
                 'ucla_beta': model.params.get('z_ucla', np.nan),
                 'ucla_p': model.pvalues.get('z_ucla', np.nan),
-                'interaction_beta': model.params.get('z_ucla:C(gender_male)[T.1]', np.nan),
-                'interaction_p': model.pvalues.get('z_ucla:C(gender_male)[T.1]', np.nan)
+                'interaction_beta': model.params.get(int_term, np.nan) if int_term else np.nan,
+                'interaction_p': model.pvalues.get(int_term, np.nan) if int_term else np.nan
             })
 
             if verbose:
@@ -271,8 +274,9 @@ def analyze_neutral_baseline(verbose: bool = True) -> pd.DataFrame:
                 print(f"  UCLA → {label}: β={model.params.get('z_ucla', np.nan):.3f}, p={model.pvalues.get('z_ucla', np.nan):.4f}{sig}")
 
         if regression_results:
-            pd.DataFrame(regression_results).to_csv(output_dir / "ucla_decomposed_regression.csv",
-                                                     index=False, encoding='utf-8-sig')
+            reg_df = pd.DataFrame(regression_results)
+            reg_df.to_csv(output_dir / "ucla_decomposed_regression.csv",
+                          index=False, encoding='utf-8-sig')
 
     baseline_df.to_csv(output_dir / "neutral_baseline_metrics.csv", index=False, encoding='utf-8-sig')
     return baseline_df
@@ -441,26 +445,30 @@ def analyze_cse(verbose: bool = True) -> pd.DataFrame:
             if verbose:
                 sig = "*" if p < 0.05 else ""
                 print(f"  {label} (N={len(subset)}): r={r:.3f}, p={p:.4f}{sig}")
-
     # DASS-controlled regression
     if len(analysis_df) >= 30:
         formula = "cse ~ z_ucla * C(gender_male) + z_dass_dep + z_dass_anx + z_dass_str + z_age"
         model = smf.ols(formula, data=analysis_df).fit(cov_type='HC3')
+        int_term = find_interaction_term(model.params.index, 'ucla', 'gender')
 
         if verbose:
-            print(f"  UCLA main: β={model.params.get('z_ucla', np.nan):.3f}, p={model.pvalues.get('z_ucla', np.nan):.4f}")
-            print(f"  UCLA×Gender: β={model.params.get('z_ucla:C(gender_male)[T.1]', np.nan):.3f}, p={model.pvalues.get('z_ucla:C(gender_male)[T.1]', np.nan):.4f}")
+            print(f"  UCLA main: beta={model.params.get('z_ucla', np.nan):.3f}, p={model.pvalues.get('z_ucla', np.nan):.4f}")
+            int_beta = model.params.get(int_term, np.nan) if int_term else np.nan
+            int_p = model.pvalues.get(int_term, np.nan) if int_term else np.nan
+            print(f"  UCLA x Gender: beta={int_beta:.3f}, p={int_p:.4f}")
 
-        pd.DataFrame({
+        reg_df = pd.DataFrame({
             'predictor': model.params.index,
             'beta': model.params.values,
             'se': model.bse.values,
             'p': model.pvalues.values
-        }).to_csv(output_dir / "cse_regression.csv", index=False, encoding='utf-8-sig')
+        })
+        reg_df.to_csv(output_dir / "cse_regression.csv", index=False, encoding='utf-8-sig')
 
     cse_df.to_csv(output_dir / "cse_participant_scores.csv", index=False, encoding='utf-8-sig')
     if results_rows:
-        pd.DataFrame(results_rows).to_csv(output_dir / "cse_gender_correlations.csv", index=False, encoding='utf-8-sig')
+        corr_df = pd.DataFrame(results_rows)
+        corr_df.to_csv(output_dir / "cse_gender_correlations.csv", index=False, encoding='utf-8-sig')
 
     return cse_df
 
@@ -635,9 +643,9 @@ def analyze_exgaussian(verbose: bool = True) -> pd.DataFrame:
                             print(f"\n  DASS-Controlled Regression ({dv_name}):")
                             print(f"    N={int(model.nobs)}, R²={model.rsquared:.3f}")
                             print(f"    UCLA main: β={model.params.get('z_ucla', 0):.3f}, p={model.pvalues.get('z_ucla', 1):.4f}")
-                            ucla_gender = 'z_ucla:C(gender_male)[T.True]'
-                            if ucla_gender in model.params:
-                                print(f"    UCLA×Gender: β={model.params[ucla_gender]:.3f}, p={model.pvalues[ucla_gender]:.4f}")
+                            int_term = find_interaction_term(model.params.index, 'ucla', 'gender')
+                            if int_term and int_term in model.params:
+                                print(f"    UCLA×Gender: β={model.params[int_term]:.3f}, p={model.pvalues[int_term]:.4f}")
 
                         regression_results[dv_name] = {
                             'coefficients': model.params.to_dict(),
@@ -662,7 +670,8 @@ def analyze_exgaussian(verbose: bool = True) -> pd.DataFrame:
                         'r_squared': res['r_squared'],
                         'n': res['n']
                     })
-            pd.DataFrame(reg_summary).to_csv(
+            reg_df = pd.DataFrame(reg_summary)
+            reg_df.to_csv(
                 output_dir / "exgaussian_dass_regression.csv",
                 index=False, encoding='utf-8-sig'
             )
