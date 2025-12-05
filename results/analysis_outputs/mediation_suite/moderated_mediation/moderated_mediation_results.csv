@@ -1,7 +1,0 @@
-﻿mediator,outcome,n_male,n_female,indirect_male,indirect_female,indirect_diff,male_significant,female_significant
-dass_depression,pe_rate,64,106,3.627946942004003e-17,1.4232958228933033e-14,-1.4196678759512992e-14,False,False
-dass_depression,stroop_interference,64,106,-5.752301512189927e-18,1.6996481397409726e-13,-1.6997056627560944e-13,False,False
-dass_anxiety,pe_rate,64,106,3.804916086443976e-17,1.5421473302493512e-14,-1.5383424141629072e-14,False,False
-dass_anxiety,stroop_interference,64,106,2.291987012562722e-16,1.938834677361315e-13,-1.9365426903487522e-13,False,False
-dass_stress,pe_rate,64,106,-8.257367736496969e-17,1.4662753274752106e-14,-1.4745326952117076e-14,False,False
-dass_stress,stroop_interference,64,106,-4.436587442118958e-16,1.6242210603937084e-13,-1.6286576478358273e-13,False,False

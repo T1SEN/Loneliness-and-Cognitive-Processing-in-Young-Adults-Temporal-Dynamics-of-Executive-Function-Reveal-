@@ -1,9 +1,0 @@
-﻿task,outcome,term,beta,p,n
-stroop,n_change_points,UCLA,0.0,,171
-stroop,n_change_points,UCLA x Male,0.0,,171
-stroop,cp_rate,UCLA,0.0,,171
-stroop,cp_rate,UCLA x Male,0.0,,171
-wcst,n_change_points,UCLA,0.05006216069779208,0.2716567830698864,171
-wcst,n_change_points,UCLA x Male,-0.012295106228701717,0.8677175756689285,171
-wcst,cp_rate,UCLA,0.058254830918101144,0.29908838196509635,171
-wcst,cp_rate,UCLA x Male,-0.010594829545726325,0.9110442909580703,171

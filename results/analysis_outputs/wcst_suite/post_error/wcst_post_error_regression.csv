@@ -1,2 +1,0 @@
-﻿ucla_beta,ucla_p,interaction_beta,interaction_p,n,formula,cov_type
-0.010521958888100362,0.4942275511307793,-0.03766370269304203,0.10151322520222276,169,post_error_improvement ~ z_ucla * C(gender_male) + z_dass_dep + z_dass_anx + z_dass_str + z_age,HC3

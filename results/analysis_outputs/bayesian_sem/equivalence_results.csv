@@ -1,7 +1,0 @@
-﻿outcome,term,rope_width,prop_in_rope,prop_above_rope,prop_below_rope,decision,n
-WCST PE Rate,UCLA,1.0,0.777,0.026,0.197,Undecided,170
-WCST PE Rate,UCLA×Gender,1.0,0.679,0.313,0.008,Undecided,170
-Stroop Interference,UCLA,20.0,0.847,0.123,0.03,Undecided,170
-Stroop Interference,UCLA×Gender,20.0,0.663,0.311,0.026,Undecided,170
-PRP Bottleneck,UCLA,30.0,0.8865,0.0785,0.035,Undecided,166
-PRP Bottleneck,UCLA×Gender,30.0,0.3275,0.6725,0.0,Undecided,166

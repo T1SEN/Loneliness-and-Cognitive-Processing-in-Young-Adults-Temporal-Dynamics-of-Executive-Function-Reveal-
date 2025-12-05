@@ -5,7 +5,9 @@
       "Bash(PYTHONIOENCODING=utf-8 ./venv/Scripts/python.exe:*)",
       "Bash(./venv/Scripts/python.exe:*)",
       "Bash(cd:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "ask": []
