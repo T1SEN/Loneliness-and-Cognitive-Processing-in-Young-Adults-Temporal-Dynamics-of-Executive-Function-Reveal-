@@ -1,0 +1,69 @@
+{
+  "construct_validity": {
+    "kmo": 0.9382989437224323,
+    "kmo_interpretation": "Marvelous",
+    "bartlett_chi_sq": 2203.951686513678,
+    "bartlett_p": 0.0,
+    "bartlett_significant": "True",
+    "efa_factors": 2,
+    "n_participants": 198
+  },
+  "convergent_discriminant_validity": {
+    "UCLA Loneliness_vs_DASS Depression": {
+      "r": 0.6572567578362979,
+      "p": 9.677243670843245e-26,
+      "significant": true
+    },
+    "UCLA Loneliness_vs_DASS Anxiety": {
+      "r": 0.4857404753973538,
+      "p": 4.653808393542541e-13,
+      "significant": true
+    },
+    "UCLA Loneliness_vs_DASS Stress": {
+      "r": 0.5217458166933989,
+      "p": 3.786918823792945e-15,
+      "significant": true
+    },
+    "DASS Depression_vs_DASS Anxiety": {
+      "r": 0.6242148124076091,
+      "p": 1.127193757984318e-22,
+      "significant": true
+    },
+    "DASS Depression_vs_DASS Stress": {
+      "r": 0.6362455435346327,
+      "p": 9.519091844093832e-24,
+      "significant": true
+    },
+    "DASS Anxiety_vs_DASS Stress": {
+      "r": 0.7379423488235661,
+      "p": 3.834062573939935e-35,
+      "significant": true
+    }
+  },
+  "criterion_validity": {
+    "pe_rate": {
+      "beta": -0.10967259324176737,
+      "p": 0.850646436311162,
+      "delta_r2": 0.0001834530339277496,
+      "significant": false
+    },
+    "prp_bottleneck": {
+      "beta": 26.368135848854774,
+      "p": 0.08592934775916432,
+      "delta_r2": 0.01582546580339128,
+      "significant": false
+    },
+    "stroop_interference": {
+      "beta": 7.336844473837362,
+      "p": 0.46603591505758224,
+      "delta_r2": 0.0027697038596684598,
+      "significant": false
+    }
+  },
+  "interpretation": {
+    "kmo_threshold": ">=0.6 for adequate sampling",
+    "bartlett_threshold": "p<0.05 indicates factorability",
+    "convergent_validity": "High UCLA-Depression correlation expected (r > 0.5)",
+    "discriminant_validity": "UCLA should differ from depression (not identical construct)"
+  }
+}

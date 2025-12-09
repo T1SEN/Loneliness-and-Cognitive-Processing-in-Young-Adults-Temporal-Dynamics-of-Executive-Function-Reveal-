@@ -1,0 +1,4 @@
+﻿task,measure,method,n_participants,split_half_r,spearman_brown_r,interpretation
+Stroop,Interference Effect,Odd/Even Split-Half,203,0.39616010279043196,0.5674995324657216,Poor
+WCST,Perseverative Error Rate,First/Second Half Split,203,0.6054164573891376,0.7542173304660356,Acceptable
+PRP,Bottleneck Effect,Odd/Even Split-Half,203,0.5445987707668708,0.7051653556560652,Acceptable
