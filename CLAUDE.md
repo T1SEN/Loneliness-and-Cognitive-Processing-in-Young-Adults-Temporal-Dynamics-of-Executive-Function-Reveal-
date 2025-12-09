@@ -6,9 +6,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Research data analysis pipeline for a psychology study examining the relationship between loneliness (UCLA Loneliness Scale) and executive function (EF) across three cognitive tasks: Stroop (interference control), WCST (set-shifting), and PRP (dual-task coordination).
 
-**Two main components:**
-1. **Data Export**: Firebase → CSV extraction (`export_alldata.py`)
-2. **Statistical Analysis**: Suite-based analysis pipeline (`analysis/`)
+**Three main components:**
+1. **Data Collection**: Flutter mobile app for cognitive tasks (`lib/`)
+2. **Data Export**: Firebase → CSV extraction (`export_alldata.py`)
+3. **Statistical Analysis**: Suite-based analysis pipeline (`analysis/`)
 
 ## Data Flow
 
@@ -16,7 +17,7 @@ Research data analysis pipeline for a psychology study examining the relationshi
 Firebase (Firestore) → export_alldata.py → results/*.csv → python -m analysis → results/gold_standard/ & results/analysis_outputs/
 ```
 
-### Key Data Files (`results/`)
+### Key Data Files (`results/complete_only/`)
 | File | Contents |
 |------|----------|
 | `1_participants_info.csv` | Demographics (age, gender, education) |
@@ -91,7 +92,10 @@ analysis/
 │   ├── sequential_dynamics_suite.py  # Adaptive recovery, error cascade
 │   ├── clustering_suite.py     # MANOVA validation, GMM profiles
 │   ├── latent_suite.py         # Network analysis (GraphicalLASSO, NCT)
-│   └── ...                     # See run.py for full list
+│   ├── ddm_suite.py            # Drift-diffusion modeling
+│   ├── intervention_subgroups_suite.py  # High-risk subgroup identification
+│   ├── male_vulnerability_suite.py      # Gender-specific effects
+│   └── ...                     # ~30 suites total; see run.py SUITE_REGISTRY
 ├── ml/                     # Machine learning pipelines
 └── archive/                # Legacy scripts (DEPRECATED - see README.md)
 ```
@@ -261,6 +265,15 @@ from sklearn.covariance import GraphicalLassoCV
 
 ## Key Libraries
 pandas, numpy, scipy, statsmodels, scikit-learn, pymc, arviz, matplotlib, seaborn, firebase-admin
+
+## Flutter Data Collection App (`lib/`)
+
+The Flutter mobile app collects experimental data:
+- **Tasks**: `prp_page.dart`, `stroop_page.dart`, `wcst_page.dart`
+- **Surveys**: `ucla_page.dart` (UCLA Loneliness), `dass_page.dart` (DASS-21)
+- **Flow**: `test_sequencer_page.dart` orchestrates task order
+
+Data flows to Firebase Firestore, then exported via `export_alldata.py`.
 
 ## Notes
 

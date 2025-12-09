@@ -24,7 +24,11 @@
       "Bash(git -C \"C:/Users/ansel/my_research_exporter\" log --all --oneline --grep=\"complete\\|filter\")",
       "Bash(PYTHONIOENCODING=utf-8 ./venv/Scripts/python.exe:*)",
       "Bash(source:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(./venv/Scripts/pip.exe list:*)",
+      "Bash(./venv/Scripts/pip.exe install scipy -q)",
+      "Bash(git push)",
+      "Bash(./venv/Scripts/pip.exe install:*)"
     ],
     "deny": [],
     "ask": []
