@@ -1,0 +1,110 @@
+======================================================================
+HIERARCHICAL REGRESSION ANALYSIS SUMMARY
+======================================================================
+
+Model Structure:
+  Model 0: age + gender
+  Model 1: Model 0 + DASS-21 (depression, anxiety, stress)
+  Model 2: Model 1 + UCLA loneliness
+  Model 3: Model 2 + UCLA × Gender interaction
+
+----------------------------------------------------------------------
+
+Outcome: WCST Perseverative Error Rate (N = 187)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        ΔR² = 0.0231, p = 0.237
+  Step 2 (UCLA):        ΔR² = 0.0004, p = 0.762 (HC3 Wald)
+  Step 3 (Interaction): ΔR² = 0.0008, p = 0.616 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  β = -0.1729, SE = 0.5689, t = -0.30, p = 0.761
+
+UCLA × Gender Interaction (Model 3):
+  β = 0.3548, SE = 0.7058, p = 0.615
+
+Gender-Stratified UCLA Effects:
+  Female (n=112): β = -0.1845, p = 0.820
+  Male (n=75):   β = -0.0191, p = 0.984
+
+Diagnostics:
+  VIF max: 2.53
+  Breusch-Pagan p: 0.917
+  Shapiro-Wilk p: < 0.001
+
+
+Outcome: WCST Accuracy (N = 187)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        ΔR² = 0.0354, p = 0.085
+  Step 2 (UCLA):        ΔR² = 0.0000, p = 0.941 (HC3 Wald)
+  Step 3 (Interaction): ΔR² = 0.0027, p = 0.334 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  β = -0.0768, SE = 1.0319, t = -0.07, p = 0.941
+
+UCLA × Gender Interaction (Model 3):
+  β = -1.0837, SE = 1.1189, p = 0.333
+
+Gender-Stratified UCLA Effects:
+  Female (n=112): β = 0.1802, p = 0.897
+  Male (n=75):   β = -0.5695, p = 0.758
+
+Diagnostics:
+  VIF max: 2.53
+  Breusch-Pagan p: 0.391
+  Shapiro-Wilk p: < 0.001
+
+
+Outcome: Stroop Interference Effect (N = 187)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        ΔR² = 0.0093, p = 0.633
+  Step 2 (UCLA):        ΔR² = 0.0029, p = 0.485 (HC3 Wald)
+  Step 3 (Interaction): ΔR² = 0.0010, p = 0.657 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  β = 7.5703, SE = 10.8187, t = 0.70, p = 0.484
+
+UCLA × Gender Interaction (Model 3):
+  β = 6.7790, SE = 15.2493, p = 0.657
+
+Gender-Stratified UCLA Effects:
+  Female (n=112): β = 2.2266, p = 0.876
+  Male (n=75):   β = 15.6758, p = 0.403
+
+Diagnostics:
+  VIF max: 2.53
+  Breusch-Pagan p: 0.371
+  Shapiro-Wilk p: < 0.001
+
+
+Outcome: PRP Delay Effect (N = 182)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        ΔR² = 0.0020, p = 0.940
+  Step 2 (UCLA):        ΔR² = 0.0147, p = 0.111 (HC3 Wald)
+  Step 3 (Interaction): ΔR² = 0.0078, p = 0.181 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  β = 25.0633, SE = 15.6280, t = 1.60, p = 0.109
+
+UCLA × Gender Interaction (Model 3):
+  β = 27.6454, SE = 20.5855, p = 0.179
+
+Gender-Stratified UCLA Effects:
+  Female (n=108): β = 13.7390, p = 0.497
+  Male (n=74):   β = 27.1218, p = 0.223
+
+Diagnostics:
+  VIF max: 2.50
+  Breusch-Pagan p: 0.512
+  Shapiro-Wilk p: 0.315
+
+======================================================================
+Note. HC3 robust standard errors used for all tests.
+======================================================================
