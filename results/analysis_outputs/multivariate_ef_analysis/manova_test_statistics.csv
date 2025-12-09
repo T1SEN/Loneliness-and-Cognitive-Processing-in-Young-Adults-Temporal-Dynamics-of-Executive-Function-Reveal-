@@ -1,9 +1,0 @@
-﻿term,wilks_stat,wilks_F,wilks_p,pillai_stat,pillai_F,pillai_p
-Intercept,,,,,,
-z_ucla,,,,,,
-gender_male_num,,,,,,
-z_ucla:gender_male_num,,,,,,
-z_dass_dep,,,,,,
-z_dass_anx,,,,,,
-z_dass_str,,,,,,
-z_age,,,,,,

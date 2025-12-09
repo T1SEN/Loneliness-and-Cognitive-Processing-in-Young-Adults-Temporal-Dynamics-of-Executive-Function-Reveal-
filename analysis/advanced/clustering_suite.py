@@ -40,7 +40,10 @@ from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 from sklearn.mixture import GaussianMixture
 
-from analysis.preprocessing import load_master_dataset, ANALYSIS_OUTPUT_DIR, RESULTS_DIR, find_interaction_term
+from analysis.preprocessing import (
+    load_master_dataset, ANALYSIS_OUTPUT_DIR, RESULTS_DIR,
+    find_interaction_term, apply_fdr_correction
+)
 from analysis.utils.modeling import standardize_predictors
 import statsmodels.formula.api as smf
 
@@ -1186,6 +1189,168 @@ def analyze_manova_validation(verbose: bool = True) -> pd.DataFrame:
 
     if verbose:
         print(f"\n  Output: {OUTPUT_DIR / 'manova_validation_results.csv'}")
+
+    return results_df
+
+
+@register_analysis(
+    name="cluster_ucla_relationship",
+    description="Test UCLA-EF relationships within each cluster",
+    source_script="cluster_specific_effects.py"
+)
+def analyze_cluster_ucla_relationship(verbose: bool = True) -> pd.DataFrame:
+    """
+    Test whether UCLA effects on EF differ by cluster.
+
+    Key question: Are there subgroups where loneliness effects are stronger?
+    This would help identify who might benefit most from intervention.
+    """
+    if verbose:
+        print("\n" + "=" * 70)
+        print("CLUSTER-SPECIFIC UCLA-EF RELATIONSHIPS")
+        print("=" * 70)
+
+    master = load_clustering_data()
+
+    # Load or create cluster assignments
+    cluster_file = OUTPUT_DIR / "cluster_assignments.csv"
+    if cluster_file.exists():
+        cluster_df = pd.read_csv(cluster_file)
+        master = master.merge(cluster_df[['participant_id', 'cluster']], on='participant_id', how='left')
+    else:
+        # Run vulnerability clustering first
+        if verbose:
+            print("  Running vulnerability clustering first...")
+        analyze_vulnerability_clusters(verbose=False)
+        if cluster_file.exists():
+            cluster_df = pd.read_csv(cluster_file)
+            master = master.merge(cluster_df[['participant_id', 'cluster']], on='participant_id', how='left')
+        else:
+            if verbose:
+                print("  ERROR: Could not create cluster assignments")
+            return pd.DataFrame()
+
+    # Filter complete cases
+    ef_outcomes = ['pe_rate', 'stroop_interference', 'prp_bottleneck']
+    available = [o for o in ef_outcomes if o in master.columns]
+
+    required_cols = available + ['cluster', 'z_ucla', 'gender_male', 'z_dass_dep', 'z_dass_anx', 'z_dass_str', 'z_age']
+    clean_data = master.dropna(subset=required_cols).copy()
+
+    if len(clean_data) < 50:
+        if verbose:
+            print(f"  Insufficient data (N={len(clean_data)})")
+        return pd.DataFrame()
+
+    n_clusters = clean_data['cluster'].nunique()
+    if verbose:
+        print(f"  N = {len(clean_data)}, Clusters = {n_clusters}")
+
+    all_results = []
+
+    # Test UCLA effects within each cluster
+    for cluster_id in sorted(clean_data['cluster'].unique()):
+        cluster_data = clean_data[clean_data['cluster'] == cluster_id]
+
+        if len(cluster_data) < 15:
+            continue
+
+        if verbose:
+            print(f"\n  CLUSTER {cluster_id} (N={len(cluster_data)})")
+            print("  " + "-" * 50)
+            print(f"    UCLA mean: {cluster_data['ucla_total'].mean():.1f}" if 'ucla_total' in cluster_data.columns else "")
+            print(f"    % Male: {cluster_data['gender_male'].mean() * 100:.1f}%")
+
+        for outcome in available:
+            try:
+                formula = f"{outcome} ~ z_ucla + z_dass_dep + z_dass_anx + z_dass_str + z_age"
+                model = smf.ols(formula, data=cluster_data).fit(cov_type='HC3')
+
+                if 'z_ucla' in model.params:
+                    beta = model.params['z_ucla']
+                    se = model.bse['z_ucla']
+                    p = model.pvalues['z_ucla']
+
+                    all_results.append({
+                        'cluster': cluster_id,
+                        'outcome': outcome,
+                        'n': len(cluster_data),
+                        'beta_ucla': beta,
+                        'se_ucla': se,
+                        'p_ucla': p,
+                        'r_squared': model.rsquared
+                    })
+
+                    if verbose and p < 0.10:
+                        sig = "*" if p < 0.05 else "†"
+                        print(f"    {outcome}: β={beta:.4f}, p={p:.4f}{sig}")
+
+            except Exception as e:
+                if verbose:
+                    print(f"    {outcome}: Error - {e}")
+
+    if len(all_results) == 0:
+        return pd.DataFrame()
+
+    results_df = pd.DataFrame(all_results)
+
+    # Test for cluster × UCLA interaction (is effect stronger in some clusters?)
+    if verbose:
+        print("\n  INTERACTION TEST: Does UCLA effect differ by cluster?")
+        print("  " + "-" * 50)
+
+    for outcome in available:
+        try:
+            formula = f"{outcome} ~ z_ucla * C(cluster) + z_dass_dep + z_dass_anx + z_dass_str + z_age"
+            model = smf.ols(formula, data=clean_data).fit(cov_type='HC3')
+
+            # Find interaction terms
+            int_terms = [p for p in model.params.index if 'z_ucla:' in p and 'cluster' in p]
+
+            for int_term in int_terms:
+                beta_int = model.params[int_term]
+                p_int = model.pvalues[int_term]
+
+                if verbose and p_int < 0.10:
+                    sig = "*" if p_int < 0.05 else "†"
+                    print(f"    {outcome} × {int_term}: β={beta_int:.4f}, p={p_int:.4f}{sig}")
+
+        except Exception as e:
+            if verbose:
+                print(f"    {outcome}: Interaction test error - {e}")
+
+    # Apply FDR correction (Benjamini-Hochberg) across all within-cluster tests
+    if 'p_ucla' in results_df.columns and len(results_df) > 1:
+        results_df = apply_fdr_correction(results_df, p_col='p_ucla')
+
+        if verbose:
+            print("\n  FDR Correction Applied (Benjamini-Hochberg):")
+            print("  " + "-" * 50)
+            sig_raw = (results_df['p_ucla'] < 0.05).sum()
+            sig_fdr = (results_df['p_fdr'] < 0.05).sum() if 'p_fdr' in results_df.columns else 0
+            print(f"    Significant (raw p < 0.05): {sig_raw}/{len(results_df)}")
+            print(f"    Significant (FDR q < 0.05): {sig_fdr}/{len(results_df)}")
+
+    # Identify high-risk cluster (where UCLA effects are strongest)
+    if verbose:
+        print("\n  HIGH-RISK CLUSTER IDENTIFICATION:")
+        print("  " + "-" * 50)
+
+        # Use FDR-corrected significance if available
+        p_col = 'p_fdr' if 'p_fdr' in results_df.columns else 'p_ucla'
+        sig_effects = results_df[results_df[p_col] < 0.05]
+        if len(sig_effects) > 0:
+            for _, row in sig_effects.iterrows():
+                direction = "↑" if row['beta_ucla'] > 0 else "↓"
+                print(f"    Cluster {row['cluster']}: {row['outcome']} {direction} (β={row['beta_ucla']:.3f}, q={row[p_col]:.4f})")
+        else:
+            print("    No significant within-cluster UCLA effects found (FDR-corrected)")
+
+    # Save results
+    results_df.to_csv(OUTPUT_DIR / "cluster_ucla_relationship.csv", index=False, encoding='utf-8-sig')
+
+    if verbose:
+        print(f"\n  Output: {OUTPUT_DIR / 'cluster_ucla_relationship.csv'}")
 
     return results_df
 

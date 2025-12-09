@@ -91,6 +91,70 @@ def load_latent_data() -> pd.DataFrame:
     return master
 
 
+def compute_partial_correlation(df: pd.DataFrame, x: str, y: str, controls: list) -> dict:
+    """
+    Compute partial correlation between x and y, controlling for variables in controls.
+
+    Returns dict with r, p, and n.
+    """
+    from scipy.stats import pearsonr
+
+    # Remove controls that are x or y
+    controls = [c for c in controls if c != x and c != y and c in df.columns]
+
+    if len(controls) == 0:
+        # No controls, just compute regular correlation
+        clean = df[[x, y]].dropna()
+        if len(clean) < 3:
+            return {'r': np.nan, 'p': np.nan, 'n': 0}
+        r, p = pearsonr(clean[x], clean[y])
+        return {'r': r, 'p': p, 'n': len(clean)}
+
+    # Residualize x and y on controls
+    all_cols = [x, y] + controls
+    clean = df[all_cols].dropna()
+
+    if len(clean) < len(controls) + 3:
+        return {'r': np.nan, 'p': np.nan, 'n': 0}
+
+    # Regression residuals
+    try:
+        X_controls = clean[controls].values
+        X_controls = np.column_stack([np.ones(len(clean)), X_controls])
+
+        # Residualize x
+        beta_x = np.linalg.lstsq(X_controls, clean[x].values, rcond=None)[0]
+        resid_x = clean[x].values - X_controls @ beta_x
+
+        # Residualize y
+        beta_y = np.linalg.lstsq(X_controls, clean[y].values, rcond=None)[0]
+        resid_y = clean[y].values - X_controls @ beta_y
+
+        # Partial correlation
+        r, p = pearsonr(resid_x, resid_y)
+        return {'r': r, 'p': p, 'n': len(clean)}
+
+    except Exception:
+        return {'r': np.nan, 'p': np.nan, 'n': 0}
+
+
+def compute_partial_corr_matrix(df: pd.DataFrame, vars_list: list, controls: list) -> pd.DataFrame:
+    """
+    Compute partial correlation matrix for vars_list, controlling for controls.
+    """
+    n_vars = len(vars_list)
+    corr_matrix = pd.DataFrame(np.eye(n_vars), index=vars_list, columns=vars_list)
+
+    for i, v1 in enumerate(vars_list):
+        for j, v2 in enumerate(vars_list):
+            if i < j:
+                result = compute_partial_correlation(df, v1, v2, controls)
+                corr_matrix.loc[v1, v2] = result['r']
+                corr_matrix.loc[v2, v1] = result['r']
+
+    return corr_matrix
+
+
 @register_analysis(
     name="network",
     description="Partial correlation network of UCLA, DASS, and EF measures",
@@ -483,6 +547,171 @@ def analyze_network_extended(verbose: bool = True) -> pd.DataFrame:
         print(f"\n  Output: {OUTPUT_DIR / 'network_extended_results.csv'}")
 
     return results_df
+
+
+@register_analysis(
+    name="bridge_centrality",
+    description="Bridge centrality analysis: identify nodes connecting DASS and EF domains (UCLA excluded)",
+    source_script="network_psychometrics_bridge.py"
+)
+def analyze_bridge_centrality(verbose: bool = True) -> pd.DataFrame:
+    """
+    Bridge centrality analysis to identify variables that connect different domains.
+
+    IMPORTANT: UCLA is EXCLUDED from bridge calculation to avoid circular logic
+    (we cannot use UCLA correlations to study UCLA-EF relationships).
+
+    Domains:
+    - Psychological: DASS subscales only (not UCLA)
+    - Cognitive: PE rate, Stroop interference, PRP bottleneck
+
+    Bridge centrality measures how strongly a node connects to nodes in other domains.
+    High bridge centrality = potential intervention target.
+    """
+    if verbose:
+        print("\n" + "=" * 70)
+        print("BRIDGE CENTRALITY ANALYSIS")
+        print("=" * 70)
+        print("  NOTE: UCLA excluded from bridge calculation (avoids circular logic)")
+
+    master = load_latent_data()
+
+    # Define domains - UCLA EXCLUDED from bridge analysis to avoid circular logic
+    dass_vars = ['dass_depression', 'dass_anxiety', 'dass_stress']
+    cog_vars = ['pe_rate', 'stroop_interference', 'prp_bottleneck']
+    control_vars = ['z_age']  # Controls for partial correlations
+
+    dass_available = [v for v in dass_vars if v in master.columns]
+    cog_available = [v for v in cog_vars if v in master.columns]
+    controls = [v for v in control_vars if v in master.columns]
+
+    all_vars = dass_available + cog_available
+
+    if len(dass_available) < 2 or len(cog_available) < 2:
+        if verbose:
+            print("  Insufficient variables for bridge centrality analysis")
+        return pd.DataFrame()
+
+    # Complete cases - include UCLA for separate analysis
+    df = master[all_vars + ['ucla_total', 'gender_male'] + controls].dropna()
+
+    if len(df) < 50:
+        if verbose:
+            print(f"  Insufficient data (N={len(df)})")
+        return pd.DataFrame()
+
+    if verbose:
+        print(f"  N = {len(df)}")
+        print(f"  DASS domain (psychological): {dass_available}")
+        print(f"  EF domain (cognitive): {cog_available}")
+        print(f"  Controls for partial correlations: {controls}")
+
+    # Compute PARTIAL correlation matrix controlling for age
+    corr_matrix = compute_partial_corr_matrix(df, all_vars, controls)
+
+    if verbose:
+        print("\n  Using PARTIAL correlations (controlling for age)")
+
+    # Bridge centrality: sum of absolute partial correlations with OTHER domain
+    bridge_results = []
+
+    for var in all_vars:
+        is_dass = var in dass_available
+        other_domain = cog_available if is_dass else dass_available
+
+        # Bridge centrality = sum of abs partial correlations with other domain
+        bridge_strength = corr_matrix.loc[var, other_domain].abs().sum()
+
+        # Expected bridge influence = sum of signed correlations with other domain
+        bridge_ei = corr_matrix.loc[var, other_domain].sum()
+
+        # Within-domain strength
+        own_domain = dass_available if is_dass else cog_available
+        own_domain_filtered = [v for v in own_domain if v != var]
+        within_strength = corr_matrix.loc[var, own_domain_filtered].abs().sum() if own_domain_filtered else 0
+
+        bridge_results.append({
+            'variable': var,
+            'domain': 'DASS' if is_dass else 'Cognitive',
+            'bridge_strength': bridge_strength,
+            'bridge_ei': bridge_ei,
+            'within_strength': within_strength,
+            'bridge_ratio': bridge_strength / (bridge_strength + within_strength) if (bridge_strength + within_strength) > 0 else 0,
+            'method': 'partial_correlation'
+        })
+
+    bridge_df = pd.DataFrame(bridge_results)
+
+    if verbose:
+        print("\n  Bridge Centrality (DASS ↔ EF connections, partial r):")
+        print("  " + "-" * 60)
+        for _, row in bridge_df.sort_values('bridge_strength', ascending=False).iterrows():
+            print(f"    {row['variable']}: bridge={row['bridge_strength']:.3f}, ratio={row['bridge_ratio']:.3f} ({row['domain']})")
+
+    # Identify top bridge nodes (key mediators between DASS and EF)
+    top_bridge = bridge_df.nlargest(3, 'bridge_strength')
+
+    if verbose:
+        print(f"\n  Top Bridge Nodes (DASS-EF mediators):")
+        for _, row in top_bridge.iterrows():
+            print(f"    • {row['variable']} (bridge={row['bridge_strength']:.3f})")
+        print("\n  Interpretation:")
+        print("    These variables most strongly connect DASS distress to EF impairments.")
+        print("    Targeting these nodes may interrupt the distress→cognition pathway.")
+
+    # Gender-stratified bridge analysis (using partial correlations)
+    gender_bridge_results = []
+
+    for gender, label in [(1, 'Male'), (0, 'Female')]:
+        subset = df[df['gender_male'] == gender]
+
+        if len(subset) < 30:
+            continue
+
+        # Use partial correlation matrix for gender subgroup
+        corr_g = compute_partial_corr_matrix(subset, all_vars, controls)
+
+        for var in all_vars:
+            is_dass = var in dass_available
+            other_domain = cog_available if is_dass else dass_available
+            bridge_strength_g = corr_g.loc[var, other_domain].abs().sum()
+
+            gender_bridge_results.append({
+                'gender': label,
+                'variable': var,
+                'domain': 'DASS' if is_dass else 'Cognitive',
+                'bridge_strength': bridge_strength_g,
+                'method': 'partial_correlation'
+            })
+
+    if gender_bridge_results:
+        gender_bridge_df = pd.DataFrame(gender_bridge_results)
+        gender_bridge_df.to_csv(OUTPUT_DIR / "bridge_centrality_by_gender.csv", index=False, encoding='utf-8-sig')
+
+        if verbose:
+            print(f"\n  Gender-Stratified Bridge Centrality (partial r):")
+            print("  " + "-" * 60)
+
+            # Compare DASS depression bridge centrality by gender
+            dass_dep_bridge = gender_bridge_df[gender_bridge_df['variable'] == 'dass_depression']
+            if len(dass_dep_bridge) == 2:
+                male_bridge = dass_dep_bridge[dass_dep_bridge['gender'] == 'Male']['bridge_strength'].values[0]
+                female_bridge = dass_dep_bridge[dass_dep_bridge['gender'] == 'Female']['bridge_strength'].values[0]
+                print(f"    DASS Depression:")
+                print(f"      Male bridge (partial r): {male_bridge:.3f}")
+                print(f"      Female bridge (partial r): {female_bridge:.3f}")
+                if male_bridge > female_bridge:
+                    print(f"      → Stronger DASS-Cog link in males")
+                else:
+                    print(f"      → Stronger DASS-Cog link in females")
+
+    # Save results
+    bridge_df.to_csv(OUTPUT_DIR / "bridge_centrality.csv", index=False, encoding='utf-8-sig')
+
+    if verbose:
+        print(f"\n  Output: {OUTPUT_DIR / 'bridge_centrality.csv'}")
+
+    return bridge_df
 
 
 @register_analysis(
@@ -1155,6 +1384,180 @@ def analyze_causal_extended(verbose: bool = True) -> pd.DataFrame:
 
     if verbose:
         print(f"\n  Output: {OUTPUT_DIR / 'causal_extended.csv'}")
+
+    return results_df
+
+
+@register_analysis(
+    name="network_cluster_integration",
+    description="Integrate network structure and cluster analyses",
+    source_script="network_cluster_integration.py"
+)
+def analyze_network_cluster_integration(verbose: bool = True) -> pd.DataFrame:
+    """
+    Integrate network analysis with clustering results.
+
+    Questions addressed:
+    1. Do different vulnerability clusters have different network structures?
+    2. Is bridge centrality related to cluster membership?
+    3. Can we identify network-based risk profiles?
+    """
+    import json
+
+    if verbose:
+        print("\n" + "=" * 70)
+        print("NETWORK-CLUSTER INTEGRATION ANALYSIS")
+        print("=" * 70)
+
+    master = load_latent_data()
+
+    # Load cluster assignments
+    cluster_file = ANALYSIS_OUTPUT_DIR / "clustering_suite" / "cluster_assignments.csv"
+    if not cluster_file.exists():
+        if verbose:
+            print("  Cluster assignments not found. Running clustering first...")
+        return pd.DataFrame()
+
+    cluster_df = pd.read_csv(cluster_file)
+    master = master.merge(cluster_df[['participant_id', 'cluster']], on='participant_id', how='left')
+
+    # Network variables - exclude UCLA from bridge to avoid circular logic
+    psych_vars = ['ucla_total', 'dass_depression', 'dass_anxiety', 'dass_stress']
+    dass_vars = ['dass_depression', 'dass_anxiety', 'dass_stress']  # For bridge (no UCLA)
+    cog_vars = ['pe_rate', 'stroop_interference', 'prp_bottleneck']
+    control_vars = ['z_age']  # Controls for partial correlations
+
+    psych_available = [v for v in psych_vars if v in master.columns]
+    dass_available = [v for v in dass_vars if v in master.columns]
+    cog_available = [v for v in cog_vars if v in master.columns]
+    controls = [v for v in control_vars if v in master.columns]
+
+    all_vars = psych_available + cog_available
+    bridge_vars = dass_available + cog_available  # For bridge analysis (no UCLA)
+
+    # Complete cases with cluster info
+    clean_data = master[all_vars + ['cluster', 'gender_male'] + controls].dropna().copy()
+
+    if len(clean_data) < 50:
+        if verbose:
+            print(f"  Insufficient data (N={len(clean_data)})")
+        return pd.DataFrame()
+
+    n_clusters = clean_data['cluster'].nunique()
+
+    if verbose:
+        print(f"  N = {len(clean_data)}, Clusters = {n_clusters}")
+        print(f"  Psychological vars: {psych_available}")
+        print(f"  Cognitive vars: {cog_available}")
+        print(f"  Using PARTIAL correlations (controlling for age)")
+        print(f"  Bridge analysis excludes UCLA (avoids circular logic)")
+
+    all_results = []
+
+    # Compute cluster-specific network structures
+    cluster_networks = {}
+    cluster_bridge = {}
+
+    for cluster_id in sorted(clean_data['cluster'].unique()):
+        cluster_subset = clean_data[clean_data['cluster'] == cluster_id]
+
+        if len(cluster_subset) < 20:
+            continue
+
+        # PARTIAL correlation matrix (controlling for age)
+        corr_matrix = compute_partial_corr_matrix(cluster_subset, all_vars, controls)
+        cluster_networks[cluster_id] = corr_matrix
+
+        # Global strength (mean of absolute partial correlations)
+        mask = np.triu(np.ones_like(corr_matrix, dtype=bool), k=1)
+        global_strength = np.abs(corr_matrix.values)[mask].mean()
+
+        # Bridge centrality for DASS↔EF (excluding UCLA to avoid circular logic)
+        bridge_corr = compute_partial_corr_matrix(cluster_subset, bridge_vars, controls)
+        bridge_results = {}
+        for var in bridge_vars:
+            is_dass = var in dass_available
+            other_domain = cog_available if is_dass else dass_available
+            bridge_strength = bridge_corr.loc[var, other_domain].abs().sum()
+            bridge_results[var] = bridge_strength
+
+        cluster_bridge[cluster_id] = bridge_results
+
+        # Find most important bridge in this cluster
+        top_bridge_var = max(bridge_results, key=bridge_results.get)
+        top_bridge_val = bridge_results[top_bridge_var]
+
+        all_results.append({
+            'cluster': cluster_id,
+            'n': len(cluster_subset),
+            'global_strength': global_strength,
+            'top_bridge_node': top_bridge_var,
+            'top_bridge_strength': top_bridge_val,
+            'pct_male': (clean_data[clean_data['cluster'] == cluster_id]['gender_male'] == 1).mean() * 100,
+            'method': 'partial_correlation'
+        })
+
+        if verbose:
+            print(f"\n  CLUSTER {cluster_id} (N={len(cluster_subset)})")
+            print("  " + "-" * 50)
+            print(f"    Global network strength (partial r): {global_strength:.3f}")
+            print(f"    Top bridge (DASS↔EF): {top_bridge_var} ({top_bridge_val:.3f})")
+            print(f"    % Male: {all_results[-1]['pct_male']:.1f}%")
+
+    # Compare network structures across clusters
+    if verbose and len(cluster_networks) >= 2:
+        print("\n  CROSS-CLUSTER NETWORK COMPARISON")
+        print("  " + "-" * 50)
+
+        cluster_ids = list(cluster_networks.keys())
+
+        # Compare global strengths
+        strengths = {c: r['global_strength'] for c, r in zip(cluster_ids, all_results)}
+        strongest = max(strengths, key=strengths.get)
+        weakest = min(strengths, key=strengths.get)
+
+        print(f"    Strongest network: Cluster {strongest} ({strengths[strongest]:.3f})")
+        print(f"    Weakest network: Cluster {weakest} ({strengths[weakest]:.3f})")
+
+        # Compare UCLA-DASS link across clusters
+        print("\n    UCLA-DASS Depression link by cluster:")
+        for cluster_id, corr_mat in cluster_networks.items():
+            if 'ucla_total' in corr_mat.index and 'dass_depression' in corr_mat.columns:
+                r = corr_mat.loc['ucla_total', 'dass_depression']
+                print(f"      Cluster {cluster_id}: r={r:.3f}")
+
+        # Compare PE-DASS link across clusters
+        print("\n    PE Rate - DASS Depression link by cluster:")
+        for cluster_id, corr_mat in cluster_networks.items():
+            if 'pe_rate' in corr_mat.index and 'dass_depression' in corr_mat.columns:
+                r = corr_mat.loc['pe_rate', 'dass_depression']
+                print(f"      Cluster {cluster_id}: r={r:.3f}")
+
+    # Clinical implication summary
+    if verbose:
+        print("\n  CLINICAL IMPLICATIONS")
+        print("  " + "=" * 50)
+
+        # Find high-vulnerability cluster (female-dominated, weak network)
+        female_clusters = [r for r in all_results if r['pct_male'] < 35]
+        if female_clusters:
+            most_female = min(female_clusters, key=lambda x: x['pct_male'])
+            print(f"\n    High-risk profile (Cluster {most_female['cluster']}):")
+            print(f"      - {100 - most_female['pct_male']:.0f}% female")
+            print(f"      - Network strength: {most_female['global_strength']:.3f}")
+            print(f"      - Key bridge: {most_female['top_bridge_node']}")
+            print("      → Consider targeting {0} for intervention".format(most_female['top_bridge_node']))
+
+    # Save results
+    results_df = pd.DataFrame(all_results)
+    results_df.to_csv(OUTPUT_DIR / "network_cluster_integration.csv", index=False, encoding='utf-8-sig')
+
+    # Save cluster networks
+    for cluster_id, corr_mat in cluster_networks.items():
+        corr_mat.to_csv(OUTPUT_DIR / f"network_cluster_{int(cluster_id)}.csv", encoding='utf-8-sig')
+
+    if verbose:
+        print(f"\n  Output: {OUTPUT_DIR / 'network_cluster_integration.csv'}")
 
     return results_df
 

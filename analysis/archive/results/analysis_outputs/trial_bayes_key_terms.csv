@@ -1,0 +1,12 @@
+mean,sd,hdi_3%,hdi_97%,term,model
+0.136,0.005,0.126,0.146,condition,stroop_logrt
+-0.068,0.076,-0.227,0.069,ucla,stroop_logrt
+-0.243,0.087,-0.404,-0.078,dass_dep,stroop_logrt
+-0.591,0.066,-0.722,-0.478,dass_anx,stroop_logrt
+-0.001,0.005,-0.011,0.009,ucla:condition,stroop_logrt
+-0.25,0.002,-0.254,-0.245,soa,prp_logt2rt
+0.026,0.026,-0.023,0.075,ucla,prp_logt2rt
+-0.037,0.029,-0.093,0.016,dass_dep,prp_logt2rt
+-0.04,0.03,-0.092,0.018,dass_anx,prp_logt2rt
+0.063,0.029,0.006,0.117,dass_stress,prp_logt2rt
+-0.002,0.002,-0.006,0.003,ucla:soa,prp_logt2rt

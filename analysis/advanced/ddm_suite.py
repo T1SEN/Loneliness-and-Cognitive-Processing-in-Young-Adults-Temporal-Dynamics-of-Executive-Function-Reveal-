@@ -59,7 +59,8 @@ import statsmodels.formula.api as smf
 # Project imports
 from analysis.preprocessing import (
     load_master_dataset, RESULTS_DIR, ANALYSIS_OUTPUT_DIR,
-    DEFAULT_RT_MIN, STROOP_RT_MAX, find_interaction_term
+    DEFAULT_RT_MIN, STROOP_RT_MAX, find_interaction_term,
+    apply_fdr_correction
 )
 from analysis.utils.modeling import standardize_predictors
 
@@ -572,6 +573,862 @@ def analyze_ucla_relationship(verbose: bool = True) -> pd.DataFrame:
 
 
 @register_analysis(
+    name="ddm_hmm_correlation",
+    description="Correlations between DDM parameters and HMM attentional states"
+)
+def analyze_ddm_hmm_correlation(verbose: bool = True) -> pd.DataFrame:
+    """
+    Test whether DDM parameters correlate with HMM-derived attentional states.
+
+    Theoretical link:
+    - Low drift rate (v) may correlate with high lapse occupancy
+    - High boundary (a) may correlate with lower lapse transitions
+    """
+    if verbose:
+        print("\n" + "=" * 70)
+        print("DDM-HMM CORRELATION ANALYSIS")
+        print("=" * 70)
+
+    # Load DDM parameters
+    param_file = OUTPUT_DIR / "ez_ddm_parameters.csv"
+    if not param_file.exists():
+        analyze_ez_ddm(verbose=False)
+
+    if not param_file.exists():
+        if verbose:
+            print("  DDM parameters not available")
+        return pd.DataFrame()
+
+    ddm_params = pd.read_csv(param_file)
+
+    # Load HMM states
+    hmm_file = ANALYSIS_OUTPUT_DIR / "hmm_mechanism" / "hmm_states_by_participant.csv"
+    if not hmm_file.exists():
+        hmm_file = ANALYSIS_OUTPUT_DIR / "hmm_attentional_states" / "hmm_merged_with_predictors.csv"
+
+    if not hmm_file.exists():
+        if verbose:
+            print("  HMM states not available")
+        return pd.DataFrame()
+
+    hmm_states = pd.read_csv(hmm_file)
+
+    # Merge
+    merged = ddm_params.merge(hmm_states, on='participant_id', how='inner')
+
+    if len(merged) < 30:
+        if verbose:
+            print(f"  Insufficient merged data (N={len(merged)})")
+        return pd.DataFrame()
+
+    if verbose:
+        print(f"  N = {len(merged)}")
+        print("\n  DDM-HMM Correlations:")
+        print("  " + "-" * 60)
+
+    ddm_cols = ['v', 'a', 't']
+    hmm_cols = ['lapse_occupancy', 'trans_to_lapse', 'trans_to_focus', 'rt_diff']
+
+    correlations = []
+
+    for ddm_col in ddm_cols:
+        if ddm_col not in merged.columns:
+            continue
+
+        for hmm_col in hmm_cols:
+            if hmm_col not in merged.columns:
+                continue
+
+            valid = merged[[ddm_col, hmm_col]].dropna()
+
+            if len(valid) < 20:
+                continue
+
+            r, p = stats.pearsonr(valid[ddm_col], valid[hmm_col])
+
+            correlations.append({
+                'ddm_param': ddm_col,
+                'hmm_state': hmm_col,
+                'r': r,
+                'p': p,
+                'n': len(valid)
+            })
+
+            if verbose:
+                sig = "*" if p < 0.05 else ""
+                print(f"    {ddm_col} × {hmm_col}: r={r:.3f}, p={p:.4f}{sig}")
+
+    if len(correlations) == 0:
+        return pd.DataFrame()
+
+    corr_df = pd.DataFrame(correlations)
+    corr_df.to_csv(OUTPUT_DIR / "ddm_hmm_correlations.csv", index=False, encoding='utf-8-sig')
+
+    # Key finding: drift rate and lapse
+    if 'v' in corr_df['ddm_param'].values and 'lapse_occupancy' in corr_df['hmm_state'].values:
+        row = corr_df[(corr_df['ddm_param'] == 'v') & (corr_df['hmm_state'] == 'lapse_occupancy')]
+        if len(row) > 0 and verbose:
+            r_val = row['r'].values[0]
+            p_val = row['p'].values[0]
+            direction = "negative" if r_val < 0 else "positive"
+            sig = "***" if p_val < 0.001 else "**" if p_val < 0.01 else "*" if p_val < 0.05 else ""
+            print(f"\n  KEY: Drift rate × Lapse occupancy: r={r_val:.3f}{sig} ({direction})")
+            print(f"        Higher drift rate associated with {'lower' if r_val < 0 else 'higher'} lapse time")
+
+    if verbose:
+        print(f"\n  Output: {OUTPUT_DIR / 'ddm_hmm_correlations.csv'}")
+
+    return corr_df
+
+
+@register_analysis(
+    name="drift_boundary_tradeoff",
+    description="Analyze drift rate vs boundary separation tradeoff"
+)
+def analyze_drift_boundary_tradeoff(verbose: bool = True) -> Dict:
+    """
+    Analyze the speed-accuracy tradeoff through drift-boundary relationship.
+
+    Higher boundary = more cautious, lower drift = slower accumulation.
+    """
+    if verbose:
+        print("\n" + "=" * 70)
+        print("DRIFT-BOUNDARY TRADEOFF ANALYSIS")
+        print("=" * 70)
+
+    # Load DDM parameters
+    param_file = OUTPUT_DIR / "ez_ddm_parameters.csv"
+    if not param_file.exists():
+        analyze_ez_ddm(verbose=False)
+
+    if not param_file.exists():
+        if verbose:
+            print("  DDM parameters not available")
+        return {}
+
+    params = pd.read_csv(param_file)
+    master = load_ddm_data()
+    merged = master.merge(params, on='participant_id', how='inner')
+
+    if len(merged) < 30:
+        if verbose:
+            print(f"  Insufficient data (N={len(merged)})")
+        return {}
+
+    results = {'n': len(merged)}
+
+    # 1. Basic v-a correlation
+    r_va, p_va = stats.pearsonr(merged['v'], merged['a'])
+    results['r_v_a'] = r_va
+    results['p_v_a'] = p_va
+
+    if verbose:
+        print(f"  N = {len(merged)}")
+        print(f"\n  1. Drift-Boundary Correlation:")
+        sig = "*" if p_va < 0.05 else ""
+        print(f"     r(v, a) = {r_va:.3f}, p = {p_va:.4f}{sig}")
+
+    # 2. Efficiency ratio: v/a (higher = more efficient)
+    merged['efficiency'] = merged['v'] / merged['a']
+    results['mean_efficiency'] = merged['efficiency'].mean()
+    results['sd_efficiency'] = merged['efficiency'].std()
+
+    if verbose:
+        print(f"\n  2. Processing Efficiency (v/a ratio):")
+        print(f"     Mean = {results['mean_efficiency']:.3f} (SD = {results['sd_efficiency']:.3f})")
+
+    # 3. UCLA effect on efficiency
+    try:
+        formula = "efficiency ~ z_ucla * C(gender_male) + z_dass_dep + z_dass_anx + z_dass_str + z_age"
+        model = smf.ols(formula, data=merged).fit(cov_type='HC3')
+
+        if 'z_ucla' in model.params:
+            results['beta_ucla_efficiency'] = model.params['z_ucla']
+            results['p_ucla_efficiency'] = model.pvalues['z_ucla']
+
+            if verbose:
+                sig = "*" if results['p_ucla_efficiency'] < 0.05 else ""
+                print(f"\n  3. UCLA → Efficiency (DASS-controlled):")
+                print(f"     beta = {results['beta_ucla_efficiency']:.4f}, p = {results['p_ucla_efficiency']:.4f}{sig}")
+
+        # Check interaction
+        int_term = find_interaction_term(model.params.index)
+        if int_term:
+            results['beta_interaction_efficiency'] = model.params[int_term]
+            results['p_interaction_efficiency'] = model.pvalues[int_term]
+
+            if verbose and results['p_interaction_efficiency'] < 0.10:
+                sig = "*" if results['p_interaction_efficiency'] < 0.05 else "†"
+                print(f"     UCLA × Gender: beta = {results['beta_interaction_efficiency']:.4f}, p = {results['p_interaction_efficiency']:.4f}{sig}")
+
+    except Exception as e:
+        if verbose:
+            print(f"  Efficiency regression error: {e}")
+
+    # 4. Gender differences in tradeoff
+    if verbose:
+        print(f"\n  4. Gender Differences:")
+
+    for gender, label in [(0, 'Female'), (1, 'Male')]:
+        subset = merged[merged['gender_male'] == gender]
+        if len(subset) < 20:
+            continue
+
+        r_g, p_g = stats.pearsonr(subset['v'], subset['a'])
+        results[f'r_v_a_{label.lower()}'] = r_g
+        results[f'p_v_a_{label.lower()}'] = p_g
+
+        if verbose:
+            sig = "*" if p_g < 0.05 else ""
+            print(f"     {label}: r(v, a) = {r_g:.3f}, p = {p_g:.4f}{sig}")
+
+    # Save results
+    import json
+    with open(OUTPUT_DIR / "drift_boundary_tradeoff.json", 'w', encoding='utf-8') as f:
+        json.dump(results, f, indent=2)
+
+    if verbose:
+        print(f"\n  Output: {OUTPUT_DIR / 'drift_boundary_tradeoff.json'}")
+
+    return results
+
+
+@register_analysis(
+    name="gender_stratified_ddm",
+    description="Gender-stratified DDM analysis for UCLA effects"
+)
+def analyze_gender_stratified_ddm(verbose: bool = True) -> pd.DataFrame:
+    """
+    Analyze UCLA effects on DDM parameters separately by gender.
+
+    Based on the UCLA × Gender interaction found in WCST PE, we test whether
+    DDM parameters also show gender-specific UCLA effects.
+    """
+    if verbose:
+        print("\n" + "=" * 70)
+        print("GENDER-STRATIFIED DDM ANALYSIS")
+        print("=" * 70)
+
+    # Load DDM parameters
+    param_file = OUTPUT_DIR / "ez_ddm_parameters.csv"
+    if not param_file.exists():
+        analyze_ez_ddm(verbose=False)
+
+    if not param_file.exists():
+        if verbose:
+            print("  DDM parameters not available")
+        return pd.DataFrame()
+
+    params = pd.read_csv(param_file)
+    master = load_ddm_data()
+    merged = master.merge(params, on='participant_id', how='inner')
+
+    if len(merged) < 30:
+        if verbose:
+            print(f"  Insufficient data (N={len(merged)})")
+        return pd.DataFrame()
+
+    all_results = []
+
+    for gender, label in [(0, 'female'), (1, 'male')]:
+        subset = merged[merged['gender_male'] == gender]
+
+        if len(subset) < 15:
+            if verbose:
+                print(f"  {label.upper()}: Insufficient data (N={len(subset)})")
+            continue
+
+        if verbose:
+            print(f"\n  {label.upper()} (N={len(subset)})")
+            print("  " + "-" * 50)
+
+        for param in ['v', 'a', 't']:
+            if param not in subset.columns:
+                continue
+
+            try:
+                # Simple UCLA model without gender interaction (already stratified)
+                formula = f"{param} ~ z_ucla + z_dass_dep + z_dass_anx + z_dass_str + z_age"
+                model = smf.ols(formula, data=subset).fit(cov_type='HC3')
+
+                if 'z_ucla' in model.params:
+                    beta = model.params['z_ucla']
+                    se = model.bse['z_ucla']
+                    p = model.pvalues['z_ucla']
+
+                    all_results.append({
+                        'gender': label,
+                        'parameter': param,
+                        'beta_ucla': beta,
+                        'se_ucla': se,
+                        'p_ucla': p,
+                        'r_squared': model.rsquared,
+                        'n': len(subset)
+                    })
+
+                    if verbose:
+                        sig = "*" if p < 0.05 else ""
+                        print(f"    UCLA → {param}: beta={beta:.4f}, SE={se:.4f}, p={p:.4f}{sig}")
+
+            except Exception as e:
+                if verbose:
+                    print(f"    {param}: Error - {e}")
+
+    if len(all_results) == 0:
+        return pd.DataFrame()
+
+    results_df = pd.DataFrame(all_results)
+
+    # Compare male vs female effects
+    if verbose:
+        print("\n  GENDER COMPARISON:")
+        print("  " + "-" * 50)
+
+        for param in ['v', 'a', 't']:
+            male_row = results_df[(results_df['gender'] == 'male') & (results_df['parameter'] == param)]
+            female_row = results_df[(results_df['gender'] == 'female') & (results_df['parameter'] == param)]
+
+            if len(male_row) > 0 and len(female_row) > 0:
+                m_beta = male_row['beta_ucla'].values[0]
+                f_beta = female_row['beta_ucla'].values[0]
+                m_p = male_row['p_ucla'].values[0]
+                f_p = female_row['p_ucla'].values[0]
+
+                m_sig = "*" if m_p < 0.05 else ""
+                f_sig = "*" if f_p < 0.05 else ""
+
+                print(f"    {param}: Male β={m_beta:.4f}{m_sig} vs Female β={f_beta:.4f}{f_sig}")
+
+    results_df.to_csv(OUTPUT_DIR / "gender_stratified_ddm.csv", index=False, encoding='utf-8-sig')
+
+    if verbose:
+        print(f"\n  Output: {OUTPUT_DIR / 'gender_stratified_ddm.csv'}")
+
+    return results_df
+
+
+@register_analysis(
+    name="mediation_drift_stroop",
+    description="Mediation analysis: UCLA → Drift Rate → Stroop Interference"
+)
+def analyze_mediation_drift_stroop(verbose: bool = True) -> Dict:
+    """
+    Test whether drift rate mediates the UCLA → Stroop interference relationship.
+
+    Path model:
+    - c: UCLA → Stroop interference (total effect)
+    - a: UCLA → Drift rate
+    - b: Drift rate → Stroop interference (controlling for UCLA)
+    - c': UCLA → Stroop interference (controlling for Drift rate = direct effect)
+    - Indirect effect = a × b
+    """
+    if verbose:
+        print("\n" + "=" * 70)
+        print("MEDIATION: UCLA → DRIFT RATE → STROOP INTERFERENCE")
+        print("=" * 70)
+
+    # Load DDM parameters
+    param_file = OUTPUT_DIR / "ez_ddm_parameters.csv"
+    if not param_file.exists():
+        analyze_ez_ddm(verbose=False)
+
+    if not param_file.exists():
+        if verbose:
+            print("  DDM parameters not available")
+        return {}
+
+    params = pd.read_csv(param_file)
+    master = load_ddm_data()
+    merged = master.merge(params, on='participant_id', how='inner')
+
+    # Need Stroop interference
+    if 'stroop_interference' not in merged.columns and 'stroop_effect' not in merged.columns:
+        if verbose:
+            print("  Stroop interference measure not available")
+        return {}
+
+    outcome = 'stroop_interference' if 'stroop_interference' in merged.columns else 'stroop_effect'
+
+    # Standardize for interpretability
+    merged['z_v'] = (merged['v'] - merged['v'].mean()) / merged['v'].std()
+    merged[f'z_{outcome}'] = (merged[outcome] - merged[outcome].mean()) / merged[outcome].std()
+
+    valid = merged.dropna(subset=['z_ucla', 'z_v', f'z_{outcome}', 'z_dass_dep', 'z_dass_anx', 'z_dass_str'])
+
+    if len(valid) < 30:
+        if verbose:
+            print(f"  Insufficient data (N={len(valid)})")
+        return {}
+
+    results = {'n': len(valid)}
+
+    if verbose:
+        print(f"  N = {len(valid)}")
+        print(f"  Mediator: Drift rate (v)")
+        print(f"  Outcome: {outcome}")
+
+    # Path c: Total effect (UCLA → Stroop)
+    try:
+        model_c = smf.ols(f"z_{outcome} ~ z_ucla + z_dass_dep + z_dass_anx + z_dass_str + z_age",
+                          data=valid).fit(cov_type='HC3')
+        c = model_c.params.get('z_ucla', np.nan)
+        c_p = model_c.pvalues.get('z_ucla', np.nan)
+        results['c_total'] = c
+        results['c_p'] = c_p
+
+        if verbose:
+            sig = "*" if c_p < 0.05 else ""
+            print(f"\n  Path c (total effect): β={c:.4f}, p={c_p:.4f}{sig}")
+    except:
+        return {}
+
+    # Path a: UCLA → Drift
+    try:
+        model_a = smf.ols("z_v ~ z_ucla + z_dass_dep + z_dass_anx + z_dass_str + z_age",
+                          data=valid).fit(cov_type='HC3')
+        a = model_a.params.get('z_ucla', np.nan)
+        a_p = model_a.pvalues.get('z_ucla', np.nan)
+        results['a_path'] = a
+        results['a_p'] = a_p
+
+        if verbose:
+            sig = "*" if a_p < 0.05 else ""
+            print(f"  Path a (UCLA → Drift): β={a:.4f}, p={a_p:.4f}{sig}")
+    except:
+        return results
+
+    # Path b and c': Drift → Stroop (controlling UCLA)
+    try:
+        model_bc = smf.ols(f"z_{outcome} ~ z_ucla + z_v + z_dass_dep + z_dass_anx + z_dass_str + z_age",
+                           data=valid).fit(cov_type='HC3')
+        b = model_bc.params.get('z_v', np.nan)
+        b_p = model_bc.pvalues.get('z_v', np.nan)
+        c_prime = model_bc.params.get('z_ucla', np.nan)
+        c_prime_p = model_bc.pvalues.get('z_ucla', np.nan)
+
+        results['b_path'] = b
+        results['b_p'] = b_p
+        results['c_prime_direct'] = c_prime
+        results['c_prime_p'] = c_prime_p
+
+        if verbose:
+            sig = "*" if b_p < 0.05 else ""
+            print(f"  Path b (Drift → Stroop): β={b:.4f}, p={b_p:.4f}{sig}")
+            sig = "*" if c_prime_p < 0.05 else ""
+            print(f"  Path c' (direct effect): β={c_prime:.4f}, p={c_prime_p:.4f}{sig}")
+    except:
+        return results
+
+    # Indirect effect = a × b
+    indirect = a * b
+    results['indirect_ab'] = indirect
+
+    # Sobel test for indirect effect
+    try:
+        se_a = model_a.bse.get('z_ucla', np.nan)
+        se_b = model_bc.bse.get('z_v', np.nan)
+        se_indirect = np.sqrt(a**2 * se_b**2 + b**2 * se_a**2)
+        z_sobel = indirect / se_indirect
+        p_sobel = 2 * (1 - stats.norm.cdf(abs(z_sobel)))
+
+        results['se_indirect'] = se_indirect
+        results['z_sobel'] = z_sobel
+        results['p_sobel'] = p_sobel
+
+        if verbose:
+            sig = "*" if p_sobel < 0.05 else ""
+            print(f"\n  Indirect effect (a×b): β={indirect:.4f}, SE={se_indirect:.4f}")
+            print(f"  Sobel test: z={z_sobel:.3f}, p={p_sobel:.4f}{sig}")
+    except:
+        pass
+
+    # Proportion mediated
+    if abs(c) > 0.001:
+        prop_mediated = indirect / c
+        results['proportion_mediated'] = prop_mediated
+
+        if verbose:
+            print(f"\n  Proportion mediated: {prop_mediated*100:.1f}%")
+
+    # Bootstrap confidence interval for indirect effect
+    if verbose:
+        print("\n  Bootstrap 95% CI (1000 iterations)...")
+
+    n_boot = 1000
+    boot_indirect = []
+
+    for _ in range(n_boot):
+        idx = np.random.choice(len(valid), size=len(valid), replace=True)
+        boot_data = valid.iloc[idx]
+
+        try:
+            m_a = smf.ols("z_v ~ z_ucla + z_dass_dep + z_dass_anx + z_dass_str + z_age",
+                          data=boot_data).fit()
+            m_bc = smf.ols(f"z_{outcome} ~ z_ucla + z_v + z_dass_dep + z_dass_anx + z_dass_str + z_age",
+                           data=boot_data).fit()
+
+            boot_a = m_a.params.get('z_ucla', np.nan)
+            boot_b = m_bc.params.get('z_v', np.nan)
+            boot_indirect.append(boot_a * boot_b)
+        except:
+            continue
+
+    if len(boot_indirect) > 100:
+        ci_low = np.percentile(boot_indirect, 2.5)
+        ci_high = np.percentile(boot_indirect, 97.5)
+        results['ci_low'] = ci_low
+        results['ci_high'] = ci_high
+
+        # Significant if CI doesn't include 0
+        results['boot_significant'] = (ci_low > 0) or (ci_high < 0)
+
+        if verbose:
+            sig = "*" if results['boot_significant'] else ""
+            print(f"  95% CI: [{ci_low:.4f}, {ci_high:.4f}]{sig}")
+
+    # Save results
+    import json
+    with open(OUTPUT_DIR / "mediation_drift_stroop.json", 'w', encoding='utf-8') as f:
+        # Convert numpy types for JSON
+        json_results = {}
+        for k, v in results.items():
+            if isinstance(v, (np.floating, np.integer)):
+                json_results[k] = float(v)
+            elif isinstance(v, (np.bool_, bool)):
+                json_results[k] = bool(v)
+            else:
+                json_results[k] = v
+        json.dump(json_results, f, indent=2)
+
+    if verbose:
+        print(f"\n  Output: {OUTPUT_DIR / 'mediation_drift_stroop.json'}")
+
+    return results
+
+
+@register_analysis(
+    name="condition_by_gender",
+    description="Condition-specific DDM analysis by gender (congruent vs incongruent)"
+)
+def analyze_condition_by_gender(verbose: bool = True) -> pd.DataFrame:
+    """
+    Analyze whether UCLA affects condition-specific DDM parameters differently by gender.
+
+    Tests:
+    - Does female vulnerability in drift rate appear specifically in high-conflict (incongruent) trials?
+    - Is there a 3-way interaction: UCLA × condition × gender?
+    """
+    if verbose:
+        print("\n" + "=" * 70)
+        print("CONDITION-SPECIFIC DDM BY GENDER")
+        print("=" * 70)
+
+    # Load condition DDM parameters
+    param_file = OUTPUT_DIR / "condition_ddm_parameters.csv"
+    if not param_file.exists():
+        analyze_condition_ddm(verbose=False)
+
+    if not param_file.exists():
+        if verbose:
+            print("  Condition DDM parameters not available")
+        return pd.DataFrame()
+
+    params = pd.read_csv(param_file)
+    master = load_ddm_data()
+    merged = master.merge(params, on='participant_id', how='inner')
+
+    if len(merged) < 30:
+        if verbose:
+            print(f"  Insufficient data (N={len(merged)})")
+        return pd.DataFrame()
+
+    if verbose:
+        print(f"  N = {len(merged)}")
+
+    all_results = []
+
+    # Condition-specific drift rates
+    drift_cols = ['congruent_v', 'incongruent_v', 'delta_v']
+
+    # Gender-stratified analysis
+    for gender, label in [(0, 'female'), (1, 'male')]:
+        subset = merged[merged['gender_male'] == gender]
+
+        if len(subset) < 15:
+            continue
+
+        if verbose:
+            print(f"\n  {label.upper()} (N={len(subset)})")
+            print("  " + "-" * 50)
+
+        for drift_col in drift_cols:
+            if drift_col not in subset.columns:
+                continue
+
+            try:
+                formula = f"{drift_col} ~ z_ucla + z_dass_dep + z_dass_anx + z_dass_str + z_age"
+                model = smf.ols(formula, data=subset).fit(cov_type='HC3')
+
+                if 'z_ucla' in model.params:
+                    beta = model.params['z_ucla']
+                    p = model.pvalues['z_ucla']
+
+                    all_results.append({
+                        'gender': label,
+                        'parameter': drift_col,
+                        'beta_ucla': beta,
+                        'se_ucla': model.bse['z_ucla'],
+                        'p_ucla': p,
+                        'r_squared': model.rsquared,
+                        'n': len(subset)
+                    })
+
+                    if verbose:
+                        sig = "*" if p < 0.05 else "†" if p < 0.10 else ""
+                        cond_label = {'congruent_v': 'Congruent drift',
+                                     'incongruent_v': 'Incongruent drift',
+                                     'delta_v': 'Conflict cost (Δv)'}.get(drift_col, drift_col)
+                        print(f"    UCLA → {cond_label}: β={beta:.4f}, p={p:.4f}{sig}")
+
+            except Exception as e:
+                if verbose:
+                    print(f"    {drift_col}: Error - {e}")
+
+    # Test 3-way interactions
+    if verbose:
+        print("\n  UCLA × Condition Interactions (pooled):")
+        print("  " + "-" * 50)
+
+    for drift_col in drift_cols:
+        if drift_col not in merged.columns:
+            continue
+
+        try:
+            formula = f"{drift_col} ~ z_ucla * C(gender_male) + z_dass_dep + z_dass_anx + z_dass_str + z_age"
+            model = smf.ols(formula, data=merged).fit(cov_type='HC3')
+
+            int_term = find_interaction_term(model.params.index)
+            if int_term:
+                beta_int = model.params[int_term]
+                p_int = model.pvalues[int_term]
+
+                all_results.append({
+                    'gender': 'interaction',
+                    'parameter': drift_col,
+                    'beta_ucla': beta_int,
+                    'se_ucla': model.bse[int_term],
+                    'p_ucla': p_int,
+                    'r_squared': model.rsquared,
+                    'n': len(merged)
+                })
+
+                if verbose:
+                    sig = "*" if p_int < 0.05 else "†" if p_int < 0.10 else ""
+                    print(f"    UCLA × Gender → {drift_col}: β={beta_int:.4f}, p={p_int:.4f}{sig}")
+
+        except Exception:
+            continue
+
+    if len(all_results) == 0:
+        return pd.DataFrame()
+
+    results_df = pd.DataFrame(all_results)
+    results_df.to_csv(OUTPUT_DIR / "condition_by_gender.csv", index=False, encoding='utf-8-sig')
+
+    # Summary
+    if verbose:
+        print("\n  FEMALE-SPECIFIC DRIFT RATE EFFECTS:")
+        print("  " + "-" * 50)
+        female_sig = results_df[(results_df['gender'] == 'female') & (results_df['p_ucla'] < 0.05)]
+        if len(female_sig) > 0:
+            for _, row in female_sig.iterrows():
+                direction = "lower" if row['beta_ucla'] < 0 else "higher"
+                print(f"    Higher UCLA → {direction} {row['parameter']}")
+        else:
+            print("    No significant effects at p < 0.05")
+
+        print(f"\n  Output: {OUTPUT_DIR / 'condition_by_gender.csv'}")
+
+    return results_df
+
+
+@register_analysis(
+    name="efficiency_by_gender",
+    description="Processing efficiency (v/a ratio) analysis by gender"
+)
+def analyze_efficiency_by_gender(verbose: bool = True) -> pd.DataFrame:
+    """
+    Analyze processing efficiency (drift/boundary ratio) by gender.
+
+    Efficiency = v/a
+    Higher efficiency = faster accumulation relative to caution level
+    """
+    if verbose:
+        print("\n" + "=" * 70)
+        print("PROCESSING EFFICIENCY BY GENDER")
+        print("=" * 70)
+
+    # Load DDM parameters
+    param_file = OUTPUT_DIR / "ez_ddm_parameters.csv"
+    if not param_file.exists():
+        analyze_ez_ddm(verbose=False)
+
+    if not param_file.exists():
+        if verbose:
+            print("  DDM parameters not available")
+        return pd.DataFrame()
+
+    params = pd.read_csv(param_file)
+    master = load_ddm_data()
+    merged = master.merge(params, on='participant_id', how='inner')
+
+    if len(merged) < 30:
+        if verbose:
+            print(f"  Insufficient data (N={len(merged)})")
+        return pd.DataFrame()
+
+    # Compute efficiency (ratio) and log-transformed efficiency
+    # Log transformation for ratio variables helps with non-linearity
+    merged['efficiency'] = merged['v'] / merged['a']
+    merged['log_efficiency'] = np.log(merged['efficiency'].clip(lower=0.001))
+
+    if verbose:
+        print(f"  N = {len(merged)}")
+        print(f"  Mean efficiency: {merged['efficiency'].mean():.3f} (SD={merged['efficiency'].std():.3f})")
+        print(f"  Using LOG-TRANSFORMED efficiency for regression (corrects non-linearity)")
+
+    all_results = []
+
+    # Gender-stratified
+    for gender, label in [(0, 'female'), (1, 'male')]:
+        subset = merged[merged['gender_male'] == gender]
+
+        if len(subset) < 15:
+            continue
+
+        if verbose:
+            print(f"\n  {label.upper()} (N={len(subset)})")
+            print(f"    Mean efficiency: {subset['efficiency'].mean():.3f}")
+            print("  " + "-" * 50)
+
+        # UCLA → efficiency (using log-transformed efficiency for linearity)
+        try:
+            formula = "log_efficiency ~ z_ucla + z_dass_dep + z_dass_anx + z_dass_str + z_age"
+            model = smf.ols(formula, data=subset).fit(cov_type='HC3')
+
+            if 'z_ucla' in model.params:
+                beta = model.params['z_ucla']
+                p = model.pvalues['z_ucla']
+
+                all_results.append({
+                    'gender': label,
+                    'parameter': 'efficiency',
+                    'beta_ucla': beta,
+                    'se_ucla': model.bse['z_ucla'],
+                    'p_ucla': p,
+                    'r_squared': model.rsquared,
+                    'n': len(subset)
+                })
+
+                if verbose:
+                    sig = "*" if p < 0.05 else "†" if p < 0.10 else ""
+                    direction = "lower" if beta < 0 else "higher"
+                    print(f"    UCLA → Efficiency: β={beta:.4f}, p={p:.4f}{sig}")
+                    if p < 0.10:
+                        print(f"      Higher UCLA → {direction} processing efficiency")
+
+        except Exception as e:
+            if verbose:
+                print(f"    Efficiency regression error: {e}")
+
+        # Also test v and a separately
+        for param, param_name in [('v', 'drift'), ('a', 'boundary')]:
+            if param not in subset.columns:
+                continue
+
+            try:
+                formula = f"{param} ~ z_ucla + z_dass_dep + z_dass_anx + z_dass_str + z_age"
+                model = smf.ols(formula, data=subset).fit(cov_type='HC3')
+
+                if 'z_ucla' in model.params:
+                    beta = model.params['z_ucla']
+                    p = model.pvalues['z_ucla']
+
+                    all_results.append({
+                        'gender': label,
+                        'parameter': param,
+                        'beta_ucla': beta,
+                        'se_ucla': model.bse['z_ucla'],
+                        'p_ucla': p,
+                        'r_squared': model.rsquared,
+                        'n': len(subset)
+                    })
+
+                    if verbose:
+                        sig = "*" if p < 0.05 else "†" if p < 0.10 else ""
+                        print(f"    UCLA → {param_name}: β={beta:.4f}, p={p:.4f}{sig}")
+
+            except Exception:
+                continue
+
+    # Interaction test
+    if verbose:
+        print("\n  UCLA × Gender Interaction:")
+        print("  " + "-" * 50)
+
+    try:
+        formula = "log_efficiency ~ z_ucla * C(gender_male) + z_dass_dep + z_dass_anx + z_dass_str + z_age"
+        model = smf.ols(formula, data=merged).fit(cov_type='HC3')
+
+        int_term = find_interaction_term(model.params.index)
+        if int_term:
+            beta_int = model.params[int_term]
+            p_int = model.pvalues[int_term]
+
+            all_results.append({
+                'gender': 'interaction',
+                'parameter': 'efficiency',
+                'beta_ucla': beta_int,
+                'se_ucla': model.bse[int_term],
+                'p_ucla': p_int,
+                'r_squared': model.rsquared,
+                'n': len(merged)
+            })
+
+            if verbose:
+                sig = "*" if p_int < 0.05 else "†" if p_int < 0.10 else ""
+                print(f"    UCLA × Gender → Efficiency: β={beta_int:.4f}, p={p_int:.4f}{sig}")
+
+    except Exception as e:
+        if verbose:
+            print(f"    Interaction error: {e}")
+
+    if len(all_results) == 0:
+        return pd.DataFrame()
+
+    results_df = pd.DataFrame(all_results)
+
+    # Apply FDR correction (Benjamini-Hochberg) across all tests
+    if 'p_ucla' in results_df.columns and len(results_df) > 1:
+        results_df = apply_fdr_correction(results_df, p_col='p_ucla')
+
+        if verbose:
+            print("\n  FDR Correction Applied (Benjamini-Hochberg):")
+            print("  " + "-" * 50)
+            sig_raw = (results_df['p_ucla'] < 0.05).sum()
+            sig_fdr = (results_df['p_fdr'] < 0.05).sum() if 'p_fdr' in results_df.columns else 0
+            print(f"    Significant (raw p < 0.05): {sig_raw}/{len(results_df)}")
+            print(f"    Significant (FDR q < 0.05): {sig_fdr}/{len(results_df)}")
+
+    results_df.to_csv(OUTPUT_DIR / "efficiency_by_gender.csv", index=False, encoding='utf-8-sig')
+
+    if verbose:
+        print(f"\n  Output: {OUTPUT_DIR / 'efficiency_by_gender.csv'}")
+
+    return results_df
+
+
+@register_analysis(
     name="parameter_correlations",
     description="Correlations between DDM parameters and other EF measures"
 )
@@ -686,6 +1543,12 @@ def run(analysis: Optional[str] = None, verbose: bool = True) -> Dict[str, pd.Da
             'ez_ddm',
             'condition_ddm',
             'ucla_relationship',
+            'ddm_hmm_correlation',
+            'drift_boundary_tradeoff',
+            'gender_stratified_ddm',
+            'condition_by_gender',
+            'efficiency_by_gender',
+            'mediation_drift_stroop',
             'parameter_correlations'
         ]
 

@@ -51,6 +51,7 @@ SUITE_REGISTRY: Dict[str, str] = {
     # Synthesis
     'synthesis': 'analysis.synthesis.synthesis_suite',
     'synthesis.dass_specificity': 'analysis.synthesis.dass_specificity_suite',
+    'synthesis.comprehensive_report': 'analysis.synthesis.comprehensive_report_suite',
 
     # Advanced
     'advanced.mechanistic': 'analysis.advanced.mechanistic_suite',
@@ -67,6 +68,27 @@ SUITE_REGISTRY: Dict[str, str] = {
     'advanced.hmm_mechanism': 'analysis.advanced.hmm_mechanism_suite',
     'advanced.bayesian': 'analysis.advanced.bayesian_sem_suite',
     'advanced.causal': 'analysis.advanced.causal_inference_suite',
+    'advanced.path_comparison': 'analysis.advanced.path_comparison_suite',
+    'advanced.path_anxiety': 'analysis.advanced.path_anxiety_suite',
+    'advanced.path_stress': 'analysis.advanced.path_stress_suite',
+
+    # Stroop Decomposition (new)
+    'advanced.stroop_decomposition': 'analysis.advanced.stroop_decomposition_suite',
+
+    # UCLA Factor Analysis (new)
+    'advanced.ucla_factor': 'analysis.advanced.ucla_factor_suite',
+
+    # WCST Error Decomposition (new)
+    'advanced.wcst_error_decomposition': 'analysis.advanced.wcst_error_decomposition_suite',
+
+    # PRP Constraint Violation (new)
+    'advanced.prp_constraint': 'analysis.advanced.prp_constraint_suite',
+
+    # Male Vulnerability (new)
+    'advanced.male_vulnerability': 'analysis.advanced.male_vulnerability_suite',
+
+    # Intervention Subgroups (new)
+    'advanced.intervention_subgroups': 'analysis.advanced.intervention_subgroups_suite',
 
     # Computational Modeling (new)
     'advanced.ddm': 'analysis.advanced.ddm_suite',
@@ -75,6 +97,10 @@ SUITE_REGISTRY: Dict[str, str] = {
     'advanced.error_monitoring': 'analysis.advanced.error_monitoring_suite',
     'advanced.control_strategy': 'analysis.advanced.control_strategy_suite',
     'advanced.integration': 'analysis.advanced.integration_suite',
+
+    # Additional Deep Analyses (2025-12-07)
+    'advanced.ucla_dass_moderation': 'analysis.advanced.ucla_dass_moderation_suite',
+    'advanced.trial_level_mixed': 'analysis.advanced.trial_level_mixed_suite',
 }
 
 # Suite categories for organized listing
@@ -83,8 +109,8 @@ SUITE_CATEGORIES = {
     'Exploratory': ['exploratory.prp', 'exploratory.stroop', 'exploratory.wcst', 'exploratory.cross_task', 'exploratory.fatigue', 'exploratory.extreme_group'],
     'Mediation': ['mediation'],
     'Validation': ['validation', 'validation.bayesian_equivalence', 'validation.power'],
-    'Synthesis': ['synthesis', 'synthesis.dass_specificity'],
-    'Advanced': ['advanced.mechanistic', 'advanced.latent', 'advanced.clustering', 'advanced.developmental_window', 'advanced.hmm_deep', 'advanced.pure_ucla', 'advanced.rule_learning', 'advanced.sequential_dynamics', 'advanced.wcst_mechanism', 'advanced.normative', 'advanced.temporal', 'advanced.hmm_mechanism', 'advanced.bayesian', 'advanced.causal', 'advanced.ddm', 'advanced.reinforcement_learning', 'advanced.attention_depletion', 'advanced.error_monitoring', 'advanced.control_strategy', 'advanced.integration'],
+    'Synthesis': ['synthesis', 'synthesis.dass_specificity', 'synthesis.comprehensive_report'],
+    'Advanced': ['advanced.mechanistic', 'advanced.latent', 'advanced.clustering', 'advanced.developmental_window', 'advanced.hmm_deep', 'advanced.pure_ucla', 'advanced.rule_learning', 'advanced.sequential_dynamics', 'advanced.wcst_mechanism', 'advanced.normative', 'advanced.temporal', 'advanced.hmm_mechanism', 'advanced.bayesian', 'advanced.causal', 'advanced.path_comparison', 'advanced.path_anxiety', 'advanced.path_stress', 'advanced.stroop_decomposition', 'advanced.ucla_factor', 'advanced.wcst_error_decomposition', 'advanced.prp_constraint', 'advanced.male_vulnerability', 'advanced.ddm', 'advanced.reinforcement_learning', 'advanced.attention_depletion', 'advanced.error_monitoring', 'advanced.control_strategy', 'advanced.integration', 'advanced.ucla_dass_moderation', 'advanced.trial_level_mixed'],
 }
 
 

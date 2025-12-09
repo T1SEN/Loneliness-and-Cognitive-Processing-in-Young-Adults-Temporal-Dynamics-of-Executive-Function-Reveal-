@@ -1,4 +1,0 @@
-﻿hypothesis,outcome,predictor,coef,se,p,supported
-Anxiety → Stroop (attentional control),stroop_interference,anxiety,9.053538624947759,11.970189395661457,0.4505107149624805,False
-Depression → WCST PE (set-shifting),pe_rate,depression,-0.7044488419464248,0.6417297929740191,0.27390073349421806,False
-Stress → PRP (dual-task capacity),prp_bottleneck,stress,-6.2895467925167114,17.53009184124548,0.7202225455985956,False
