@@ -28,7 +28,13 @@
       "Bash(./venv/Scripts/pip.exe list:*)",
       "Bash(./venv/Scripts/pip.exe install scipy -q)",
       "Bash(git push)",
-      "Bash(./venv/Scripts/pip.exe install:*)"
+      "Bash(./venv/Scripts/pip.exe install:*)",
+      "Bash(git -C \"C:/Users/ansel/my_research_exporter\" log --oneline --all -- \"*complete_only*\")",
+      "Bash(git -C \"C:/Users/ansel/my_research_exporter\" log --oneline --all -- \"export_alldata.py\")",
+      "Bash(git -C \"C:/Users/ansel/my_research_exporter\" status)",
+      "Bash(git -C \"C:/Users/ansel/my_research_exporter\" log --oneline -5)",
+      "Bash(git -C \"C:/Users/ansel/my_research_exporter\" add:*)",
+      "Bash(git -C \"C:/Users/ansel/my_research_exporter\" commit -m \"$(cat <<''EOF''\n데이터 업데이트 및 코드 정리\n\n- results/ 데이터 파일 업데이트\n- gold_standard/ 결과 디렉토리 추가\n- filter_complete_participants.py 추가\n- 불필요한 utils/ 및 scripts/ 파일 제거\n- trial_cache 정리\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n)\")"
     ],
     "deny": [],
     "ask": []
