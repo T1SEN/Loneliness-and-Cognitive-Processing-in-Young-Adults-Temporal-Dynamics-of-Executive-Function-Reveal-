@@ -10,9 +10,9 @@ Modules:
 - data_quality_suite: Response time validation, careless responding detection
 
 Usage:
-    python -m analysis.validity_reliability.reliability_suite
-    python -m analysis.validity_reliability.validity_suite
-    python -m analysis.validity_reliability.data_quality_suite
+    python -m publication.validity_reliability.reliability_suite
+    python -m publication.validity_reliability.validity_suite
+    python -m publication.validity_reliability.data_quality_suite
 """
 
 from pathlib import Path

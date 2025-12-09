@@ -19,7 +19,7 @@ Analyses:
    - Original N -> exclusion criteria -> Final analysis N
 
 Usage:
-    python -m analysis.validity_reliability.data_quality_suite
+    python -m publication.validity_reliability.data_quality_suite
 
 Output:
     results/analysis_outputs/validity_reliability/
@@ -46,9 +46,9 @@ import pandas as pd
 from scipy import stats
 from pathlib import Path
 
-from analysis.preprocessing import RESULTS_DIR, ANALYSIS_OUTPUT_DIR
-from analysis.preprocessing import load_stroop_trials, load_wcst_trials, load_prp_trials
-from analysis.preprocessing import DEFAULT_RT_MIN, STROOP_RT_MAX, PRP_RT_MAX
+from publication.preprocessing import RESULTS_DIR, ANALYSIS_OUTPUT_DIR
+from publication.preprocessing import load_stroop_trials, load_wcst_trials, load_prp_trials
+from publication.preprocessing import DEFAULT_RT_MIN, STROOP_RT_MAX, PRP_RT_MAX
 
 try:
     import matplotlib.pyplot as plt

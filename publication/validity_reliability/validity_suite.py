@@ -17,7 +17,7 @@ Analyses:
    - UCLA prediction of EF task performance (R-squared)
 
 Usage:
-    python -m analysis.validity_reliability.validity_suite
+    python -m publication.validity_reliability.validity_suite
 
 Output:
     results/analysis_outputs/validity_reliability/
@@ -45,8 +45,8 @@ from scipy import stats
 from pathlib import Path
 import statsmodels.formula.api as smf
 
-from analysis.preprocessing import RESULTS_DIR, ANALYSIS_OUTPUT_DIR
-from analysis.preprocessing import load_master_dataset, safe_zscore, prepare_gender_variable
+from publication.preprocessing import RESULTS_DIR, ANALYSIS_OUTPUT_DIR
+from publication.preprocessing import load_master_dataset, safe_zscore, prepare_gender_variable
 
 # Output directory
 OUTPUT_DIR = ANALYSIS_OUTPUT_DIR / "validity_reliability"
@@ -172,7 +172,7 @@ def load_ucla_items() -> pd.DataFrame:
 
 def perform_efa(df: pd.DataFrame, n_factors: int = 2) -> tuple[np.ndarray, np.ndarray]:
     """
-    Perform Exploratory Factor Analysis using Principal Axis Factoring.
+    Perform Exploratory Factor Analysis with varimax rotation.
 
     Parameters
     ----------
@@ -186,11 +186,30 @@ def perform_efa(df: pd.DataFrame, n_factors: int = 2) -> tuple[np.ndarray, np.nd
     tuple
         (loadings, variance_explained)
     """
-    from sklearn.decomposition import FactorAnalysis
-
     df_clean = df.dropna()
 
-    fa = FactorAnalysis(n_components=n_factors, rotation='varimax', random_state=42)
+    # Try factor_analyzer first (supports varimax rotation)
+    try:
+        from factor_analyzer import FactorAnalyzer
+        fa = FactorAnalyzer(n_factors=n_factors, rotation='varimax', method='principal')
+        fa.fit(df_clean)
+        loadings = fa.loadings_  # shape: (n_items, n_factors)
+        variance_explained = fa.get_factor_variance()[0]  # eigenvalues
+        return loadings, variance_explained
+    except ImportError:
+        pass
+
+    # Fallback: sklearn FactorAnalysis without rotation
+    # Note: sklearn's FactorAnalysis does not support rotation parameter
+    from sklearn.decomposition import FactorAnalysis
+    import warnings
+    warnings.warn(
+        "factor_analyzer not installed. Using sklearn FactorAnalysis without varimax rotation. "
+        "Install factor_analyzer for proper EFA: pip install factor_analyzer",
+        UserWarning
+    )
+
+    fa = FactorAnalysis(n_components=n_factors, random_state=42)
     fa.fit(df_clean)
 
     loadings = fa.components_.T  # shape: (n_items, n_factors)
