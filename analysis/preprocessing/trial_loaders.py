@@ -73,14 +73,16 @@ def load_prp_trials(
             df = df.drop(columns=["t2_rt"])
         df = df.rename(columns={rt_col: "t2_rt"})
     # Prefer soa_nominal_ms (has more data) over legacy soa
+    # But fallback to soa when soa_nominal_ms is NaN (early participants)
     soa_col = None
     for cand in ["soa_nominal_ms", "soa_ms", "soa"]:
         if cand in df.columns:
             soa_col = cand
             break
     if soa_col and soa_col != "soa":
-        # Drop the old empty soa column if exists to avoid duplicates
+        # Fill NaN in soa_nominal_ms with legacy soa values (early 216 trials)
         if "soa" in df.columns:
+            df[soa_col] = df[soa_col].fillna(df["soa"])
             df = df.drop(columns=["soa"])
         df = df.rename(columns={soa_col: "soa"})
     if "t1_correct" not in df.columns:

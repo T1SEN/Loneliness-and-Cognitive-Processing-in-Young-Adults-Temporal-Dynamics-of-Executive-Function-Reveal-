@@ -47,7 +47,7 @@ from scipy import stats
 from pathlib import Path
 
 from publication.preprocessing import RESULTS_DIR, ANALYSIS_OUTPUT_DIR
-from publication.preprocessing import load_stroop_trials, load_wcst_trials, load_prp_trials
+from publication.preprocessing import ensure_participant_id
 from publication.preprocessing import DEFAULT_RT_MIN, STROOP_RT_MAX, PRP_RT_MAX
 
 try:
@@ -431,6 +431,10 @@ def analyze_cognitive_quality() -> dict:
     """
     Comprehensive cognitive task quality analysis.
 
+    NOTE: For quality diagnostics, we load RAW CSV data directly (without any filtering)
+    to properly detect timeouts, anticipations, and other quality issues.
+    Using trial loaders would apply RT filters that drop timeout trials (NaN RT).
+
     Returns
     -------
     dict
@@ -438,27 +442,39 @@ def analyze_cognitive_quality() -> dict:
     """
     results = {}
 
-    # Stroop
+    # Stroop - load RAW CSV for quality analysis (bypass RT filter)
     try:
-        stroop, _ = load_stroop_trials()  # Returns (df, metadata) tuple
+        stroop = pd.read_csv(RESULTS_DIR / "4c_stroop_trials.csv", encoding="utf-8")
+        stroop = ensure_participant_id(stroop)
+        # Use rt_ms column if available, otherwise rt
+        if "rt_ms" in stroop.columns and "rt" not in stroop.columns:
+            stroop["rt"] = stroop["rt_ms"]
+        elif "rt_ms" in stroop.columns:
+            # Prefer rt_ms (has more data)
+            stroop["rt"] = stroop["rt_ms"]
         results['stroop_rt'] = analyze_rt_quality('Stroop', stroop, DEFAULT_RT_MIN, STROOP_RT_MAX)
         results['stroop_accuracy'] = analyze_participant_accuracy('Stroop', stroop, 0.5)
         results['stroop_trials'] = analyze_trial_counts('Stroop', stroop, 20)
     except Exception as e:
         print(f"Stroop analysis failed: {e}")
 
-    # WCST
+    # WCST - load RAW CSV for quality analysis
     try:
-        wcst, _ = load_wcst_trials()  # Returns (df, metadata) tuple
+        wcst = pd.read_csv(RESULTS_DIR / "4b_wcst_trials.csv", encoding="utf-8")
+        wcst = ensure_participant_id(wcst)
         results['wcst_rt'] = analyze_rt_quality('WCST', wcst, DEFAULT_RT_MIN, 5000)  # WCST has longer timeout
         results['wcst_accuracy'] = analyze_participant_accuracy('WCST', wcst, 0.25)  # 4 options = 25% chance
         results['wcst_trials'] = analyze_trial_counts('WCST', wcst, 30)
     except Exception as e:
         print(f"WCST analysis failed: {e}")
 
-    # PRP
+    # PRP - load RAW CSV for quality analysis (bypass RT filter)
     try:
-        prp, _ = load_prp_trials()  # Returns (df, metadata) tuple
+        prp = pd.read_csv(RESULTS_DIR / "4a_prp_trials.csv", encoding="utf-8")
+        prp = ensure_participant_id(prp)
+        # Use t2_rt_ms column if available
+        if "t2_rt_ms" in prp.columns:
+            prp["t2_rt"] = prp["t2_rt_ms"]
         # PRP uses t2_correct for Task 2 accuracy
         if 't2_correct' in prp.columns:
             prp['correct'] = prp['t2_correct']
@@ -527,26 +543,37 @@ def plot_rt_distributions(save_path: Path):
 
     fig, axes = plt.subplots(1, 3, figsize=(15, 4))
 
-    tasks = [
-        ('Stroop', load_stroop_trials, DEFAULT_RT_MIN, STROOP_RT_MAX),
-        ('WCST', load_wcst_trials, DEFAULT_RT_MIN, 5000),
-        ('PRP', load_prp_trials, DEFAULT_RT_MIN, PRP_RT_MAX)
-    ]
+    # Load raw CSV data and extract RT columns
+    tasks_data = []
 
-    for ax, (task_name, loader, rt_min, rt_max) in zip(axes, tasks):
+    # Stroop
+    try:
+        stroop = pd.read_csv(RESULTS_DIR / "4c_stroop_trials.csv", encoding="utf-8")
+        rt_col = "rt_ms" if "rt_ms" in stroop.columns else "rt"
+        tasks_data.append(('Stroop', stroop, rt_col, DEFAULT_RT_MIN, STROOP_RT_MAX))
+    except Exception as e:
+        tasks_data.append(('Stroop', None, None, DEFAULT_RT_MIN, STROOP_RT_MAX))
+
+    # WCST
+    try:
+        wcst = pd.read_csv(RESULTS_DIR / "4b_wcst_trials.csv", encoding="utf-8")
+        rt_col = "rt_ms" if "rt_ms" in wcst.columns else "rt"
+        tasks_data.append(('WCST', wcst, rt_col, DEFAULT_RT_MIN, 5000))
+    except Exception as e:
+        tasks_data.append(('WCST', None, None, DEFAULT_RT_MIN, 5000))
+
+    # PRP
+    try:
+        prp = pd.read_csv(RESULTS_DIR / "4a_prp_trials.csv", encoding="utf-8")
+        rt_col = "t2_rt_ms" if "t2_rt_ms" in prp.columns else "t2_rt"
+        tasks_data.append(('PRP', prp, rt_col, DEFAULT_RT_MIN, PRP_RT_MAX))
+    except Exception as e:
+        tasks_data.append(('PRP', None, None, DEFAULT_RT_MIN, PRP_RT_MAX))
+
+    for ax, (task_name, trials, rt_col, rt_min, rt_max) in zip(axes, tasks_data):
         try:
-            # Loaders return (DataFrame, metadata) tuple
-            trials, _ = loader()
-
-            # Determine RT column (rt_ms, rt, or t2_rt for PRP)
-            rt_col = None
-            for col in ['rt_ms', 'rt', 't2_rt']:
-                if col in trials.columns:
-                    rt_col = col
-                    break
-
-            if rt_col is None:
-                raise ValueError(f"No RT column found in {task_name}")
+            if trials is None or rt_col is None:
+                raise ValueError(f"Failed to load {task_name} data")
 
             valid_rt = trials[(trials[rt_col] >= rt_min) & (trials[rt_col] <= rt_max)][rt_col]
 

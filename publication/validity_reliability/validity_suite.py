@@ -434,7 +434,14 @@ def run():
     construct_results = calculate_construct_validity()
 
     print(f"  KMO: {construct_results['kmo']:.3f} ({construct_results['kmo_interpretation']})")
-    print(f"  Bartlett's Test: chi-sq = {construct_results['bartlett_chi_sq']:.2f}, p < 0.001")
+    bartlett_p = construct_results['bartlett_p']
+    if pd.notna(bartlett_p) and bartlett_p < 0.001:
+        p_str = "p < 0.001"
+    elif pd.notna(bartlett_p):
+        p_str = f"p = {bartlett_p:.3f}"
+    else:
+        p_str = "p = N/A"
+    print(f"  Bartlett's Test: chi-sq = {construct_results['bartlett_chi_sq']:.2f}, {p_str}")
     print(f"  N participants: {construct_results['n_participants']}")
 
     if construct_results['loadings_df'] is not None:

@@ -112,7 +112,7 @@ def derive_prp_features(
     Features:
     - prp_t2_cv_all: Overall T2 RT coefficient of variation
     - prp_t2_cv_short: T2 CV at short SOA (≤150ms)
-    - prp_t2_cv_long: T2 CV at long SOA (≥600ms)
+    - prp_t2_cv_long: T2 CV at long SOA (≥1200ms)
     - prp_cascade_rate: Rate of T1 error → T2 error cascades
     - prp_cascade_inflation: Cascade rate / baseline T2 error rate
     - prp_pes: Post-error slowing (T2 RT)
@@ -146,7 +146,7 @@ def derive_prp_features(
         # CV metrics
         overall_cv = coefficient_of_variation(group["t2_rt_ms"])
         short_soa = group[group["soa_ms"] <= 150]
-        long_soa = group[group["soa_ms"] >= 600]
+        long_soa = group[group["soa_ms"] >= 1200]  # Fixed: was 600, should be 1200 per lib/prp_page.dart
 
         # Error cascade metrics
         if "t1_correct" in group.columns and "t2_correct" in group.columns:

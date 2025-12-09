@@ -427,9 +427,14 @@ def derive_all_features(
     features = prp_features.merge(stroop_features, on="participant_id", how="outer")
     features = features.merge(wcst_features, on="participant_id", how="outer")
 
-    # Cache result
-    features.to_parquet(CACHE_PATH, index=False)
-    print(f"  Cached to: {CACHE_PATH}")
+    # Cache result (with CSV fallback if parquet engine unavailable)
+    try:
+        features.to_parquet(CACHE_PATH, index=False)
+        print(f"  Cached to: {CACHE_PATH}")
+    except Exception:
+        csv_path = CACHE_PATH.with_suffix(".csv")
+        features.to_csv(csv_path, index=False, encoding="utf-8-sig")
+        print(f"  Cached to: {csv_path} (parquet unavailable)")
 
     return features
 
