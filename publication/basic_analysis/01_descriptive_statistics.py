@@ -117,8 +117,8 @@ def compute_gender_comparison(
         if len(male_data) < 5 or len(female_data) < 5:
             continue
 
-        # Independent samples t-test
-        t_stat, p_value = stats.ttest_ind(male_data, female_data)
+        # Independent samples t-test (Welch's, unequal variance)
+        t_stat, p_value = stats.ttest_ind(male_data, female_data, equal_var=False)
 
         # Cohen's d
         pooled_std = np.sqrt(

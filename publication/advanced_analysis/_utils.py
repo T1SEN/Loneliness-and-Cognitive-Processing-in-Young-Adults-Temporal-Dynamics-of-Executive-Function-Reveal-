@@ -250,7 +250,10 @@ def fit_path_model_semopy(model_spec: str, df: pd.DataFrame, model_name: str) ->
         Model fit results including AIC, BIC, CFI, RMSEA, etc.
     """
     if not SEMOPY_AVAILABLE:
-        return fit_path_model_ols(model_spec, df, model_name)
+        raise ImportError(
+            "semopy is required for path analysis in publication scripts. "
+            "Install via: pip install semopy"
+        )
 
     try:
         model = SemopyModel(model_spec)

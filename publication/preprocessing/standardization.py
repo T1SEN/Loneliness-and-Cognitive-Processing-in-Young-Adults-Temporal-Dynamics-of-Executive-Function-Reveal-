@@ -103,7 +103,10 @@ def safe_zscore(series: pd.Series, ddof: int = 1, fill_constant: float = 0.0) ->
 
     if pd.isna(std_val) or std_val == 0:
         warnings.warn(f"Constant or undefined std ({std_val}) detected. Filling with {fill_constant}.")
-        return pd.Series(fill_constant, index=series.index)
+        # Preserve NaN positions from original series
+        result = pd.Series(fill_constant, index=series.index)
+        result[series.isna()] = np.nan
+        return result
 
     return (series - mean_val) / std_val
 
@@ -209,8 +212,11 @@ def prepare_gender_variable(
         .str.lower()
     )
 
-    # Create binary variable (1 = male, 0 = female/other)
-    result['gender_male'] = (result['gender'] == 'male').astype(int)
+    # Create binary variable: 1 = male, 0 = female, NaN = other/missing
+    # Unrecognized values remain NaN and will be excluded from analyses
+    result['gender_male'] = np.nan
+    result.loc[result['gender'] == 'male', 'gender_male'] = 1
+    result.loc[result['gender'] == 'female', 'gender_male'] = 0
 
     return result
 

@@ -357,8 +357,8 @@ def compute_gender_effect_sizes(
 
         d = cohens_d(male, female)
 
-        # Independent samples t-test
-        t, p = stats.ttest_ind(male, female)
+        # Independent samples t-test (Welch's, unequal variance)
+        t, p = stats.ttest_ind(male, female, equal_var=False)
 
         results.append({
             'outcome': outcome,

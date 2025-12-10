@@ -6,7 +6,7 @@ Shared constants for gender-specific analyses.
 """
 
 # Minimum sample sizes
-MIN_SAMPLE_STRATIFIED = 15  # Minimum N per gender for stratified analysis
+MIN_SAMPLE_STRATIFIED = 20  # Minimum N per gender for stratified analysis (6 predictors requires at least 20)
 MIN_SAMPLE_INTERACTION = 30  # Minimum total N for interaction testing
 
 # EF outcome variables for gender analyses
