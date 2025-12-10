@@ -1451,3 +1451,169 @@ UCLA_pure = residuals(UCLA ~ DASS_dep + DASS_anx + DASS_str)
 2. FDR 보정 후 유의한 효과 **0개**
 3. 검정력 부족 (6-22%)으로 Type II 오류 가능성 높음
 4. 복제 연구 시 N > 300 권장 (80% 검정력 달성)
+
+---
+
+## 업데이트된 Complete Only 분석 (2025-12-09)
+
+**데이터셋:** `results/complete_only/` (업데이트됨)
+**총 참가자:** N=198 (Male=78, Female=117, Missing=3)
+
+### Gold Standard (DASS-controlled, FDR)
+
+| 항목 | 결과 |
+|------|------|
+| 테스트 가설 | 23개 (Tier 1: 4개, Tier 2: 19개) |
+| 유의한 주효과 | **0개** (all p > 0.10) |
+| 유의한 상호작용 | **0개** (all q > 0.05) |
+
+**결론:** DASS 통제 후 UCLA의 모든 효과 비유의
+
+### 유의한 결과 요약 (p < 0.05)
+
+#### 1. 성별 차이 (Independent t-test)
+
+| 변수 | Male M(SD) | Female M(SD) | t | p | Cohen's d |
+|------|------------|--------------|---|---|-----------|
+| UCLA 외로움 | 38.12 (11.08) | 41.94 (10.67) | -2.41 | **.017** | -0.35 |
+| DASS 우울 | 5.95 (7.02) | 8.56 (7.72) | -2.39 | **.018** | -0.35 |
+| PRP Delay Effect | 527.02 (137.24) | 626.29 (146.71) | -4.68 | **<.001** | -0.69 |
+
+#### 2. Depression 경로모형 (Bootstrap 5000회)
+
+| Model | Path | Indirect Effect | 95% CI | Sig |
+|-------|------|-----------------|--------|-----|
+| Model 2 | 인지 → 우울 → 외로움 | **-0.132** | [-0.265, -0.009] | **Yes** |
+| Model 3 | 외로움 → 우울 → 인지 | **-0.051** | [-0.099, -0.005] | **Yes** |
+
+#### 3. Stress 경로모형 성별 차이
+
+| Path | z | p | 해석 |
+|------|---|---|------|
+| Model2 a-path (EF → Stress) | 2.10 | **.036** | 남녀 반대 방향 |
+| Model3 b-path (Stress → EF) | 2.16 | **.031** | 남녀 반대 방향 |
+| Model3 indirect (L → S → C) | 1.98 | **.048** | 간접효과 성차 |
+| Model4 b-path (EF → Stress) | 2.10 | **.036** | 남녀 반대 방향 |
+
+**해석:** 남성(+), 여성(-) 반대 방향의 인지-스트레스 관계
+
+#### 4. Bayesian 영가설 지지 (BF₀₁)
+
+| Outcome | BF₀₁ (UCLA) | BF₀₁ (Interaction) | 해석 |
+|---------|-------------|-------------------|------|
+| WCST PE | 13.63 | 12.02 | H₀ 강하게 지지 |
+| Stroop | 11.64 | 11.17 | H₀ 강하게 지지 |
+| PRP Bottleneck | 4.71 | 3.86 | H₀ 중간 지지 |
+
+**결론:** BF₀₁ > 10은 UCLA 효과가 **없다**는 강한 증거
+
+### 측정도구 신뢰도
+
+| 척도 | Cronbach's α | 평가 |
+|------|--------------|------|
+| UCLA Loneliness | **0.936** | Excellent |
+| DASS-21 Total | **0.920** | Excellent |
+| DASS Depression | 0.871 | Good |
+| DASS Anxiety | 0.779 | Acceptable |
+| DASS Stress | 0.830 | Good |
+
+### 2025-12-09 분석 핵심 결론
+
+1. **UCLA-DASS 강한 공변**: r = 0.49 ~ 0.66 (외로움과 정서적 고통 높은 중첩)
+2. **UCLA → EF 직접효과 부재**: DASS 통제 시 모든 주효과 비유의
+3. **베이지안 확증**: BF₀₁ = 4.7~13.6으로 영가설 강력 지지
+4. **Depression 매개**: 우울만 유의한 매개, 불안/스트레스 비유의
+5. **Stress 성별 차이**: 인지-스트레스 관계에서 남녀 반대 방향
+| 2025-12-09 | Age-Stratified (22-25) | PRP Bottleneck | UCLA x Gender | β=95.945 | p=0.0073 | N=56 |
+| 2025-12-09 | Three-way Interaction | WCST PE Rate | UCLA x Gender x Age | β=-2.964 | p=0.0352 | N=196 |
+| 2025-12-09 | Three-way Interaction | WCST PE Rate | UCLA x Age | β=2.568 | p=0.0354 | N=196 |
+| 2025-12-09 | Johnson-Neyman | WCST PE Rate | UCLA×Gender (ages 18-36) | β=-7.918 | p=0.0332 | N=196 |
+| 2025-12-09 | Johnson-Neyman | PRP Bottleneck | UCLA×Gender (ages 21-22) | β=46.656 | p=0.0296 | N=190 |
+| 2025-12-09 | Simple Slopes | WCST PE Rate (18-21, Female) | UCLA | β=-1.267 | p=0.0433 | N=96 |
+
+---
+
+## 2025-12-10 Advanced Analysis Suites 전체 실행 결과
+
+**분석 날짜:** 2025-12-10
+**실행된 Suite 수:** 45개 (전체 SUITE_REGISTRY)
+**데이터셋:** results/complete_only (N=197)
+
+### Gold Standard (DASS-controlled) 최종 결과
+
+| 지표 | 값 | 해석 |
+|------|------|------|
+| 총 가설 수 | 23 | Tier 1 (4) + Tier 2 (19) |
+| Raw p < 0.05 | **0** | 없음 |
+| FDR q < 0.05 | **0** | 없음 |
+| 최소 UCLA p-value | 0.086 | PRP Bottleneck Interaction |
+
+**결론:** DASS 통제 후 모든 UCLA → EF 효과가 사라짐
+
+### Exploratory Analyses (DASS 미통제, Raw p < 0.05)
+
+| 날짜 | Suite | 분석대상 | 효과 | β | p | N |
+|------|-------|----------|------|---|---|---|
+| 2025-12-10 | intervention_subgroups | Cluster 4, PRP bottleneck | UCLA | -81.78 | **0.002** | 30 |
+| 2025-12-10 | hmm_mechanism (Male) | lapse_occupancy_corr | UCLA | 0.32 | **0.004** | 78 |
+| 2025-12-10 | control_strategy | Stroop interference_change | UCLA | 40.74 | **0.015** | 197 |
+| 2025-12-10 | sequential_deep | Stroop RT recovery (lag 3) | UCLA | 150.15 | **0.018** | 42 |
+| 2025-12-10 | hmm_mechanism (Male) | lapse_occupancy | UCLA | 5.05 | **0.029** | 78 |
+| 2025-12-10 | attention_depletion | WCST CV fatigue slope | UCLA | -0.024 | **0.031** | 197 |
+| 2025-12-10 | ddm | drift rate (v) | UCLA | -0.012 | **0.035** | 121 |
+| 2025-12-10 | developmental_window | PE rate (Female 18-21) | UCLA | -1.27 | **0.043** | 96 |
+
+**중요:** 위 결과들은 DASS 미통제 상태의 탐색적 분석으로, FDR 보정 시 생존하지 않음
+
+### Path Analysis (Depression 매개경로)
+
+| Model | 경로 | Indirect | 95% CI | 유의 |
+|-------|------|----------|--------|------|
+| Model 2 | 인지 → 우울 → 외로움 | **-0.132** | [-0.265, -0.009] | **Yes** |
+| Model 3 | 외로움 → 우울 → 인지 | **-0.051** | [-0.099, -0.005] | **Yes** |
+
+- **Anxiety 경로**: 모든 간접효과 비유의 (all CI include 0)
+- **Stress 경로**: 모든 간접효과 비유의 (all CI include 0)
+
+### UCLA Factor Analysis
+
+| Factor | UCLA 하위요인 → EF 유의 효과 |
+|--------|------------------------------|
+| Social Loneliness | 없음 |
+| Emotional Loneliness | WCST PE Rate |
+
+### Advanced Suites 실행 상태 (45개)
+
+| 카테고리 | Suite 수 | 완료 |
+|----------|----------|------|
+| Gold Standard | 1 | ✓ |
+| Exploratory | 6 | ✓ |
+| Mediation | 1 | ✓ |
+| Validation | 3 | ✓ |
+| Synthesis | 3 | ✓ |
+| Advanced | 31 | ✓ |
+
+### 최종 결론 (2025-12-10)
+
+1. **DASS-controlled 확증적 분석**: UCLA → EF 직접효과 **0건** (23개 가설 모두 비유의)
+2. **탐색적 분석**: 8건의 raw p < 0.05 발견, 그러나 모두 DASS 미통제 또는 하위집단 분석
+3. **Depression 매개**: 유일하게 bootstrap CI에서 유의한 간접효과 확인
+4. **Emotional Loneliness**: UCLA 하위요인 중 정서적 외로움만 WCST PE와 연관
+5. **Gender-specific (Male)**: HMM lapse state에서 남성에서만 UCLA 효과 관찰
+
+**해석:** 외로움이 인지기능에 미치는 영향은 우울을 통한 간접경로로만 유의하며, 직접효과는 존재하지 않음
+| 2025-12-10 | Age-Stratified (22-25) | PRP Bottleneck | UCLA x Gender | β=95.945 | p=0.0073 | N=56 |
+| 2025-12-10 | Three-way Interaction | WCST PE Rate | UCLA x Gender x Age | β=-2.964 | p=0.0352 | N=196 |
+| 2025-12-10 | Three-way Interaction | WCST PE Rate | UCLA x Age | β=2.568 | p=0.0354 | N=196 |
+| 2025-12-10 | Johnson-Neyman | WCST PE Rate | UCLA×Gender (ages 18-36) | β=-7.918 | p=0.0332 | N=196 |
+| 2025-12-10 | Johnson-Neyman | PRP Bottleneck | UCLA×Gender (ages 21-22) | β=46.656 | p=0.0296 | N=190 |
+| 2025-12-10 | Simple Slopes | WCST PE Rate (18-21, Female) | UCLA | β=-1.267 | p=0.0433 | N=96 |
+| 2025-12-10 | Fatigue Moderation | STROOP Early (Q1) Accuracy | UCLA main | β=-0.005 | p=0.0334 | N=196 |
+| 2025-12-10 | Bayes Factor | WCST PE Rate | Decisive evidence for H0 (no UCLA effect) | BF01=163.88 | N/A | N=196 |
+| 2025-12-10 | Bayes Factor | WCST Accuracy | Decisive evidence for H0 (no UCLA effect) | BF01=114.51 | N/A | N=196 |
+| 2025-12-10 | Bayes Factor | Stroop Interference | Decisive evidence for H0 (no UCLA effect) | BF01=130.01 | N/A | N=196 |
+| 2025-12-10 | Bayes Factor | PRP Bottleneck | Strong evidence for H0 | BF01=18.15 | N/A | N=190 |
+| 2025-12-10 | Dominance Analysis | WCST PE Rate | Primary confound: Depression | β=-56.09% | N/A | N=196 |
+| 2025-12-10 | Dominance Analysis | WCST Accuracy | Primary confound: Stress | β=33.19% | N/A | N=196 |
+| 2025-12-10 | Dominance Analysis | Stroop Interference | Primary confound: Depression | β=-130.73% | N/A | N=196 |
+| 2025-12-10 | Dominance Analysis | PRP Bottleneck | Primary confound: Depression | β=-247.30% | N/A | N=190 |
