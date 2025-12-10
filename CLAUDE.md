@@ -14,10 +14,13 @@ Research data analysis pipeline for a psychology study examining the relationshi
 ## Data Flow
 
 ```
-Firebase (Firestore) → export_alldata.py → results/*.csv → python -m analysis → results/gold_standard/ & results/analysis_outputs/
+Firebase (Firestore) → export_alldata.py → publication/data/raw/ → filter_complete_participants.py → publication/data/complete/
+                                                                                                   ↓
+                                                     python -m analysis → results/gold_standard/ & results/analysis_outputs/
+                                                     python -m publication.* → results/publication/
 ```
 
-### Key Data Files (`results/complete_only/`)
+### Key Data Files (`publication/data/complete/`)
 | File | Contents |
 |------|----------|
 | `1_participants_info.csv` | Demographics (age, gender, education) |
@@ -26,6 +29,8 @@ Firebase (Firestore) → export_alldata.py → results/*.csv → python -m analy
 | `4a_prp_trials.csv` | Trial-level PRP data |
 | `4b_wcst_trials.csv` | Trial-level WCST data |
 | `4c_stroop_trials.csv` | Trial-level Stroop data |
+
+Raw data (before filtering) is in `publication/data/raw/`.
 
 ## Essential Commands
 
@@ -45,10 +50,22 @@ python -m analysis.exploratory.prp_suite
 python -m analysis.mediation.mediation_suite
 python -m analysis.validation.validation_suite
 
-# Publication Gender Analysis (NEW)
-python -m publication.gender_analysis --list           # List available analyses
-python -m publication.gender_analysis --all            # Run all gender analyses
-python -m publication.gender_analysis -a male_vulnerability  # Run specific analysis
+# Publication Package (출판용 분석)
+python -m publication.basic_analysis.01_descriptive_statistics   # 기술통계
+python -m publication.basic_analysis.02_correlation_analysis     # 상관분석
+python -m publication.basic_analysis.03_hierarchical_regression  # 위계적 회귀
+
+python -m publication.advanced_analysis.mediation_suite          # UCLA → DASS → EF 매개분석
+python -m publication.advanced_analysis.path_depression_suite    # 경로모형 (Depression)
+python -m publication.advanced_analysis.bayesian_suite           # 베이지안 SEM
+
+python -m publication.validity_reliability.reliability_suite     # Cronbach's alpha, split-half
+python -m publication.validity_reliability.validity_suite        # Factor analysis
+python -m publication.validity_reliability.data_quality_suite    # Response validation
+
+python -m publication.gender_analysis --list                     # List gender analyses
+python -m publication.gender_analysis --all                      # Run all gender analyses
+python -m publication.gender_analysis -a male_vulnerability      # Run specific analysis
 
 # Machine learning
 python -m analysis.ml.nested_cv --task classification --features demo_dass
@@ -105,40 +122,63 @@ analysis/
 └── archive/                # Legacy scripts (DEPRECATED - see README.md)
 ```
 
-## Publication Gender Analysis Package
+## Publication Package Structure
 
-출판용 성별 분석을 위한 통합 패키지. `analysis/`의 성별 관련 분석들을 `publication/gender_analysis/`로 통합.
+출판용 분석을 위한 통합 패키지. IRB 연구계획서에 명시된 분석과 추가 고급분석 포함.
 
 ```
-publication/gender_analysis/
-├── __init__.py                 # 패키지 초기화, ANALYSES 레지스트리
-├── __main__.py                 # CLI 지원
-├── _utils.py                   # 공통 유틸리티 (load_gender_data, fisher_z_test 등)
-├── _constants.py               # 성별 분석 상수 (EF_OUTCOMES, MIN_SAMPLE 등)
+publication/
+├── data/                       # 데이터 파일
+│   ├── raw/                    # 원본 데이터 (전체 참가자)
+│   ├── complete/               # 필터링된 데이터 (완료자만)
+│   ├── outputs/                # 생성된 데이터 (master_dataset.csv 등)
+│   ├── export_alldata.py       # Firebase 데이터 추출
+│   └── filter_complete_participants.py  # 완료자 필터링
 │
-├── vulnerability/              # 성별 취약성 패턴
-│   ├── male_vulnerability.py   # 남성 특이적 취약성 (WCST PE)
-│   └── double_dissociation.py  # 이중 해리 분석
+├── preprocessing/              # 데이터 전처리
+│   ├── loaders.py              # load_master_dataset, load_*_scores
+│   ├── trial_loaders.py        # load_prp_trials, load_stroop_trials, load_wcst_trials
+│   ├── features.py             # derive_all_features
+│   └── constants.py            # RT 임계값, SOA 상수
 │
-├── stratified/                 # 성별 층화 분석
-│   ├── ddm_gender.py           # DDM 파라미터 성별 분석
-│   ├── stroop_gender.py        # Stroop 분해 성별 분석
-│   └── wcst_gender.py          # WCST 오류 유형 성별 분석
+├── basic_analysis/             # IRB 기본 분석
+│   ├── 01_descriptive_statistics.py  # 기술통계
+│   ├── 02_correlation_analysis.py    # 상관분석
+│   └── 03_hierarchical_regression.py # 위계적 회귀 (DASS 통제)
 │
-└── interactions/               # UCLA × Gender 상호작용
-    ├── ucla_gender.py          # 모든 EF 결과변수 상호작용 검정
-    └── synthesis.py            # 종합 결과
+├── advanced_analysis/          # 고급 분석
+│   ├── mediation_suite.py      # UCLA → DASS → EF 매개분석
+│   ├── path_depression_suite.py # 경로모형 비교 (Depression)
+│   ├── path_anxiety_suite.py   # 경로모형 비교 (Anxiety)
+│   ├── path_stress_suite.py    # 경로모형 비교 (Stress)
+│   └── bayesian_suite.py       # 베이지안 SEM
+│
+├── validity_reliability/       # 심리측정 검증
+│   ├── reliability_suite.py    # Cronbach's alpha, split-half
+│   ├── validity_suite.py       # Factor analysis, convergent validity
+│   └── data_quality_suite.py   # 응답 시간 검증, careless responding
+│
+└── gender_analysis/            # 성별 분석
+    ├── vulnerability/          # 남성 취약성, 이중 해리
+    ├── stratified/             # 성별 층화 분석 (DDM, Stroop, WCST)
+    └── interactions/           # UCLA × Gender 상호작용
 ```
 
-**출력 디렉토리:** `results/publication/gender_analysis/`
+**출력 디렉토리:** `results/publication/{basic_analysis,advanced_analysis,validity_reliability,gender_analysis}/`
 
 ### 사용법
 ```python
 from publication.gender_analysis import (
-    load_gender_data,           # 성별 변수 준비된 마스터 데이터
+    load_gender_data,                  # 성별 변수 준비된 마스터 데이터
     run_gender_stratified_regression,  # 성별별 회귀분석
     run_all_gender_interactions,       # UCLA × Gender 상호작용 검정
-    fisher_z_test,              # 성별 간 상관 비교
+    fisher_z_test,                     # 성별 간 상관 비교
+)
+
+from publication.advanced_analysis import (
+    bootstrap_mediation,               # Bootstrap 매개분석
+    sobel_test,                        # Sobel 검정
+    fit_path_model_semopy,             # SEM 경로모형
 )
 ```
 
@@ -215,6 +255,17 @@ from analysis.preprocessing import (
 )
 ```
 
+### `publication/preprocessing/` - Publication Data Loading
+```python
+from publication.preprocessing import (
+    load_master_dataset,              # publication/data/complete/ 기반 데이터셋
+    load_prp_trials, load_stroop_trials, load_wcst_trials,
+    derive_all_features,              # 모든 파생 변수 계산
+    DATA_DIR, COMPLETE_DIR, RAW_DIR,  # 데이터 경로 상수
+)
+```
+Note: `publication/preprocessing/` mirrors `analysis/preprocessing/` but uses `publication/data/` paths.
+
 ## Implementation Details
 
 ### Unicode Handling (Windows)
@@ -251,7 +302,7 @@ def _parse_wcst_extra(extra_str):
 | Gold Standard | `results/gold_standard/` |
 | Exploratory | `results/analysis_outputs/{prp,stroop,wcst,cross_task}_suite/` |
 | Other suites | `results/analysis_outputs/{suite_name}/` |
-| **Publication Gender** | `results/publication/gender_analysis/` |
+| **Publication** | `results/publication/{basic_analysis,advanced_analysis,validity_reliability,gender_analysis}/` |
 
 ## Results Recording
 
