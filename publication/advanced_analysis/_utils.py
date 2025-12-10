@@ -40,11 +40,12 @@ except ImportError:
     calc_stats = None
 
 # =============================================================================
-# OUTPUT PATHS (publication/basic_analysis/utils.py 패턴 따름)
+# OUTPUT PATHS (constants.py에서 중앙 관리)
 # =============================================================================
 
-RESULTS_DIR = Path(__file__).resolve().parents[2] / "results"
-BASE_OUTPUT = RESULTS_DIR / "publication" / "advanced_analysis"
+from publication.preprocessing.constants import ANALYSIS_OUTPUT_DIR
+
+BASE_OUTPUT = ANALYSIS_OUTPUT_DIR / "advanced_analysis"
 BASE_OUTPUT.mkdir(parents=True, exist_ok=True)
 
 # =============================================================================

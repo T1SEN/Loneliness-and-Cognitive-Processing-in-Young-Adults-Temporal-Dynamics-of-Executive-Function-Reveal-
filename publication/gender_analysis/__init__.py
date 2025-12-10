@@ -42,7 +42,6 @@ from ._constants import (
 
 # Utilities
 from ._utils import (
-    RESULTS_DIR,
     OUTPUT_DIR,
     load_gender_data,
     run_gender_stratified_regression,

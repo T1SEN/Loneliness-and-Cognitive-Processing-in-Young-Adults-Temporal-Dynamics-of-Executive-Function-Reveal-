@@ -148,13 +148,36 @@ def derive_prp_features(
         short_soa = group[group["soa_ms"] <= 150]
         long_soa = group[group["soa_ms"] >= 1200]  # Fixed: was 600, should be 1200 per lib/prp_page.dart
 
-        # Error cascade metrics
+        # Error cascade metrics - conditional probability P(T2 error | T1 error)
         if "t1_correct" in group.columns and "t2_correct" in group.columns:
             valid = group[(group["t1_correct"].notna()) & (group["t2_correct"].notna())]
-            cascade = (~valid["t1_correct"]) & (~valid["t2_correct"])
-            cascade_rate = cascade.mean() if len(valid) > 0 else np.nan
-            t2_error_rate = 1 - valid["t2_correct"].mean() if len(valid) > 0 else np.nan
-            cascade_inflation = cascade_rate / t2_error_rate if t2_error_rate and t2_error_rate > 0 else np.nan
+
+            # T1 오류 시행들
+            t1_errors = valid[~valid["t1_correct"]]
+            n_t1_errors = len(t1_errors)
+
+            # T1 오류가 0이면 cascade 계산 불가 → NaN
+            if n_t1_errors == 0:
+                cascade_rate = np.nan
+                cascade_inflation = np.nan
+            else:
+                # T1 오류 후 T2도 오류
+                t1_and_t2_errors = t1_errors[~t1_errors["t2_correct"]]
+                n_cascade = len(t1_and_t2_errors)
+
+                # 조건부 확률: P(T2 error | T1 error)
+                cascade_rate = n_cascade / n_t1_errors
+
+                # 비교용: 전체 T2 오류율
+                t2_error_rate = 1 - valid["t2_correct"].mean() if len(valid) > 0 else np.nan
+
+                # Cascade inflation: 조건부 확률 / 무조건 확률
+                # t2_error_rate가 0이면 inflation 계산 불가 → NaN
+                cascade_inflation = (
+                    cascade_rate / t2_error_rate
+                    if pd.notna(t2_error_rate) and t2_error_rate > 0
+                    else np.nan
+                )
         else:
             cascade_rate = np.nan
             cascade_inflation = np.nan

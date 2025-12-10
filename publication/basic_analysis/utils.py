@@ -18,11 +18,12 @@ import pandas as pd
 from publication.preprocessing import load_master_dataset
 
 # =============================================================================
-# PATHS
+# PATHS (constants.py에서 중앙 관리)
 # =============================================================================
 
-RESULTS_DIR = Path(__file__).resolve().parents[2] / "results"
-OUTPUT_DIR = RESULTS_DIR / "publication" / "basic_analysis"
+from publication.preprocessing.constants import ANALYSIS_OUTPUT_DIR
+
+OUTPUT_DIR = ANALYSIS_OUTPUT_DIR / "basic_analysis"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # =============================================================================

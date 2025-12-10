@@ -58,7 +58,14 @@
       "Bash(python:*)",
       "Bash(git commit -m \"$(cat <<''EOF''\npublication/gender_analysis 통계적 정확성 수정\n\n주요 변경:\n1. dropna에 z_age 누락 수정 (4개 파일)\n   - 회귀식에 z_age가 포함되어 있으나 dropna에서 누락되어\n     보고된 N과 실제 분석 N 불일치 문제 해결\n\n2. stratified 스크립트 결측치 처리 추가 (3개 파일)\n   - ddm_gender.py, stroop_gender.py, wcst_gender.py\n   - 각 outcome별로 dropna 적용하여 정확한 N 보고\n\n3. 이중 해리 z-test → Stacked mixed model로 대체\n   - 기존: se_diff = sqrt(se1^2 + se2^2) 독립 가정 (위반)\n   - 변경: 3-way interaction (UCLA×Gender×Task) mixed model\n   - 동일 참가자 상관을 random effect로 처리\n\n4. Cohen''s d → standardized_beta로 수정\n   - 연속 예측변수의 회귀계수는 Cohen''s d가 아님\n   - standardized_beta + partial_r로 올바르게 보고\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n)\")",
       "Bash(git push:*)",
-      "Bash(git cat-file:*)"
+      "Bash(git cat-file:*)",
+      "Bash(git commit:*)",
+      "Bash(dir \"C:\\Users\\ansel\\my_research_exporter\\publication\\data\")",
+      "Bash(dir \"C:\\Users\\ansel\\my_research_exporter\\results\")",
+      "Bash(dir \"C:\\Users\\ansel\\my_research_exporter\\publication\\data\\complete\")",
+      "Bash(.venvScriptsactivate)",
+      "Bash(set:*)",
+      "Bash(python publication/data/export_alldata.py:*)"
     ],
     "deny": [],
     "ask": []

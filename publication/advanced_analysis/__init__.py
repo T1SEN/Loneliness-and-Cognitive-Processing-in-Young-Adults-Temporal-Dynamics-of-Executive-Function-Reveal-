@@ -24,7 +24,6 @@ import warnings
 # Shared utilities
 from ._utils import (
     BASE_OUTPUT,
-    RESULTS_DIR,
     SEMOPY_AVAILABLE,
     bootstrap_mediation,
     sobel_test,

@@ -1,11 +1,23 @@
 import firebase_admin
 from firebase_admin import credentials, firestore
 import pandas as pd
-import os
+from pathlib import Path
+
+from publication.data import filter_complete_participants
+
+# 스크립트 위치 기준 경로 설정
+SCRIPT_DIR = Path(__file__).parent
+PROJECT_ROOT = SCRIPT_DIR.parent.parent
+RAW_DIR = SCRIPT_DIR / 'raw'
+SERVICE_ACCOUNT_PATH = PROJECT_ROOT / 'serviceAccountKey.json'
+
+RAW_DIR.mkdir(parents=True, exist_ok=True)
+if not SERVICE_ACCOUNT_PATH.exists():
+    raise FileNotFoundError(f"serviceAccountKey.json 파일을 찾을 수 없습니다: {SERVICE_ACCOUNT_PATH}")
 
 # --- Part 1: Firebase 초기화 ---
 try:
-    cred = credentials.Certificate("serviceAccountKey.json")
+    cred = credentials.Certificate(str(SERVICE_ACCOUNT_PATH))
     firebase_admin.initialize_app(cred)
 except ValueError:
     print("Firebase 앱이 이미 초기화되었습니다.")
@@ -127,12 +139,7 @@ for participant_doc in participants_stream:
 
 
 # --- Part 5: 추출한 모든 데이터를 Pandas DataFrame으로 변환 후 CSV 파일로 저장 ---
-print("\n모든 데이터 추출 완료! CSV 파일로 저장합니다...")
-
-# CSV를 저장할 'results' 폴더 생성
-output_dir = 'results'
-if not os.path.exists(output_dir):
-    os.makedirs(output_dir)
+print("\n모든 데이터 추출 완료! RAW CSV 파일로 저장합니다...")
 
 def save_to_csv(data_list, filename):
     if data_list:
@@ -143,7 +150,7 @@ def save_to_csv(data_list, filename):
                 cols = ['participantId'] + [col for col in df.columns if col != 'participantId']
                 df = df[cols]
             
-            filepath = os.path.join(output_dir, filename)
+            filepath = RAW_DIR / filename
             df.to_csv(filepath, index=False, encoding='utf-8-sig')
             print(f"  [SUCCESS] '{filepath}' 파일 저장 완료! (총 {len(df)} 행)")
         except Exception as e:
@@ -159,4 +166,6 @@ save_to_csv(prp_trial_data, '4a_prp_trials.csv')
 save_to_csv(wcst_trial_data, '4b_wcst_trials.csv')
 save_to_csv(stroop_trial_data, '4c_stroop_trials.csv')
 
-print(f"\n[COMPLETE] 작업 완료! '{output_dir}' 폴더에서 생성된 CSV 파일들을 확인하세요.")
+print(f"\n[COMPLETE] 작업 완료! RAW 데이터는 '{RAW_DIR}' 폴더에서 확인할 수 있습니다.")
+print("\n[FILTER] RAW 데이터를 기반으로 COMPLETE 폴더를 갱신합니다...")
+filter_complete_participants.filter_and_save()

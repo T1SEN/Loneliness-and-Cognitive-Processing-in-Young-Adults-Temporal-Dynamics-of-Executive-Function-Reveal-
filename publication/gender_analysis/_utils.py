@@ -38,11 +38,12 @@ from ._constants import (
 )
 
 # =============================================================================
-# OUTPUT PATHS
+# OUTPUT PATHS (constants.py에서 중앙 관리)
 # =============================================================================
 
-RESULTS_DIR = Path(__file__).resolve().parents[2] / "results"
-OUTPUT_DIR = RESULTS_DIR / "publication" / "gender_analysis"
+from publication.preprocessing.constants import ANALYSIS_OUTPUT_DIR
+
+OUTPUT_DIR = ANALYSIS_OUTPUT_DIR / "gender_analysis"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 

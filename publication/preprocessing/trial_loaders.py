@@ -6,6 +6,7 @@ Outputs are cached (optional) to speed repeated analyses.
 from __future__ import annotations
 
 import ast
+import hashlib
 from pathlib import Path
 from typing import Tuple, Dict, Any
 
@@ -26,6 +27,13 @@ from .loaders import ensure_participant_id
 
 CACHE_DIR = ANALYSIS_OUTPUT_DIR / "trial_cache"
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def _generate_cache_key(prefix: str, **params) -> str:
+    """Generate unique cache key based on filter parameters."""
+    param_str = "_".join(f"{k}={v}" for k, v in sorted(params.items()))
+    param_hash = hashlib.md5(param_str.encode()).hexdigest()[:8]
+    return f"{prefix}_{param_hash}.parquet"
 
 
 def _maybe_cache(path: Path, df: pd.DataFrame, use_parquet: bool = True) -> None:
@@ -57,7 +65,16 @@ def load_prp_trials(
     require_t2_correct_for_rt: bool = True,
     drop_timeouts: bool = True,
 ) -> Tuple[pd.DataFrame, Dict[str, Any]]:
-    cache_path = CACHE_DIR / "prp_trials.parquet"
+    cache_key = _generate_cache_key(
+        "prp_trials",
+        rt_min=rt_min,
+        rt_max=rt_max,
+        require_t1_correct=require_t1_correct,
+        enforce_short_long_only=enforce_short_long_only,
+        require_t2_correct_for_rt=require_t2_correct_for_rt,
+        drop_timeouts=drop_timeouts,
+    )
+    cache_path = CACHE_DIR / cache_key
     if use_cache and not force_rebuild:
         cached = _load_cached(cache_path)
         if cached is not None:
@@ -67,10 +84,12 @@ def load_prp_trials(
     df = ensure_participant_id(df)
 
     # Prefer _ms columns (have more data) over legacy columns
+    # But backfill NaN in _ms with legacy values (early participants)
     rt_col = "t2_rt_ms" if "t2_rt_ms" in df.columns else "t2_rt" if "t2_rt" in df.columns else None
     if rt_col and rt_col != "t2_rt":
-        # Drop the old empty t2_rt column if exists to avoid duplicates
+        # Fill NaN in t2_rt_ms with legacy t2_rt values (early participants)
         if "t2_rt" in df.columns:
+            df[rt_col] = df[rt_col].fillna(df["t2_rt"])
             df = df.drop(columns=["t2_rt"])
         df = df.rename(columns={rt_col: "t2_rt"})
     # Prefer soa_nominal_ms (has more data) over legacy soa
@@ -138,7 +157,14 @@ def load_stroop_trials(
     require_correct_for_rt: bool = True,
     drop_timeouts: bool = True,
 ) -> Tuple[pd.DataFrame, Dict[str, Any]]:
-    cache_path = CACHE_DIR / "stroop_trials.parquet"
+    cache_key = _generate_cache_key(
+        "stroop_trials",
+        rt_min=rt_min,
+        rt_max=rt_max,
+        require_correct_for_rt=require_correct_for_rt,
+        drop_timeouts=drop_timeouts,
+    )
+    cache_path = CACHE_DIR / cache_key
     if use_cache and not force_rebuild:
         cached = _load_cached(cache_path)
         if cached is not None:
@@ -147,13 +173,15 @@ def load_stroop_trials(
     df = pd.read_csv(RESULTS_DIR / "4c_stroop_trials.csv", encoding="utf-8")
     df = ensure_participant_id(df)
 
-    # Prefer rt_ms (has more data) over legacy rt column - same pattern as PRP fix
+    # Prefer rt_ms (has more data) over legacy rt column
+    # But backfill NaN in _ms with legacy values (early participants)
     rt_col = "rt_ms" if "rt_ms" in df.columns else "rt" if "rt" in df.columns else None
     if not rt_col:
         raise KeyError("Stroop trials missing rt/rt_ms column")
     if rt_col != "rt":
-        # Drop the old empty rt column if exists to avoid duplicates
+        # Fill NaN in rt_ms with legacy rt values (early participants)
         if "rt" in df.columns:
+            df[rt_col] = df[rt_col].fillna(df["rt"])
             df = df.drop(columns=["rt"])
         df = df.rename(columns={rt_col: "rt"})
 

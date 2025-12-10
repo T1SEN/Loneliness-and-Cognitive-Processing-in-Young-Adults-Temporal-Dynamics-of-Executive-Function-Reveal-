@@ -152,11 +152,22 @@ def load_dass_scores():
 
     # Try to use pre-computed scores if available
     if all(col in dass_data.columns for col in ['score_D', 'score_A', 'score_S']):
-        dass_summary = dass_data.groupby('participant_id').agg({
-            'score_D': 'first',
-            'score_A': 'first',
-            'score_S': 'first'
-        }).reset_index()
+        # UCLA와 동일하게 최신 기록 유지
+        for col in ['score_D', 'score_A', 'score_S']:
+            dass_data[col] = pd.to_numeric(dass_data[col], errors='coerce')
+
+        # 시간 기준 정렬 (CSV 순서가 섞여 있을 수 있으므로)
+        sort_cols = ['participant_id']
+        if 'createdAt' in dass_data.columns:
+            sort_cols.append('createdAt')
+        elif 'created_at' in dass_data.columns:
+            sort_cols.append('created_at')
+        dass_data = dass_data.sort_values(sort_cols)
+
+        dass_summary = dass_data.drop_duplicates(
+            subset=['participant_id'],
+            keep='last'
+        )[['participant_id', 'score_D', 'score_A', 'score_S']].copy()
         dass_summary.columns = ['participant_id', 'dass_depression', 'dass_anxiety', 'dass_stress']
     else:
         # Fallback: compute from items
@@ -211,8 +222,16 @@ def load_survey_items():
     survey_items = ucla_items.merge(dass_items, on="participant_id", how="outer")
     return survey_items
 
-def load_wcst_summary():
-    """Load WCST summary metrics including PE rate."""
+def load_wcst_summary(rt_min: int = DEFAULT_RT_MIN, rt_max: Optional[int] = None):
+    """Load WCST summary metrics including PE rate.
+
+    Parameters
+    ----------
+    rt_min : int
+        Minimum RT threshold (default: 100ms, removes anticipatory responses)
+    rt_max : int or None
+        Maximum RT threshold (default: None, no upper bound since WCST has no timeout)
+    """
     wcst_trials = pd.read_csv(RESULTS_DIR / "4b_wcst_trials.csv", encoding="utf-8")
 
     wcst_trials = ensure_participant_id(wcst_trials)
@@ -232,16 +251,15 @@ def load_wcst_summary():
     # Determine RT column
     rt_col = 'rt_ms' if 'rt_ms' in wcst_trials.columns else 'reactionTimeMs'
 
-    # Apply RT filtering for consistency with PRP/Stroop (P1 fix)
-    # Filter valid RT range before computing summary metrics
+    # Apply RT filtering (WCST has no timeout, so default rt_max=None)
     before_filter = len(wcst_trials)
-    wcst_trials = wcst_trials[
-        (wcst_trials[rt_col] > DEFAULT_RT_MIN) &
-        (wcst_trials[rt_col] < DEFAULT_RT_MAX)
-    ].copy()
+    mask = wcst_trials[rt_col] > rt_min
+    if rt_max is not None:
+        mask = mask & (wcst_trials[rt_col] < rt_max)
+    wcst_trials = wcst_trials[mask].copy()
     after_filter = len(wcst_trials)
     if before_filter != after_filter:
-        print(f"  WCST RT filtering: {before_filter} -> {after_filter} trials ({(before_filter - after_filter) / before_filter * 100:.1f}% removed)")
+        print(f"  WCST RT filtering (>{rt_min}ms): {before_filter} -> {after_filter} trials ({(before_filter - after_filter) / before_filter * 100:.1f}% removed)")
 
     wcst_summary = wcst_trials.groupby('participant_id').agg(
         pe_count=('is_pe', 'sum'),
@@ -261,16 +279,19 @@ def load_prp_summary():
     prp_trials = ensure_participant_id(prp_trials)
 
     # Normalize RT column name - prefer _ms columns (have more data)
+    # But backfill NaN in _ms with legacy values (early participants)
     rt_col = 't2_rt_ms' if 't2_rt_ms' in prp_trials.columns else ('t2_rt' if 't2_rt' in prp_trials.columns else None)
     if rt_col is None:
         raise KeyError("PRP trials missing T2 RT column ('t2_rt' or 't2_rt_ms').")
     if rt_col != 't2_rt':
-        # Drop the old empty t2_rt column if exists to avoid duplicates
+        # Fill NaN in t2_rt_ms with legacy t2_rt values (early participants)
         if 't2_rt' in prp_trials.columns:
+            prp_trials[rt_col] = prp_trials[rt_col].fillna(prp_trials['t2_rt'])
             prp_trials = prp_trials.drop(columns=['t2_rt'])
         prp_trials = prp_trials.rename(columns={rt_col: 't2_rt'})
 
     # Normalize SOA column name - prefer soa_nominal_ms (has more data)
+    # But backfill NaN in _ms with legacy values (early participants)
     soa_col = None
     for cand in ['soa_nominal_ms', 'soa_ms', 'soa']:
         if cand in prp_trials.columns:
@@ -279,8 +300,9 @@ def load_prp_summary():
     if soa_col is None:
         raise KeyError("PRP trials missing SOA column ('soa', 'soa_ms', or 'soa_nominal_ms').")
     if soa_col != 'soa':
-        # Drop the old empty soa column if exists to avoid duplicates
+        # Fill NaN in soa_nominal_ms with legacy soa values (early participants)
         if 'soa' in prp_trials.columns:
+            prp_trials[soa_col] = prp_trials[soa_col].fillna(prp_trials['soa'])
             prp_trials = prp_trials.drop(columns=['soa'])
         prp_trials = prp_trials.rename(columns={soa_col: 'soa'})
 
@@ -338,10 +360,18 @@ def load_stroop_summary():
 
     stroop_trials = ensure_participant_id(stroop_trials)
 
-    # Determine RT column name (prefer rt_ms which has more data - same pattern as PRP fix)
+    # Determine RT column name (prefer rt_ms which has more data)
+    # But backfill NaN in _ms with legacy values (early participants)
     rt_col = 'rt_ms' if 'rt_ms' in stroop_trials.columns else ('rt' if 'rt' in stroop_trials.columns else None)
     if rt_col is None:
         raise KeyError("Stroop trials missing RT column ('rt' or 'rt_ms').")
+    if rt_col != 'rt':
+        # Fill NaN in rt_ms with legacy rt values (early participants)
+        if 'rt' in stroop_trials.columns:
+            stroop_trials[rt_col] = stroop_trials[rt_col].fillna(stroop_trials['rt'])
+            stroop_trials = stroop_trials.drop(columns=['rt'])
+        stroop_trials = stroop_trials.rename(columns={rt_col: 'rt'})
+        rt_col = 'rt'
 
     # Determine condition column
     cond_col = 'type' if 'type' in stroop_trials.columns else ('condition' if 'condition' in stroop_trials.columns else ('cond' if 'cond' in stroop_trials.columns else None))

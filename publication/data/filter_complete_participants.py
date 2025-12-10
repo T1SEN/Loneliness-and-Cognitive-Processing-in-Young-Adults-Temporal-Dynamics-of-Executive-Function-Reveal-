@@ -8,16 +8,18 @@
 - WCST 인지과제 완료
 - Stroop 인지과제 완료
 
-실행: python filter_complete_participants.py
+실행: python -m publication.data.filter_complete_participants
 """
 
 import pandas as pd
 import os
 import shutil
+from pathlib import Path
 
-# 입출력 경로
-INPUT_DIR = 'results'
-OUTPUT_DIR = 'results/complete_only'
+# 스크립트 위치 기준 경로 설정
+SCRIPT_DIR = Path(__file__).parent
+INPUT_DIR = SCRIPT_DIR / 'raw'
+OUTPUT_DIR = SCRIPT_DIR / 'complete'
 
 def get_complete_participants():
     """완료 참가자 ID 목록 반환"""

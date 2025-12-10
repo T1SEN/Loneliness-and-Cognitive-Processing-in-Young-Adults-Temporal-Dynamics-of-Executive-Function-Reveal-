@@ -7,8 +7,8 @@ Extracted from data_loader_utils.py for cleaner organization.
 from pathlib import Path
 
 # Directory paths
-RESULTS_DIR = Path("results/complete_only")
-ANALYSIS_OUTPUT_DIR = Path("results/analysis_outputs")
+RESULTS_DIR = Path("publication/data/complete")
+ANALYSIS_OUTPUT_DIR = Path("publication/data/outputs")
 
 # RT filtering constants
 DEFAULT_RT_MIN = 100          # ms; drop anticipations
