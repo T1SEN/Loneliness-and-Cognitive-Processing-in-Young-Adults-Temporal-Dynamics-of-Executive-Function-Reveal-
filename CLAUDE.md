@@ -45,6 +45,11 @@ python -m analysis.exploratory.prp_suite
 python -m analysis.mediation.mediation_suite
 python -m analysis.validation.validation_suite
 
+# Publication Gender Analysis (NEW)
+python -m publication.gender_analysis --list           # List available analyses
+python -m publication.gender_analysis --all            # Run all gender analyses
+python -m publication.gender_analysis -a male_vulnerability  # Run specific analysis
+
 # Machine learning
 python -m analysis.ml.nested_cv --task classification --features demo_dass
 
@@ -98,6 +103,43 @@ analysis/
 │   └── ...                     # ~30 suites total; see run.py SUITE_REGISTRY
 ├── ml/                     # Machine learning pipelines
 └── archive/                # Legacy scripts (DEPRECATED - see README.md)
+```
+
+## Publication Gender Analysis Package
+
+출판용 성별 분석을 위한 통합 패키지. `analysis/`의 성별 관련 분석들을 `publication/gender_analysis/`로 통합.
+
+```
+publication/gender_analysis/
+├── __init__.py                 # 패키지 초기화, ANALYSES 레지스트리
+├── __main__.py                 # CLI 지원
+├── _utils.py                   # 공통 유틸리티 (load_gender_data, fisher_z_test 등)
+├── _constants.py               # 성별 분석 상수 (EF_OUTCOMES, MIN_SAMPLE 등)
+│
+├── vulnerability/              # 성별 취약성 패턴
+│   ├── male_vulnerability.py   # 남성 특이적 취약성 (WCST PE)
+│   └── double_dissociation.py  # 이중 해리 분석
+│
+├── stratified/                 # 성별 층화 분석
+│   ├── ddm_gender.py           # DDM 파라미터 성별 분석
+│   ├── stroop_gender.py        # Stroop 분해 성별 분석
+│   └── wcst_gender.py          # WCST 오류 유형 성별 분석
+│
+└── interactions/               # UCLA × Gender 상호작용
+    ├── ucla_gender.py          # 모든 EF 결과변수 상호작용 검정
+    └── synthesis.py            # 종합 결과
+```
+
+**출력 디렉토리:** `results/publication/gender_analysis/`
+
+### 사용법
+```python
+from publication.gender_analysis import (
+    load_gender_data,           # 성별 변수 준비된 마스터 데이터
+    run_gender_stratified_regression,  # 성별별 회귀분석
+    run_all_gender_interactions,       # UCLA × Gender 상호작용 검정
+    fisher_z_test,              # 성별 간 상관 비교
+)
 ```
 
 ## ⚠️ CRITICAL: DASS-21 Covariate Control
@@ -209,6 +251,7 @@ def _parse_wcst_extra(extra_str):
 | Gold Standard | `results/gold_standard/` |
 | Exploratory | `results/analysis_outputs/{prp,stroop,wcst,cross_task}_suite/` |
 | Other suites | `results/analysis_outputs/{suite_name}/` |
+| **Publication Gender** | `results/publication/gender_analysis/` |
 
 ## Results Recording
 
