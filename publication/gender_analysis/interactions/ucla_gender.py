@@ -145,7 +145,7 @@ def analyze_primary_outcomes(verbose: bool = True) -> pd.DataFrame:
             # Add gender-stratified betas
             for gender, label in [(0, 'female'), (1, 'male')]:
                 subset = df[df['gender_male'] == gender].dropna(
-                    subset=['z_ucla', outcome, 'z_dass_dep', 'z_dass_anx', 'z_dass_str']
+                    subset=['z_ucla', outcome, 'z_dass_dep', 'z_dass_anx', 'z_dass_str', 'z_age']
                 )
 
                 if len(subset) >= 15:

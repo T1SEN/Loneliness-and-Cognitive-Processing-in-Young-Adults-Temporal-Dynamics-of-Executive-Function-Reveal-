@@ -123,9 +123,17 @@ def analyze_gender_stratified_wcst(verbose: bool = True) -> pd.DataFrame:
             if outcome not in subset.columns:
                 continue
 
+            # Drop missing values for all covariates to ensure accurate N
+            valid = subset.dropna(subset=['z_ucla', outcome, 'z_dass_dep', 'z_dass_anx', 'z_dass_str', 'z_age'])
+
+            if len(valid) < MIN_SAMPLE_STRATIFIED:
+                if verbose:
+                    print(f"    {outcome}: Insufficient valid data (N={len(valid)})")
+                continue
+
             try:
                 formula = f"{outcome} ~ z_ucla + z_dass_dep + z_dass_anx + z_dass_str + z_age"
-                model = smf.ols(formula, data=subset).fit(cov_type='HC3')
+                model = smf.ols(formula, data=valid).fit(cov_type='HC3')
 
                 if 'z_ucla' in model.params:
                     beta = model.params['z_ucla']
@@ -139,7 +147,7 @@ def analyze_gender_stratified_wcst(verbose: bool = True) -> pd.DataFrame:
                         'se_ucla': se,
                         'p_ucla': p,
                         'r_squared': model.rsquared,
-                        'n': len(subset)
+                        'n': len(valid)  # Use valid N, not subset N
                     })
 
                     if verbose:
