@@ -171,6 +171,10 @@ def load_dass_scores():
         dass_summary.columns = ['participant_id', 'dass_depression', 'dass_anxiety', 'dass_stress']
     else:
         # Fallback: compute from items
+        if 'score' not in dass_data.columns:
+            raise KeyError("DASS survey responses missing 'score' column; cannot compute component scores.")
+        dass_data['score'] = pd.to_numeric(dass_data['score'], errors='coerce')
+        dass_data = dass_data.dropna(subset=['score'])
         dass_scores = dass_data.groupby(['participant_id', 'questionText'])['score'].sum().unstack(fill_value=0)
 
         dep_items = [col for col in dass_scores.columns if any(x in str(col).lower() for x in ['meaningless', 'nothing', 'enthused', 'worth', 'positive', 'initiative', 'future'])]
@@ -308,9 +312,11 @@ def load_prp_summary():
 
     # Normalize correctness/timeout columns to avoid silent NaN-based row drops
     prp_trials['t1_correct'] = prp_trials['t1_correct'].fillna(False).astype(bool)
-    prp_trials['t2_correct'] = prp_trials.get('t2_correct', False)
-    if isinstance(prp_trials['t2_correct'], pd.Series):
+    if 't2_correct' in prp_trials.columns:
         prp_trials['t2_correct'] = prp_trials['t2_correct'].fillna(False).astype(bool)
+    else:
+        # Legacy exports omitted t2_correct entirely; assume entries were valid
+        prp_trials['t2_correct'] = True
     prp_trials['t2_timeout'] = prp_trials.get('t2_timeout', False)
     if isinstance(prp_trials['t2_timeout'], pd.Series):
         prp_trials['t2_timeout'] = prp_trials['t2_timeout'].fillna(False).astype(bool)
@@ -380,13 +386,15 @@ def load_stroop_summary():
 
     # Accuracy: 모든 trial 포함(타임아웃은 False로 집계되므로 분모 포함)
     stroop_trials['correct'] = stroop_trials['correct'].fillna(False).astype(bool)
+    if 'timeout' in stroop_trials.columns:
+        stroop_trials['timeout'] = stroop_trials['timeout'].fillna(False).astype(bool)
     acc_summary = stroop_trials.groupby(['participant_id', cond_col]).agg(
         accuracy=('correct', 'mean')
     ).reset_index()
 
     # RT: 정답 + 시간내 반응 + 합리적 RT 범위
     rt_trials = stroop_trials[
-        (stroop_trials['timeout'] == False) &
+        ((stroop_trials['timeout'] == False) if 'timeout' in stroop_trials.columns else True) &
         (stroop_trials['correct'] == True) &
         (stroop_trials[rt_col] > DEFAULT_RT_MIN) &
         (stroop_trials[rt_col] < STROOP_RT_MAX)

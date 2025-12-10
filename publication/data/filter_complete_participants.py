@@ -20,6 +20,7 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).parent
 INPUT_DIR = SCRIPT_DIR / 'raw'
 OUTPUT_DIR = SCRIPT_DIR / 'complete'
+RECENT_START_DATE = pd.Timestamp('2025-09-10 00:00:00', tz='UTC')
 
 def get_complete_participants():
     """완료 참가자 ID 목록 반환"""
@@ -48,6 +49,23 @@ def get_complete_participants():
     # 3. 두 조건의 교집합 = 완료 참가자
     complete_participants = survey_complete & cognitive_complete
     print(f"전체 완료 참가자: {len(complete_participants)}명")
+
+    # 4. createdAt 기준 날짜 필터링 (2025-09-10 이후 데이터만)
+    participants_info_path = INPUT_DIR / '1_participants_info.csv'
+    if participants_info_path.exists():
+        participants_df = pd.read_csv(participants_info_path, encoding='utf-8-sig')
+        if 'createdAt' in participants_df.columns:
+            participants_df['createdAt'] = pd.to_datetime(participants_df['createdAt'], errors='coerce', utc=True)
+            recent_ids = set(
+                participants_df[participants_df['createdAt'] >= RECENT_START_DATE]['participantId'].dropna()
+            )
+            print(f"createdAt 필터 적용(>= {RECENT_START_DATE.date()}): {len(recent_ids)}명")
+            complete_participants = complete_participants & recent_ids
+            print(f"날짜 필터 반영 후 complete 참가자 {len(complete_participants)}명")
+        else:
+            print("  [WARN] participants_info.csv에 createdAt 열이 없어 날짜 필터를 적용하지 못했습니다.")
+    else:
+        print("  [WARN] participants_info.csv 파일을 찾을 수 없어 날짜 필터를 적용하지 못했습니다.")
 
     return complete_participants
 

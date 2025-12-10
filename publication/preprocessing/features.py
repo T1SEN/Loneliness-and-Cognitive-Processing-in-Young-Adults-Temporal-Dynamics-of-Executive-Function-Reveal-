@@ -64,6 +64,7 @@ def compute_post_error_slowing(
     rt_col: str,
     correct_col: str,
     participant_col: str = "participant_id",
+    order_col: Optional[str] = None,
 ) -> pd.DataFrame:
     """
     Compute post-error slowing (PES) for each participant.
@@ -71,8 +72,19 @@ def compute_post_error_slowing(
     PES = mean(RT after error) - mean(RT after correct)
     """
     records = []
+    preferred_order_cols: List[str] = []
+    if order_col:
+        preferred_order_cols.append(order_col)
+    preferred_order_cols.extend(["trial_index", "trialIndex", "trial", "idx", "order"])
+
     for pid, grp in df.groupby(participant_col):
-        grp = grp.copy().sort_index()
+        grp = grp.copy()
+        for candidate in preferred_order_cols:
+            if candidate in grp.columns:
+                grp = grp.sort_values(candidate)
+                break
+        else:
+            grp = grp.sort_index()
         grp["prev_correct"] = grp[correct_col].shift(1)
 
         post_error = grp[grp["prev_correct"] == False]

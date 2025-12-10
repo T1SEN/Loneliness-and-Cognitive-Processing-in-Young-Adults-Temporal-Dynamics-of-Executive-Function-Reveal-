@@ -65,7 +65,10 @@
       "Bash(dir \"C:\\Users\\ansel\\my_research_exporter\\publication\\data\\complete\")",
       "Bash(.venvScriptsactivate)",
       "Bash(set:*)",
-      "Bash(python publication/data/export_alldata.py:*)"
+      "Bash(python publication/data/export_alldata.py:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nCLAUDE.md 문서 업데이트: publication 패키지 구조 반영\n\n- 데이터 경로 수정: results/complete_only/ → publication/data/complete/\n- Data Flow 다이어그램 업데이트 (raw → complete 필터링 단계 추가)\n- Publication 패키지 전체 구조 문서화 (basic_analysis, advanced_analysis, validity_reliability, gender_analysis)\n- Essential Commands에 publication 스위트 명령어 추가\n- publication/preprocessing 모듈 사용법 추가\n- Output Locations 테이블 업데이트\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(dir \"C:\\Users\\ansel\\my_research_exporter\\publication\\preprocessing\")",
+      "Bash(git commit -m \"$(cat <<''EOF''\n데이터 필터링 강화: 2025-09-10 이후 참가자만 포함\n\n- filter_complete_participants.py: createdAt 기준 날짜 필터 추가\n- 데이터 파일 업데이트: 8명 참가자 제외 (날짜 기준 미충족)\n- preprocessing 모듈 개선: loaders.py, features.py, standardization.py\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n)\")"
     ],
     "deny": [],
     "ask": []

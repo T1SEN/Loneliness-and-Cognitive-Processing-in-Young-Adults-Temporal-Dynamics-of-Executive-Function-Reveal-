@@ -203,20 +203,25 @@ def prepare_gender_variable(
         else:
             raise ValueError("No gender column found. Provide gender_col parameter.")
 
-    # Normalize to lowercase
-    result['gender'] = (
+    # Normalize to canonical tokens using shared preprocessing logic
+    from .loaders import normalize_gender_series
+
+    normalized = normalize_gender_series(result[gender_col])
+    fallback = (
         result[gender_col]
         .fillna('')
         .astype(str)
         .str.strip()
         .str.lower()
+        .replace('', np.nan)
     )
+
+    result['gender_normalized'] = normalized
+    result['gender'] = normalized.where(normalized.notna(), fallback)
 
     # Create binary variable: 1 = male, 0 = female, NaN = other/missing
     # Unrecognized values remain NaN and will be excluded from analyses
-    result['gender_male'] = np.nan
-    result.loc[result['gender'] == 'male', 'gender_male'] = 1
-    result.loc[result['gender'] == 'female', 'gender_male'] = 0
+    result['gender_male'] = normalized.map({'male': 1, 'female': 0})
 
     return result
 
