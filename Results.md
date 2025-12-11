@@ -240,6 +240,15 @@
 | 2025-12-12 | WCST HMM (Male) | Lapse Occupancy | UCLA→Lapse | β=5.355 | 0.024 | 72 |
 | 2025-12-12 | WCST HMM (Male) | Lapse Occupancy | UCLA corr | r=0.335 | 0.004 | 72 |
 
+### 3.3 Network Analysis
+
+| 날짜 | 분석 | Edge | 효과 | Statistic | p | N |
+|------|------|------|------|-----------|---|---|
+| 2025-12-12 | Network GGM (Gender) | DASS Str - PRP | 성별 차이 | Δr=0.215 | 0.001 | 185 |
+| 2025-12-12 | Network GGM (Gender) | Stroop - PRP | 성별 차이 | Δr=0.198 | 0.001 | 185 |
+| 2025-12-12 | Network GGM (Gender) | DASS Dep - WCST PE | 성별 차이 | Δr=0.185 | 0.001 | 185 |
+| 2025-12-12 | Network GGM (Gender) | UCLA - DASS Str | 성별 차이 | Δr=0.181 | 0.001 | 185 |
+
 ---
 
 ## 4. Key Conclusions
@@ -259,6 +268,13 @@
 4. **Mechanism 분석 결과**:
    - DASS-Controlled 회귀에서는 UCLA 주효과 비유의 (Ex-Gaussian, RL 모두)
    - 성별 층화 분석에서만 남성 특이적 효과 발견
+
+5. **네트워크 분석 결과**:
+   - 정서 노드(UCLA, DASS) 간 강한 연결 (r=0.29-0.42)
+   - 정서-EF 간 직접 연결 미약 (부분상관 |r|<0.10)
+   - DASS Depression이 네트워크 허브 (strength=1.102)
+   - UCLA가 Affect-Executive 간 브릿지 역할 (bridge ratio=0.191)
+   - **성별 차이 4개 엣지 유의 (p=0.001)**: DASS Str-PRP, Stroop-PRP, DASS Dep-WCST, UCLA-DASS Str
 
 ---
 
@@ -336,7 +352,134 @@
 
 ---
 
-## 6. Output File Locations
+## 7. Network Analysis (Gaussian Graphical Model)
+
+### 7.1 Method
+
+**분석 기법:**
+- Gaussian Graphical Model (GGM) with GraphicalLasso regularization
+- Spearman 상관계수 (비모수, 이상치에 강건)
+- Alpha (정규화 강도): 0.0291 (Cross-validation)
+
+**통계 검증:**
+- 부트스트랩: 500회 반복 (80% 리샘플링, 엣지 안정성)
+- 순열 검정: 500회 (성별 간 엣지 차이 유의성)
+
+**네트워크 노드 (7개):**
+- Affect 커뮤니티: UCLA, DASS Depression, DASS Anxiety, DASS Stress
+- Executive 커뮤니티: WCST PE Rate, Stroop Interference, PRP Bottleneck
+
+### 7.2 Overall Network Structure (N=185)
+
+**GraphicalLasso 모델:**
+
+| Group | n | Alpha | Iterations | Objective |
+|-------|---|-------|------------|-----------|
+| Overall | 185 | 0.0291 | 3 | -8.8495 |
+| Male | 76 | 0.0291 | 3 | -8.7195 |
+| Female | 109 | 0.0291 | 2 | -8.9610 |
+
+**부분상관 행렬 (전체 표본):**
+
+| Edge | Partial r | Type |
+|------|-----------|------|
+| DASS Anx - DASS Str | **0.423** | Affect↔Affect |
+| UCLA - DASS Dep | **0.415** | Affect↔Affect |
+| DASS Dep - DASS Str | **0.311** | Affect↔Affect |
+| DASS Dep - DASS Anx | **0.293** | Affect↔Affect |
+| PRP - WCST PE | 0.146 | Exec↔Exec |
+| PRP - Stroop | 0.106 | Exec↔Exec |
+| UCLA - DASS Str | 0.095 | Affect↔Affect |
+| UCLA - PRP | 0.088 | Affect→Exec |
+| UCLA - DASS Anx | 0.086 | Affect↔Affect |
+
+**해석:**
+- 정서 노드 간 강한 연결 (r=0.29-0.42)
+- 정서-집행기능 간 직접 연결 미약 (|r|<0.10)
+- UCLA-PRP 연결이 유일한 cross-domain 엣지 (r=0.088)
+
+### 7.3 Centrality Indices (전체 표본)
+
+| Node | Strength | Betweenness | Closeness | Eigenvector | Bridge Ratio |
+|------|----------|-------------|-----------|-------------|--------------|
+| **DASS Dep** | **1.102** | **0.533** | 0.092 | 0.568 | 0.075 |
+| DASS Str | 0.829 | 0.000 | 0.078 | 0.509 | 0.000 |
+| DASS Anx | 0.802 | 0.000 | 0.077 | 0.498 | 0.000 |
+| **UCLA** | 0.737 | 0.400 | 0.093 | 0.401 | **0.191** |
+| PRP | 0.339 | 0.400 | 0.079 | 0.058 | 0.259 |
+| WCST PE | 0.264 | 0.000 | 0.057 | 0.058 | 0.271 |
+| Stroop | 0.217 | 0.000 | 0.049 | 0.048 | 0.295 |
+
+**해석:**
+- DASS Depression이 가장 높은 중심성 (strength=1.102) → 네트워크 허브
+- UCLA가 높은 Bridge Ratio (0.191) → Affect-Executive 간 연결 역할
+- 집행기능 노드들은 낮은 중심성과 약한 상호연결
+
+### 7.4 Gender Comparison
+
+**엣지 수 및 구조:**
+
+| Group | n | Total Edges | Bootstrap Stability |
+|-------|---|-------------|---------------------|
+| Male | 76 | 17 | 88.6% |
+| Female | 109 | 18 | 87.4% |
+
+**유의한 성별 차이 (순열 검정 500회):**
+
+| Edge | Male r | Female r | Δr | p | 해석 |
+|------|--------|----------|-----|-----|------|
+| **DASS Str - PRP** | 0.084 | -0.131 | **0.215** | **0.001** | 남성: 양, 여성: 음 |
+| **Stroop - PRP** | 0.218 | 0.021 | **0.198** | **0.001** | 남성에서만 강한 연결 |
+| **DASS Dep - WCST PE** | 0.029 | -0.156 | **0.185** | **0.001** | 반대 방향 |
+| **UCLA - DASS Str** | 0.190 | 0.009 | **0.181** | **0.001** | 남성에서만 연결 |
+
+**비유의 엣지 차이:**
+
+| Edge | Δr | p |
+|------|-----|-----|
+| UCLA - PE | 0.110 | 0.240 |
+| PE - Stroop | 0.014 | 0.910 |
+| PE - PRP | 0.076 | 0.585 |
+
+### 7.5 Bootstrap Edge Stability
+
+**엣지별 부트스트랩 존재율 (500회):**
+
+| Edge | Overall | Male | Female | 해석 |
+|------|---------|------|--------|------|
+| DASS Dep - Anx | 100% | 100% | 100% | 매우 안정 |
+| DASS Dep - Str | 100% | 100% | 100% | 매우 안정 |
+| DASS Anx - Str | 100% | 100% | 100% | 매우 안정 |
+| PRP - WCST PE | 98.8% | - | - | 매우 안정 |
+| PRP - Stroop | 92.2% | - | - | 안정 |
+| UCLA - PRP | 89.4% | - | 79.0% | 안정 |
+| UCLA - DASS Dep | ~84% | ~84% | ~84% | 안정 |
+| DASS Dep - WCST PE | 69.4% | 76.8% | 61.0% | 중간 |
+
+### 7.6 Interpretation
+
+1. **정서 커뮤니티의 강한 내부 연결**
+   - DASS 우울/불안/스트레스 간 부분상관 r=0.29-0.42
+   - UCLA도 DASS 우울과 강하게 연결 (r=0.42)
+   - → 정서 문제들이 밀접하게 얽혀 있음
+
+2. **정서-집행기능 간 약한 직접 연결**
+   - UCLA/DASS와 EF 간 부분상관 모두 |r|<0.10
+   - → DASS covariate 통제 후에도 직접적 독립 효과 미약
+
+3. **집행기능 내부 연결**
+   - PE율-PRP: r=0.146
+   - Stroop-PRP: r=0.106
+   - → 세 과제의 집행기능 손상이 부분적 공통 메커니즘 반영
+
+4. **성별 상호작용**
+   - 남성의 Stroop-PRP 강한 연결 (r=0.218) vs 여성 약함 (r=0.021)
+   - 여성의 우울-WCST PE 음의 관계 (r=-0.156) vs 남성 양 (r=0.029)
+   - UCLA-DASS스트레스: 남성에서만 유의 (r=0.190 vs 0.009)
+
+---
+
+## 8. Output File Locations
 
 | Analysis | Directory |
 |----------|-----------|
@@ -346,3 +489,4 @@
 | WCST RL Modeling | `publication/data/outputs/mechanism_analysis/wcst_rl_modeling/` |
 | WCST HMM Modeling | `publication/data/outputs/mechanism_analysis/wcst_hmm_modeling/` |
 | Validity & Reliability | `publication/data/outputs/validity_reliability/` |
+| Network Analysis | `publication/data/outputs/network_analysis/domain_level/` |

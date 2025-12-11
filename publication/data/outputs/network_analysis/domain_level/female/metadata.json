@@ -1,0 +1,37 @@
+{
+  "subset": "female",
+  "n": 109,
+  "alpha": 0.02912129594762547,
+  "used_cv": false,
+  "cv_alphas": null,
+  "objective": -8.96100550277451,
+  "n_iter": 2,
+  "correlation_method": "spearman",
+  "variables": [
+    "z_ucla",
+    "z_dass_dep",
+    "z_dass_anx",
+    "z_dass_str",
+    "pe_rate",
+    "stroop_interference",
+    "prp_bottleneck"
+  ],
+  "labels": {
+    "z_ucla": "UCLA Loneliness",
+    "z_dass_dep": "DASS Depression",
+    "z_dass_anx": "DASS Anxiety",
+    "z_dass_str": "DASS Stress",
+    "pe_rate": "WCST PE Rate",
+    "stroop_interference": "Stroop Interference",
+    "prp_bottleneck": "PRP Bottleneck (ms)"
+  },
+  "communities": {
+    "z_ucla": "Affect",
+    "z_dass_dep": "Affect",
+    "z_dass_anx": "Affect",
+    "z_dass_str": "Affect",
+    "pe_rate": "Executive",
+    "stroop_interference": "Executive",
+    "prp_bottleneck": "Executive"
+  }
+}
