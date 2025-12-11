@@ -50,14 +50,17 @@ python -m analysis.exploratory.prp_suite
 python -m analysis.mediation.mediation_suite
 python -m analysis.validation.validation_suite
 
-# Publication Package (출판용 분석)
-python -m publication.basic_analysis.01_descriptive_statistics   # 기술통계
-python -m publication.basic_analysis.02_correlation_analysis     # 상관분석
-python -m publication.basic_analysis.03_hierarchical_regression  # 위계적 회귀
+# Publication Package
+python -m publication.basic_analysis.descriptive_statistics      # Descriptive statistics
+python -m publication.basic_analysis.correlation_analysis        # Correlation analysis
+python -m publication.basic_analysis.hierarchical_regression     # Hierarchical regression (DASS-controlled)
 
 python -m publication.advanced_analysis.mediation_suite          # UCLA → DASS → EF 매개분석
-python -m publication.advanced_analysis.path_depression_suite    # 경로모형 (Depression)
 python -m publication.advanced_analysis.bayesian_suite           # 베이지안 SEM
+
+python -m publication.path_analysis.path_depression             # Path analysis (Depression)
+python -m publication.path_analysis.path_anxiety                # Path analysis (Anxiety)
+python -m publication.path_analysis.path_stress                 # Path analysis (Stress)
 
 python -m publication.validity_reliability.reliability_suite     # Cronbach's alpha, split-half
 python -m publication.validity_reliability.validity_suite        # Factor analysis
@@ -142,16 +145,18 @@ publication/
 │   └── constants.py            # RT 임계값, SOA 상수
 │
 ├── basic_analysis/             # IRB 기본 분석
-│   ├── 01_descriptive_statistics.py  # 기술통계
-│   ├── 02_correlation_analysis.py    # 상관분석
-│   └── 03_hierarchical_regression.py # 위계적 회귀 (DASS 통제)
+│   ├── descriptive_statistics.py     # Descriptive statistics
+│   ├── correlation_analysis.py       # Correlation analysis
+│   └── hierarchical_regression.py    # Hierarchical regression (DASS-controlled)
 │
-├── advanced_analysis/          # 고급 분석
-│   ├── mediation_suite.py      # UCLA → DASS → EF 매개분석
-│   ├── path_depression_suite.py # 경로모형 비교 (Depression)
-│   ├── path_anxiety_suite.py   # 경로모형 비교 (Anxiety)
-│   ├── path_stress_suite.py    # 경로모형 비교 (Stress)
-│   └── bayesian_suite.py       # 베이지안 SEM
+?????? advanced_analysis/          # ???? ???
+??   ?????? mediation_suite.py      # UCLA ?? DASS ?? EF ??????
+??   ?????? bayesian_suite.py       # ???????? SEM
+??
+?????? path_analysis/              # EF composite path analyses
+??   ?????? path_depression.py      # Path analysis (Depression)
+??   ?????? path_anxiety.py         # Path analysis (Anxiety)
+??   ?????? path_stress.py          # Path analysis (Stress)
 │
 ├── validity_reliability/       # 심리측정 검증
 │   ├── reliability_suite.py    # Cronbach's alpha, split-half

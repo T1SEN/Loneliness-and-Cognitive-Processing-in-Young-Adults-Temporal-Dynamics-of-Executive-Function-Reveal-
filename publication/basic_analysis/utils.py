@@ -38,7 +38,6 @@ DESCRIPTIVE_VARS = [
     ('dass_anxiety', 'DASS-21 Anxiety'),
     ('dass_stress', 'DASS-21 Stress'),
     ('pe_rate', 'WCST Perseverative Error Rate'),
-    ('wcst_accuracy', 'WCST Accuracy'),
     ('stroop_interference', 'Stroop Interference Effect'),
     ('prp_bottleneck', 'PRP Delay Effect'),  # RT2(short SOA) - RT2(long SOA)
 ]
@@ -50,7 +49,6 @@ CORRELATION_VARS = [
     ('dass_anxiety', 'DASS-Anx'),
     ('dass_stress', 'DASS-Str'),
     ('pe_rate', 'WCST PE'),
-    ('wcst_accuracy', 'WCST Acc'),
     ('stroop_interference', 'Stroop Int'),
     ('prp_bottleneck', 'PRP Delay'),
 ]
@@ -58,7 +56,6 @@ CORRELATION_VARS = [
 # Tier 1 outcomes for hierarchical regression
 TIER1_OUTCOMES = [
     ('pe_rate', 'WCST Perseverative Error Rate'),
-    ('wcst_accuracy', 'WCST Accuracy'),
     ('stroop_interference', 'Stroop Interference Effect'),
     ('prp_bottleneck', 'PRP Delay Effect'),
 ]

@@ -1,18 +1,19 @@
-"""
+﻿"""
 Publication Basic Analysis Suite
 ================================
 
-IRB 연구계획서에 명시된 기본 통계분석 스크립트 모음
+Core descriptive, correlational, and hierarchical-regression scripts for the
+basic IRB analysis section.
 
 Scripts:
-    01_descriptive_statistics.py  - 기술통계분석 (N, Mean, SD, Min, Max)
-    02_correlation_analysis.py    - 상관분석 (전체 상관행렬)
-    03_hierarchical_regression.py - 위계적 다중회귀분석 (DASS 통제)
+    descriptive_statistics.py   - Descriptive summary (N, Mean, SD, Min, Max)
+    correlation_analysis.py     - Pearson correlation matrix
+    hierarchical_regression.py  - Hierarchical multiple regression (DASS-controlled)
 
 Usage:
-    python -m publication.basic_analysis.01_descriptive_statistics
-    python -m publication.basic_analysis.02_correlation_analysis
-    python -m publication.basic_analysis.03_hierarchical_regression
+    python -m publication.basic_analysis.descriptive_statistics
+    python -m publication.basic_analysis.correlation_analysis
+    python -m publication.basic_analysis.hierarchical_regression
 """
 
 from .utils import (

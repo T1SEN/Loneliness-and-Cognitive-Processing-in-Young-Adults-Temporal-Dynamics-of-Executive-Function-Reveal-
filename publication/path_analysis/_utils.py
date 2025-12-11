@@ -1,0 +1,481 @@
+﻿"""
+Shared utilities for EF-focused path analyses.
+"""
+
+from __future__ import annotations
+
+import sys
+if sys.platform.startswith("win") and hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding='utf-8')
+
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Dict, List, Optional
+
+import numpy as np
+import pandas as pd
+import statsmodels.formula.api as smf
+from scipy import stats
+from statsmodels.stats.diagnostic import het_breuschpagan
+
+try:
+    from semopy import Model as SemopyModel
+    from semopy import calc_stats
+    SEMOPY_AVAILABLE = True
+except ImportError:
+    SEMOPY_AVAILABLE = False
+    SemopyModel = None
+    calc_stats = None
+
+from publication.preprocessing import (
+    load_master_dataset,
+    standardize_predictors,
+    prepare_gender_variable,
+)
+from publication.preprocessing.constants import ANALYSIS_OUTPUT_DIR
+from publication.advanced_analysis._utils import create_ef_composite
+
+BASE_OUTPUT = ANALYSIS_OUTPUT_DIR / "path_analysis"
+BASE_OUTPUT.mkdir(parents=True, exist_ok=True)
+
+
+@dataclass
+class PathModelResult:
+    stage1: pd.DataFrame
+    stage2: pd.DataFrame
+    path_effects: pd.DataFrame
+    fit_stats: Dict[str, float]
+    bootstrap: pd.DataFrame
+    sobel: pd.DataFrame
+    diagnostics: Dict[str, float]
+    description: str
+
+
+PATH_SPECS: List[Dict] = [
+    {
+        'name': 'loneliness_to_dass_to_ef',
+        'description': 'Loneliness -> DASS -> EF',
+        'stage1_label': 'Loneliness predicting DASS',
+        'stage2_label': 'EF outcome',
+        'stage1_formula': lambda dass_col: (
+            f"{dass_col} ~ z_ucla * C(gender_male) + z_age"
+        ),
+        'stage2_formula': lambda dass_col: (
+            f"ef_composite ~ z_ucla * C(gender_male) + "
+            f"{dass_col} * C(gender_male) + z_age"
+        ),
+        'paths': [
+            {'path': "UCLA -> {dass_label}", 'model': 'stage1', 'term': 'z_ucla', 'role': 'a'},
+            {'path': "{dass_label} -> EF", 'model': 'stage2', 'term': '{dass_col}', 'role': 'b'},
+            {'path': "UCLA -> EF (direct)", 'model': 'stage2', 'term': 'z_ucla', 'role': 'direct'},
+        ],
+        'sem_model': lambda dass_col: (
+            f"{dass_col} ~ c1*z_ucla + c2*gender_male + c3*z_age + c4*ucla_male\n"
+            f"ef_composite ~ b1*z_ucla + b2*{dass_col} + b3*gender_male + "
+            f"b4*z_age + b5*ucla_male + b6*dass_male"
+        ),
+        'indirect': {
+            'stage_a': 'stage1',
+            'term_a': 'z_ucla',
+            'stage_b': 'stage2',
+            'term_b': '{dass_col}',
+        },
+    },
+    {
+        'name': 'loneliness_to_ef_to_dass',
+        'description': 'Loneliness -> EF -> DASS',
+        'stage1_label': 'Loneliness predicting EF',
+        'stage2_label': '{dass_label} outcome',
+        'stage1_formula': lambda dass_col: (
+            "ef_composite ~ z_ucla * C(gender_male) + z_age"
+        ),
+        'stage2_formula': lambda dass_col: (
+            f"{dass_col} ~ ef_composite * C(gender_male) + "
+            f"z_ucla * C(gender_male) + z_age"
+        ),
+        'paths': [
+            {'path': "UCLA -> EF", 'model': 'stage1', 'term': 'z_ucla', 'role': 'a'},
+            {'path': "EF -> {dass_label}", 'model': 'stage2', 'term': 'ef_composite', 'role': 'b'},
+            {'path': "UCLA -> {dass_label} (direct)", 'model': 'stage2', 'term': 'z_ucla', 'role': 'direct'},
+        ],
+        'sem_model': lambda dass_col: (
+            "ef_composite ~ c1*z_ucla + c2*gender_male + c3*z_age + c4*ucla_male\n"
+            f"{dass_col} ~ b1*ef_composite + b2*z_ucla + b3*gender_male + "
+            f"b4*z_age + b5*ef_male + b6*ucla_male"
+        ),
+        'indirect': {
+            'stage_a': 'stage1',
+            'term_a': 'z_ucla',
+            'stage_b': 'stage2',
+            'term_b': 'ef_composite',
+        },
+    },
+    {
+        'name': 'dass_to_loneliness_to_ef',
+        'description': '{dass_label} -> Loneliness -> EF',
+        'stage1_label': '{dass_label} predicting loneliness',
+        'stage2_label': 'EF outcome',
+        'stage1_formula': lambda dass_col: (
+            f"z_ucla ~ {dass_col} * C(gender_male) + z_age"
+        ),
+        'stage2_formula': lambda dass_col: (
+            f"ef_composite ~ z_ucla * C(gender_male) + "
+            f"{dass_col} * C(gender_male) + z_age"
+        ),
+        'paths': [
+            {'path': "{dass_label} -> Loneliness", 'model': 'stage1', 'term': '{dass_col}', 'role': 'a'},
+            {'path': "Loneliness -> EF", 'model': 'stage2', 'term': 'z_ucla', 'role': 'b'},
+            {'path': "{dass_label} -> EF (direct)", 'model': 'stage2', 'term': '{dass_col}', 'role': 'direct'},
+        ],
+        'sem_model': lambda dass_col: (
+            f"z_ucla ~ c1*{dass_col} + c2*gender_male + c3*z_age + c4*dass_male\n"
+            f"ef_composite ~ b1*z_ucla + b2*{dass_col} + b3*gender_male + "
+            f"b4*z_age + b5*ucla_male + b6*dass_male"
+        ),
+        'indirect': {
+            'stage_a': 'stage1',
+            'term_a': '{dass_col}',
+            'stage_b': 'stage2',
+            'term_b': 'z_ucla',
+        },
+    },
+]
+
+
+def load_common_path_data(target_col: str, min_n: int = 50) -> pd.DataFrame:
+    """
+    Load master dataset with EF composite and required predictors.
+    """
+    master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
+    master = prepare_gender_variable(master)
+    master = standardize_predictors(master)
+    master = create_ef_composite(master)
+
+    required_cols = [
+        'ef_composite',
+        'z_ucla',
+        target_col,
+        'z_age',
+        'gender_male',
+    ]
+
+    missing = [col for col in required_cols if col not in master.columns]
+    if missing:
+        raise ValueError(f"Missing required columns: {missing}")
+
+    df = master[required_cols].dropna()
+    if len(df) < min_n:
+        raise ValueError(f"Insufficient data for {target_col}: N={len(df)} < {min_n}")
+    return df
+
+
+def _summarize_model(model, model_name: str) -> pd.DataFrame:
+    records = []
+    for term in model.params.index:
+        records.append({
+            'model': model_name,
+            'term': term,
+            'beta': model.params[term],
+            'se': model.bse[term],
+            't': model.tvalues[term],
+            'p': model.pvalues[term],
+        })
+    return pd.DataFrame(records)
+
+
+def _find_interaction_term(model, base_term: str) -> Optional[str]:
+    candidates = [
+        f"{base_term}:C(gender_male)[T.1]",
+        f"C(gender_male)[T.1]:{base_term}",
+    ]
+    for cand in candidates:
+        if cand in model.params.index:
+            return cand
+    return None
+
+
+def _gender_effect_stats(model, base_term: str) -> Dict[str, float]:
+    base = model.params.get(base_term, np.nan)
+    base_se = model.bse.get(base_term, np.nan)
+    inter_term = _find_interaction_term(model, base_term)
+    cov = model.cov_params()
+    female_beta = base
+    female_se = base_se
+
+    female_p = model.pvalues.get(base_term, np.nan)
+
+    if inter_term:
+        inter = model.params.get(inter_term, 0.0)
+        inter_se = model.bse.get(inter_term, np.nan)
+        cov_val = 0.0
+        try:
+            cov_val = cov.loc[base_term, inter_term]
+        except Exception:
+            cov_val = 0.0
+        male_beta = base + inter
+        male_var = (base_se ** 2) + (inter_se ** 2) + 2 * cov_val
+        male_se = np.sqrt(max(male_var, 0.0))
+    else:
+        male_beta = base
+        male_se = base_se
+        male_p = female_p
+
+    # Wald test for male effect (base + interaction)
+    if inter_term:
+        try:
+            contrast = np.zeros(len(model.params))
+            idx_base = model.params.index.get_loc(base_term)
+            idx_int = model.params.index.get_loc(inter_term)
+            contrast[idx_base] = 1
+            contrast[idx_int] = 1
+            wald = model.wald_test(contrast, use_f=False)
+            male_p = float(wald.pvalue)
+        except Exception:
+            pass
+
+    return {
+        'female_beta': female_beta,
+        'female_se': female_se,
+        'female_p': female_p,
+        'male_beta': male_beta,
+        'male_se': male_se,
+        'male_p': male_p,
+    }
+
+
+def _sobel_test(a: float, sa: float, b: float, sb: float) -> Dict[str, float]:
+    if any(np.isnan(val) for val in [a, sa, b, sb]):
+        return {'z': np.nan, 'p': np.nan}
+    se = np.sqrt((b ** 2) * (sa ** 2) + (a ** 2) * (sb ** 2))
+    if se == 0 or np.isnan(se):
+        return {'z': np.nan, 'p': np.nan}
+    z_val = (a * b) / se
+    p_val = 2 * (1 - stats.norm.cdf(abs(z_val)))
+    return {'z': z_val, 'p': p_val}
+
+
+def _bootstrap_indirect_effects(
+    df: pd.DataFrame,
+    stage1_formula: str,
+    stage2_formula: str,
+    term_a: str,
+    term_b: str,
+    n_bootstrap: int,
+    seed: int = 42,
+) -> pd.DataFrame:
+    rng = np.random.default_rng(seed)
+    female_vals = []
+    male_vals = []
+
+    for _ in range(n_bootstrap):
+        sample = df.sample(n=len(df), replace=True, random_state=int(rng.integers(0, 1_000_000_000)))
+        try:
+            stage1 = smf.ols(stage1_formula, data=sample).fit(cov_type='HC3')
+            stage2 = smf.ols(stage2_formula, data=sample).fit(cov_type='HC3')
+        except Exception:
+            continue
+
+        a_stats = _gender_effect_stats(stage1, term_a)
+        b_stats = _gender_effect_stats(stage2, term_b)
+
+        female_vals.append(a_stats['female_beta'] * b_stats['female_beta'])
+        male_vals.append(a_stats['male_beta'] * b_stats['male_beta'])
+
+    def summarize(vals: List[float]) -> Dict[str, float]:
+        if not vals:
+            return {'mean': np.nan, 'se': np.nan, 'ci_lower': np.nan, 'ci_upper': np.nan}
+        arr = np.array(vals)
+        return {
+            'mean': float(np.mean(arr)),
+            'se': float(np.std(arr, ddof=1)),
+            'ci_lower': float(np.percentile(arr, 2.5)),
+            'ci_upper': float(np.percentile(arr, 97.5)),
+        }
+
+    female_stats = summarize(female_vals)
+    male_stats = summarize(male_vals)
+
+    female_stats['significant'] = female_stats['ci_lower'] > 0 or female_stats['ci_upper'] < 0
+    male_stats['significant'] = male_stats['ci_lower'] > 0 or male_stats['ci_upper'] < 0
+
+    return pd.DataFrame([
+        {'gender': 'Female', **female_stats},
+        {'gender': 'Male', **male_stats},
+    ])
+
+
+def fit_all_path_models(
+    df: pd.DataFrame,
+    dass_col: str,
+    dass_label: str,
+    output_dir: Path,
+    verbose: bool = True,
+    n_bootstrap: int = 5000,
+    bootstrap_seed: int = 42,
+) -> Dict[str, PathModelResult]:
+    """
+    Fit all gender-moderated path models (three directional structures).
+    """
+    output_dir.mkdir(parents=True, exist_ok=True)
+    all_results: Dict[str, PathModelResult] = {}
+
+    base_df = df.copy()
+
+    for spec in PATH_SPECS:
+        spec_dir = output_dir / spec['name']
+        spec_dir.mkdir(parents=True, exist_ok=True)
+
+        spec_df = base_df.copy()
+        spec_df['ucla_male'] = spec_df['z_ucla'] * spec_df['gender_male']
+        spec_df['ef_male'] = spec_df['ef_composite'] * spec_df['gender_male']
+        spec_df['dass_male'] = spec_df[dass_col] * spec_df['gender_male']
+
+        stage1_formula = spec['stage1_formula'](dass_col)
+        stage2_formula = spec['stage2_formula'](dass_col)
+
+        stage1_label = spec['stage1_label'].format(dass_label=dass_label)
+        stage2_label = spec['stage2_label'].format(dass_label=dass_label)
+
+        stage1_model = smf.ols(stage1_formula, data=spec_df).fit(cov_type='HC3')
+        stage2_model = smf.ols(stage2_formula, data=spec_df).fit(cov_type='HC3')
+
+        stage1_df = _summarize_model(stage1_model, stage1_label)
+        stage2_df = _summarize_model(stage2_model, stage2_label)
+
+        effects = []
+        for path_info in spec['paths']:
+            model_ref = stage1_model if path_info['model'] == 'stage1' else stage2_model
+            term = path_info['term'].format(dass_col=dass_col)
+            stats_g = _gender_effect_stats(model_ref, term)
+            effects.append({
+                'path': path_info['path'].format(dass_label=dass_label),
+                'female_beta': stats_g['female_beta'],
+                'female_se': stats_g['female_se'],
+                'male_beta': stats_g['male_beta'],
+                'male_se': stats_g['male_se'],
+            })
+
+        effects_df = pd.DataFrame(effects)
+
+        stage1_df.to_csv(spec_dir / "stage1_model.csv", index=False, encoding='utf-8-sig')
+        stage2_df.to_csv(spec_dir / "stage2_model.csv", index=False, encoding='utf-8-sig')
+        effects_df.to_csv(spec_dir / "gender_path_effects.csv", index=False, encoding='utf-8-sig')
+
+        fit_stats = {
+            'stage1_aic': stage1_model.aic,
+            'stage1_bic': stage1_model.bic,
+            'stage2_aic': stage2_model.aic,
+            'stage2_bic': stage2_model.bic,
+        }
+
+        if SEMOPY_AVAILABLE and spec.get('sem_model'):
+            try:
+                sem_spec = spec['sem_model'](dass_col)
+                sem_model = SemopyModel(sem_spec)
+                sem_model.fit(spec_df, obj='MLW')
+                sem_stats = calc_stats(sem_model)
+                fit_stats.update({
+                    'sem_cfi': sem_stats.get('CFI'),
+                    'sem_tli': sem_stats.get('TLI'),
+                    'sem_rmsea': sem_stats.get('RMSEA'),
+                    'sem_aic': sem_stats.get('AIC'),
+                    'sem_bic': sem_stats.get('BIC'),
+                })
+            except Exception:
+                fit_stats.update({
+                    'sem_cfi': np.nan,
+                    'sem_tli': np.nan,
+                    'sem_rmsea': np.nan,
+                    'sem_aic': np.nan,
+                    'sem_bic': np.nan,
+                })
+        else:
+            fit_stats.update({
+                'sem_cfi': np.nan,
+                'sem_tli': np.nan,
+                'sem_rmsea': np.nan,
+                'sem_aic': np.nan,
+                'sem_bic': np.nan,
+            })
+
+        sobel_rows = []
+        indirect_cfg = spec.get('indirect')
+        if indirect_cfg:
+            term_a = indirect_cfg['term_a'].format(dass_col=dass_col)
+            term_b = indirect_cfg['term_b'].format(dass_col=dass_col)
+            model_a = stage1_model if indirect_cfg['stage_a'] == 'stage1' else stage2_model
+            model_b = stage1_model if indirect_cfg['stage_b'] == 'stage1' else stage2_model
+
+            stats_a = _gender_effect_stats(model_a, term_a)
+            stats_b = _gender_effect_stats(model_b, term_b)
+
+            female_sobel = _sobel_test(
+                stats_a['female_beta'], stats_a['female_se'],
+                stats_b['female_beta'], stats_b['female_se']
+            )
+            male_sobel = _sobel_test(
+                stats_a['male_beta'], stats_a['male_se'],
+                stats_b['male_beta'], stats_b['male_se']
+            )
+            sobel_rows.extend([
+                {
+                    'gender': 'Female',
+                    'z': female_sobel['z'],
+                    'p': female_sobel['p'],
+                },
+                {
+                    'gender': 'Male',
+                    'z': male_sobel['z'],
+                    'p': male_sobel['p'],
+                },
+            ])
+        sobel_df = pd.DataFrame(sobel_rows)
+        if not sobel_df.empty:
+            sobel_df.to_csv(spec_dir / "sobel_tests.csv", index=False, encoding='utf-8-sig')
+
+        bootstrap_df = pd.DataFrame()
+        if indirect_cfg:
+            term_a = indirect_cfg['term_a'].format(dass_col=dass_col)
+            term_b = indirect_cfg['term_b'].format(dass_col=dass_col)
+            bootstrap_df = _bootstrap_indirect_effects(
+                spec_df,
+                stage1_formula,
+                stage2_formula,
+                term_a,
+                term_b,
+                n_bootstrap=n_bootstrap,
+                seed=bootstrap_seed,
+            )
+            bootstrap_df.to_csv(spec_dir / "bootstrap_indirect.csv", index=False, encoding='utf-8-sig')
+
+        diagnostics = {}
+        for label, model in [('stage1', stage1_model), ('stage2', stage2_model)]:
+            resid = model.resid
+            bp_stat, bp_p, _, _ = het_breuschpagan(model.resid, model.model.exog)
+            try:
+                shapiro_p = stats.shapiro(resid)[1]
+            except Exception:
+                shapiro_p = np.nan
+            diagnostics[f'{label}_bp_p'] = bp_p
+            diagnostics[f'{label}_shapiro_p'] = shapiro_p
+
+        if verbose:
+            print(f"\n[{spec['description'].format(dass_label=dass_label)}]")
+            print(f"  N = {len(df)}")
+            for row in effects:
+                female = row['female_beta']
+                male = row['male_beta']
+                print(f"  {row['path']}: female={female:.3f}, male={male:.3f}")
+
+        all_results[spec['name']] = PathModelResult(
+            stage1=stage1_df,
+            stage2=stage2_df,
+            path_effects=effects_df,
+            fit_stats=fit_stats,
+            bootstrap=bootstrap_df,
+            sobel=sobel_df,
+            diagnostics=diagnostics,
+            description=spec['description'].format(dass_label=dass_label),
+        )
+
+    return all_results
