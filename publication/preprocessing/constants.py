@@ -7,7 +7,7 @@ Extracted from data_loader_utils.py for cleaner organization.
 from pathlib import Path
 
 # Directory paths
-RESULTS_DIR = Path("publication/data/complete")
+RESULTS_DIR = Path("publication/data/complete_filtered")
 ANALYSIS_OUTPUT_DIR = Path("publication/data/outputs")
 
 # RT filtering constants

@@ -11,10 +11,12 @@ Model Structure (4 Steps):
     Model 2: outcome ~ age + gender + DASS(3) + UCLA
     Model 3: outcome ~ age + gender + DASS(3) + UCLA*gender
 
-Tier-1 Outcomes:
-    - pe_rate: WCST Perseverative Error Rate
-    - stroop_interference: Stroop Interference Effect
-    - prp_bottleneck: PRP Bottleneck Effect
+Tier-1 Outcomes (automatically iterated):
+    - Core EF: pe_rate, stroop_interference, prp_bottleneck
+    - WCST summary metrics: wcst_accuracy, wcst_mean_rt, wcst_sd_rt, pe_count,
+      perseverativeResponses, perseverativeErrorCount, perseverativeResponsesPercent
+    - WCST trial-derived metrics: wcst_pes, wcst_post_switch_error_rate,
+      wcst_cv_rt, wcst_trials
 
 Output:
     results/publication/basic_analysis/hierarchical_results.csv

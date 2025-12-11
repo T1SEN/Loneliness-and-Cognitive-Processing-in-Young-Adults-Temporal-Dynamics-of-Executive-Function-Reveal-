@@ -2,8 +2,8 @@
 Path Analysis (Stress)
 ======================
 
-Tests gender-moderated pathways linking UCLA loneliness, DASS stress, and the
-EF composite outcome.
+Tests gender-moderated pathways linking UCLA loneliness, DASS stress, and
+each EF outcome (WCST PE rate, Stroop interference, PRP bottleneck).
 """
 
 from __future__ import annotations

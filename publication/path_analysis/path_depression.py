@@ -3,7 +3,7 @@ Path Analysis (Depression)
 ==========================
 
 Tests gender-moderated pathways linking UCLA loneliness, DASS depression, and
-the EF composite outcome.
+each EF outcome (WCST PE rate, Stroop interference, PRP bottleneck).
 """
 
 from __future__ import annotations

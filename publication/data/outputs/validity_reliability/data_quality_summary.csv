@@ -1,0 +1,8 @@
+﻿category,measure,metric,value,n
+survey,UCLA_duration,mean_seconds,154.67027027027027,185
+survey,UCLA_too_fast,percent,0.0,0
+survey,DASS_duration,mean_seconds,80.83783783783784,185
+survey,DASS_too_fast,percent,13.513513513513514,25
+cognitive,STROOP_valid_trials,percent,99.82482482482482,19945
+cognitive,WCST_valid_trials,percent,97.25371630133534,15440
+cognitive,PRP_valid_trials,percent,99.09009009009009,21998

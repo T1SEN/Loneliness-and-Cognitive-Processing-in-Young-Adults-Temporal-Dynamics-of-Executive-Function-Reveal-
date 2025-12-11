@@ -33,10 +33,16 @@ from publication.preprocessing import (
     prepare_gender_variable,
 )
 from publication.preprocessing.constants import ANALYSIS_OUTPUT_DIR
-from publication.advanced_analysis._utils import create_ef_composite
 
 BASE_OUTPUT = ANALYSIS_OUTPUT_DIR / "path_analysis"
 BASE_OUTPUT.mkdir(parents=True, exist_ok=True)
+
+# Default EF targets analyzed separately
+EF_TARGETS: List[Dict[str, str]] = [
+    {'col': 'pe_rate', 'label': 'WCST Perseverative Error Rate'},
+    {'col': 'stroop_interference', 'label': 'Stroop Interference Effect'},
+    {'col': 'prp_bottleneck', 'label': 'PRP Bottleneck Effect'},
+]
 
 
 @dataclass
@@ -49,29 +55,31 @@ class PathModelResult:
     sobel: pd.DataFrame
     diagnostics: Dict[str, float]
     description: str
+    ef_label: str
+    ef_col: str
 
 
 PATH_SPECS: List[Dict] = [
     {
         'name': 'loneliness_to_dass_to_ef',
-        'description': 'Loneliness -> DASS -> EF',
+        'description': 'Loneliness -> DASS -> {ef_label}',
         'stage1_label': 'Loneliness predicting DASS',
-        'stage2_label': 'EF outcome',
-        'stage1_formula': lambda dass_col: (
+        'stage2_label': '{ef_label} outcome',
+        'stage1_formula': lambda dass_col, ef_col: (
             f"{dass_col} ~ z_ucla * C(gender_male) + z_age"
         ),
-        'stage2_formula': lambda dass_col: (
-            f"ef_composite ~ z_ucla * C(gender_male) + "
+        'stage2_formula': lambda dass_col, ef_col: (
+            f"{ef_col} ~ z_ucla * C(gender_male) + "
             f"{dass_col} * C(gender_male) + z_age"
         ),
         'paths': [
             {'path': "UCLA -> {dass_label}", 'model': 'stage1', 'term': 'z_ucla', 'role': 'a'},
-            {'path': "{dass_label} -> EF", 'model': 'stage2', 'term': '{dass_col}', 'role': 'b'},
-            {'path': "UCLA -> EF (direct)", 'model': 'stage2', 'term': 'z_ucla', 'role': 'direct'},
+            {'path': "{dass_label} -> {ef_label}", 'model': 'stage2', 'term': '{dass_col}', 'role': 'b'},
+            {'path': "UCLA -> {ef_label} (direct)", 'model': 'stage2', 'term': 'z_ucla', 'role': 'direct'},
         ],
-        'sem_model': lambda dass_col: (
+        'sem_model': lambda dass_col, ef_col: (
             f"{dass_col} ~ c1*z_ucla + c2*gender_male + c3*z_age + c4*ucla_male\n"
-            f"ef_composite ~ b1*z_ucla + b2*{dass_col} + b3*gender_male + "
+            f"{ef_col} ~ b1*z_ucla + b2*{dass_col} + b3*gender_male + "
             f"b4*z_age + b5*ucla_male + b6*dass_male"
         ),
         'indirect': {
@@ -83,53 +91,53 @@ PATH_SPECS: List[Dict] = [
     },
     {
         'name': 'loneliness_to_ef_to_dass',
-        'description': 'Loneliness -> EF -> DASS',
-        'stage1_label': 'Loneliness predicting EF',
+        'description': 'Loneliness -> {ef_label} -> DASS',
+        'stage1_label': 'Loneliness predicting {ef_label}',
         'stage2_label': '{dass_label} outcome',
-        'stage1_formula': lambda dass_col: (
-            "ef_composite ~ z_ucla * C(gender_male) + z_age"
+        'stage1_formula': lambda dass_col, ef_col: (
+            f"{ef_col} ~ z_ucla * C(gender_male) + z_age"
         ),
-        'stage2_formula': lambda dass_col: (
-            f"{dass_col} ~ ef_composite * C(gender_male) + "
+        'stage2_formula': lambda dass_col, ef_col: (
+            f"{dass_col} ~ {ef_col} * C(gender_male) + "
             f"z_ucla * C(gender_male) + z_age"
         ),
         'paths': [
-            {'path': "UCLA -> EF", 'model': 'stage1', 'term': 'z_ucla', 'role': 'a'},
-            {'path': "EF -> {dass_label}", 'model': 'stage2', 'term': 'ef_composite', 'role': 'b'},
+            {'path': "UCLA -> {ef_label}", 'model': 'stage1', 'term': 'z_ucla', 'role': 'a'},
+            {'path': "{ef_label} -> {dass_label}", 'model': 'stage2', 'term': '{ef_col}', 'role': 'b'},
             {'path': "UCLA -> {dass_label} (direct)", 'model': 'stage2', 'term': 'z_ucla', 'role': 'direct'},
         ],
-        'sem_model': lambda dass_col: (
-            "ef_composite ~ c1*z_ucla + c2*gender_male + c3*z_age + c4*ucla_male\n"
-            f"{dass_col} ~ b1*ef_composite + b2*z_ucla + b3*gender_male + "
+        'sem_model': lambda dass_col, ef_col: (
+            f"{ef_col} ~ c1*z_ucla + c2*gender_male + c3*z_age + c4*ucla_male\n"
+            f"{dass_col} ~ b1*{ef_col} + b2*z_ucla + b3*gender_male + "
             f"b4*z_age + b5*ef_male + b6*ucla_male"
         ),
         'indirect': {
             'stage_a': 'stage1',
             'term_a': 'z_ucla',
             'stage_b': 'stage2',
-            'term_b': 'ef_composite',
+            'term_b': '{ef_col}',
         },
     },
     {
         'name': 'dass_to_loneliness_to_ef',
-        'description': '{dass_label} -> Loneliness -> EF',
+        'description': '{dass_label} -> Loneliness -> {ef_label}',
         'stage1_label': '{dass_label} predicting loneliness',
-        'stage2_label': 'EF outcome',
-        'stage1_formula': lambda dass_col: (
+        'stage2_label': '{ef_label} outcome',
+        'stage1_formula': lambda dass_col, ef_col: (
             f"z_ucla ~ {dass_col} * C(gender_male) + z_age"
         ),
-        'stage2_formula': lambda dass_col: (
-            f"ef_composite ~ z_ucla * C(gender_male) + "
+        'stage2_formula': lambda dass_col, ef_col: (
+            f"{ef_col} ~ z_ucla * C(gender_male) + "
             f"{dass_col} * C(gender_male) + z_age"
         ),
         'paths': [
             {'path': "{dass_label} -> Loneliness", 'model': 'stage1', 'term': '{dass_col}', 'role': 'a'},
-            {'path': "Loneliness -> EF", 'model': 'stage2', 'term': 'z_ucla', 'role': 'b'},
-            {'path': "{dass_label} -> EF (direct)", 'model': 'stage2', 'term': '{dass_col}', 'role': 'direct'},
+            {'path': "Loneliness -> {ef_label}", 'model': 'stage2', 'term': 'z_ucla', 'role': 'b'},
+            {'path': "{dass_label} -> {ef_label} (direct)", 'model': 'stage2', 'term': '{dass_col}', 'role': 'direct'},
         ],
-        'sem_model': lambda dass_col: (
+        'sem_model': lambda dass_col, ef_col: (
             f"z_ucla ~ c1*{dass_col} + c2*gender_male + c3*z_age + c4*dass_male\n"
-            f"ef_composite ~ b1*z_ucla + b2*{dass_col} + b3*gender_male + "
+            f"{ef_col} ~ b1*z_ucla + b2*{dass_col} + b3*gender_male + "
             f"b4*z_age + b5*ucla_male + b6*dass_male"
         ),
         'indirect': {
@@ -142,28 +150,35 @@ PATH_SPECS: List[Dict] = [
 ]
 
 
-def load_common_path_data(target_col: str, min_n: int = 50) -> pd.DataFrame:
+def load_common_path_data(
+    target_col: str,
+    min_n: int = 50,
+    ef_cols: Optional[List[str]] = None,
+) -> pd.DataFrame:
     """
-    Load master dataset with EF composite and required predictors.
+    Load master dataset with predictors needed for path analysis.
     """
     master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
     master = prepare_gender_variable(master)
     master = standardize_predictors(master)
-    master = create_ef_composite(master)
 
-    required_cols = [
-        'ef_composite',
+    ef_cols = ef_cols or [spec['col'] for spec in EF_TARGETS]
+
+    required_base = [
         'z_ucla',
         target_col,
         'z_age',
         'gender_male',
     ]
 
-    missing = [col for col in required_cols if col not in master.columns]
+    missing = [col for col in required_base if col not in master.columns]
     if missing:
         raise ValueError(f"Missing required columns: {missing}")
 
-    df = master[required_cols].dropna()
+    available_ef = [col for col in ef_cols if col in master.columns]
+    keep_cols = required_base + available_ef
+
+    df = master[keep_cols].dropna(subset=required_base)
     if len(df) < min_n:
         raise ValueError(f"Insufficient data for {target_col}: N={len(df)} < {min_n}")
     return df
@@ -312,76 +327,105 @@ def fit_all_path_models(
     verbose: bool = True,
     n_bootstrap: int = 5000,
     bootstrap_seed: int = 42,
-) -> Dict[str, PathModelResult]:
+    ef_targets: Optional[List[Dict[str, str]]] = None,
+) -> Dict[str, Dict[str, PathModelResult]]:
     """
-    Fit all gender-moderated path models (three directional structures).
+    Fit gender-moderated path models for each EF outcome separately.
     """
     output_dir.mkdir(parents=True, exist_ok=True)
-    all_results: Dict[str, PathModelResult] = {}
+    target_defs = ef_targets or EF_TARGETS
+    all_results: Dict[str, Dict[str, PathModelResult]] = {}
 
-    base_df = df.copy()
+    base_cols = ['z_ucla', dass_col, 'z_age', 'gender_male']
 
-    for spec in PATH_SPECS:
-        spec_dir = output_dir / spec['name']
-        spec_dir.mkdir(parents=True, exist_ok=True)
+    for ef_spec in target_defs:
+        ef_col = ef_spec['col']
+        ef_label = ef_spec['label']
 
-        spec_df = base_df.copy()
-        spec_df['ucla_male'] = spec_df['z_ucla'] * spec_df['gender_male']
-        spec_df['ef_male'] = spec_df['ef_composite'] * spec_df['gender_male']
-        spec_df['dass_male'] = spec_df[dass_col] * spec_df['gender_male']
+        if ef_col not in df.columns:
+            if verbose:
+                print(f"[WARN] Skipping {ef_label} ({ef_col}): column missing.")
+            continue
 
-        stage1_formula = spec['stage1_formula'](dass_col)
-        stage2_formula = spec['stage2_formula'](dass_col)
+        ef_df = df[base_cols + [ef_col]].dropna()
+        if len(ef_df) < 50:
+            if verbose:
+                print(f"[WARN] Skipping {ef_label} ({ef_col}): insufficient data (N={len(ef_df)}).")
+            continue
 
-        stage1_label = spec['stage1_label'].format(dass_label=dass_label)
-        stage2_label = spec['stage2_label'].format(dass_label=dass_label)
+        ef_dir = output_dir / ef_col
+        ef_dir.mkdir(parents=True, exist_ok=True)
+        ef_results: Dict[str, PathModelResult] = {}
 
-        stage1_model = smf.ols(stage1_formula, data=spec_df).fit(cov_type='HC3')
-        stage2_model = smf.ols(stage2_formula, data=spec_df).fit(cov_type='HC3')
+        for spec in PATH_SPECS:
+            spec_dir = ef_dir / spec['name']
+            spec_dir.mkdir(parents=True, exist_ok=True)
 
-        stage1_df = _summarize_model(stage1_model, stage1_label)
-        stage2_df = _summarize_model(stage2_model, stage2_label)
+            spec_df = ef_df.copy()
+            spec_df['ucla_male'] = spec_df['z_ucla'] * spec_df['gender_male']
+            spec_df['ef_male'] = spec_df[ef_col] * spec_df['gender_male']
+            spec_df['dass_male'] = spec_df[dass_col] * spec_df['gender_male']
 
-        effects = []
-        for path_info in spec['paths']:
-            model_ref = stage1_model if path_info['model'] == 'stage1' else stage2_model
-            term = path_info['term'].format(dass_col=dass_col)
-            stats_g = _gender_effect_stats(model_ref, term)
-            effects.append({
-                'path': path_info['path'].format(dass_label=dass_label),
-                'female_beta': stats_g['female_beta'],
-                'female_se': stats_g['female_se'],
-                'male_beta': stats_g['male_beta'],
-                'male_se': stats_g['male_se'],
-            })
+            stage1_formula = spec['stage1_formula'](dass_col, ef_col)
+            stage2_formula = spec['stage2_formula'](dass_col, ef_col)
 
-        effects_df = pd.DataFrame(effects)
+            stage1_label = spec['stage1_label'].format(dass_label=dass_label, ef_label=ef_label)
+            stage2_label = spec['stage2_label'].format(dass_label=dass_label, ef_label=ef_label)
 
-        stage1_df.to_csv(spec_dir / "stage1_model.csv", index=False, encoding='utf-8-sig')
-        stage2_df.to_csv(spec_dir / "stage2_model.csv", index=False, encoding='utf-8-sig')
-        effects_df.to_csv(spec_dir / "gender_path_effects.csv", index=False, encoding='utf-8-sig')
+            stage1_model = smf.ols(stage1_formula, data=spec_df).fit(cov_type='HC3')
+            stage2_model = smf.ols(stage2_formula, data=spec_df).fit(cov_type='HC3')
 
-        fit_stats = {
-            'stage1_aic': stage1_model.aic,
-            'stage1_bic': stage1_model.bic,
-            'stage2_aic': stage2_model.aic,
-            'stage2_bic': stage2_model.bic,
-        }
+            stage1_df = _summarize_model(stage1_model, stage1_label)
+            stage2_df = _summarize_model(stage2_model, stage2_label)
 
-        if SEMOPY_AVAILABLE and spec.get('sem_model'):
-            try:
-                sem_spec = spec['sem_model'](dass_col)
-                sem_model = SemopyModel(sem_spec)
-                sem_model.fit(spec_df, obj='MLW')
-                sem_stats = calc_stats(sem_model)
-                fit_stats.update({
-                    'sem_cfi': sem_stats.get('CFI'),
-                    'sem_tli': sem_stats.get('TLI'),
-                    'sem_rmsea': sem_stats.get('RMSEA'),
-                    'sem_aic': sem_stats.get('AIC'),
-                    'sem_bic': sem_stats.get('BIC'),
+            effects = []
+            for path_info in spec['paths']:
+                model_ref = stage1_model if path_info['model'] == 'stage1' else stage2_model
+                term = path_info['term'].format(dass_col=dass_col, ef_col=ef_col)
+                stats_g = _gender_effect_stats(model_ref, term)
+                effects.append({
+                    'path': path_info['path'].format(dass_label=dass_label, ef_label=ef_label),
+                    'female_beta': stats_g['female_beta'],
+                    'female_se': stats_g['female_se'],
+                    'male_beta': stats_g['male_beta'],
+                    'male_se': stats_g['male_se'],
                 })
-            except Exception:
+
+            effects_df = pd.DataFrame(effects)
+
+            stage1_df.to_csv(spec_dir / "stage1_model.csv", index=False, encoding='utf-8-sig')
+            stage2_df.to_csv(spec_dir / "stage2_model.csv", index=False, encoding='utf-8-sig')
+            effects_df.to_csv(spec_dir / "gender_path_effects.csv", index=False, encoding='utf-8-sig')
+
+            fit_stats = {
+                'stage1_aic': stage1_model.aic,
+                'stage1_bic': stage1_model.bic,
+                'stage2_aic': stage2_model.aic,
+                'stage2_bic': stage2_model.bic,
+            }
+
+            if SEMOPY_AVAILABLE and spec.get('sem_model'):
+                try:
+                    sem_spec = spec['sem_model'](dass_col, ef_col)
+                    sem_model = SemopyModel(sem_spec)
+                    sem_model.fit(spec_df, obj='MLW')
+                    sem_stats = calc_stats(sem_model)
+                    fit_stats.update({
+                        'sem_cfi': sem_stats.get('CFI'),
+                        'sem_tli': sem_stats.get('TLI'),
+                        'sem_rmsea': sem_stats.get('RMSEA'),
+                        'sem_aic': sem_stats.get('AIC'),
+                        'sem_bic': sem_stats.get('BIC'),
+                    })
+                except Exception:
+                    fit_stats.update({
+                        'sem_cfi': np.nan,
+                        'sem_tli': np.nan,
+                        'sem_rmsea': np.nan,
+                        'sem_aic': np.nan,
+                        'sem_bic': np.nan,
+                    })
+            else:
                 fit_stats.update({
                     'sem_cfi': np.nan,
                     'sem_tli': np.nan,
@@ -389,93 +433,90 @@ def fit_all_path_models(
                     'sem_aic': np.nan,
                     'sem_bic': np.nan,
                 })
-        else:
-            fit_stats.update({
-                'sem_cfi': np.nan,
-                'sem_tli': np.nan,
-                'sem_rmsea': np.nan,
-                'sem_aic': np.nan,
-                'sem_bic': np.nan,
-            })
 
-        sobel_rows = []
-        indirect_cfg = spec.get('indirect')
-        if indirect_cfg:
-            term_a = indirect_cfg['term_a'].format(dass_col=dass_col)
-            term_b = indirect_cfg['term_b'].format(dass_col=dass_col)
-            model_a = stage1_model if indirect_cfg['stage_a'] == 'stage1' else stage2_model
-            model_b = stage1_model if indirect_cfg['stage_b'] == 'stage1' else stage2_model
+            sobel_rows = []
+            indirect_cfg = spec.get('indirect')
+            if indirect_cfg:
+                term_a = indirect_cfg['term_a'].format(dass_col=dass_col, ef_col=ef_col)
+                term_b = indirect_cfg['term_b'].format(dass_col=dass_col, ef_col=ef_col)
+                model_a = stage1_model if indirect_cfg['stage_a'] == 'stage1' else stage2_model
+                model_b = stage1_model if indirect_cfg['stage_b'] == 'stage1' else stage2_model
 
-            stats_a = _gender_effect_stats(model_a, term_a)
-            stats_b = _gender_effect_stats(model_b, term_b)
+                stats_a = _gender_effect_stats(model_a, term_a)
+                stats_b = _gender_effect_stats(model_b, term_b)
 
-            female_sobel = _sobel_test(
-                stats_a['female_beta'], stats_a['female_se'],
-                stats_b['female_beta'], stats_b['female_se']
+                female_sobel = _sobel_test(
+                    stats_a['female_beta'], stats_a['female_se'],
+                    stats_b['female_beta'], stats_b['female_se']
+                )
+                male_sobel = _sobel_test(
+                    stats_a['male_beta'], stats_a['male_se'],
+                    stats_b['male_beta'], stats_b['male_se']
+                )
+                sobel_rows.extend([
+                    {
+                        'gender': 'Female',
+                        'z': female_sobel['z'],
+                        'p': female_sobel['p'],
+                    },
+                    {
+                        'gender': 'Male',
+                        'z': male_sobel['z'],
+                        'p': male_sobel['p'],
+                    },
+                ])
+            sobel_df = pd.DataFrame(sobel_rows)
+            if not sobel_df.empty:
+                sobel_df.to_csv(spec_dir / "sobel_tests.csv", index=False, encoding='utf-8-sig')
+
+            bootstrap_df = pd.DataFrame()
+            if indirect_cfg:
+                term_a = indirect_cfg['term_a'].format(dass_col=dass_col, ef_col=ef_col)
+                term_b = indirect_cfg['term_b'].format(dass_col=dass_col, ef_col=ef_col)
+                bootstrap_df = _bootstrap_indirect_effects(
+                    spec_df,
+                    stage1_formula,
+                    stage2_formula,
+                    term_a,
+                    term_b,
+                    n_bootstrap=n_bootstrap,
+                    seed=bootstrap_seed,
+                )
+                bootstrap_df.to_csv(spec_dir / "bootstrap_indirect.csv", index=False, encoding='utf-8-sig')
+
+            diagnostics = {}
+            for label, model in [('stage1', stage1_model), ('stage2', stage2_model)]:
+                resid = model.resid
+                bp_stat, bp_p, _, _ = het_breuschpagan(model.resid, model.model.exog)
+                try:
+                    shapiro_p = stats.shapiro(resid)[1]
+                except Exception:
+                    shapiro_p = np.nan
+                diagnostics[f'{label}_bp_p'] = bp_p
+                diagnostics[f'{label}_shapiro_p'] = shapiro_p
+
+            if verbose:
+                print(f"\n[{spec['description'].format(dass_label=dass_label, ef_label=ef_label)}]")
+                print(f"  Outcome: {ef_label} (N={len(spec_df)})")
+                for row in effects:
+                    female = row['female_beta']
+                    male = row['male_beta']
+                    print(f"  {row['path']}: female={female:.3f}, male={male:.3f}")
+
+            ef_results[spec['name']] = PathModelResult(
+                stage1=stage1_df,
+                stage2=stage2_df,
+                path_effects=effects_df,
+                fit_stats=fit_stats,
+                bootstrap=bootstrap_df,
+                sobel=sobel_df,
+                diagnostics=diagnostics,
+                description=spec['description'].format(dass_label=dass_label, ef_label=ef_label),
+                ef_label=ef_label,
+                ef_col=ef_col,
             )
-            male_sobel = _sobel_test(
-                stats_a['male_beta'], stats_a['male_se'],
-                stats_b['male_beta'], stats_b['male_se']
-            )
-            sobel_rows.extend([
-                {
-                    'gender': 'Female',
-                    'z': female_sobel['z'],
-                    'p': female_sobel['p'],
-                },
-                {
-                    'gender': 'Male',
-                    'z': male_sobel['z'],
-                    'p': male_sobel['p'],
-                },
-            ])
-        sobel_df = pd.DataFrame(sobel_rows)
-        if not sobel_df.empty:
-            sobel_df.to_csv(spec_dir / "sobel_tests.csv", index=False, encoding='utf-8-sig')
 
-        bootstrap_df = pd.DataFrame()
-        if indirect_cfg:
-            term_a = indirect_cfg['term_a'].format(dass_col=dass_col)
-            term_b = indirect_cfg['term_b'].format(dass_col=dass_col)
-            bootstrap_df = _bootstrap_indirect_effects(
-                spec_df,
-                stage1_formula,
-                stage2_formula,
-                term_a,
-                term_b,
-                n_bootstrap=n_bootstrap,
-                seed=bootstrap_seed,
-            )
-            bootstrap_df.to_csv(spec_dir / "bootstrap_indirect.csv", index=False, encoding='utf-8-sig')
-
-        diagnostics = {}
-        for label, model in [('stage1', stage1_model), ('stage2', stage2_model)]:
-            resid = model.resid
-            bp_stat, bp_p, _, _ = het_breuschpagan(model.resid, model.model.exog)
-            try:
-                shapiro_p = stats.shapiro(resid)[1]
-            except Exception:
-                shapiro_p = np.nan
-            diagnostics[f'{label}_bp_p'] = bp_p
-            diagnostics[f'{label}_shapiro_p'] = shapiro_p
-
-        if verbose:
-            print(f"\n[{spec['description'].format(dass_label=dass_label)}]")
-            print(f"  N = {len(df)}")
-            for row in effects:
-                female = row['female_beta']
-                male = row['male_beta']
-                print(f"  {row['path']}: female={female:.3f}, male={male:.3f}")
-
-        all_results[spec['name']] = PathModelResult(
-            stage1=stage1_df,
-            stage2=stage2_df,
-            path_effects=effects_df,
-            fit_stats=fit_stats,
-            bootstrap=bootstrap_df,
-            sobel=sobel_df,
-            diagnostics=diagnostics,
-            description=spec['description'].format(dass_label=dass_label),
-        )
+        if ef_results:
+            all_results[ef_col] = ef_results
 
     return all_results

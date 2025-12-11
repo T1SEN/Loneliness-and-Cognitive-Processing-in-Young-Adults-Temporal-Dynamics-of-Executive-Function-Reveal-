@@ -55,9 +55,58 @@ CORRELATION_VARS = [
 
 # Tier 1 outcomes for hierarchical regression
 TIER1_OUTCOMES = [
+    # Core EF outcomes
     ('pe_rate', 'WCST Perseverative Error Rate'),
     ('stroop_interference', 'Stroop Interference Effect'),
     ('prp_bottleneck', 'PRP Delay Effect'),
+
+    # WCST summary metrics
+    ('wcst_accuracy', 'WCST Accuracy (%)'),
+    ('wcst_mean_rt', 'WCST Mean Reaction Time (ms)'),
+    ('wcst_sd_rt', 'WCST Reaction Time SD'),
+    ('pe_count', 'WCST Perseverative Error Count'),
+    ('perseverativeResponses', 'WCST Perseverative Responses (count)'),
+    ('perseverativeErrorCount', 'WCST Perseverative Errors (count)'),
+    ('perseverativeResponsesPercent', 'WCST Perseverative Responses (%)'),
+    # WCST trial-derived features
+    ('wcst_pes', 'WCST Post-Error Slowing (ms)'),
+    ('wcst_post_switch_error_rate', 'WCST Post-Switch Error Rate'),
+    ('wcst_cv_rt', 'WCST Reaction Time Coefficient of Variation'),
+    ('wcst_trials', 'WCST Valid Trial Count'),
+
+    # PRP summary metrics (SOA-specific RT/variability)
+    ('t2_rt_mean_short', 'PRP T2 Mean RT (Short SOA)'),
+    ('t2_rt_mean_long', 'PRP T2 Mean RT (Long SOA)'),
+    ('t2_rt_sd_short', 'PRP T2 RT SD (Short SOA)'),
+    ('t2_rt_sd_long', 'PRP T2 RT SD (Long SOA)'),
+
+    # PRP trial-derived features
+    ('prp_t2_cv_all', 'PRP T2 Coefficient of Variation (All)'),
+    ('prp_t2_cv_short', 'PRP T2 CV (Short SOA)'),
+    ('prp_t2_cv_long', 'PRP T2 CV (Long SOA)'),
+    ('prp_cascade_rate', 'PRP Error Cascade Rate'),
+    ('prp_cascade_inflation', 'PRP Cascade Inflation'),
+    ('prp_pes', 'PRP Post-Error Slowing (ms)'),
+    ('prp_t2_trials', 'PRP Valid T2 Trial Count'),
+
+    # Stroop summary metrics
+    ('rt_mean_incongruent', 'Stroop Mean RT (Incongruent)'),
+    ('rt_mean_congruent', 'Stroop Mean RT (Congruent)'),
+    ('rt_mean_neutral', 'Stroop Mean RT (Neutral)'),
+    ('accuracy_incongruent', 'Stroop Accuracy (Incongruent)'),
+    ('accuracy_congruent', 'Stroop Accuracy (Congruent)'),
+    ('accuracy_neutral', 'Stroop Accuracy (Neutral)'),
+    ('stroop_effect', 'Stroop Effect (RT Difference)'),
+
+    # Stroop trial-derived features
+    ('stroop_post_error_slowing', 'Stroop Post-Error Slowing (ms)'),
+    ('stroop_post_error_rt', 'Stroop Post-Error RT (ms)'),
+    ('stroop_post_correct_rt', 'Stroop Post-Correct RT (ms)'),
+    ('stroop_incong_slope', 'Stroop Incongruent RT Slope'),
+    ('stroop_cv_all', 'Stroop RT Coefficient of Variation (All)'),
+    ('stroop_cv_incong', 'Stroop RT CV (Incongruent)'),
+    ('stroop_cv_cong', 'Stroop RT CV (Congruent)'),
+    ('stroop_trials', 'Stroop Valid Trial Count'),
 ]
 
 # Standardized predictor columns (already computed in master dataset)

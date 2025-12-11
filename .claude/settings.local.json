@@ -97,7 +97,12 @@
       "Bash(ls -la \"C:\\Users\\ansel\\my_research_exporter\\publication\\data\\raw\"\" 2>/dev/null || echo \"raw 디렉토리 확인 \")",
       "Bash(C:/Users/ansel/my_research_exporter/venv/Scripts/python.exe -m publication.data.filter_complete_participants)",
       "Bash(C:/Users/ansel/my_research_exporter/venv/Scripts/python.exe -c:*)",
-      "Bash(.venvScriptspython.exe -m publication.basic_analysis.descriptive_statistics)"
+      "Bash(.venvScriptspython.exe -m publication.basic_analysis.descriptive_statistics)",
+      "Bash(del \"C:\\Users\\ansel\\my_research_exporter\\publication\\data\\outputs\\master_dataset.csv\")",
+      "Bash(dir \"C:\\Users\\ansel\\my_research_exporter\\publication\\data\\outputs\")",
+      "Bash(.venvScriptspython.exe -m publication.validity_reliability.reliability_suite)",
+      "Bash(C:/Users/ansel/my_research_exporter/venv/Scripts/python.exe -m publication.validity_reliability.reliability_suite)",
+      "Bash(C:/Users/ansel/my_research_exporter/venv/Scripts/python.exe -m publication.validity_reliability.validity_suite:*)"
     ],
     "deny": [],
     "ask": []

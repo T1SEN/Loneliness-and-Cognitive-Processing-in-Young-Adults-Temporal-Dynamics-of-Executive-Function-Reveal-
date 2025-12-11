@@ -422,7 +422,8 @@ def load_master_dataset(
     force_rebuild: bool = False,
     cache_path: Path = MASTER_CACHE_PATH,
     add_standardized: bool = True,
-    merge_cognitive_summary: bool = True
+    merge_cognitive_summary: bool = True,
+    merge_trial_features: bool = True,
 ) -> pd.DataFrame:
     """
     Build or load a unified master dataset shared by all analyses.
@@ -447,15 +448,45 @@ def load_master_dataset(
         If True, add z-scored versions of STANDARDIZE_COLS (prefixed with 'z_').
     merge_cognitive_summary : bool
         If True, merge cognitive summary file (3_cognitive_tests_summary.csv) when present.
+    merge_trial_features : bool
+        If True, merge trial-derived feature aggregates (WCST/PRP/Stroop advanced metrics).
     """
     cache_path = Path(cache_path)
 
+    def _merge_trial_features_if_needed(master_df: pd.DataFrame, log: bool = False) -> pd.DataFrame:
+        """Attach trial-derived aggregates if requested."""
+        if not merge_trial_features:
+            return master_df
+        try:
+            from .features import derive_all_features  # Local import avoids circular dependency
+            trial_features = derive_all_features(use_cache=True)
+        except Exception as exc:  # pragma: no cover - defensive
+            print(f"  Warning: Failed to load trial features ({exc})")
+            return master_df
+
+        if trial_features.empty:
+            return master_df
+
+        # Drop overlapping columns to prevent suffixes; these columns always originate from trial_features
+        trial_cols = [c for c in trial_features.columns if c != "participant_id"]
+        overlap = [c for c in trial_cols if c in master_df.columns]
+        if overlap:
+            master_df = master_df.drop(columns=overlap)
+
+        before = len(master_df)
+        merged = master_df.merge(trial_features, on="participant_id", how="left")
+        if log:
+            print(f"  Merge master + trial_features: {before} -> {len(merged)} rows (left join on 'participant_id')")
+        return merged
+
     if use_cache and not force_rebuild:
         if cache_path.exists():
-            return pd.read_parquet(cache_path)
+            cached = pd.read_parquet(cache_path)
+            return _merge_trial_features_if_needed(cached, log=False)
         csv_fallback = cache_path.with_suffix(".csv")
         if csv_fallback.exists():
-            return pd.read_csv(csv_fallback)
+            cached = pd.read_csv(csv_fallback)
+            return _merge_trial_features_if_needed(cached, log=False)
 
     participants = load_participants()
     participants["gender_normalized"] = normalize_gender_series(participants["gender"])
@@ -487,6 +518,9 @@ def load_master_dataset(
     master = _log_merge(master, "master", wcst, "wcst")
     master = _log_merge(master, "master", prp, "prp")
     master = _log_merge(master, "master", stroop, "stroop")
+
+    # Merge advanced trial-derived features (PES, post-switch errors, variability, etc.)
+    master = _merge_trial_features_if_needed(master, log=True)
 
     if merge_cognitive_summary:
         summary_path = RESULTS_DIR / "3_cognitive_tests_summary.csv"
