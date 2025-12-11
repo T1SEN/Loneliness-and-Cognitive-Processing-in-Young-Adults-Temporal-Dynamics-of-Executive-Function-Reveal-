@@ -102,7 +102,13 @@
       "Bash(dir \"C:\\Users\\ansel\\my_research_exporter\\publication\\data\\outputs\")",
       "Bash(.venvScriptspython.exe -m publication.validity_reliability.reliability_suite)",
       "Bash(C:/Users/ansel/my_research_exporter/venv/Scripts/python.exe -m publication.validity_reliability.reliability_suite)",
-      "Bash(C:/Users/ansel/my_research_exporter/venv/Scripts/python.exe -m publication.validity_reliability.validity_suite:*)"
+      "Bash(C:/Users/ansel/my_research_exporter/venv/Scripts/python.exe -m publication.validity_reliability.validity_suite:*)",
+      "Bash(PYTHONIOENCODING=utf-8 .\\venv\\Scripts\\python.exe:*)",
+      "Bash(powershell.exe -Command \"cd ''C:\\Users\\ansel\\my_research_exporter''; $env:PYTHONIOENCODING=''utf-8''; .\\venv\\Scripts\\python.exe publication\\data\\export_alldata.py\")",
+      "Bash(powershell.exe -Command \"Set-Location ''C:\\Users\\ansel\\my_research_exporter''; $env:PYTHONIOENCODING=''utf-8''; $env:PYTHONPATH=''C:\\Users\\ansel\\my_research_exporter''; .\\venv\\Scripts\\python.exe publication\\data\\export_alldata.py\")",
+      "Bash(cmd.exe:*)",
+      "Bash(python -m publication.basic_analysis.descriptive_statistics:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nResults.md 정리 및 WCST RL/HMM 모델링 결과 추가\n\n- Results.md: 185명 품질통제 데이터셋 기준으로 분석 결과 정리\n- WCST HMM 모델링 결과 추가\n- WCST RL 모델링 비교 및 UCLA 관계 분석 결과 추가\n- Ex-Gaussian 분석 결과 업데이트 (PRP, Stroop)\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n)\")"
     ],
     "deny": [],
     "ask": []
