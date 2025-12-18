@@ -1,7 +1,0 @@
-﻿,full_indirect,full_indirect,full_indirect,full_sig,full_sig,full_sig
-dass,anxiety,depression,stress,anxiety,depression,stress
-model,,,,,,
-DASS → UCLA → EF,0.017114621233390734,0.07977289113445193,0.02224525673356219,False,False,False
-EF → DASS → UCLA,6.788807495007903e-05,-0.09382275599002021,-0.010324005703417733,False,False,False
-UCLA → DASS → EF,-0.008550856976365795,-0.0929176373713573,-0.016185290242730875,False,True,False
-UCLA → EF → DASS,-0.000796556071711666,-0.0046528725647420185,-0.0013556450254730555,False,False,False
