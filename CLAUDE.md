@@ -20,7 +20,15 @@ Firebase (Firestore) → export_alldata.py → publication/data/raw/ → filter_
                                                      python -m publication.* → results/publication/
 ```
 
-### Key Data Files (`publication/data/complete/`)
+### Key Data Files (`publication/data/`)
+| Directory | Contents |
+|-----------|----------|
+| `raw/` | Raw exported data (all participants) |
+| `complete/` | Completion-filtered data (finished all tasks) |
+| `complete_filtered/` | Quality-controlled data (N=185, removes outliers) |
+| `outputs/` | Generated outputs (master_dataset.csv, analysis results) |
+
+**Data file structure (same across raw/complete/complete_filtered):**
 | File | Contents |
 |------|----------|
 | `1_participants_info.csv` | Demographics (age, gender, education) |
@@ -29,8 +37,6 @@ Firebase (Firestore) → export_alldata.py → publication/data/raw/ → filter_
 | `4a_prp_trials.csv` | Trial-level PRP data |
 | `4b_wcst_trials.csv` | Trial-level WCST data |
 | `4c_stroop_trials.csv` | Trial-level Stroop data |
-
-Raw data (before filtering) is in `publication/data/raw/`.
 
 ## Essential Commands
 
@@ -133,7 +139,8 @@ analysis/
 publication/
 ├── data/                       # 데이터 파일
 │   ├── raw/                    # 원본 데이터 (전체 참가자)
-│   ├── complete/               # 필터링된 데이터 (완료자만)
+│   ├── complete/               # 완료자 필터링 (모든 과제 완료)
+│   ├── complete_filtered/      # 품질 통제 데이터 (N=185, 이상치 제거)
 │   ├── outputs/                # 생성된 데이터 (master_dataset.csv 등)
 │   ├── export_alldata.py       # Firebase 데이터 추출
 │   └── filter_complete_participants.py  # 완료자 필터링
@@ -149,14 +156,14 @@ publication/
 │   ├── correlation_analysis.py       # Correlation analysis
 │   └── hierarchical_regression.py    # Hierarchical regression (DASS-controlled)
 │
-?????? advanced_analysis/          # ???? ???
-??   ?????? mediation_suite.py      # UCLA ?? DASS ?? EF ??????
-??   ?????? bayesian_suite.py       # ???????? SEM
-??
-?????? path_analysis/              # EF composite path analyses
-??   ?????? path_depression.py      # Path analysis (Depression)
-??   ?????? path_anxiety.py         # Path analysis (Anxiety)
-??   ?????? path_stress.py          # Path analysis (Stress)
+├── advanced_analysis/          # 고급 분석
+│   ├── mediation_suite.py      # UCLA → DASS → EF 매개분석
+│   └── bayesian_suite.py       # 베이지안 SEM
+│
+├── path_analysis/              # EF composite path analyses
+│   ├── path_depression.py      # Path analysis (Depression)
+│   ├── path_anxiety.py         # Path analysis (Anxiety)
+│   └── path_stress.py          # Path analysis (Stress)
 │
 ├── validity_reliability/       # 심리측정 검증
 │   ├── reliability_suite.py    # Cronbach's alpha, split-half

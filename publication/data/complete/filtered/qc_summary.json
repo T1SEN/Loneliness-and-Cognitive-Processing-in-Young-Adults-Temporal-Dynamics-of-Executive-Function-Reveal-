@@ -1,0 +1,24 @@
+{
+  "generated_at_utc": "2025-12-18T05:37:05+00:00",
+  "input_n": 205,
+  "excluded_n": 14,
+  "included_n": 191,
+  "thresholds": {
+    "age_exclude_lt": 0,
+    "prp_accuracy_exclude_lt_pct": 80.0,
+    "wcst_total_error_exclude_gte": 60,
+    "wcst_persev_resp_exclude_gte": 60,
+    "stroop_accuracy_exclude_lt_pct": 93.0,
+    "stroop_mrt_exclude_gt_ms": 1500.0,
+    "trial_duration_exclude_gt_s": 1000.0,
+    "duration_correction_abs_diff_s": 60.0
+  },
+  "rule_counts_not_unique": {
+    "age<0": 1,
+    "prp_accuracy<80%": 3,
+    "wcst_totalError>=60_or_persevResp>=60": 8,
+    "stroop_accuracy<93%_or_mrt>1500ms": 2,
+    "trial_duration>1000s": 1
+  },
+  "duration_corrections_n": 2
+}
