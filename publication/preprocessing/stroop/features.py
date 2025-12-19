@@ -11,7 +11,7 @@ import pandas as pd
 from ..constants import STROOP_RT_MIN, STROOP_RT_MAX
 from ..core import coefficient_of_variation
 from .loaders import load_stroop_trials
-from .mechanism import load_or_compute_stroop_mechanism_features
+from .exgaussian_mechanism import load_or_compute_stroop_mechanism_features
 
 
 def derive_stroop_features(

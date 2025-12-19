@@ -1,4 +1,4 @@
-"""WCST mechanism feature derivation (HMM + RL)."""
+"""WCST RL mechanism feature derivation."""
 
 from __future__ import annotations
 
@@ -12,13 +12,7 @@ from scipy.optimize import minimize
 from ..constants import WCST_VALID_CARDS, get_results_dir
 from .loaders import load_wcst_trials
 
-MECHANISM_FILENAME = "5_wcst_mechanism_features.csv"
-
-try:
-    from hmmlearn import hmm as hmm_module
-    HMM_AVAILABLE = True
-except ImportError:
-    HMM_AVAILABLE = False
+MECHANISM_FILENAME = "5_wcst_rl_mechanism_features.csv"
 
 
 WCST_CARD_ORDER = [
@@ -50,64 +44,6 @@ def _prepare_actions(trials: pd.DataFrame) -> pd.DataFrame:
     return trials
 
 
-def compute_wcst_hmm_features(
-    data_dir: Path | None = None,
-    n_states: int = 2,
-    min_trials: int = 50,
-) -> pd.DataFrame:
-    if not HMM_AVAILABLE:
-        return pd.DataFrame()
-
-    trials, _ = load_wcst_trials(data_dir=data_dir, filter_rt=True)
-
-    rt_col = "rt_ms" if "rt_ms" in trials.columns else "reactiontimems" if "reactiontimems" in trials.columns else None
-    if rt_col is None:
-        return pd.DataFrame()
-    trials["rt_ms"] = pd.to_numeric(trials[rt_col], errors="coerce")
-    trials = trials[trials["rt_ms"].notna()]
-
-    results = []
-    for pid, pdata in trials.groupby("participant_id"):
-        if len(pdata) < min_trials:
-            continue
-
-        rts = pdata["rt_ms"].values.reshape(-1, 1)
-        try:
-            model = hmm_module.GaussianHMM(
-                n_components=n_states,
-                covariance_type="full",
-                n_iter=100,
-                random_state=42,
-            )
-            model.fit(rts)
-            states = model.predict(rts)
-            means = model.means_.flatten()
-
-            lapse_state = int(np.argmax(means))
-            focus_state = 1 - lapse_state
-
-            trans_matrix = model.transmat_
-
-            record = {
-                "participant_id": pid,
-                "wcst_hmm_lapse_occupancy": (states == lapse_state).mean() * 100,
-                "wcst_hmm_trans_to_lapse": trans_matrix[focus_state, lapse_state],
-                "wcst_hmm_trans_to_focus": trans_matrix[lapse_state, focus_state],
-                "wcst_hmm_stay_lapse": trans_matrix[lapse_state, lapse_state],
-                "wcst_hmm_stay_focus": trans_matrix[focus_state, focus_state],
-                "wcst_hmm_lapse_rt_mean": means[lapse_state],
-                "wcst_hmm_focus_rt_mean": means[focus_state],
-                "wcst_hmm_rt_diff": means[lapse_state] - means[focus_state],
-                "wcst_hmm_state_changes": int(np.sum(np.diff(states) != 0)),
-                "wcst_hmm_n_trials": int(len(pdata)),
-            }
-            results.append(record)
-        except Exception:
-            continue
-
-    return pd.DataFrame(results)
-
-
 class RescorlaWagnerModel:
     def __init__(self, alpha: float = 0.5, beta: float = 1.0):
         self.alpha = alpha
@@ -135,7 +71,7 @@ class RescorlaWagnerModel:
             if pd.isna(action):
                 continue
             action = int(action) % self.n_actions
-            reward = 1.0 if bool(trial.get("correct", False)) else 0.0
+            reward = 1.0 if trial.get("correct", False) else 0.0
             prob = self.get_action_prob(action)
             nll -= np.log(max(prob, 1e-10))
             self.update(action, reward)
@@ -255,25 +191,7 @@ def compute_wcst_rl_features(
     return pd.DataFrame(results)
 
 
-def compute_wcst_mechanism_features(data_dir: Path | None = None) -> pd.DataFrame:
-    hmm_df = compute_wcst_hmm_features(data_dir=data_dir)
-    rl_df = compute_wcst_rl_features(data_dir=data_dir)
-
-    if hmm_df.empty and rl_df.empty:
-        return pd.DataFrame()
-    if hmm_df.empty:
-        return rl_df
-    if rl_df.empty:
-        return hmm_df
-
-    overlap = [c for c in rl_df.columns if c != "participant_id" and c in hmm_df.columns]
-    if overlap:
-        rl_df = rl_df.drop(columns=overlap)
-
-    return hmm_df.merge(rl_df, on="participant_id", how="outer")
-
-
-def load_or_compute_wcst_mechanism_features(
+def load_or_compute_wcst_rl_mechanism_features(
     data_dir: Path | None = None,
     overwrite: bool = False,
     save: bool = True,
@@ -286,9 +204,9 @@ def load_or_compute_wcst_mechanism_features(
     if output_path.exists() and not overwrite:
         return pd.read_csv(output_path, encoding="utf-8-sig")
 
-    features = compute_wcst_mechanism_features(data_dir=data_dir)
+    features = compute_wcst_rl_features(data_dir=data_dir)
     if save and not features.empty:
         features.to_csv(output_path, index=False, encoding="utf-8-sig")
         if verbose:
-            print(f"[OK] WCST mechanism features saved: {output_path}")
+            print(f"[OK] WCST RL mechanism features saved: {output_path}")
     return features

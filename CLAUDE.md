@@ -33,6 +33,7 @@ Firebase (Firestore) → export_alldata.py → publication/data/raw/
 | `complete_stroop/` | Stroop + 설문 완료자 (N ~ 200) |
 | `complete_prp/` | PRP + 설문 완료자 (N ~ 195) |
 | `complete_wcst/` | WCST + 설문 완료자 (N ~ 190) |
+| `complete_overall/` | 모든 과제 완료자 통합 (N ~ 180) |
 | `outputs/` | Generated outputs (master_dataset.csv, analysis results) |
 
 **Data file structure (same across raw/complete_*):**
@@ -45,7 +46,7 @@ Firebase (Firestore) → export_alldata.py → publication/data/raw/
 | `4b_wcst_trials.csv` | Trial-level WCST data |
 | `4c_stroop_trials.csv` | Trial-level Stroop data |
 
-Note: task? complete_* ?????? ?? task? trial ??? ?????.
+Note: 각 task별 complete_* 디렉토리는 해당 task의 trial 파일만 포함합니다.
 
 ## Essential Commands
 
@@ -95,6 +96,7 @@ PYTHONIOENCODING=utf-8 .\venv\Scripts\python.exe export_alldata.py
 python -m publication.preprocessing --build stroop   # Stroop 완료자 데이터셋
 python -m publication.preprocessing --build prp      # PRP 완료자 데이터셋
 python -m publication.preprocessing --build wcst     # WCST 완료자 데이터셋
+python -m publication.preprocessing --build overall  # 모든 과제 완료자 통합 데이터셋
 python -m publication.preprocessing --build all      # 모든 task 데이터셋 빌드
 python -m publication.preprocessing --list           # 데이터셋 현황 조회
 ```
@@ -142,7 +144,7 @@ analysis/
 │   ├── ddm_suite.py            # Drift-diffusion modeling
 │   ├── intervention_subgroups_suite.py  # High-risk subgroup identification
 │   ├── male_vulnerability_suite.py      # Gender-specific effects
-│   └── ...                     # ~30 suites total; see run.py SUITE_REGISTRY
+│   └── ...                     # ~45 suites total; see run.py SUITE_REGISTRY
 ├── ml/                     # Machine learning pipelines
 └── archive/                # Legacy scripts (DEPRECATED - see README.md)
 ```
@@ -181,11 +183,14 @@ publication/
 |   |   |-- filters.py
 |   |   |-- features.py
 |   |   `-- dataset.py
-|   `-- wcst/
+|   |-- wcst/
+|   |   |-- __init__.py
+|   |   |-- loaders.py
+|   |   |-- filters.py
+|   |   |-- features.py
+|   |   `-- dataset.py
+|   `-- overall/
 |       |-- __init__.py
-|       |-- loaders.py
-|       |-- filters.py
-|       |-- features.py
 |       `-- dataset.py
 |-- basic_analysis/
 |-- advanced_analysis/
@@ -274,14 +279,24 @@ from analysis.visualization import (
 )
 ```
 
-### RT Filtering Constants
+### RT Filtering & QC Constants
 ```python
-from analysis.preprocessing import (
+from publication.preprocessing import (
+    # RT Filtering
     DEFAULT_RT_MIN,       # 100 ms; drop anticipations
     PRP_RT_MAX,           # 3000 ms; PRP task timeout
     STROOP_RT_MAX,        # 3000 ms; Stroop task timeout
-    DEFAULT_SOA_SHORT,    # 150 ms; PRP short bin upper bound
-    DEFAULT_SOA_LONG,     # 1200 ms; PRP long bin lower bound
+    WCST_RT_MIN,          # 100 ms; WCST anticipation cutoff
+    WCST_RT_MAX,          # 15000 ms; WCST attention lapse cutoff
+    # PRP SOA Binning
+    DEFAULT_SOA_SHORT,    # 150 ms; short bin upper bound
+    DEFAULT_SOA_LONG,     # 1200 ms; long bin lower bound
+    # WCST QC Thresholds
+    WCST_MIN_TRIALS,      # 60; minimum trials
+    WCST_MIN_MEDIAN_RT,   # 300 ms; random clicking threshold
+    WCST_MAX_SINGLE_CHOICE,  # 0.85; max single card choice ratio
+    # QC Criteria Classes
+    PRPQCCriteria, StroopQCCriteria, WCSTQCCriteria, SurveyQCCriteria,
 )
 ```
 
@@ -289,25 +304,33 @@ from analysis.preprocessing import (
 ```python
 from publication.preprocessing import (
     # Task-specific datasets (recommended)
-    load_master_dataset,  # task='stroop', 'prp', 'wcst'
+    load_master_dataset,  # task='stroop', 'prp', 'wcst', 'overall'
     # Task builders
     build_prp_dataset, build_stroop_dataset, build_wcst_dataset,
-    build_all_datasets,
+    build_overall_dataset, build_all_datasets,
     # Trial loaders
     load_prp_trials, load_stroop_trials, load_wcst_trials,
     # Trial-derived features
     derive_prp_features, derive_stroop_features, derive_wcst_features,
+    derive_overall_features,
+    # Mechanism features (Ex-Gaussian, HMM, RL)
+    compute_prp_exgaussian_features, compute_stroop_exgaussian_features,
+    compute_wcst_hmm_features, compute_wcst_rl_features,
+    load_or_compute_prp_mechanism_features,
+    load_or_compute_stroop_mechanism_features,
+    load_or_compute_wcst_mechanism_features,
     # Path utilities
     get_results_dir,
     RAW_DIR, DATA_DIR, VALID_TASKS,
 )
 
 # Task-specific dataset usage:
-df_stroop = load_master_dataset(task='stroop')  # N ~ 200
-df_prp = load_master_dataset(task='prp')        # N ~ 195
-df_wcst = load_master_dataset(task='wcst')      # N ~ 190
+df_stroop = load_master_dataset(task='stroop')   # N ~ 200
+df_prp = load_master_dataset(task='prp')         # N ~ 195
+df_wcst = load_master_dataset(task='wcst')       # N ~ 190
+df_overall = load_master_dataset(task='overall') # N ~ 180 (all tasks complete)
 ```
-Note: Each task has its own complete dataset. Each complete_* contains only its task trial file.
+Note: Each task has its own complete dataset. Each complete_* contains only its task trial file. The `overall` dataset requires all three tasks completed.
 
 ## Implementation Details
 
@@ -346,6 +369,7 @@ def _parse_wcst_extra(extra_str):
 | Exploratory | `results/analysis_outputs/{prp,stroop,wcst,cross_task}_suite/` |
 | Other suites | `results/analysis_outputs/{suite_name}/` |
 | **Publication** | `results/publication/{basic_analysis,advanced_analysis,validity_reliability,gender_analysis}/` |
+| Publication outputs | `publication/data/outputs/{basic_analysis,mechanism_analysis,validity_reliability,network_analysis}/` |
 
 ## Results Recording
 
@@ -394,11 +418,17 @@ from sklearn.covariance import GraphicalLassoCV
 - 4 chains × 2000 draws (improved from 2 × 1000)
 - ROPE interval: [-0.1, 0.1] for practical equivalence
 
-## Key Findings
+## Key Findings (N=185 Quality-Controlled)
 
-- **UCLA Main Effects**: Non-significant after DASS control (all p > 0.35)
-- **UCLA × Gender Interaction**: Significant for WCST PE (p = 0.025)
-- **Interpretation**: Loneliness effects confound with mood; only gender-specific vulnerability is independent
+- **UCLA Main Effects After DASS Control**: 3 variables significant
+  - PRP Delay Effect (ΔR²=2.38%, p<.05)
+  - WCST Post-Error Slowing (ΔR²=2.53%, p<.05)
+  - Stroop Incongruent RT Slope (ΔR²=3.74%, p<.05)
+- **UCLA × Gender Interactions**: None significant after DASS control
+- **Male-Specific Vulnerability** (gender-stratified analysis):
+  - PRP: UCLA correlates with Ex-Gaussian parameters (mu, sigma) in males only (r=0.26-0.31, p<.03)
+  - WCST HMM: UCLA→Lapse occupancy significant in males only (β=5.36, p=.024; r=0.34, p=.004)
+- **Network Analysis**: 4 edges show significant gender differences (p=.001 via permutation test)
 
 ## Key Libraries
 pandas, numpy, scipy, statsmodels, scikit-learn, pymc, arviz, matplotlib, seaborn, firebase-admin

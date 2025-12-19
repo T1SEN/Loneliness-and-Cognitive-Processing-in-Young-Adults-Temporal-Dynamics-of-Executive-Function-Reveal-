@@ -11,7 +11,7 @@ import pandas as pd
 from ..constants import PRP_RT_MIN, PRP_RT_MAX
 from ..core import coefficient_of_variation
 from .loaders import load_prp_trials
-from .mechanism import load_or_compute_prp_mechanism_features
+from .exgaussian_mechanism import load_or_compute_prp_mechanism_features
 
 
 def derive_prp_features(

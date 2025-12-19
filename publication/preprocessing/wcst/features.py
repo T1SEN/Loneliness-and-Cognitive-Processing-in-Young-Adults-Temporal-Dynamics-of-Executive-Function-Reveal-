@@ -10,7 +10,8 @@ import pandas as pd
 
 from ..core import coefficient_of_variation
 from .loaders import load_wcst_trials
-from .mechanism import load_or_compute_wcst_mechanism_features
+from .hmm_mechanism import load_or_compute_wcst_hmm_mechanism_features
+from .rl_mechanism import load_or_compute_wcst_rl_mechanism_features
 
 
 def derive_wcst_features(
@@ -89,14 +90,25 @@ def derive_wcst_features(
 
     features_df = pd.DataFrame(records)
 
-    mechanism_df = load_or_compute_wcst_mechanism_features(data_dir=data_dir)
-    if mechanism_df.empty:
+    hmm_df = load_or_compute_wcst_hmm_mechanism_features(data_dir=data_dir)
+    rl_df = load_or_compute_wcst_rl_mechanism_features(data_dir=data_dir)
+    mech_frames = [df for df in (hmm_df, rl_df) if not df.empty]
+    if not mech_frames:
         return features_df
+
     if features_df.empty:
-        return mechanism_df
+        combined = mech_frames[0]
+        for extra_df in mech_frames[1:]:
+            overlap = [c for c in extra_df.columns if c != "participant_id" and c in combined.columns]
+            if overlap:
+                extra_df = extra_df.drop(columns=overlap)
+            combined = combined.merge(extra_df, on="participant_id", how="outer")
+        return combined
 
-    overlap = [c for c in mechanism_df.columns if c != "participant_id" and c in features_df.columns]
-    if overlap:
-        features_df = features_df.drop(columns=overlap)
+    for mech_df in mech_frames:
+        overlap = [c for c in mech_df.columns if c != "participant_id" and c in features_df.columns]
+        if overlap:
+            features_df = features_df.drop(columns=overlap)
+        features_df = features_df.merge(mech_df, on="participant_id", how="left")
 
-    return features_df.merge(mechanism_df, on="participant_id", how="left")
+    return features_df

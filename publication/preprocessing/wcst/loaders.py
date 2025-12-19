@@ -12,6 +12,25 @@ from ..constants import get_results_dir
 from .filters import clean_wcst_trials, filter_wcst_rt_trials
 from ..core import ensure_participant_id
 
+def _coerce_bool_series(series: pd.Series) -> pd.Series:
+    if series.dtype == bool:
+        return series
+    text = series.astype(str).str.strip().str.lower()
+    mapping = {
+        "true": True,
+        "false": False,
+        "1": True,
+        "0": False,
+        "yes": True,
+        "no": False,
+    }
+    mapped = text.map(mapping)
+    if mapped.isna().any():
+        numeric = pd.to_numeric(series, errors="coerce")
+        numeric_bool = numeric.map(lambda v: bool(int(v)) if pd.notna(v) else None)
+        mapped = mapped.fillna(numeric_bool)
+    return mapped.fillna(False).astype(bool)
+
 
 def load_wcst_trials(
     data_dir: Path | None = None,
@@ -39,6 +58,9 @@ def load_wcst_trials(
         df = filter_wcst_rt_trials(df)
         summary["rt_filtered"] = before_rt - len(df)
         summary["rows_after"] = len(df)
+
+    if "correct" in df.columns:
+        df["correct"] = _coerce_bool_series(df["correct"])
 
     if "isPE" not in df.columns:
         def parse_extra(extra_str):

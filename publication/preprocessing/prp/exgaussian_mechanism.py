@@ -50,7 +50,7 @@ def _fit_exgaussian(rts: np.ndarray, min_trials: int = 20) -> Dict[str, float]:
     result = minimize(
         neg_loglik,
         x0=[mu_init, sigma_init, tau_init],
-        bounds=[(50, 1500), (10, 1000), (10, 2000)],
+        bounds=[(100, PRP_RT_MAX), (10, 1000), (10, 2000)],
         method="L-BFGS-B",
     )
     if not result.success:
