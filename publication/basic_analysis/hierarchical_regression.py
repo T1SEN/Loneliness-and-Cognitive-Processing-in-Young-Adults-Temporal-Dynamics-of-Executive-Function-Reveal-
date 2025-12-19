@@ -50,7 +50,7 @@ from publication.basic_analysis.utils import (
     get_analysis_data,
     filter_vars,
     get_output_dir,
-    TIER1_OUTCOMES,
+    get_tier1_outcomes,
     STANDARDIZED_PREDICTORS,
     print_section_header,
     format_pvalue,
@@ -369,7 +369,7 @@ def run(task: str, verbose: bool = True) -> dict[str, pd.DataFrame]:
     if verbose:
         print("\n  Loading data...")
     df = get_analysis_data(task)
-    outcomes = filter_vars(df, TIER1_OUTCOMES)
+    outcomes = filter_vars(df, get_tier1_outcomes(task))
     output_dir = get_output_dir(task)
 
     if verbose:

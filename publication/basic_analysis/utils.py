@@ -50,7 +50,7 @@ CORRELATION_VARS = [
     ('prp_bottleneck', 'PRP Delay'),
 ]
 
-# Tier 1 outcomes for hierarchical regression
+# Tier 1 outcomes for hierarchical regression (overall / full list)
 TIER1_OUTCOMES = [
     # Core EF outcomes
     ('pe_rate', 'WCST Perseverative Error Rate'),
@@ -173,6 +173,108 @@ TIER1_OUTCOMES = [
     ('stroop_lba_t0_interference', 'Stroop LBA t0 Interference'),
 ]
 
+# Task-specific Tier 1 outcomes
+TIER1_OUTCOMES_BY_TASK = {
+    "overall": TIER1_OUTCOMES,
+    "wcst": [
+        ('pe_rate', 'WCST Perseverative Error Rate'),
+        ('wcst_accuracy', 'WCST Accuracy (%)'),
+        ('wcst_mean_rt', 'WCST Mean Reaction Time (ms)'),
+        ('wcst_sd_rt', 'WCST Reaction Time SD'),
+        ('pe_count', 'WCST Perseverative Error Count'),
+        ('perseverativeResponses', 'WCST Perseverative Responses (count)'),
+        ('perseverativeErrorCount', 'WCST Perseverative Errors (count)'),
+        ('perseverativeResponsesPercent', 'WCST Perseverative Responses (%)'),
+        ('wcst_pes', 'WCST Post-Error Slowing (ms)'),
+        ('wcst_post_switch_error_rate', 'WCST Post-Switch Error Rate'),
+        ('wcst_cv_rt', 'WCST Reaction Time Coefficient of Variation'),
+        ('wcst_trials', 'WCST Valid Trial Count'),
+        ('wcst_hmm_lapse_occupancy', 'WCST HMM Lapse Occupancy (%)'),
+        ('wcst_hmm_trans_to_lapse', 'WCST HMM P(Focus->Lapse)'),
+        ('wcst_hmm_trans_to_focus', 'WCST HMM P(Lapse->Focus)'),
+        ('wcst_hmm_stay_lapse', 'WCST HMM P(Lapse->Lapse)'),
+        ('wcst_hmm_stay_focus', 'WCST HMM P(Focus->Focus)'),
+        ('wcst_hmm_lapse_rt_mean', 'WCST HMM Lapse RT Mean'),
+        ('wcst_hmm_focus_rt_mean', 'WCST HMM Focus RT Mean'),
+        ('wcst_hmm_rt_diff', 'WCST HMM RT Difference'),
+        ('wcst_hmm_state_changes', 'WCST HMM State Changes'),
+        ('wcst_rl_alpha', 'WCST RL alpha'),
+        ('wcst_rl_beta', 'WCST RL beta'),
+        ('wcst_rl_alpha_pos', 'WCST RL alpha (pos)'),
+        ('wcst_rl_alpha_neg', 'WCST RL alpha (neg)'),
+        ('wcst_rl_alpha_asymmetry', 'WCST RL alpha asymmetry'),
+        ('wcst_rl_beta_asym', 'WCST RL beta (asym)'),
+        ('wcst_wsls_p_stay_win', 'WCST WSLS P(stay|win)'),
+        ('wcst_wsls_p_shift_lose', 'WCST WSLS P(shift|lose)'),
+        ('wcst_brl_hazard', 'WCST Bayesian RL hazard'),
+        ('wcst_brl_noise', 'WCST Bayesian RL noise'),
+        ('wcst_brl_beta', 'WCST Bayesian RL beta'),
+    ],
+    "prp": [
+        ('prp_bottleneck', 'PRP Delay Effect'),
+        ('t2_rt_mean_short', 'PRP T2 Mean RT (Short SOA)'),
+        ('t2_rt_mean_long', 'PRP T2 Mean RT (Long SOA)'),
+        ('t2_rt_sd_short', 'PRP T2 RT SD (Short SOA)'),
+        ('t2_rt_sd_long', 'PRP T2 RT SD (Long SOA)'),
+        ('prp_t2_cv_all', 'PRP T2 Coefficient of Variation (All)'),
+        ('prp_t2_cv_short', 'PRP T2 CV (Short SOA)'),
+        ('prp_t2_cv_long', 'PRP T2 CV (Long SOA)'),
+        ('prp_cascade_rate', 'PRP Error Cascade Rate'),
+        ('prp_cascade_inflation', 'PRP Cascade Inflation'),
+        ('prp_pes', 'PRP Post-Error Slowing (ms)'),
+        ('prp_t2_trials', 'PRP Valid T2 Trial Count'),
+        ('prp_exg_short_mu', 'PRP Ex-Gaussian mu (Short SOA)'),
+        ('prp_exg_short_sigma', 'PRP Ex-Gaussian sigma (Short SOA)'),
+        ('prp_exg_short_tau', 'PRP Ex-Gaussian tau (Short SOA)'),
+        ('prp_exg_long_mu', 'PRP Ex-Gaussian mu (Long SOA)'),
+        ('prp_exg_long_sigma', 'PRP Ex-Gaussian sigma (Long SOA)'),
+        ('prp_exg_long_tau', 'PRP Ex-Gaussian tau (Long SOA)'),
+        ('prp_exg_overall_mu', 'PRP Ex-Gaussian mu (Overall)'),
+        ('prp_exg_overall_sigma', 'PRP Ex-Gaussian sigma (Overall)'),
+        ('prp_exg_overall_tau', 'PRP Ex-Gaussian tau (Overall)'),
+        ('prp_exg_mu_bottleneck', 'PRP Ex-Gaussian mu (Bottleneck)'),
+        ('prp_exg_sigma_bottleneck', 'PRP Ex-Gaussian sigma (Bottleneck)'),
+        ('prp_exg_tau_bottleneck', 'PRP Ex-Gaussian tau (Bottleneck)'),
+        ('prp_cb_base', 'PRP CB Base RT (ms)'),
+        ('prp_cb_bottleneck', 'PRP CB Bottleneck Duration (ms)'),
+        ('prp_cb_r_squared', 'PRP CB Model R-squared'),
+        ('prp_cb_slope', 'PRP CB Slope (short SOA)'),
+    ],
+    "stroop": [
+        ('stroop_interference', 'Stroop Interference Effect'),
+        ('rt_mean_incongruent', 'Stroop Mean RT (Incongruent)'),
+        ('rt_mean_congruent', 'Stroop Mean RT (Congruent)'),
+        ('rt_mean_neutral', 'Stroop Mean RT (Neutral)'),
+        ('accuracy_incongruent', 'Stroop Accuracy (Incongruent)'),
+        ('accuracy_congruent', 'Stroop Accuracy (Congruent)'),
+        ('accuracy_neutral', 'Stroop Accuracy (Neutral)'),
+        ('stroop_effect', 'Stroop Effect (RT Difference)'),
+        ('stroop_post_error_slowing', 'Stroop Post-Error Slowing (ms)'),
+        ('stroop_post_error_rt', 'Stroop Post-Error RT (ms)'),
+        ('stroop_post_correct_rt', 'Stroop Post-Correct RT (ms)'),
+        ('stroop_incong_slope', 'Stroop Incongruent RT Slope'),
+        ('stroop_cv_all', 'Stroop RT Coefficient of Variation (All)'),
+        ('stroop_cv_incong', 'Stroop RT CV (Incongruent)'),
+        ('stroop_cv_cong', 'Stroop RT CV (Congruent)'),
+        ('stroop_trials', 'Stroop Valid Trial Count'),
+        ('stroop_exg_congruent_mu', 'Stroop Ex-Gaussian mu (Congruent)'),
+        ('stroop_exg_congruent_sigma', 'Stroop Ex-Gaussian sigma (Congruent)'),
+        ('stroop_exg_congruent_tau', 'Stroop Ex-Gaussian tau (Congruent)'),
+        ('stroop_exg_incongruent_mu', 'Stroop Ex-Gaussian mu (Incongruent)'),
+        ('stroop_exg_incongruent_sigma', 'Stroop Ex-Gaussian sigma (Incongruent)'),
+        ('stroop_exg_incongruent_tau', 'Stroop Ex-Gaussian tau (Incongruent)'),
+        ('stroop_exg_neutral_mu', 'Stroop Ex-Gaussian mu (Neutral)'),
+        ('stroop_exg_neutral_sigma', 'Stroop Ex-Gaussian sigma (Neutral)'),
+        ('stroop_exg_neutral_tau', 'Stroop Ex-Gaussian tau (Neutral)'),
+        ('stroop_exg_mu_interference', 'Stroop Ex-Gaussian mu (Interference)'),
+        ('stroop_exg_sigma_interference', 'Stroop Ex-Gaussian sigma (Interference)'),
+        ('stroop_exg_tau_interference', 'Stroop Ex-Gaussian tau (Interference)'),
+        ('stroop_lba_v_correct_interference', 'Stroop LBA v_correct Interference'),
+        ('stroop_lba_b_interference', 'Stroop LBA b (Threshold) Interference'),
+        ('stroop_lba_t0_interference', 'Stroop LBA t0 Interference'),
+    ],
+}
+
 # Standardized predictor columns (already computed in master dataset)
 STANDARDIZED_PREDICTORS = [
     'z_ucla_score',
@@ -193,6 +295,13 @@ def get_analysis_data(task: str) -> pd.DataFrame:
     if task not in VALID_TASKS:
         raise ValueError(f"Unknown task: {task}. Valid tasks: {sorted(VALID_TASKS)}")
     return load_master_dataset(task=task)
+
+
+def get_tier1_outcomes(task: str) -> list[tuple[str, str]]:
+    """Return task-specific Tier 1 outcome list."""
+    if task not in VALID_TASKS:
+        raise ValueError(f"Unknown task: {task}. Valid tasks: {sorted(VALID_TASKS)}")
+    return TIER1_OUTCOMES_BY_TASK[task]
 
 
 def filter_vars(
