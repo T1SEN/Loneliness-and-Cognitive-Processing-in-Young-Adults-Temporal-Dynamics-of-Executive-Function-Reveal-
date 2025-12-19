@@ -1,6 +1,7 @@
 # Basic Analysis 종합 결과 보고서
 
-**생성일**: 2025-12-19 (Mechanism 변수 재계산: 2025-12-19)
+**생성일**: 2025-12-19
+**최종 업데이트**: 2025-12-19 (PRP Central Bottleneck + Stroop LBA 추가)
 **분석 대상**: 외로움(UCLA)과 집행기능(WCST, Stroop, PRP) 간 관계
 **통제 변인**: DASS-21 (우울, 불안, 스트레스), 나이, 성별
 
@@ -240,6 +241,84 @@ done
 | **WCST RL alpha (pos)** | 여성 | overall | 117 | 0.010 | .856 |
 | **WCST HMM Lapse Occupancy** | 남성 | wcst | 78 | 3.72 | **.047** |
 
+#### 4.3.6 PRP Central Bottleneck 모델 결과 (2025-12-19 추가)
+
+**모델**: `RT2 = base + max(0, bottleneck - SOA)`
+- `base`: 긴 SOA에서의 비병목 기준 RT2 (플래토)
+- `bottleneck`: 중앙 처리 병목 지속 시간 (ms)
+- `slope`: short SOA 구간에서의 RT2~SOA 기울기 (이론적으로 -1에 가까워야 함)
+
+**피팅 성공률**: 198/204 (97.1%)
+
+| 지표 | M | SD | Min | Max |
+|------|---|----|----|-----|
+| `prp_cb_base` (ms) | 703.78 | 190.96 | 387.36 | 1309.97 |
+| `prp_cb_bottleneck` (ms) | 687.42 | 170.72 | 300.00 | 1136.68 |
+| `prp_cb_r_squared` | 0.88 | 0.13 | 0.26 | 1.00 |
+| `prp_cb_slope` | -0.86 | 0.56 | -2.64 | 1.02 |
+| `prp_cb_n_trials` | 100.27 | 24.37 | 1 | 120 |
+
+**해석**:
+- R² 평균 0.88로 Central Bottleneck 모델이 데이터를 잘 설명함
+- slope 평균 -0.86으로 이론적 예측값 -1에 근접
+- bottleneck 평균 687ms로 중앙 처리 단계가 약 700ms 소요됨을 시사
+
+**UCLA와의 관계 (위계적 회귀, DASS 통제 후)**:
+
+| 결과변수 | N | β | SE | t | p | ΔR² |
+|----------|---|---|----|----|---|-----|
+| **PRP CB Slope** | 198 | -0.126 | 0.059 | -2.12 | **.035** | 2.65% |
+| PRP CB Base | 198 | 13.68 | 15.52 | 0.88 | .379 | 0.09% |
+| PRP CB Bottleneck | 198 | 18.31 | 13.47 | 1.36 | .176 | 0.42% |
+
+| 결과변수 | 성별 | n | β | p |
+|----------|------|---|---|---|
+| PRP CB Slope | 전체 | 198 | -0.126 | **.035** |
+| PRP CB Slope | 남성 | 79 | -0.139 | .187 |
+| PRP CB Slope | 여성 | 119 | -0.113 | .149 |
+
+**해석**: UCLA 외로움↑ → CB Slope 감소 (더 음수, -1 방향으로 이동)
+- 이론적으로 slope = -1이면 완전한 중앙 병목 (순차적 처리)
+- slope가 0에 가까워지면 병렬 처리 가능
+- 외로움이 높을수록 중앙 병목 효과가 **강화**됨 → **이중과제 처리가 더 직렬적**
+- 외로움이 **인지 자원의 병렬 할당을 방해**할 수 있음을 시사
+
+#### 4.3.7 Stroop LBA 모델 결과 (2025-12-19 추가)
+
+**모델**: Linear Ballistic Accumulator (Brown & Heathcote, 2008)
+- 4개 독립 축적기 (정답 1개 + 오답 3개) 경쟁 모델
+- 파라미터: v_correct (정답 drift rate), v_incorrect (오답 drift rate), A (시작점 변이), b (threshold), t0 (비결정 시간)
+
+**피팅 성공률** (조건별):
+
+| 조건 | 유효 피팅 | 비율 |
+|------|-----------|------|
+| Congruent | 36/219 | 16.4% |
+| Incongruent | 108/219 | 49.3% |
+| Neutral | 47/219 | 21.5% |
+| **전체 조건 유효** | 24/219 | **11.0%** |
+
+**간섭 효과 지표** (N=24, 모든 조건 유효한 참가자만):
+
+| 지표 | M | SD | 해석 |
+|------|---|----|------|
+| `v_correct_interference` | 0.658 | 1.653 | cong - incong: 간섭 시 drift rate 감소 |
+| `b_interference` | 0.246 | 0.663 | incong - cong: 간섭 시 threshold 증가 |
+| `t0_interference` | -0.051 | 0.097 | incong - cong: 비결정시간 변화 |
+
+**⚠️ 주의**: LBA 피팅 성공률이 낮음 (11%). 원인:
+1. 조건당 시행 수 부족 (36시행 중 timeout/오류 제외 시 15 미만)
+2. 4-choice LBA 피팅의 높은 복잡성
+3. 개인차로 인한 피팅 실패
+
+**권장**: LBA 결과는 탐색적 목적으로만 사용하고, 주요 분석은 기존 Ex-Gaussian 지표 활용
+
+**UCLA와의 관계 (위계적 회귀, DASS 통제 후)**:
+
+⚠️ **분석 불가**: LBA interference 지표의 유효 N=24로, 최소 기준 N=30 미충족
+- 위계적 회귀분석 수행 불가
+- 향후 더 큰 표본으로 재검증 필요
+
 ---
 
 ## 5. 유의한 결과 요약표
@@ -259,11 +338,13 @@ done
 |----------|------|------|------|
 | WCST Accuracy | p=.042 (overall) | **p=.044** | ns |
 | WCST Post-Error Slowing | p=.045 (wcst) | ns | **p=.020-.029** |
-| Stroop Incong RT Slope | p=.006-.016 | ns | **p<.001-.001** |
+| Stroop Incong RT Slope | **p=.017** (stroop) | ns | **p=.001** |
 | **WCST HMM P(Lapse→Focus)** | p=.004 (overall), **p<.001** (wcst) | **p=.005-.035** | ns (경계선) |
 | **WCST HMM P(Lapse→Lapse)** | p=.004 (overall), **p<.001** (wcst) | **p=.005-.035** | ns (경계선) |
 | WCST RL alpha (pos) | ns | ns | **p=.009** (남성 내 효과) |
 | WCST HMM Lapse Occupancy | p=.039 (wcst) | ns | **p=.047** (남성) |
+| **PRP CB Slope** | **p=.035** (prp) | ns | ns |
+| PRP Ex-Gaussian sigma (Short) | **p=.047** (prp) | ns | ns |
 
 ### 5.3 DASS 효과
 
@@ -322,6 +403,13 @@ done
 
 **해석**: 외로운 남성은 긍정 피드백에 더 민감하게 반응하며, 이는 **사회적 보상에 대한 과민감**을 반영할 수 있음. 상호작용 term 자체는 통계적으로 유의하지 않으나, 성별에 따른 효과 차이가 존재함.
 
+**PRP Central Bottleneck 모델 결과:**
+- UCLA 외로움이 높을수록 **CB Slope가 더 음수** (β=-0.126, p=.035, ΔR²=2.65%)
+- Slope가 -1에 가까울수록 완전한 순차적 처리 (중앙 병목)
+- 성별별로는 유의하지 않음 (남성 p=.19, 여성 p=.15)
+
+**해석**: 외로운 개인은 이중과제 수행 시 **병렬 처리 능력이 저하**되어 더 직렬적(순차적)으로 처리함. 이는 외로움이 **인지 자원의 유연한 할당을 방해**할 수 있음을 시사. Central Bottleneck Theory 관점에서, 외로움이 높을수록 Task 1과 Task 2의 중앙 처리 단계가 더 엄격하게 순차적으로 이루어짐.
+
 ### 6.4 DASS 우울의 역설적 효과
 
 - **DASS 우울↑ → WCST PE Rate↓** (r = -.14, p = .043)
@@ -355,6 +443,18 @@ done
    - **HMM Lapse Occupancy**: 남성에서 UCLA↑ → 주의 이탈 증가 (p=.047)
    - **RL**: 남성에서만 UCLA↑ → 양성 학습률↑ (β=0.17, p=.009; 상호작용은 비유의 p=.141)
    - 외로움이 **주의 상태 전이**와 **강화학습 과정**에 성별-특이적 영향
+9. **PRP Central Bottleneck 모델 (2025-12-19 추가)**:
+   - 피팅 성공률 97.1% (198/204명), R² 평균 0.88
+   - bottleneck 평균 687ms, slope 평균 -0.86 (이론적 예측 -1에 근접)
+   - **UCLA→CB Slope 유의** (β=-0.126, p=.035, ΔR²=2.65%)
+   - 외로움↑ → slope가 -1 방향으로 이동 → **중앙 병목 효과 강화** → 이중과제 처리가 더 직렬적
+10. **Stroop LBA 모델 (2025-12-19 추가)**:
+    - 피팅 성공률 낮음 (11%, 24/219명) - 조건당 시행 수 부족이 원인
+    - N=24로 회귀분석 불가 (min N=30 미충족)
+    - 탐색적 분석 목적으로만 사용 권장
+11. **PRP Ex-Gaussian sigma (Short SOA) (2025-12-19 추가)**:
+    - **UCLA→sigma 유의** (β=24.34, p=.047, ΔR²=2.50%)
+    - 외로움↑ → RT 변동성↑ → 이중과제 수행의 불안정성
 
 ---
 
@@ -367,7 +467,7 @@ done
 
 ---
 
-## 부록: 출력 파일 목록 (44개)
+## 부록: 출력 파일 목록 (46개+)
 
 ```
 publication/data/outputs/basic_analysis/
@@ -387,4 +487,12 @@ publication/data/outputs/basic_analysis/
 ├── prp/ (11 files) - 동일 구조
 ├── wcst/ (11 files) - 동일 구조
 └── conclusion.md (본 파일)
+
+publication/data/complete_prp/
+├── 5_prp_bottleneck_mechanism_features.csv  # NEW (2025-12-19)
+└── 5_prp_mechanism_features.csv             # Ex-Gaussian
+
+publication/data/complete_stroop/
+├── 5_stroop_lba_mechanism_features.csv      # NEW (2025-12-19)
+└── 5_stroop_mechanism_features.csv          # Ex-Gaussian
 ```

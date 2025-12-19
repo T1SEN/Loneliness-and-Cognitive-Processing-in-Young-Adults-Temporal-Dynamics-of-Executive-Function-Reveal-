@@ -151,6 +151,17 @@ TIER1_OUTCOMES = [
     ('wcst_rl_alpha_neg', 'WCST RL alpha (neg)'),
     ('wcst_rl_alpha_asymmetry', 'WCST RL alpha asymmetry'),
     ('wcst_rl_beta_asym', 'WCST RL beta (asym)'),
+
+    # PRP Central Bottleneck model parameters
+    ('prp_cb_base', 'PRP CB Base RT (ms)'),
+    ('prp_cb_bottleneck', 'PRP CB Bottleneck Duration (ms)'),
+    ('prp_cb_r_squared', 'PRP CB Model R-squared'),
+    ('prp_cb_slope', 'PRP CB Slope (short SOA)'),
+
+    # Stroop LBA model parameters (interference indices)
+    ('stroop_lba_v_correct_interference', 'Stroop LBA v_correct Interference'),
+    ('stroop_lba_b_interference', 'Stroop LBA b (Threshold) Interference'),
+    ('stroop_lba_t0_interference', 'Stroop LBA t0 Interference'),
 ]
 
 # Standardized predictor columns (already computed in master dataset)

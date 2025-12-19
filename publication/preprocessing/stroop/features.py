@@ -12,6 +12,7 @@ from ..constants import STROOP_RT_MIN, STROOP_RT_MAX
 from ..core import coefficient_of_variation
 from .loaders import load_stroop_trials
 from .exgaussian_mechanism import load_or_compute_stroop_mechanism_features
+from .lba_mechanism import load_or_compute_stroop_lba_mechanism_features
 
 
 def derive_stroop_features(
@@ -98,13 +99,23 @@ def derive_stroop_features(
     features_df = pd.DataFrame(records)
 
     mechanism_df = load_or_compute_stroop_mechanism_features(data_dir=data_dir)
-    if mechanism_df.empty:
+    if not mechanism_df.empty:
+        if features_df.empty:
+            features_df = mechanism_df
+        else:
+            overlap = [c for c in mechanism_df.columns if c != "participant_id" and c in features_df.columns]
+            if overlap:
+                features_df = features_df.drop(columns=overlap)
+            features_df = features_df.merge(mechanism_df, on="participant_id", how="left")
+
+    lba_df = load_or_compute_stroop_lba_mechanism_features(data_dir=data_dir)
+    if lba_df.empty:
         return features_df
     if features_df.empty:
-        return mechanism_df
+        return lba_df
 
-    overlap = [c for c in mechanism_df.columns if c != "participant_id" and c in features_df.columns]
+    overlap = [c for c in lba_df.columns if c != "participant_id" and c in features_df.columns]
     if overlap:
         features_df = features_df.drop(columns=overlap)
 
-    return features_df.merge(mechanism_df, on="participant_id", how="left")
+    return features_df.merge(lba_df, on="participant_id", how="left")
