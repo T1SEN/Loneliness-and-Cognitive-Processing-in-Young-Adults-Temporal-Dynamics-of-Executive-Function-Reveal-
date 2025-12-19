@@ -21,6 +21,8 @@ from .wcst.features import derive_wcst_features
 from .prp.loaders import load_prp_summary
 from .stroop.loaders import load_stroop_summary
 from .wcst.loaders import load_wcst_summary
+from .overall.loaders import load_overall_summary
+from .overall.features import derive_overall_features
 
 
 def load_master_dataset(
@@ -37,7 +39,9 @@ def load_master_dataset(
         if not merge_trial_features:
             return master_df
         try:
-            if task == "prp":
+            if task == "overall":
+                trial_features = derive_overall_features(data_dir=data_dir)
+            elif task == "prp":
                 trial_features = derive_prp_features(data_dir=data_dir)
             elif task == "stroop":
                 trial_features = derive_stroop_features(data_dir=data_dir)
@@ -79,7 +83,9 @@ def load_master_dataset(
     dass = load_dass_scores(data_dir)
     survey_items = load_survey_items(data_dir)
 
-    if task == "prp":
+    if task == "overall":
+        summary = load_overall_summary(data_dir)
+    elif task == "prp":
         summary = load_prp_summary(data_dir)
     elif task == "stroop":
         summary = load_stroop_summary(data_dir)
@@ -97,7 +103,7 @@ def load_master_dataset(
 
     if merge_cognitive_summary:
         summary_path = data_dir / "3_cognitive_tests_summary.csv"
-        if summary_path.exists():
+        if summary_path.exists() and task != "overall":
             cognitive = pd.read_csv(summary_path, encoding="utf-8")
             cognitive = ensure_participant_id(cognitive)
             if "testName" in cognitive.columns:
@@ -105,6 +111,8 @@ def load_master_dataset(
                 cognitive = cognitive[cognitive["testName"] == task]
             cognitive = cognitive.sort_values("participant_id").drop_duplicates(subset=["participant_id"])
             master = _log_merge(master, "master", cognitive, "cognitive_summary")
+        elif summary_path.exists() and task == "overall":
+            print("  Skipping cognitive summary merge for overall (already merged in task summaries)")
 
     if add_standardized:
         for col in STANDARDIZE_COLS:

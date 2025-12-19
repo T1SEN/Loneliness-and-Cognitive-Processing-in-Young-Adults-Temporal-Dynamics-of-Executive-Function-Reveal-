@@ -27,7 +27,17 @@
       "Bash(powershell.exe -Command \"& ''C:\\\\Users\\\\ansel\\\\my_research_exporter\\\\venv\\\\Scripts\\\\python.exe'' -c \"\"\nimport pandas as pd\ndf = pd.read_csv\\(''C:/Users/ansel/my_research_exporter/publication/data/raw/3_cognitive_tests_summary.csv'', encoding=''utf-8-sig''\\)\nprp = df[df[''testName''].str.lower\\(\\) == ''prp'']\nprint\\(''PRP summary columns:'', prp.columns.tolist\\(\\)\\)\nprint\\(''n_trials distribution:''\\)\nprint\\(prp[''n_trials''].value_counts\\(\\)\\)\nprint\\(''\\\\nmrt_t2 null count:'', prp[''mrt_t2''].isna\\(\\).sum\\(\\)\\)\nprint\\(''rt2_soa_50 null count:'', prp[''rt2_soa_50''].isna\\(\\).sum\\(\\)\\)\nprint\\(''rt2_soa_1200 null count:'', prp[''rt2_soa_1200''].isna\\(\\).sum\\(\\)\\)\n\"\"\")",
       "Bash(powershell.exe -Command \"& ''C:\\\\Users\\\\ansel\\\\my_research_exporter\\\\venv\\\\Scripts\\\\python.exe'' -m publication.preprocessing --build prp\")",
       "Bash(powershell.exe:*)",
-      "Bash(./venv/Scripts/python.exe:*)"
+      "Bash(./venv/Scripts/python.exe:*)",
+      "Bash(python:*)",
+      "Bash(git -C \"C:\\\\Users\\\\ansel\\\\my_research_exporter\" status)",
+      "Bash(git -C \"C:\\\\Users\\\\ansel\\\\my_research_exporter\" diff --stat)",
+      "Bash(git -C \"C:\\\\Users\\\\ansel\\\\my_research_exporter\" log -3 --oneline)",
+      "Bash(git -C \"C:\\\\Users\\\\ansel\\\\my_research_exporter\" add publication/preprocessing/ publication/data/complete_wcst/ publication/data/complete_prp/)",
+      "Bash(git -C \"C:\\\\Users\\\\ansel\\\\my_research_exporter\" commit -m \"$\\(cat <<''EOF''\nWCST QC 전처리 강화: trial 기반 필터링 적용\n\n- Trial-level 필터링: 중복/결측/유효성 검사\n- RT 필터: 100ms < rt_ms <= 15000ms \\(분석용 분리\\)\n- Participant QC: median RT >= 300ms, 최빈선택 <= 85%\n- Summary + Trial QC 통합 \\(N=220 → N=200\\)\n- PRP 필터 리팩토링 포함\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git -C \"C:\\\\Users\\\\ansel\\\\my_research_exporter\" push)",
+      "Bash(git -C:*)",
+      "Bash(wc:*)",
+      "Bash(ls:*)"
     ]
   }
 }

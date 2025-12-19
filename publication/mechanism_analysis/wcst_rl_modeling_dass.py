@@ -94,7 +94,7 @@ def register_analysis(name: str, description: str):
 
 def load_rl_data() -> pd.DataFrame:
     """Load and prepare master dataset with gender and standardized predictors."""
-    master = load_master_dataset(merge_cognitive_summary=True)
+    master = load_master_dataset(task="wcst", merge_cognitive_summary=True)
     master = prepare_gender_variable(master)
     master = standardize_predictors(master)
     return master

@@ -76,6 +76,7 @@ def prepare_network_frame(
 
     config = VARIABLE_SETS[variable_set]
     master = load_master_dataset(
+        task="overall",
         merge_cognitive_summary=True,
         merge_trial_features=True,
     )

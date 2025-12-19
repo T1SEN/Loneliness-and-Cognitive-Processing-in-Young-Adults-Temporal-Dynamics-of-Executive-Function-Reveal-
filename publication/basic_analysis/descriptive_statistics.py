@@ -15,7 +15,7 @@ Output:
     results/publication/basic_analysis/table1_descriptives_by_gender.csv
 
 Usage:
-    python -m publication.basic_analysis.descriptive_statistics
+    python -m publication.basic_analysis.descriptive_statistics --task overall
 """
 
 from __future__ import annotations
@@ -24,17 +24,20 @@ import sys
 if sys.platform.startswith("win") and hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding='utf-8')
 
+import argparse
 import pandas as pd
 import numpy as np
 from scipy import stats
 
 from publication.basic_analysis.utils import (
     get_analysis_data,
-    OUTPUT_DIR,
+    filter_vars,
+    get_output_dir,
     DESCRIPTIVE_VARS,
     print_section_header,
     format_coefficient,
 )
+from publication.preprocessing.constants import VALID_TASKS
 
 
 def compute_descriptive_stats(
@@ -219,7 +222,7 @@ def print_apa_table(desc_df: pd.DataFrame, cat_df: pd.DataFrame = None) -> None:
     print("  Note. M = Mean; SD = Standard Deviation")
 
 
-def run(verbose: bool = True) -> dict[str, pd.DataFrame]:
+def run(task: str, verbose: bool = True) -> dict[str, pd.DataFrame]:
     """
     Run descriptive statistics analysis.
 
@@ -239,7 +242,9 @@ def run(verbose: bool = True) -> dict[str, pd.DataFrame]:
     # Load data
     if verbose:
         print("\n  Loading data...")
-    df = get_analysis_data()
+    df = get_analysis_data(task)
+    variables = filter_vars(df, DESCRIPTIVE_VARS)
+    output_dir = get_output_dir(task)
 
     if verbose:
         print(f"  Total participants: N = {len(df)}")
@@ -252,7 +257,7 @@ def run(verbose: bool = True) -> dict[str, pd.DataFrame]:
     if verbose:
         print("\n  Computing descriptive statistics...")
 
-    desc_total = compute_descriptive_stats(df, DESCRIPTIVE_VARS, group_label="Total")
+    desc_total = compute_descriptive_stats(df, variables, group_label="Total")
 
     # Compute categorical statistics (gender frequency/percentage)
     cat_stats = compute_categorical_stats(df)
@@ -260,33 +265,33 @@ def run(verbose: bool = True) -> dict[str, pd.DataFrame]:
     # Compute by gender
     if 'gender_male' in df.columns:
         desc_male = compute_descriptive_stats(
-            df[df['gender_male'] == 1], DESCRIPTIVE_VARS, group_label="Male"
+            df[df['gender_male'] == 1], variables, group_label="Male"
         )
         desc_female = compute_descriptive_stats(
-            df[df['gender_male'] == 0], DESCRIPTIVE_VARS, group_label="Female"
+            df[df['gender_male'] == 0], variables, group_label="Female"
         )
         desc_by_gender = pd.concat([desc_total, desc_male, desc_female], ignore_index=True)
 
         # Gender comparison with t-tests
-        gender_comparison = compute_gender_comparison(df, DESCRIPTIVE_VARS)
+        gender_comparison = compute_gender_comparison(df, variables)
     else:
         desc_by_gender = desc_total
         gender_comparison = pd.DataFrame()
 
     # Save results
-    output_file = OUTPUT_DIR / "table1_descriptives.csv"
+    output_file = output_dir / "table1_descriptives.csv"
     desc_total.to_csv(output_file, index=False, encoding='utf-8-sig')
 
-    output_file_gender = OUTPUT_DIR / "table1_descriptives_by_gender.csv"
+    output_file_gender = output_dir / "table1_descriptives_by_gender.csv"
     desc_by_gender.to_csv(output_file_gender, index=False, encoding='utf-8-sig')
 
     # Save categorical statistics
     if len(cat_stats) > 0:
-        output_file_categorical = OUTPUT_DIR / "table1_categorical.csv"
+        output_file_categorical = output_dir / "table1_categorical.csv"
         cat_stats.to_csv(output_file_categorical, index=False, encoding='utf-8-sig')
 
     if len(gender_comparison) > 0:
-        output_file_comparison = OUTPUT_DIR / "table1_gender_comparison.csv"
+        output_file_comparison = output_dir / "table1_gender_comparison.csv"
         gender_comparison.to_csv(output_file_comparison, index=False, encoding='utf-8-sig')
 
     if verbose:
@@ -302,13 +307,13 @@ def run(verbose: bool = True) -> dict[str, pd.DataFrame]:
             else:
                 print("  No significant gender differences found (p < .05)")
 
-        print(f"\n  Output files:")
+        print("\n  Output files:")
         print(f"    - {output_file}")
         print(f"    - {output_file_gender}")
         if len(cat_stats) > 0:
-            print(f"    - {OUTPUT_DIR / 'table1_categorical.csv'}")
+            print(f"    - {output_dir / 'table1_categorical.csv'}")
         if len(gender_comparison) > 0:
-            print(f"    - {OUTPUT_DIR / 'table1_gender_comparison.csv'}")
+            print(f"    - {output_dir / 'table1_gender_comparison.csv'}")
 
     return {
         'total': desc_total,
@@ -318,8 +323,20 @@ def run(verbose: bool = True) -> dict[str, pd.DataFrame]:
     }
 
 
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Descriptive statistics analysis")
+    parser.add_argument(
+        "--task",
+        required=True,
+        choices=sorted(VALID_TASKS),
+        help="Dataset task to analyze (overall, stroop, prp, wcst).",
+    )
+    return parser.parse_args()
+
+
 if __name__ == "__main__":
-    results = run(verbose=True)
+    args = parse_args()
+    results = run(task=args.task, verbose=True)
     print("\n" + "=" * 70)
     print("DESCRIPTIVE STATISTICS COMPLETE")
     print("=" * 70)

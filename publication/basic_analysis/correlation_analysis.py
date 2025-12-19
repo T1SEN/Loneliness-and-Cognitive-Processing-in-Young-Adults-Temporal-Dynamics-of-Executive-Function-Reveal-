@@ -16,7 +16,7 @@ Output:
     results/publication/basic_analysis/correlation_heatmap.png
 
 Usage:
-    python -m publication.basic_analysis.correlation_analysis
+    python -m publication.basic_analysis.correlation_analysis --task overall
 """
 
 from __future__ import annotations
@@ -25,6 +25,7 @@ import sys
 if sys.platform.startswith("win") and hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding='utf-8')
 
+import argparse
 import matplotlib
 matplotlib.use("Agg")  # Headless backend
 
@@ -36,11 +37,13 @@ import seaborn as sns
 
 from publication.basic_analysis.utils import (
     get_analysis_data,
-    OUTPUT_DIR,
+    filter_vars,
+    get_output_dir,
     CORRELATION_VARS,
     print_section_header,
     format_pvalue,
 )
+from publication.preprocessing.constants import VALID_TASKS
 
 
 def compute_correlation_matrix(
@@ -256,7 +259,7 @@ def compute_ucla_ef_correlations(
     return pd.DataFrame(results)
 
 
-def run(verbose: bool = True) -> dict[str, pd.DataFrame]:
+def run(task: str, verbose: bool = True) -> dict[str, pd.DataFrame]:
     """
     Run correlation analysis.
 
@@ -276,7 +279,9 @@ def run(verbose: bool = True) -> dict[str, pd.DataFrame]:
     # Load data
     if verbose:
         print("\n  Loading data...")
-    df = get_analysis_data()
+    df = get_analysis_data(task)
+    variables = filter_vars(df, CORRELATION_VARS)
+    output_dir = get_output_dir(task)
 
     if verbose:
         print(f"  Total participants: N = {len(df)}")
@@ -285,26 +290,26 @@ def run(verbose: bool = True) -> dict[str, pd.DataFrame]:
     if verbose:
         print("\n  Computing correlation matrix...")
 
-    r_matrix, p_matrix, ci_matrix = compute_correlation_matrix(df, CORRELATION_VARS)
+    r_matrix, p_matrix, ci_matrix = compute_correlation_matrix(df, variables)
 
     # Save correlation matrices
-    r_matrix.to_csv(OUTPUT_DIR / "correlation_matrix.csv", encoding='utf-8-sig')
-    p_matrix.to_csv(OUTPUT_DIR / "correlation_pvalues.csv", encoding='utf-8-sig')
-    ci_matrix.to_csv(OUTPUT_DIR / "correlation_ci.csv", encoding='utf-8-sig')
+    r_matrix.to_csv(output_dir / "correlation_matrix.csv", encoding='utf-8-sig')
+    p_matrix.to_csv(output_dir / "correlation_pvalues.csv", encoding='utf-8-sig')
+    ci_matrix.to_csv(output_dir / "correlation_ci.csv", encoding='utf-8-sig')
 
     # Create heatmap
     if verbose:
         print("  Creating correlation heatmap...")
     create_correlation_heatmap(
         r_matrix, p_matrix,
-        OUTPUT_DIR / "correlation_heatmap.png",
+        output_dir / "correlation_heatmap.png",
         title="Correlation Matrix: UCLA Loneliness, DASS-21, and Executive Function"
     )
 
     # Detailed UCLA-EF correlations
-    ucla_ef_corr = compute_ucla_ef_correlations(df, CORRELATION_VARS)
+    ucla_ef_corr = compute_ucla_ef_correlations(df, variables)
     if len(ucla_ef_corr) > 0:
-        ucla_ef_corr.to_csv(OUTPUT_DIR / "ucla_correlations_detailed.csv", index=False, encoding='utf-8-sig')
+        ucla_ef_corr.to_csv(output_dir / "ucla_correlations_detailed.csv", index=False, encoding='utf-8-sig')
 
     # Print results
     if verbose:
@@ -349,10 +354,12 @@ def run(verbose: bool = True) -> dict[str, pd.DataFrame]:
                 print(f"  {row['Variable']:<25}: r = {row['r']:.3f}{sig} "
                       f"[{row['CI_Lower']:.3f}, {row['CI_Upper']:.3f}], p = {format_pvalue(row['p'])}")
 
-        print(f"\n  Output files:")
-        print(f"    - {OUTPUT_DIR / 'correlation_matrix.csv'}")
-        print(f"    - {OUTPUT_DIR / 'correlation_pvalues.csv'}")
-        print(f"    - {OUTPUT_DIR / 'correlation_heatmap.png'}")
+        print("\n  Output files:")
+        print(f"    - {output_dir / 'correlation_matrix.csv'}")
+        print(f"    - {output_dir / 'correlation_pvalues.csv'}")
+        print(f"    - {output_dir / 'correlation_heatmap.png'}")
+        if len(ucla_ef_corr) > 0:
+            print(f"    - {output_dir / 'ucla_correlations_detailed.csv'}")
 
     return {
         'r_matrix': r_matrix,
@@ -362,8 +369,20 @@ def run(verbose: bool = True) -> dict[str, pd.DataFrame]:
     }
 
 
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Correlation analysis")
+    parser.add_argument(
+        "--task",
+        required=True,
+        choices=sorted(VALID_TASKS),
+        help="Dataset task to analyze (overall, stroop, prp, wcst).",
+    )
+    return parser.parse_args()
+
+
 if __name__ == "__main__":
-    results = run(verbose=True)
+    args = parse_args()
+    results = run(task=args.task, verbose=True)
     print("\n" + "=" * 70)
     print("CORRELATION ANALYSIS COMPLETE")
     print("=" * 70)

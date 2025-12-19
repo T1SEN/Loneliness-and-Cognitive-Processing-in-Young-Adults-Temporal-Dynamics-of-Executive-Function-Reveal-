@@ -21,10 +21,7 @@ from publication.preprocessing import load_master_dataset
 # PATHS (constants.py에서 중앙 관리)
 # =============================================================================
 
-from publication.preprocessing.constants import ANALYSIS_OUTPUT_DIR
-
-OUTPUT_DIR = ANALYSIS_OUTPUT_DIR / "basic_analysis"
-OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+from publication.preprocessing.constants import ANALYSIS_OUTPUT_DIR, VALID_TASKS
 
 # =============================================================================
 # VARIABLE DEFINITIONS
@@ -122,11 +119,29 @@ STANDARDIZED_PREDICTORS = [
 # DATA LOADING
 # =============================================================================
 
-def get_analysis_data() -> pd.DataFrame:
+def get_analysis_data(task: str) -> pd.DataFrame:
     """
     Load master dataset with Tier-1 metrics pre-computed.
     """
-    return load_master_dataset()
+    if task not in VALID_TASKS:
+        raise ValueError(f"Unknown task: {task}. Valid tasks: {sorted(VALID_TASKS)}")
+    return load_master_dataset(task=task)
+
+
+def filter_vars(
+    df: pd.DataFrame,
+    var_list: list[tuple[str, str]],
+) -> list[tuple[str, str]]:
+    """Filter variable list to only include columns present in the dataframe."""
+    return [(col, label) for col, label in var_list if col in df.columns]
+
+
+def get_output_dir(task: str) -> Path:
+    """Return task-specific output directory for basic analysis."""
+    base_dir = ANALYSIS_OUTPUT_DIR / "basic_analysis"
+    output_dir = base_dir / task
+    output_dir.mkdir(parents=True, exist_ok=True)
+    return output_dir
 
 
 def prepare_regression_data(df: pd.DataFrame) -> pd.DataFrame:

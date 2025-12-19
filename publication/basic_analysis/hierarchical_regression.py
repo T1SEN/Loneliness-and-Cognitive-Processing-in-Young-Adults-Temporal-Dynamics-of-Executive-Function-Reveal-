@@ -24,7 +24,7 @@ Output:
     results/publication/basic_analysis/hierarchical_summary.txt
 
 Usage:
-    python -m publication.basic_analysis.hierarchical_regression
+    python -m publication.basic_analysis.hierarchical_regression --task overall
 """
 
 from __future__ import annotations
@@ -36,6 +36,7 @@ if sys.platform.startswith("win") and hasattr(sys.stdout, "reconfigure"):
 import warnings
 warnings.filterwarnings('ignore')
 
+import argparse
 import numpy as np
 import pandas as pd
 from scipy import stats
@@ -47,13 +48,15 @@ from typing import Any, Optional
 
 from publication.basic_analysis.utils import (
     get_analysis_data,
-    OUTPUT_DIR,
+    filter_vars,
+    get_output_dir,
     TIER1_OUTCOMES,
     STANDARDIZED_PREDICTORS,
     print_section_header,
     format_pvalue,
     format_coefficient,
 )
+from publication.preprocessing.constants import VALID_TASKS
 
 
 # =============================================================================
@@ -345,7 +348,7 @@ def generate_summary_report(results_df: pd.DataFrame, output_path: str) -> None:
         f.write('\n'.join(lines))
 
 
-def run(verbose: bool = True) -> dict[str, pd.DataFrame]:
+def run(task: str, verbose: bool = True) -> dict[str, pd.DataFrame]:
     """
     Run hierarchical regression analysis for all Tier-1 outcomes.
 
@@ -365,7 +368,9 @@ def run(verbose: bool = True) -> dict[str, pd.DataFrame]:
     # Load data
     if verbose:
         print("\n  Loading data...")
-    df = get_analysis_data()
+    df = get_analysis_data(task)
+    outcomes = filter_vars(df, TIER1_OUTCOMES)
+    output_dir = get_output_dir(task)
 
     if verbose:
         print(f"  Total participants: N = {len(df)}")
@@ -376,7 +381,7 @@ def run(verbose: bool = True) -> dict[str, pd.DataFrame]:
         print("  " + "-" * 50)
 
     all_results = []
-    for outcome_col, outcome_label in TIER1_OUTCOMES:
+    for outcome_col, outcome_label in outcomes:
         if verbose:
             print(f"\n  Analyzing: {outcome_label}")
 
@@ -391,7 +396,7 @@ def run(verbose: bool = True) -> dict[str, pd.DataFrame]:
     results_df = pd.DataFrame(all_results)
 
     # Save results
-    results_df.to_csv(OUTPUT_DIR / "hierarchical_results.csv", index=False, encoding='utf-8-sig')
+    results_df.to_csv(output_dir / "hierarchical_results.csv", index=False, encoding='utf-8-sig')
 
     # Create model comparison table
     comparison_cols = [
@@ -402,10 +407,10 @@ def run(verbose: bool = True) -> dict[str, pd.DataFrame]:
         'delta_r2_interaction', 'p_interaction_wald'
     ]
     comparison_df = results_df[[c for c in comparison_cols if c in results_df.columns]]
-    comparison_df.to_csv(OUTPUT_DIR / "model_comparison.csv", index=False, encoding='utf-8-sig')
+    comparison_df.to_csv(output_dir / "model_comparison.csv", index=False, encoding='utf-8-sig')
 
     # Generate summary report
-    generate_summary_report(results_df, OUTPUT_DIR / "hierarchical_summary.txt")
+    generate_summary_report(results_df, output_dir / "hierarchical_summary.txt")
 
     # Print results
     if verbose:
@@ -444,10 +449,10 @@ def run(verbose: bool = True) -> dict[str, pd.DataFrame]:
         else:
             print("    UCLA x Gender interactions: None")
 
-        print(f"\n  Output files:")
-        print(f"    - {OUTPUT_DIR / 'hierarchical_results.csv'}")
-        print(f"    - {OUTPUT_DIR / 'model_comparison.csv'}")
-        print(f"    - {OUTPUT_DIR / 'hierarchical_summary.txt'}")
+        print("\n  Output files:")
+        print(f"    - {output_dir / 'hierarchical_results.csv'}")
+        print(f"    - {output_dir / 'model_comparison.csv'}")
+        print(f"    - {output_dir / 'hierarchical_summary.txt'}")
 
     return {
         'results': results_df,
@@ -455,8 +460,20 @@ def run(verbose: bool = True) -> dict[str, pd.DataFrame]:
     }
 
 
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Hierarchical regression analysis")
+    parser.add_argument(
+        "--task",
+        required=True,
+        choices=sorted(VALID_TASKS),
+        help="Dataset task to analyze (overall, stroop, prp, wcst).",
+    )
+    return parser.parse_args()
+
+
 if __name__ == "__main__":
-    results = run(verbose=True)
+    args = parse_args()
+    results = run(task=args.task, verbose=True)
     print("\n" + "=" * 70)
     print("HIERARCHICAL REGRESSION ANALYSIS COMPLETE")
     print("=" * 70)

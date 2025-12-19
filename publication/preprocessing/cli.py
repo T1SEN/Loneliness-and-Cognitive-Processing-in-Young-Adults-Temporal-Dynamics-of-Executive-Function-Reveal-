@@ -37,8 +37,8 @@ Examples:
 
     parser.add_argument(
         '--build',
-        choices=list(VALID_TASKS) + ['all', 'overall'],
-        help='Build task-specific dataset (stroop, prp, wcst), overall, or all datasets',
+        choices=list(VALID_TASKS) + ['all'],
+        help='Build task-specific dataset (stroop, prp, wcst, overall) or all datasets',
     )
     parser.add_argument(
         '--list',

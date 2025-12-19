@@ -11,14 +11,15 @@ Scripts:
     hierarchical_regression.py  - Hierarchical multiple regression (DASS-controlled)
 
 Usage:
-    python -m publication.basic_analysis.descriptive_statistics
-    python -m publication.basic_analysis.correlation_analysis
-    python -m publication.basic_analysis.hierarchical_regression
+    python -m publication.basic_analysis.descriptive_statistics --task overall
+    python -m publication.basic_analysis.correlation_analysis --task overall
+    python -m publication.basic_analysis.hierarchical_regression --task overall
 """
 
 from .utils import (
     get_analysis_data,
-    OUTPUT_DIR,
+    filter_vars,
+    get_output_dir,
     DESCRIPTIVE_VARS,
     CORRELATION_VARS,
     TIER1_OUTCOMES,
@@ -31,7 +32,8 @@ from .utils import (
 
 __all__ = [
     'get_analysis_data',
-    'OUTPUT_DIR',
+    'filter_vars',
+    'get_output_dir',
     'DESCRIPTIVE_VARS',
     'CORRELATION_VARS',
     'TIER1_OUTCOMES',

@@ -22,16 +22,17 @@ TASK_DIRS = {
     'stroop': COMPLETE_STROOP_DIR,
     'prp': COMPLETE_PRP_DIR,
     'wcst': COMPLETE_WCST_DIR,
+    'overall': COMPLETE_OVERALL_DIR,
 }
 
-VALID_TASKS = {'stroop', 'prp', 'wcst'}
+VALID_TASKS = {'stroop', 'prp', 'wcst', 'overall'}
 
 
 def get_results_dir(task: str) -> Path:
     """Return the task-specific data directory.
 
     Args:
-        task: 'stroop', 'prp', or 'wcst'
+        task: 'stroop', 'prp', 'wcst', or 'overall'
 
     Returns:
         Path to the task-specific complete directory
