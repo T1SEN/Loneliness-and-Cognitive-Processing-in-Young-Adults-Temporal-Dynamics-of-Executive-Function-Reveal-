@@ -8,13 +8,14 @@ from typing import List, Dict
 import numpy as np
 import pandas as pd
 
+from ..constants import PRP_RT_MIN, PRP_RT_MAX
 from ..core import coefficient_of_variation
 from .loaders import load_prp_trials
 
 
 def derive_prp_features(
-    rt_min: float = 200,
-    rt_max: float = 5000,
+    rt_min: float = PRP_RT_MIN,
+    rt_max: float = PRP_RT_MAX,
     data_dir: Path | None = None,
 ) -> pd.DataFrame:
     prp, _ = load_prp_trials(

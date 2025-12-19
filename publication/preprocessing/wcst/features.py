@@ -12,8 +12,11 @@ from ..core import coefficient_of_variation
 from .loaders import load_wcst_trials
 
 
-def derive_wcst_features(data_dir: None | str | Path = None) -> pd.DataFrame:
-    wcst, _ = load_wcst_trials(data_dir=data_dir)
+def derive_wcst_features(
+    data_dir: None | str | Path = None,
+    filter_rt: bool = True,
+) -> pd.DataFrame:
+    wcst, _ = load_wcst_trials(data_dir=data_dir, filter_rt=filter_rt)
 
     rt_col = None
     for cand in ("reactionTimeMs", "rt_ms", "reaction_time_ms", "rt"):

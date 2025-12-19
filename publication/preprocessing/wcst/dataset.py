@@ -10,7 +10,7 @@ import pandas as pd
 
 from ..constants import RAW_DIR, get_results_dir
 from ..surveys import get_survey_valid_participants, SurveyQCCriteria
-from .filters import get_wcst_valid_participants, WCSTQCCriteria
+from .filters import clean_wcst_trials, get_wcst_valid_participants, WCSTQCCriteria
 
 TASK_FILES = [
     "1_participants_info.csv",
@@ -91,6 +91,8 @@ def build_wcst_dataset(
         if filename == "3_cognitive_tests_summary.csv" and "testName" in df_filtered.columns:
             df_filtered["testName"] = df_filtered["testName"].str.lower()
             df_filtered = df_filtered[df_filtered["testName"] == "wcst"]
+        if filename == "4b_wcst_trials.csv":
+            df_filtered, _ = clean_wcst_trials(df_filtered)
 
         results[filename] = df_filtered
 

@@ -43,12 +43,32 @@ def get_results_dir(task: str) -> Path:
 DEFAULT_RT_MIN = 100          # ms; drop anticipations
 DEFAULT_RT_MAX = 5000         # ms; general upper bound (WCST etc.)
 PRP_RT_MAX = 3000             # ms; PRP task timeout is 3s
+PRP_RT_MIN = 200              # ms; PRP RT2 lower bound for anticipation
 STROOP_RT_MAX = 3000          # ms; Stroop task timeout is 3s
 STROOP_RT_MIN = 200           # ms; Stroop RT lower bound for trial-level QC
 
 # PRP SOA binning constants
 DEFAULT_SOA_SHORT = 150       # ms; short bin upper bound
 DEFAULT_SOA_LONG = 1200       # ms; long bin lower bound
+
+# PRP QC constants
+PRP_IRI_MIN = 100             # ms; response grouping threshold
+PRP_ACC_THRESHOLD = 0.70      # participant-level accuracy cutoff
+PRP_LONG_SOA_MIN = 600        # ms; long SOA definition for QC (600/1200)
+
+# WCST filtering constants
+WCST_RT_MIN = 100             # ms; anticipatory response cutoff
+WCST_RT_MAX = 15000           # ms; attention lapse cutoff
+WCST_VALID_CONDS = {"colour", "shape", "number"}
+WCST_VALID_CARDS = {
+    "one_yellow_circle",
+    "two_black_rectangle",
+    "three_blue_star",
+    "four_red_triangle",
+}
+WCST_MIN_TRIALS = 60          # theoretical minimum
+WCST_MIN_MEDIAN_RT = 300      # ms; random clicking threshold
+WCST_MAX_SINGLE_CHOICE = 0.85 # max ratio for single card choice
 
 # Columns to standardize
 STANDARDIZE_COLS = ['ucla_score', 'dass_depression', 'dass_anxiety', 'dass_stress', 'age']

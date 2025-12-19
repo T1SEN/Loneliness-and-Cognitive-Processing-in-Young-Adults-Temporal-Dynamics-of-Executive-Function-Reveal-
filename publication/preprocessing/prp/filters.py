@@ -1,75 +1,166 @@
-"""PRP QC filters."""
+"""PRP QC filters (trial-level + participant-level)."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional, Set, Tuple
+from typing import Optional, Set
+import re
 
 import pandas as pd
 
-from ..constants import RAW_DIR, DEFAULT_RT_MIN, PRP_RT_MAX, DEFAULT_SOA_SHORT, DEFAULT_SOA_LONG
+from ..constants import (
+    RAW_DIR,
+    PRP_RT_MIN,
+    PRP_RT_MAX,
+    PRP_IRI_MIN,
+    PRP_ACC_THRESHOLD,
+    PRP_LONG_SOA_MIN,
+    DEFAULT_SOA_SHORT,
+    DEFAULT_SOA_LONG,
+)
+from ..core import ensure_participant_id
 
 
 @dataclass
 class PRPQCCriteria:
     n_trials_required: int = 120
-    min_accuracy: Optional[float] = None
-    require_valid_trials: bool = True
-    require_metrics: bool = True
+    rt_min: float = PRP_RT_MIN
+    rt_max: float = PRP_RT_MAX
+    iri_min: float = PRP_IRI_MIN
+    min_acc_t1: float = PRP_ACC_THRESHOLD
+    min_acc_t2_long: float = PRP_ACC_THRESHOLD
+    long_soa_min: float = PRP_LONG_SOA_MIN
+    require_valid_order: bool = True
 
 
-def _get_prp_valid_trial_participants(data_dir: Path, verbose: bool = False) -> Tuple[Set[str], Set[str]]:
-    prp_path = data_dir / "4a_prp_trials.csv"
-    if not prp_path.exists():
-        if verbose:
-            print(f"[WARN] PRP trials file not found: {prp_path}")
-        return set(), set()
+def _normalize_response_order(value: object) -> Optional[str]:
+    if not isinstance(value, str):
+        return None
+    cleaned = value.strip().lower()
+    if not cleaned:
+        return None
+    token = re.sub(r"[^a-z0-9]", "", cleaned)
+    if token.startswith("t1t2"):
+        return "t1_t2"
+    if token.startswith("t2t1"):
+        return "t2_t1"
+    if token in {"t1only", "t2only", "none"}:
+        return token
+    return None
 
-    prp_trials = pd.read_csv(prp_path, encoding="utf-8-sig")
 
-    prp_trials["t1_correct"] = prp_trials["t1_correct"].fillna(False).astype(bool)
-    prp_trials["t2_correct"] = prp_trials["t2_correct"].fillna(False).astype(bool)
-    if "t2_timeout" in prp_trials.columns:
-        prp_trials["t2_timeout"] = prp_trials["t2_timeout"].fillna(False).astype(bool)
+def compute_prp_qc_stats(
+    trials_df: pd.DataFrame,
+    criteria: Optional[PRPQCCriteria] = None,
+) -> pd.DataFrame:
+    if criteria is None:
+        criteria = PRPQCCriteria()
+
+    trials_df = ensure_participant_id(trials_df)
+
+    if "task" in trials_df.columns:
+        trials_df = trials_df[trials_df["task"].astype(str).str.lower() == "prp"].copy()
+
+    rt_col = "t2_rt_ms" if "t2_rt_ms" in trials_df.columns else (
+        "t2_rt" if "t2_rt" in trials_df.columns else None
+    )
+    if rt_col is None:
+        raise KeyError("PRP trials missing t2_rt or t2_rt_ms column.")
+
+    soa_col = "soa_nominal_ms" if "soa_nominal_ms" in trials_df.columns else (
+        "soa" if "soa" in trials_df.columns else None
+    )
+    if soa_col is None:
+        raise KeyError("PRP trials missing soa or soa_nominal_ms column.")
+
+    for bool_col in ["t1_timeout", "t2_timeout", "t1_correct", "t2_correct"]:
+        if bool_col in trials_df.columns:
+            trials_df[bool_col] = trials_df[bool_col].fillna(False).astype(bool)
+        else:
+            trials_df[bool_col] = False
+
+    trials_df["rt_ms"] = pd.to_numeric(trials_df[rt_col], errors="coerce")
+    trials_df["soa_ms"] = pd.to_numeric(trials_df[soa_col], errors="coerce")
+
+    if "response_order" in trials_df.columns:
+        trials_df["order_norm"] = trials_df["response_order"].apply(_normalize_response_order)
     else:
-        prp_trials["t2_timeout"] = False
+        trials_df["order_norm"] = None
 
-    rt_col = "t2_rt_ms" if "t2_rt_ms" in prp_trials.columns else (
-        "t2_rt" if "t2_rt" in prp_trials.columns else None
-    )
-    soa_col = "soa_nominal_ms" if "soa_nominal_ms" in prp_trials.columns else (
-        "soa" if "soa" in prp_trials.columns else None
-    )
+    if "t2_pressed_while_t1_pending" in trials_df.columns:
+        trials_df["t2_pressed_while_t1_pending"] = (
+            trials_df["t2_pressed_while_t1_pending"].fillna(False).astype(bool)
+        )
+    else:
+        trials_df["t2_pressed_while_t1_pending"] = False
 
-    if rt_col is None or soa_col is None:
-        return set(), set(prp_trials["participantId"].unique())
+    if "t1_resp_ms" in trials_df.columns and "t2_resp_ms" in trials_df.columns:
+        trials_df["t1_resp_ms"] = pd.to_numeric(trials_df["t1_resp_ms"], errors="coerce")
+        trials_df["t2_resp_ms"] = pd.to_numeric(trials_df["t2_resp_ms"], errors="coerce")
+        trials_df["iri_ms"] = trials_df["t2_resp_ms"] - trials_df["t1_resp_ms"]
+    else:
+        trials_df["t1_resp_ms"] = pd.NA
+        trials_df["t2_resp_ms"] = pd.NA
+        trials_df["iri_ms"] = pd.NA
 
-    valid = prp_trials[
-        (prp_trials["t1_correct"] == True)
-        & (prp_trials["t2_correct"] == True)
-        & (prp_trials["t2_timeout"] == False)
-        & (prp_trials[rt_col] > DEFAULT_RT_MIN)
-        & (prp_trials[rt_col] < PRP_RT_MAX)
-    ].copy()
+    non_timeout = (~trials_df["t1_timeout"]) & (~trials_df["t2_timeout"])
+    order_valid = trials_df["order_norm"] == "t1_t2"
+    if "t2_pressed_while_t1_pending" in trials_df.columns:
+        order_valid = order_valid & (~trials_df["t2_pressed_while_t1_pending"].fillna(False).astype(bool))
 
-    def bin_soa(soa):
-        if pd.isna(soa):
-            return "other"
-        if soa <= DEFAULT_SOA_SHORT:
-            return "short"
-        if soa >= DEFAULT_SOA_LONG:
-            return "long"
-        return "other"
+    rt_valid = trials_df["rt_ms"].between(criteria.rt_min, criteria.rt_max)
+    correct_both = trials_df["t1_correct"] & trials_df["t2_correct"]
 
-    valid["soa_bin"] = valid[soa_col].apply(bin_soa)
-    valid = valid[valid["soa_bin"].isin(["short", "long"])]
+    iri_applicable = non_timeout & trials_df["t1_resp_ms"].notna() & trials_df["t2_resp_ms"].notna()
+    iri_valid = iri_applicable & (trials_df["iri_ms"] >= criteria.iri_min)
 
-    valid_ids = set(valid["participantId"].unique())
-    all_ids = set(prp_trials["participantId"].unique())
-    no_valid_ids = all_ids - valid_ids
+    valid_trial = non_timeout & correct_both & rt_valid
+    if criteria.require_valid_order and "response_order" in trials_df.columns:
+        valid_trial = valid_trial & order_valid
+    if criteria.iri_min > 0:
+        valid_trial = valid_trial & iri_valid
 
-    return valid_ids, no_valid_ids
+    n_trials = trials_df.groupby("participant_id").size().rename("n_trials")
+
+    t1_denom = trials_df[~trials_df["t1_timeout"]].groupby("participant_id").size()
+    t1_num = trials_df[~trials_df["t1_timeout"]].groupby("participant_id")["t1_correct"].sum()
+    acc_t1 = (t1_num / t1_denom).rename("acc_t1")
+
+    long_mask = (~trials_df["t2_timeout"]) & (trials_df["soa_ms"] >= criteria.long_soa_min)
+    t2_long_denom = trials_df[long_mask].groupby("participant_id").size()
+    t2_long_num = trials_df[long_mask].groupby("participant_id")["t2_correct"].sum()
+    acc_t2_long = (t2_long_num / t2_long_denom).rename("acc_t2_long")
+
+    valid_trial_n = valid_trial.groupby(trials_df["participant_id"]).sum().rename("valid_trial_n")
+
+    def _count_valid(soa_min: Optional[float], soa_max: Optional[float], label: str) -> pd.Series:
+        mask = valid_trial.copy()
+        if soa_min is not None:
+            mask = mask & (trials_df["soa_ms"] >= soa_min)
+        if soa_max is not None:
+            mask = mask & (trials_df["soa_ms"] <= soa_max)
+        return mask.groupby(trials_df["participant_id"]).sum().rename(label)
+
+    valid_short_n = _count_valid(None, DEFAULT_SOA_SHORT, "valid_short_n")
+    valid_long_n = _count_valid(DEFAULT_SOA_LONG, None, "valid_long_n")
+
+    order_violation_n = None
+    if "response_order" in trials_df.columns:
+        order_violation_n = (~order_valid).groupby(trials_df["participant_id"]).sum().rename("order_violation_n")
+
+    iri_applicable_n = iri_applicable.groupby(trials_df["participant_id"]).sum().rename("iri_applicable_n")
+    iri_violation_n = (iri_applicable & (trials_df["iri_ms"] < criteria.iri_min)).groupby(
+        trials_df["participant_id"]
+    ).sum().rename("iri_violation_n")
+
+    parts = [n_trials, acc_t1, acc_t2_long, valid_trial_n, valid_short_n, valid_long_n]
+    if order_violation_n is not None:
+        parts.append(order_violation_n)
+    parts.extend([iri_applicable_n, iri_violation_n])
+
+    qc = pd.concat(parts, axis=1).fillna(0).reset_index()
+    return qc
 
 
 def get_prp_valid_participants(
@@ -82,48 +173,26 @@ def get_prp_valid_participants(
     if criteria is None:
         criteria = PRPQCCriteria()
 
-    summary_path = data_dir / "3_cognitive_tests_summary.csv"
-    if not summary_path.exists():
+    trials_path = data_dir / "4a_prp_trials.csv"
+    if not trials_path.exists():
         if verbose:
-            print(f"[WARN] cognitive summary file not found: {summary_path}")
+            print(f"[WARN] PRP trials file not found: {trials_path}")
         return set()
 
-    summary_df = pd.read_csv(summary_path, encoding="utf-8-sig")
-    summary_df["testName"] = summary_df["testName"].str.lower()
+    trials = pd.read_csv(trials_path, encoding="utf-8-sig")
+    qc = compute_prp_qc_stats(trials, criteria)
 
-    prp_df = summary_df[summary_df["testName"] == "prp"].copy()
-    if prp_df.empty:
-        return set()
-
+    mask = (
+        (qc["acc_t1"] >= criteria.min_acc_t1)
+        & (qc["acc_t2_long"] >= criteria.min_acc_t2_long)
+    )
     if criteria.n_trials_required > 0:
-        prp_df = prp_df[prp_df["n_trials"].fillna(0).astype(int) == criteria.n_trials_required]
+        mask = mask & (qc["n_trials"] == criteria.n_trials_required)
 
-    if criteria.require_metrics:
-        mask = (
-            prp_df["mrt_t2"].notna()
-            & prp_df["rt2_soa_50"].notna()
-            & prp_df["rt2_soa_1200"].notna()
-        )
-        prp_df = prp_df[mask]
-
-    valid_ids = set(prp_df["participantId"].unique())
-
-    if criteria.min_accuracy is not None:
-        acc_threshold = criteria.min_accuracy * 100
-        if "acc_t2" in prp_df.columns:
-            prp_df_acc = prp_df[prp_df["acc_t2"].fillna(0) >= acc_threshold]
-            valid_ids = set(prp_df_acc["participantId"].unique())
-
-    if criteria.require_valid_trials:
-        _, trial_invalid = _get_prp_valid_trial_participants(data_dir, verbose)
-        excluded = valid_ids & trial_invalid
-        if excluded and verbose:
-            print(f"  [INFO] PRP excluded for 0 valid trials: {len(excluded)}")
-        valid_ids -= trial_invalid
+    valid_ids = set(qc.loc[mask, "participant_id"].astype(str))
 
     if verbose:
-        all_prp = set(summary_df[summary_df["testName"] == "prp"]["participantId"].unique())
-        excluded = all_prp - valid_ids
+        excluded = set(qc["participant_id"].astype(str)) - valid_ids
         if excluded:
             print(f"  [INFO] PRP QC failed: {len(excluded)}")
 
