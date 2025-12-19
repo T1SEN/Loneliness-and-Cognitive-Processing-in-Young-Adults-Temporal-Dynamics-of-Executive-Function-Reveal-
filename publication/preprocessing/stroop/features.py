@@ -8,13 +8,14 @@ from typing import List, Dict
 import numpy as np
 import pandas as pd
 
+from ..constants import STROOP_RT_MIN, STROOP_RT_MAX
 from ..core import coefficient_of_variation
 from .loaders import load_stroop_trials
 
 
 def derive_stroop_features(
-    rt_min: float = 200,
-    rt_max: float = 3000,
+    rt_min: float = STROOP_RT_MIN,
+    rt_max: float = STROOP_RT_MAX,
     data_dir: None | str | Path = None,
 ) -> pd.DataFrame:
     stroop, _ = load_stroop_trials(

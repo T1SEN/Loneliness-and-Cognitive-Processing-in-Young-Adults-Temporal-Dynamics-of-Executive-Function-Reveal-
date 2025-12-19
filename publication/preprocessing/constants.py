@@ -44,6 +44,7 @@ DEFAULT_RT_MIN = 100          # ms; drop anticipations
 DEFAULT_RT_MAX = 5000         # ms; general upper bound (WCST etc.)
 PRP_RT_MAX = 3000             # ms; PRP task timeout is 3s
 STROOP_RT_MAX = 3000          # ms; Stroop task timeout is 3s
+STROOP_RT_MIN = 200           # ms; Stroop RT lower bound for trial-level QC
 
 # PRP SOA binning constants
 DEFAULT_SOA_SHORT = 150       # ms; short bin upper bound

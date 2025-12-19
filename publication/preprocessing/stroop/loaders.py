@@ -8,7 +8,7 @@ from typing import Dict, Any, Tuple
 import pandas as pd
 
 from ..constants import (
-    DEFAULT_RT_MIN,
+    STROOP_RT_MIN,
     STROOP_RT_MAX,
     get_results_dir,
 )
@@ -17,7 +17,7 @@ from ..core import ensure_participant_id
 
 def load_stroop_trials(
     data_dir: Path | None = None,
-    rt_min: int = DEFAULT_RT_MIN,
+    rt_min: int = STROOP_RT_MIN,
     rt_max: int = STROOP_RT_MAX,
     require_correct_for_rt: bool = True,
     drop_timeouts: bool = True,
@@ -94,8 +94,8 @@ def load_stroop_summary(data_dir: Path) -> pd.DataFrame:
     rt_trials = stroop_trials[
         ((stroop_trials["timeout"] == False) if "timeout" in stroop_trials.columns else True)
         & (stroop_trials["correct"] == True)
-        & (stroop_trials[rt_col] > DEFAULT_RT_MIN)
-        & (stroop_trials[rt_col] < STROOP_RT_MAX)
+        & (stroop_trials[rt_col] >= STROOP_RT_MIN)
+        & (stroop_trials[rt_col] <= STROOP_RT_MAX)
     ].copy()
 
     rt_summary = rt_trials.groupby(["participant_id", cond_col]).agg(
