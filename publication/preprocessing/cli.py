@@ -12,12 +12,10 @@ import argparse
 import sys
 
 from .constants import VALID_TASKS
-from .dataset_builder import (
-    build_task_dataset,
-    build_all_datasets,
-    get_dataset_info,
-    print_dataset_summary,
-)
+from .datasets import build_all_datasets, get_dataset_info, print_dataset_summary
+from .prp.dataset import build_prp_dataset
+from .stroop.dataset import build_stroop_dataset
+from .wcst.dataset import build_wcst_dataset
 
 # Windows Unicode 출력 지원
 if sys.platform.startswith("win") and hasattr(sys.stdout, "reconfigure"):
@@ -90,8 +88,12 @@ Examples:
 
         if args.build == 'all':
             build_all_datasets(save=save, verbose=verbose)
-        else:
-            build_task_dataset(args.build, save=save, verbose=verbose)
+        elif args.build == 'prp':
+            build_prp_dataset(save=save, verbose=verbose)
+        elif args.build == 'stroop':
+            build_stroop_dataset(save=save, verbose=verbose)
+        elif args.build == 'wcst':
+            build_wcst_dataset(save=save, verbose=verbose)
 
 
 if __name__ == '__main__':

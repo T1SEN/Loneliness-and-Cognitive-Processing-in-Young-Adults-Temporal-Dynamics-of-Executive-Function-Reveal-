@@ -149,47 +149,52 @@ analysis/
 
 ## Publication Package Structure
 
-출판용 분석을 위한 통합 패키지. IRB 연구계획서에 명시된 분석과 추가 고급분석 포함.
+Publication analysis package layout (task-specific preprocessing).
 
 ```
 publication/
-├── data/                       # 데이터 파일
-│   ├── raw/                    # 원본 데이터 (전체 참가자)
-│   ├── outputs/                # 생성된 데이터 (master_dataset.csv 등)
-│   ├── export_alldata.py       # Firebase 데이터 추출
-│
-├── preprocessing/              # 데이터 전처리
-│   ├── loaders.py              # load_master_dataset, load_*_scores
-│   ├── trial_loaders.py        # load_prp_trials, load_stroop_trials, load_wcst_trials
-│   ├── features.py             # derive_all_features
-│   └── constants.py            # RT 임계값, SOA 상수
-│
-├── basic_analysis/             # IRB 기본 분석
-│   ├── descriptive_statistics.py     # Descriptive statistics
-│   ├── correlation_analysis.py       # Correlation analysis
-│   └── hierarchical_regression.py    # Hierarchical regression (DASS-controlled)
-│
-├── advanced_analysis/          # 고급 분석
-│   ├── mediation_suite.py      # UCLA → DASS → EF 매개분석
-│   └── bayesian_suite.py       # 베이지안 SEM
-│
-├── path_analysis/              # EF composite path analyses
-│   ├── path_depression.py      # Path analysis (Depression)
-│   ├── path_anxiety.py         # Path analysis (Anxiety)
-│   └── path_stress.py          # Path analysis (Stress)
-│
-├── validity_reliability/       # 심리측정 검증
-│   ├── reliability_suite.py    # Cronbach's alpha, split-half
-│   ├── validity_suite.py       # Factor analysis, convergent validity
-│   └── data_quality_suite.py   # 응답 시간 검증, careless responding
-│
-└── gender_analysis/            # 성별 분석
-    ├── vulnerability/          # 남성 취약성, 이중 해리
-    ├── stratified/             # 성별 층화 분석 (DDM, Stroop, WCST)
-    └── interactions/           # UCLA × Gender 상호작용
+|-- data/
+|   |-- raw/
+|   |-- complete_prp/
+|   |-- complete_stroop/
+|   |-- complete_wcst/
+|   |-- outputs/
+|   `-- export_alldata.py
+|-- preprocessing/
+|   |-- __init__.py
+|   |-- __main__.py
+|   |-- cli.py
+|   |-- constants.py
+|   |-- core.py
+|   |-- surveys.py
+|   |-- datasets.py
+|   |-- standardization.py
+|   |-- prp/
+|   |   |-- __init__.py
+|   |   |-- loaders.py
+|   |   |-- filters.py
+|   |   |-- features.py
+|   |   `-- dataset.py
+|   |-- stroop/
+|   |   |-- __init__.py
+|   |   |-- loaders.py
+|   |   |-- filters.py
+|   |   |-- features.py
+|   |   `-- dataset.py
+|   `-- wcst/
+|       |-- __init__.py
+|       |-- loaders.py
+|       |-- filters.py
+|       |-- features.py
+|       `-- dataset.py
+|-- basic_analysis/
+|-- advanced_analysis/
+|-- path_analysis/
+|-- validity_reliability/
+`-- gender_analysis/
 ```
 
-**출력 디렉토리:** `results/publication/{basic_analysis,advanced_analysis,validity_reliability,gender_analysis}/`
+**Output directory:** `results/publication/{basic_analysis,advanced_analysis,validity_reliability,gender_analysis}/`
 
 ### 사용법
 ```python
@@ -283,16 +288,18 @@ from analysis.preprocessing import (
 ### `publication/preprocessing/` - Publication Data Loading
 ```python
 from publication.preprocessing import (
-    # Task-specific datasets (권장)
-    load_master_dataset,              # task='stroop', 'prp', 'wcst'
+    # Task-specific datasets (recommended)
+    load_master_dataset,  # task='stroop', 'prp', 'wcst'
+    # Task builders
+    build_prp_dataset, build_stroop_dataset, build_wcst_dataset,
+    build_all_datasets,
     # Trial loaders
     load_prp_trials, load_stroop_trials, load_wcst_trials,
-    derive_all_features,              # 모든 파생 변수 계산
-    # Dataset builder
-    build_task_dataset, build_all_datasets,  # task별 데이터셋 빌드
+    # Trial-derived features
+    derive_prp_features, derive_stroop_features, derive_wcst_features,
     # Path utilities
-    get_results_dir, get_cache_path,  # task별 경로 분기
-    RAW_DIR, DATA_DIR, VALID_TASKS,   # 경로 상수
+    get_results_dir,
+    RAW_DIR, DATA_DIR, VALID_TASKS,
 )
 
 # Task-specific dataset usage:
@@ -300,7 +307,7 @@ df_stroop = load_master_dataset(task='stroop')  # N ~ 200
 df_prp = load_master_dataset(task='prp')        # N ~ 195
 df_wcst = load_master_dataset(task='wcst')      # N ~ 190
 ```
-Note: Each task has its own complete dataset. Task correlations are ~0.1, so they are treated independently.
+Note: Each task has its own complete dataset. Each complete_* contains only its task trial file.
 
 ## Implementation Details
 

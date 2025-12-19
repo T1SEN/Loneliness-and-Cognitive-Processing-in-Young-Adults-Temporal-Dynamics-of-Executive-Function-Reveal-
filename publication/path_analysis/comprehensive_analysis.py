@@ -73,7 +73,7 @@ MODEL_SPECS = {
 
 def load_data() -> pd.DataFrame:
     """Load and prepare data."""
-    df = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
+    df = load_master_dataset(merge_cognitive_summary=True)
     df = prepare_gender_variable(df)
     df = standardize_predictors(df)
     df = create_ef_composite(df)

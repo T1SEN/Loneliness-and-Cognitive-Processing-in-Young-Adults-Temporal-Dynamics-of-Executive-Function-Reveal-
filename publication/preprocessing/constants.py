@@ -41,27 +41,13 @@ def get_results_dir(task: str) -> Path:
 
 # RT filtering constants
 DEFAULT_RT_MIN = 100          # ms; drop anticipations
-DEFAULT_RT_MAX = 5000         # ms; legacy upper bound (WCST etc.)
+DEFAULT_RT_MAX = 5000         # ms; general upper bound (WCST etc.)
 PRP_RT_MAX = 3000             # ms; PRP task timeout is 3s
 STROOP_RT_MAX = 3000          # ms; Stroop task timeout is 3s
 
 # PRP SOA binning constants
 DEFAULT_SOA_SHORT = 150       # ms; short bin upper bound
 DEFAULT_SOA_LONG = 1200       # ms; long bin lower bound
-
-# Cache path for master dataset
-def get_cache_path(task: str) -> Path:
-    """Return the task-specific master dataset cache path.
-
-    Args:
-        task: 'stroop', 'prp', or 'wcst'
-
-    Returns:
-        Path to the cache file for the task
-    """
-    if task not in VALID_TASKS:
-        raise ValueError(f"Unknown task: {task}. Valid tasks: {VALID_TASKS}")
-    return ANALYSIS_OUTPUT_DIR / f"master_dataset_{task}.parquet"
 
 # Columns to standardize
 STANDARDIZE_COLS = ['ucla_score', 'dass_depression', 'dass_anxiety', 'dass_stress', 'age']

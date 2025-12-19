@@ -54,7 +54,7 @@ OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 def load_mediation_data() -> pd.DataFrame:
     """Load and prepare data for mediation analysis."""
-    master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
+    master = load_master_dataset(merge_cognitive_summary=True)
 
     # Normalize gender using shared utility
     master = prepare_gender_variable(master)

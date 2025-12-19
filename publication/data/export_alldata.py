@@ -3,7 +3,7 @@ from firebase_admin import credentials, firestore
 import pandas as pd
 from pathlib import Path
 
-from publication.preprocessing.dataset_builder import build_all_datasets
+from publication.preprocessing.datasets import build_all_datasets
 
 # 스크립트 위치 기준 경로 설정
 SCRIPT_DIR = Path(__file__).parent

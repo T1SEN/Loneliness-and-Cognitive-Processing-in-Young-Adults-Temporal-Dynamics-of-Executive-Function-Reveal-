@@ -122,21 +122,11 @@ STANDARDIZED_PREDICTORS = [
 # DATA LOADING
 # =============================================================================
 
-def get_analysis_data(use_cache: bool = True) -> pd.DataFrame:
+def get_analysis_data() -> pd.DataFrame:
     """
     Load master dataset with Tier-1 metrics pre-computed.
-
-    Parameters
-    ----------
-    use_cache : bool
-        Whether to use cached parquet file (default: True)
-
-    Returns
-    -------
-    pd.DataFrame
-        Master dataset with all required variables
     """
-    return load_master_dataset(use_cache=use_cache)
+    return load_master_dataset()
 
 
 def prepare_regression_data(df: pd.DataFrame) -> pd.DataFrame:

@@ -283,7 +283,7 @@ def calculate_convergent_discriminant_validity() -> pd.DataFrame:
     pd.DataFrame
         Correlation matrix with p-values
     """
-    master = load_master_dataset(use_cache=True)
+    master = load_master_dataset()
 
     # Ensure required columns
     required_cols = ['ucla_total', 'dass_depression', 'dass_anxiety', 'dass_stress']
@@ -349,7 +349,7 @@ def calculate_criterion_validity() -> pd.DataFrame:
     pd.DataFrame
         R-squared values for UCLA predicting each EF outcome
     """
-    master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
+    master = load_master_dataset(merge_cognitive_summary=True)
     master = prepare_gender_variable(master)
 
     # Ensure ucla column

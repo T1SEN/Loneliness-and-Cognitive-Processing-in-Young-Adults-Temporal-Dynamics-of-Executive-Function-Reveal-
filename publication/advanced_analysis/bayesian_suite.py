@@ -110,7 +110,7 @@ def register_analysis(name: str, description: str):
 
 def load_bayesian_data() -> pd.DataFrame:
     """Load and prepare data for Bayesian analysis."""
-    master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
+    master = load_master_dataset(merge_cognitive_summary=True)
 
     # Normalize gender using shared utility
     master = prepare_gender_variable(master)

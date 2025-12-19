@@ -276,7 +276,7 @@ def run(verbose: bool = True) -> dict[str, pd.DataFrame]:
     # Load data
     if verbose:
         print("\n  Loading data...")
-    df = get_analysis_data(use_cache=True)
+    df = get_analysis_data()
 
     if verbose:
         print(f"  Total participants: N = {len(df)}")

@@ -67,8 +67,6 @@ class NetworkResults:
 
 def prepare_network_frame(
     variable_set: str = "domain_level",
-    use_cache: bool = True,
-    force_rebuild: bool = False,
 ) -> Tuple[pd.DataFrame, List[str], NetworkVariableSet]:
     """
     Load the master dataset and return a standardized frame with requested nodes.
@@ -78,8 +76,6 @@ def prepare_network_frame(
 
     config = VARIABLE_SETS[variable_set]
     master = load_master_dataset(
-        use_cache=use_cache,
-        force_rebuild=force_rebuild,
         merge_cognitive_summary=True,
         merge_trial_features=True,
     )
@@ -681,7 +677,6 @@ def run(
     alpha: Optional[float] = None,
     use_cv: bool = True,
     cv_folds: int = 5,
-    force_rebuild: bool = False,
     verbose: bool = True,
     correlation: str = "pearson",
 ) -> Dict[str, object]:
@@ -699,8 +694,6 @@ def run(
 
     frame, columns, config = prepare_network_frame(
         variable_set=variable_set,
-        use_cache=not force_rebuild,
-        force_rebuild=force_rebuild,
     )
 
     output_dir = config.name
@@ -763,7 +756,6 @@ if __name__ == "__main__":
     parser.add_argument("--alpha", type=float, default=None, help="Manual GraphicalLasso alpha (skip CV).")
     parser.add_argument("--no-cv", action="store_true", help="Disable GraphicalLassoCV (use alpha only).")
     parser.add_argument("--cv-folds", type=int, default=5, help="Cross-validation folds when applicable.")
-    parser.add_argument("--force-rebuild", action="store_true", help="Force rebuild of master dataset cache.")
     parser.add_argument(
         "--correlation",
         type=str,
@@ -788,7 +780,6 @@ if __name__ == "__main__":
         alpha=args.alpha,
         use_cv=not args.no_cv and args.alpha is None,
         cv_folds=args.cv_folds,
-        force_rebuild=args.force_rebuild,
         verbose=True,
         correlation=args.correlation,
     )

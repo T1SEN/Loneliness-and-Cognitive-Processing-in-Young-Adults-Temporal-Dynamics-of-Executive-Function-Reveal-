@@ -20,7 +20,6 @@ def main() -> None:
     parser.add_argument("--alpha", type=float, default=None, help="Manual GraphicalLasso alpha (skip CV).")
     parser.add_argument("--no-cv", action="store_true", help="Disable cross-validation.")
     parser.add_argument("--cv-folds", type=int, default=5, help="Number of CV folds when enabled.")
-    parser.add_argument("--force-rebuild", action="store_true", help="Force rebuild of master dataset.")
     parser.add_argument(
         "--correlation",
         type=str,
@@ -48,7 +47,6 @@ def main() -> None:
         alpha=args.alpha,
         use_cv=not args.no_cv and args.alpha is None,
         cv_folds=args.cv_folds,
-        force_rebuild=args.force_rebuild,
         verbose=True,
         correlation=args.correlation,
     )

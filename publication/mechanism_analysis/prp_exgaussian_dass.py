@@ -93,7 +93,7 @@ def register_analysis(name: str, description: str):
 
 def load_prp_data() -> pd.DataFrame:
     """Load and prepare master dataset with gender and standardized predictors."""
-    master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
+    master = load_master_dataset(merge_cognitive_summary=True)
     master = prepare_gender_variable(master)
     master = standardize_predictors(master)
     return master
@@ -102,7 +102,6 @@ def load_prp_data() -> pd.DataFrame:
 def load_prp_trials() -> pd.DataFrame:
     """Load PRP trial-level data using shared loader (short/long SOA only)."""
     trials, _ = load_prp_trials_shared(
-        use_cache=True,
         rt_min=200,  # Match legacy PRP ex-Gaussian preprocessing
         rt_max=PRP_RT_MAX,
         require_t1_correct=False,

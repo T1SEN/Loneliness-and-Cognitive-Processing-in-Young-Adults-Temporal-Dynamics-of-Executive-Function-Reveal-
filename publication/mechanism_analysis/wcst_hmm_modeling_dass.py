@@ -116,11 +116,11 @@ def register_analysis(name: str, description: str):
 
 def load_hmm_data() -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Load and prepare data for HMM analysis."""
-    master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
+    master = load_master_dataset(merge_cognitive_summary=True)
     master = prepare_gender_variable(master)
     master = standardize_predictors(master)
 
-    trials, _ = load_wcst_trials_shared(use_cache=True)
+    trials, _ = load_wcst_trials_shared()
     trials.columns = trials.columns.str.lower()
 
     if 'rt_ms' in trials.columns:

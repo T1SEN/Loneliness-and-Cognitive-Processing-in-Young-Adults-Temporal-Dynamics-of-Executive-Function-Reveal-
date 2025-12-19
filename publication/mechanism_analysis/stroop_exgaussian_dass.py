@@ -94,7 +94,7 @@ def register_analysis(name: str, description: str):
 
 def load_stroop_data() -> pd.DataFrame:
     """Load and prepare master dataset with gender and standardized predictors."""
-    master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
+    master = load_master_dataset(merge_cognitive_summary=True)
     master = prepare_gender_variable(master)
     master = standardize_predictors(master)
     return master
@@ -103,7 +103,6 @@ def load_stroop_data() -> pd.DataFrame:
 def load_stroop_trials() -> pd.DataFrame:
     """Load Stroop trial-level data using shared loader."""
     trials, _ = load_stroop_trials_shared(
-        use_cache=True,
         rt_min=200,  # Legacy analysis used 200 ms lower bound
         rt_max=STROOP_RT_MAX,
         drop_timeouts=True,

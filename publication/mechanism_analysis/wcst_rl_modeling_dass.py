@@ -94,7 +94,7 @@ def register_analysis(name: str, description: str):
 
 def load_rl_data() -> pd.DataFrame:
     """Load and prepare master dataset with gender and standardized predictors."""
-    master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
+    master = load_master_dataset(merge_cognitive_summary=True)
     master = prepare_gender_variable(master)
     master = standardize_predictors(master)
     return master
@@ -102,7 +102,7 @@ def load_rl_data() -> pd.DataFrame:
 
 def load_wcst_trials() -> pd.DataFrame:
     """Load WCST trial-level data for RL modeling using shared loader."""
-    trials, _ = load_wcst_trials_shared(use_cache=True)
+    trials, _ = load_wcst_trials_shared()
     trials.columns = trials.columns.str.lower()
 
     if 'chosencard' in trials.columns:

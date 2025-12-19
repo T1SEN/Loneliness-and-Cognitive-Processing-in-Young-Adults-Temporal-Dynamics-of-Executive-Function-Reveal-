@@ -158,7 +158,7 @@ def load_common_path_data(
     """
     Load master dataset with predictors needed for path analysis.
     """
-    master = load_master_dataset(use_cache=True, merge_cognitive_summary=True)
+    master = load_master_dataset(merge_cognitive_summary=True)
     master = prepare_gender_variable(master)
     master = standardize_predictors(master)
 
