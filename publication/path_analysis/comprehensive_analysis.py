@@ -15,6 +15,7 @@ import sys
 if sys.platform.startswith("win") and hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding='utf-8')
 
+import argparse
 from pathlib import Path
 from typing import Dict, List, Tuple
 import numpy as np
@@ -27,11 +28,9 @@ from publication.preprocessing import (
     standardize_predictors,
     prepare_gender_variable,
 )
-from publication.preprocessing.constants import ANALYSIS_OUTPUT_DIR
+from publication.preprocessing.constants import VALID_TASKS
 from publication.advanced_analysis._utils import create_ef_composite
-
-OUTPUT_DIR = ANALYSIS_OUTPUT_DIR / "path_analysis" / "comprehensive"
-OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+from ._utils import get_output_dir
 
 DASS_COLS = {
     'depression': 'z_dass_dep',
@@ -71,9 +70,9 @@ MODEL_SPECS = {
 }
 
 
-def load_data() -> pd.DataFrame:
+def load_data(task: str) -> pd.DataFrame:
     """Load and prepare data."""
-    df = load_master_dataset(task="overall", merge_cognitive_summary=True)
+    df = load_master_dataset(task=task, merge_cognitive_summary=True)
     df = prepare_gender_variable(df)
     df = standardize_predictors(df)
     df = create_ef_composite(df)
@@ -171,10 +170,11 @@ def fisher_z_test(r1: float, n1: int, r2: float, n2: int) -> Tuple[float, float]
     return z_diff, p
 
 
-def run_comprehensive_analysis(verbose: bool = True) -> Dict:
+def run_comprehensive_analysis(task: str, verbose: bool = True) -> Dict:
     """Run all comprehensive analyses."""
 
-    df = load_data()
+    output_dir = get_output_dir(task, "comprehensive")
+    df = load_data(task)
     df_male = df[df['gender_male'] == 1].copy()
     df_female = df[df['gender_male'] == 0].copy()
 
@@ -272,15 +272,15 @@ def run_comprehensive_analysis(verbose: bool = True) -> Dict:
                     print(f"  ⚠️ Gender difference: a-path p={a_p:.3f}, b-path p={b_p:.3f}")
 
     results_df = pd.DataFrame(all_results)
-    results_df.to_csv(OUTPUT_DIR / "comprehensive_results.csv", index=False, encoding='utf-8-sig')
+    results_df.to_csv(output_dir / "comprehensive_results.csv", index=False, encoding='utf-8-sig')
 
     # Summary tables
-    _create_summary_tables(results_df, verbose)
+    _create_summary_tables(results_df, output_dir, verbose)
 
     return {'results': results_df}
 
 
-def _create_summary_tables(df: pd.DataFrame, verbose: bool = True):
+def _create_summary_tables(df: pd.DataFrame, output_dir: Path, verbose: bool = True):
     """Create publication-ready summary tables."""
 
     # Table 1: Indirect effects by DASS subscale and model
@@ -290,7 +290,7 @@ def _create_summary_tables(df: pd.DataFrame, verbose: bool = True):
         values=['full_indirect', 'full_sig'],
         aggfunc='first'
     )
-    summary_indirect.to_csv(OUTPUT_DIR / "summary_indirect_effects.csv", encoding='utf-8-sig')
+    summary_indirect.to_csv(output_dir / "summary_indirect_effects.csv", encoding='utf-8-sig')
 
     # Table 2: Gender-stratified results
     gender_summary = []
@@ -307,13 +307,13 @@ def _create_summary_tables(df: pd.DataFrame, verbose: bool = True):
             'Diff p': f"{row['a_path_p_diff']:.3f}" if not np.isnan(row['a_path_p_diff']) else 'N/A',
         })
     gender_df = pd.DataFrame(gender_summary)
-    gender_df.to_csv(OUTPUT_DIR / "gender_stratified_summary.csv", index=False, encoding='utf-8-sig')
+    gender_df.to_csv(output_dir / "gender_stratified_summary.csv", index=False, encoding='utf-8-sig')
 
     # Table 3: Model fit comparison
     fit_summary = df[['dass', 'model', 'full_aic', 'full_bic',
                       'full_r2_stage1', 'full_r2_stage2']].copy()
     fit_summary['total_r2'] = (fit_summary['full_r2_stage1'] + fit_summary['full_r2_stage2']) / 2
-    fit_summary.to_csv(OUTPUT_DIR / "model_fit_comparison.csv", index=False, encoding='utf-8-sig')
+    fit_summary.to_csv(output_dir / "model_fit_comparison.csv", index=False, encoding='utf-8-sig')
 
     if verbose:
         print(f"\n{'='*70}")
@@ -335,12 +335,15 @@ def _create_summary_tables(df: pd.DataFrame, verbose: bool = True):
         print(f"\n{'='*70}")
         print("MODEL FIT COMPARISON (by AIC - lower is better)")
         print(f"{'='*70}")
-        for dass_name in DASS_COLS.keys():
-            dass_df = df[df['dass'] == dass_name].sort_values('full_aic')
-            print(f"\n{dass_name.upper()}:")
-            for _, row in dass_df.iterrows():
-                print(f"  {row['model']}: AIC={row['full_aic']:.1f}, BIC={row['full_bic']:.1f}")
+    for dass_name in DASS_COLS.keys():
+        dass_df = df[df['dass'] == dass_name].sort_values('full_aic')
+        print(f"\n{dass_name.upper()}:")
+        for _, row in dass_df.iterrows():
+            print(f"  {row['model']}: AIC={row['full_aic']:.1f}, BIC={row['full_bic']:.1f}")
 
 
 if __name__ == "__main__":
-    run_comprehensive_analysis(verbose=True)
+    parser = argparse.ArgumentParser(description="Run comprehensive path analysis.")
+    parser.add_argument("--task", required=True, choices=sorted(VALID_TASKS))
+    args = parser.parse_args()
+    run_comprehensive_analysis(task=args.task, verbose=True)

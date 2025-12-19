@@ -22,6 +22,14 @@ from .rl_mechanism import (
     compute_wcst_rl_features,
     load_or_compute_wcst_rl_mechanism_features,
 )
+from .wsls_mechanism import (
+    compute_wcst_wsls_features,
+    load_or_compute_wcst_wsls_mechanism_features,
+)
+from .bayesianrl_mechanism import (
+    compute_wcst_bayesianrl_features,
+    load_or_compute_wcst_bayesianrl_mechanism_features,
+)
 from .dataset import build_wcst_dataset, get_wcst_complete_participants
 
 MECHANISM_FILENAME = "5_wcst_mechanism_features.csv"
@@ -30,19 +38,19 @@ MECHANISM_FILENAME = "5_wcst_mechanism_features.csv"
 def compute_wcst_mechanism_features(data_dir: Path | None = None) -> pd.DataFrame:
     hmm_df = compute_wcst_hmm_features(data_dir=data_dir)
     rl_df = compute_wcst_rl_features(data_dir=data_dir)
+    wsls_df = compute_wcst_wsls_features(data_dir=data_dir)
+    brl_df = compute_wcst_bayesianrl_features(data_dir=data_dir)
 
-    if hmm_df.empty and rl_df.empty:
+    mech_frames = [df for df in (hmm_df, rl_df, wsls_df, brl_df) if not df.empty]
+    if not mech_frames:
         return pd.DataFrame()
-    if hmm_df.empty:
-        return rl_df
-    if rl_df.empty:
-        return hmm_df
-
-    overlap = [c for c in rl_df.columns if c != "participant_id" and c in hmm_df.columns]
-    if overlap:
-        rl_df = rl_df.drop(columns=overlap)
-
-    return hmm_df.merge(rl_df, on="participant_id", how="outer")
+    combined = mech_frames[0]
+    for extra_df in mech_frames[1:]:
+        overlap = [c for c in extra_df.columns if c != "participant_id" and c in combined.columns]
+        if overlap:
+            extra_df = extra_df.drop(columns=overlap)
+        combined = combined.merge(extra_df, on="participant_id", how="outer")
+    return combined
 
 
 def load_or_compute_wcst_mechanism_features(
@@ -78,6 +86,10 @@ __all__ = [
     "load_or_compute_wcst_hmm_mechanism_features",
     "compute_wcst_rl_features",
     "load_or_compute_wcst_rl_mechanism_features",
+    "compute_wcst_wsls_features",
+    "load_or_compute_wcst_wsls_mechanism_features",
+    "compute_wcst_bayesianrl_features",
+    "load_or_compute_wcst_bayesianrl_mechanism_features",
     "compute_wcst_mechanism_features",
     "load_or_compute_wcst_mechanism_features",
     "build_wcst_dataset",

@@ -152,6 +152,15 @@ TIER1_OUTCOMES = [
     ('wcst_rl_alpha_asymmetry', 'WCST RL alpha asymmetry'),
     ('wcst_rl_beta_asym', 'WCST RL beta (asym)'),
 
+    # WCST WSLS parameters
+    ('wcst_wsls_p_stay_win', 'WCST WSLS P(stay|win)'),
+    ('wcst_wsls_p_shift_lose', 'WCST WSLS P(shift|lose)'),
+
+    # WCST Bayesian rule learner parameters
+    ('wcst_brl_hazard', 'WCST Bayesian RL hazard'),
+    ('wcst_brl_noise', 'WCST Bayesian RL noise'),
+    ('wcst_brl_beta', 'WCST Bayesian RL beta'),
+
     # PRP Central Bottleneck model parameters
     ('prp_cb_base', 'PRP CB Base RT (ms)'),
     ('prp_cb_bottleneck', 'PRP CB Bottleneck Duration (ms)'),

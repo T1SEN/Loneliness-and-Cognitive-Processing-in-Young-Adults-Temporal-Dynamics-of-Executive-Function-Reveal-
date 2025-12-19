@@ -12,6 +12,8 @@ from ..core import coefficient_of_variation
 from .loaders import load_wcst_trials
 from .hmm_mechanism import load_or_compute_wcst_hmm_mechanism_features
 from .rl_mechanism import load_or_compute_wcst_rl_mechanism_features
+from .wsls_mechanism import load_or_compute_wcst_wsls_mechanism_features
+from .bayesianrl_mechanism import load_or_compute_wcst_bayesianrl_mechanism_features
 
 
 def derive_wcst_features(
@@ -92,7 +94,9 @@ def derive_wcst_features(
 
     hmm_df = load_or_compute_wcst_hmm_mechanism_features(data_dir=data_dir)
     rl_df = load_or_compute_wcst_rl_mechanism_features(data_dir=data_dir)
-    mech_frames = [df for df in (hmm_df, rl_df) if not df.empty]
+    wsls_df = load_or_compute_wcst_wsls_mechanism_features(data_dir=data_dir)
+    brl_df = load_or_compute_wcst_bayesianrl_mechanism_features(data_dir=data_dir)
+    mech_frames = [df for df in (hmm_df, rl_df, wsls_df, brl_df) if not df.empty]
     if not mech_frames:
         return features_df
 

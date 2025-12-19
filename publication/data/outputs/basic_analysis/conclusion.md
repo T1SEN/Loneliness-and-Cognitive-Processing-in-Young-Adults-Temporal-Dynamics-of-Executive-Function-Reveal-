@@ -1,7 +1,7 @@
 # Basic Analysis 종합 결과 보고서
 
 **생성일**: 2025-12-19
-**최종 업데이트**: 2025-12-19 (PRP Central Bottleneck + Stroop LBA 추가)
+**최종 업데이트**: 2025-12-19 (WCST WSLS + Bayesian RL 추가)
 **분석 대상**: 외로움(UCLA)과 집행기능(WCST, Stroop, PRP) 간 관계
 **통제 변인**: DASS-21 (우울, 불안, 스트레스), 나이, 성별
 
@@ -319,6 +319,39 @@ done
 - 위계적 회귀분석 수행 불가
 - 향후 더 큰 표본으로 재검증 필요
 
+#### 4.3.8 WCST WSLS 및 Bayesian RL 결과 (2025-12-19 추가)
+
+**WSLS (Win-Stay Lose-Shift) 모델**:
+- 정답 시 같은 규칙 유지(stay), 오답 시 규칙 전환(shift) 전략 분석
+- 모호한 규칙 매칭 trial 제외 (1개 규칙만 매칭되는 경우만 분석)
+
+**Bayesian RL 모델**:
+- belief = [color, shape, number]에 대한 Bayesian 확률 업데이트 모델
+- hazard(h): 규칙 전환 확률 (높을수록 규칙 변화 예상)
+- noise(ε): 피드백 업데이트 노이즈 (높을수록 불확실한 학습)
+- beta(β): softmax 역온도 (높을수록 결정 정밀도↑)
+
+**DASS 통제 후 UCLA 효과 (Model 1→2, 모두 비유의)**:
+
+| 결과변수 | 데이터셋 | N | β | SE | t | p | ΔR² |
+|----------|----------|---|---|----|----|---|-----|
+| WCST WSLS P(stay\|win) | wcst | 200 | 0.001 | 0.007 | 0.08 | .936 | 0.00% |
+| WCST WSLS P(stay\|win) | overall | 192 | 0.000 | 0.007 | 0.02 | .981 | 0.00% |
+| WCST WSLS P(shift\|lose) | wcst | 196 | 0.023 | 0.019 | 1.21 | .228 | 0.68% |
+| WCST WSLS P(shift\|lose) | overall | 188 | 0.022 | 0.019 | 1.12 | .261 | 0.59% |
+| WCST Bayesian RL hazard | wcst | 200 | -0.009 | 0.008 | -1.14 | .253 | 0.84% |
+| WCST Bayesian RL hazard | overall | 192 | -0.010 | 0.009 | -1.18 | .237 | 0.95% |
+| WCST Bayesian RL noise | wcst | 200 | -0.006 | 0.011 | -0.53 | .597 | 0.14% |
+| WCST Bayesian RL noise | overall | 192 | -0.010 | 0.011 | -0.93 | .351 | 0.44% |
+| WCST Bayesian RL beta | wcst | 200 | -0.079 | 0.152 | -0.52 | .604 | 0.17% |
+| WCST Bayesian RL beta | overall | 192 | -0.064 | 0.161 | -0.40 | .691 | 0.11% |
+
+**해석**: DASS를 통제한 후, 외로움(UCLA)은 WCST에서의 Win-Stay Lose-Shift 전략 및 Bayesian RL 학습 파라미터에 **유의한 영향을 미치지 않음**
+
+**상호작용 경계선 결과 (overall, p < .10)**:
+- Bayesian RL hazard × Gender: p=.077 (경계선)
+- Bayesian RL beta × Gender: p=.077 (경계선)
+
 ---
 
 ## 5. 유의한 결과 요약표
@@ -345,6 +378,11 @@ done
 | WCST HMM Lapse Occupancy | p=.039 (wcst) | ns | **p=.047** (남성) |
 | **PRP CB Slope** | **p=.035** (prp) | ns | ns |
 | PRP Ex-Gaussian sigma (Short) | **p=.047** (prp) | ns | ns |
+| WCST WSLS P(stay\|win) | ns | ns | ns |
+| WCST WSLS P(shift\|lose) | ns | ns | ns |
+| WCST Bayesian RL hazard | ns | ns | ns |
+| WCST Bayesian RL noise | ns | ns | ns |
+| WCST Bayesian RL beta | ns | ns | ns |
 
 ### 5.3 DASS 효과
 
@@ -410,6 +448,13 @@ done
 
 **해석**: 외로운 개인은 이중과제 수행 시 **병렬 처리 능력이 저하**되어 더 직렬적(순차적)으로 처리함. 이는 외로움이 **인지 자원의 유연한 할당을 방해**할 수 있음을 시사. Central Bottleneck Theory 관점에서, 외로움이 높을수록 Task 1과 Task 2의 중앙 처리 단계가 더 엄격하게 순차적으로 이루어짐.
 
+**WSLS 및 Bayesian RL 모델 결과 (2025-12-19 추가):**
+- **WSLS P(stay|win)**: UCLA 비유의 (p=.94 wcst, p=.98 overall)
+- **WSLS P(shift|lose)**: UCLA 비유의 (p=.23 wcst, p=.26 overall)
+- **Bayesian RL hazard/noise/beta**: UCLA 모두 비유의
+
+**해석**: DASS를 통제한 후, 외로움은 WCST에서의 **규칙 기반 전략(WSLS)** 및 **Bayesian 학습 과정**에 유의한 영향을 미치지 않음. 이는 외로움이 **단순한 전략적 학습 패턴**보다는 **주의 상태 전이(HMM)** 및 **오류 후 모니터링(PES)**에 더 특이적으로 영향을 미침을 시사함. 외로움의 인지적 영향은 학습 자체보다 **주의 조절 및 메타인지적 모니터링** 수준에서 나타나는 것으로 해석됨.
+
 ### 6.4 DASS 우울의 역설적 효과
 
 - **DASS 우울↑ → WCST PE Rate↓** (r = -.14, p = .043)
@@ -455,6 +500,10 @@ done
 11. **PRP Ex-Gaussian sigma (Short SOA) (2025-12-19 추가)**:
     - **UCLA→sigma 유의** (β=24.34, p=.047, ΔR²=2.50%)
     - 외로움↑ → RT 변동성↑ → 이중과제 수행의 불안정성
+12. **WCST WSLS 및 Bayesian RL (2025-12-19 추가)**:
+    - WSLS P(stay|win), P(shift|lose): 모두 비유의
+    - Bayesian RL hazard/noise/beta: 모두 비유의
+    - 외로움은 **전략적 학습 패턴**보다 **주의 조절/메타인지 모니터링**에 특이적 영향
 
 ---
 
@@ -495,4 +544,18 @@ publication/data/complete_prp/
 publication/data/complete_stroop/
 ├── 5_stroop_lba_mechanism_features.csv      # NEW (2025-12-19)
 └── 5_stroop_mechanism_features.csv          # Ex-Gaussian
+
+publication/data/complete_wcst/
+├── 5_wcst_wsls_mechanism_features.csv       # NEW (2025-12-19)
+├── 5_wcst_bayesianrl_mechanism_features.csv # NEW (2025-12-19)
+├── 5_wcst_hmm_mechanism_features.csv
+└── 5_wcst_rl_mechanism_features.csv
+
+publication/data/complete_overall/
+├── 5_wcst_wsls_mechanism_features.csv       # NEW (2025-12-19)
+├── 5_wcst_bayesianrl_mechanism_features.csv # NEW (2025-12-19)
+├── 5_prp_bottleneck_mechanism_features.csv
+├── 5_stroop_lba_mechanism_features.csv
+├── 5_wcst_hmm_mechanism_features.csv
+└── 5_wcst_rl_mechanism_features.csv
 ```

@@ -32,16 +32,34 @@ from publication.preprocessing import (
     standardize_predictors,
     prepare_gender_variable,
 )
-from publication.preprocessing.constants import ANALYSIS_OUTPUT_DIR
+from publication.preprocessing.constants import ANALYSIS_OUTPUT_DIR, VALID_TASKS
 
 BASE_OUTPUT = ANALYSIS_OUTPUT_DIR / "path_analysis"
 BASE_OUTPUT.mkdir(parents=True, exist_ok=True)
+
+
+def _validate_task(task: str) -> str:
+    if task not in VALID_TASKS:
+        raise ValueError(f"Unknown task: {task}. Valid tasks: {sorted(VALID_TASKS)}")
+    return task
+
+
+def get_output_dir(task: str, analysis_name: str) -> Path:
+    task = _validate_task(task)
+    output_dir = BASE_OUTPUT / task / analysis_name
+    output_dir.mkdir(parents=True, exist_ok=True)
+    return output_dir
 
 # Default EF targets analyzed separately
 EF_TARGETS: List[Dict[str, str]] = [
     {'col': 'pe_rate', 'label': 'WCST Perseverative Error Rate'},
     {'col': 'stroop_interference', 'label': 'Stroop Interference Effect'},
     {'col': 'prp_bottleneck', 'label': 'PRP Bottleneck Effect'},
+    {'col': 'prp_cb_base', 'label': 'PRP CBT Base (Plateau RT2)'},
+    {'col': 'prp_cb_bottleneck', 'label': 'PRP CBT Bottleneck Duration'},
+    {'col': 'prp_cb_r_squared', 'label': 'PRP CBT R-squared'},
+    {'col': 'prp_cb_rmse', 'label': 'PRP CBT RMSE'},
+    {'col': 'prp_cb_slope', 'label': 'PRP CBT Short-SOA Slope'},
     {'col': 'prp_exg_short_mu', 'label': 'PRP Ex-Gaussian mu (Short SOA)'},
     {'col': 'prp_exg_short_sigma', 'label': 'PRP Ex-Gaussian sigma (Short SOA)'},
     {'col': 'prp_exg_short_tau', 'label': 'PRP Ex-Gaussian tau (Short SOA)'},
@@ -66,6 +84,24 @@ EF_TARGETS: List[Dict[str, str]] = [
     {'col': 'stroop_exg_mu_interference', 'label': 'Stroop Ex-Gaussian mu (Interference)'},
     {'col': 'stroop_exg_sigma_interference', 'label': 'Stroop Ex-Gaussian sigma (Interference)'},
     {'col': 'stroop_exg_tau_interference', 'label': 'Stroop Ex-Gaussian tau (Interference)'},
+    {'col': 'stroop_lba_congruent_v_correct', 'label': 'Stroop LBA v_correct (Congruent)'},
+    {'col': 'stroop_lba_congruent_v_incorrect', 'label': 'Stroop LBA v_incorrect (Congruent)'},
+    {'col': 'stroop_lba_congruent_A', 'label': 'Stroop LBA A (Congruent)'},
+    {'col': 'stroop_lba_congruent_b', 'label': 'Stroop LBA b (Congruent)'},
+    {'col': 'stroop_lba_congruent_t0', 'label': 'Stroop LBA t0 (Congruent)'},
+    {'col': 'stroop_lba_incongruent_v_correct', 'label': 'Stroop LBA v_correct (Incongruent)'},
+    {'col': 'stroop_lba_incongruent_v_incorrect', 'label': 'Stroop LBA v_incorrect (Incongruent)'},
+    {'col': 'stroop_lba_incongruent_A', 'label': 'Stroop LBA A (Incongruent)'},
+    {'col': 'stroop_lba_incongruent_b', 'label': 'Stroop LBA b (Incongruent)'},
+    {'col': 'stroop_lba_incongruent_t0', 'label': 'Stroop LBA t0 (Incongruent)'},
+    {'col': 'stroop_lba_neutral_v_correct', 'label': 'Stroop LBA v_correct (Neutral)'},
+    {'col': 'stroop_lba_neutral_v_incorrect', 'label': 'Stroop LBA v_incorrect (Neutral)'},
+    {'col': 'stroop_lba_neutral_A', 'label': 'Stroop LBA A (Neutral)'},
+    {'col': 'stroop_lba_neutral_b', 'label': 'Stroop LBA b (Neutral)'},
+    {'col': 'stroop_lba_neutral_t0', 'label': 'Stroop LBA t0 (Neutral)'},
+    {'col': 'stroop_lba_v_correct_interference', 'label': 'Stroop LBA v_correct (Interference)'},
+    {'col': 'stroop_lba_b_interference', 'label': 'Stroop LBA b (Interference)'},
+    {'col': 'stroop_lba_t0_interference', 'label': 'Stroop LBA t0 (Interference)'},
     {'col': 'wcst_hmm_lapse_occupancy', 'label': 'WCST HMM Lapse Occupancy (%)'},
     {'col': 'wcst_hmm_trans_to_lapse', 'label': 'WCST HMM P(Focus->Lapse)'},
     {'col': 'wcst_hmm_trans_to_focus', 'label': 'WCST HMM P(Lapse->Focus)'},
@@ -81,6 +117,11 @@ EF_TARGETS: List[Dict[str, str]] = [
     {'col': 'wcst_rl_alpha_neg', 'label': 'WCST RL alpha (neg)'},
     {'col': 'wcst_rl_alpha_asymmetry', 'label': 'WCST RL alpha asymmetry'},
     {'col': 'wcst_rl_beta_asym', 'label': 'WCST RL beta (asym)'},
+    {'col': 'wcst_wsls_p_stay_win', 'label': 'WCST WSLS P(stay|win)'},
+    {'col': 'wcst_wsls_p_shift_lose', 'label': 'WCST WSLS P(shift|lose)'},
+    {'col': 'wcst_brl_hazard', 'label': 'WCST Bayesian RL hazard'},
+    {'col': 'wcst_brl_noise', 'label': 'WCST Bayesian RL noise'},
+    {'col': 'wcst_brl_beta', 'label': 'WCST Bayesian RL beta'},
 ]
 
 
@@ -191,13 +232,15 @@ PATH_SPECS: List[Dict] = [
 
 def load_common_path_data(
     target_col: str,
+    task: str,
     min_n: int = 50,
     ef_cols: Optional[List[str]] = None,
 ) -> pd.DataFrame:
     """
     Load master dataset with predictors needed for path analysis.
     """
-    master = load_master_dataset(task="overall", merge_cognitive_summary=True)
+    task = _validate_task(task)
+    master = load_master_dataset(task=task, merge_cognitive_summary=True)
     master = prepare_gender_variable(master)
     master = standardize_predictors(master)
 

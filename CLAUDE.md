@@ -74,9 +74,9 @@ python -m publication.basic_analysis.hierarchical_regression     # Hierarchical 
 python -m publication.advanced_analysis.mediation_suite          # UCLA → DASS → EF 매개분석
 python -m publication.advanced_analysis.bayesian_suite           # 베이지안 SEM
 
-python -m publication.path_analysis.path_depression             # Path analysis (Depression)
-python -m publication.path_analysis.path_anxiety                # Path analysis (Anxiety)
-python -m publication.path_analysis.path_stress                 # Path analysis (Stress)
+python -m publication.path_analysis.path_depression --task overall  # Path analysis (Depression)
+python -m publication.path_analysis.path_anxiety --task overall     # Path analysis (Anxiety)
+python -m publication.path_analysis.path_stress --task overall      # Path analysis (Stress)
 
 python -m publication.validity_reliability.reliability_suite     # Cronbach's alpha, split-half
 python -m publication.validity_reliability.validity_suite        # Factor analysis
