@@ -38,14 +38,13 @@ from .trial_loaders import (
     load_stroop_trials,
     load_wcst_trials,
 )
-from .constants import ANALYSIS_OUTPUT_DIR
+from .constants import ANALYSIS_OUTPUT_DIR, VALID_TASKS, get_results_dir
 
 warnings.filterwarnings("ignore")
 
 # Cache location
 CACHE_DIR = ANALYSIS_OUTPUT_DIR / "trial_features_cache"
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
-CACHE_PATH = CACHE_DIR / "all_trial_features.parquet"
 
 
 # =============================================================================
@@ -109,6 +108,11 @@ def compute_post_error_slowing(
     return pd.DataFrame(records)
 
 
+def _get_cache_path(data_dir: Optional[Path]) -> Path:
+    suffix = data_dir.name if data_dir else "unknown"
+    return CACHE_DIR / f"all_trial_features_{suffix}.parquet"
+
+
 # =============================================================================
 # PRP FEATURES
 # =============================================================================
@@ -117,6 +121,7 @@ def derive_prp_features(
     use_cache: bool = True,
     rt_min: float = 200,
     rt_max: float = 5000,
+    data_dir: Optional[Path] = None,
 ) -> pd.DataFrame:
     """
     Derive PRP trial-level features.
@@ -130,7 +135,11 @@ def derive_prp_features(
     - prp_pes: Post-error slowing (T2 RT)
     - prp_t2_trials: Number of valid T2 trials
     """
+    if data_dir is None:
+        data_dir = get_results_dir("prp")
+
     prp, _ = load_prp_trials(
+        data_dir=data_dir,
         use_cache=use_cache,
         rt_min=rt_min,
         rt_max=rt_max,
@@ -230,6 +239,7 @@ def derive_stroop_features(
     use_cache: bool = True,
     rt_min: float = 200,
     rt_max: float = 3000,
+    data_dir: Optional[Path] = None,
 ) -> pd.DataFrame:
     """
     Derive Stroop trial-level features.
@@ -244,7 +254,11 @@ def derive_stroop_features(
     - stroop_cv_cong: CV for congruent trials
     - stroop_trials: Number of valid trials
     """
+    if data_dir is None:
+        data_dir = get_results_dir("stroop")
+
     stroop, _ = load_stroop_trials(
+        data_dir=data_dir,
         use_cache=use_cache,
         rt_min=rt_min,
         rt_max=rt_max,
@@ -332,7 +346,7 @@ def derive_stroop_features(
 # WCST FEATURES
 # =============================================================================
 
-def derive_wcst_features(use_cache: bool = True) -> pd.DataFrame:
+def derive_wcst_features(use_cache: bool = True, data_dir: Optional[Path] = None) -> pd.DataFrame:
     """
     Derive WCST trial-level features.
 
@@ -342,7 +356,10 @@ def derive_wcst_features(use_cache: bool = True) -> pd.DataFrame:
     - wcst_cv_rt: RT coefficient of variation
     - wcst_trials: Number of valid trials
     """
-    wcst, _ = load_wcst_trials(use_cache=use_cache)
+    if data_dir is None:
+        data_dir = get_results_dir("wcst")
+
+    wcst, _ = load_wcst_trials(data_dir=data_dir, use_cache=use_cache)
 
     # Find RT column
     rt_col = None
@@ -428,6 +445,8 @@ def derive_wcst_features(use_cache: bool = True) -> pd.DataFrame:
 def derive_all_features(
     use_cache: bool = True,
     force_rebuild: bool = False,
+    data_dir: Optional[Path] = None,
+    tasks: Optional[List[str]] = None,
 ) -> pd.DataFrame:
     """
     Derive all trial-level features and merge into single dataframe.
@@ -444,30 +463,53 @@ def derive_all_features(
     pd.DataFrame
         Combined features with columns from all tasks
     """
-    if use_cache and not force_rebuild and CACHE_PATH.exists():
-        return pd.read_parquet(CACHE_PATH)
+    if data_dir is None:
+        raise ValueError("data_dir is required for derive_all_features()")
+    if tasks is None:
+        tasks = ["prp", "stroop", "wcst"]
+    invalid = [t for t in tasks if t not in VALID_TASKS]
+    if invalid:
+        raise ValueError(f"Unknown tasks: {invalid}. Valid tasks: {VALID_TASKS}")
+
+    cache_path = _get_cache_path(data_dir)
+    if use_cache and not force_rebuild and cache_path.exists():
+        return pd.read_parquet(cache_path)
 
     print("Deriving trial-level features...")
 
-    prp_features = derive_prp_features(use_cache=use_cache)
-    print(f"  PRP features: {len(prp_features)} participants")
+    features = None
+    if "prp" in tasks:
+        prp_features = derive_prp_features(use_cache=use_cache, data_dir=data_dir)
+        print(f"  PRP features: {len(prp_features)} participants")
+        features = prp_features
 
-    stroop_features = derive_stroop_features(use_cache=use_cache)
-    print(f"  Stroop features: {len(stroop_features)} participants")
+    if "stroop" in tasks:
+        stroop_features = derive_stroop_features(use_cache=use_cache, data_dir=data_dir)
+        print(f"  Stroop features: {len(stroop_features)} participants")
+        features = (
+            stroop_features
+            if features is None
+            else features.merge(stroop_features, on="participant_id", how="outer")
+        )
 
-    wcst_features = derive_wcst_features(use_cache=use_cache)
-    print(f"  WCST features: {len(wcst_features)} participants")
+    if "wcst" in tasks:
+        wcst_features = derive_wcst_features(use_cache=use_cache, data_dir=data_dir)
+        print(f"  WCST features: {len(wcst_features)} participants")
+        features = (
+            wcst_features
+            if features is None
+            else features.merge(wcst_features, on="participant_id", how="outer")
+        )
 
-    # Merge all features
-    features = prp_features.merge(stroop_features, on="participant_id", how="outer")
-    features = features.merge(wcst_features, on="participant_id", how="outer")
+    if features is None:
+        raise ValueError("No features derived; check tasks parameter.")
 
     # Cache result (with CSV fallback if parquet engine unavailable)
     try:
-        features.to_parquet(CACHE_PATH, index=False)
-        print(f"  Cached to: {CACHE_PATH}")
+        features.to_parquet(cache_path, index=False)
+        print(f"  Cached to: {cache_path}")
     except Exception:
-        csv_path = CACHE_PATH.with_suffix(".csv")
+        csv_path = cache_path.with_suffix(".csv")
         features.to_csv(csv_path, index=False, encoding="utf-8-sig")
         print(f"  Cached to: {csv_path} (parquet unavailable)")
 
@@ -486,16 +528,34 @@ def main():
     parser.add_argument("--task", choices=["prp", "stroop", "wcst", "all"], default="all")
     parser.add_argument("--force-rebuild", action="store_true")
     parser.add_argument("--output", type=str, help="Output CSV path")
+    parser.add_argument(
+        "--dataset",
+        choices=["prp", "stroop", "wcst"],
+        help="Dataset to use for participant filtering (required for --task all)",
+    )
     args = parser.parse_args()
 
+    data_dir = None
+    if args.task == "all":
+        if args.dataset is None:
+            parser.error("--dataset is required when --task all")
+        data_dir = get_results_dir(args.dataset)
+
     if args.task == "prp":
-        features = derive_prp_features()
+        data_dir = get_results_dir("prp")
+        features = derive_prp_features(data_dir=data_dir)
     elif args.task == "stroop":
-        features = derive_stroop_features()
+        data_dir = get_results_dir("stroop")
+        features = derive_stroop_features(data_dir=data_dir)
     elif args.task == "wcst":
-        features = derive_wcst_features()
+        data_dir = get_results_dir("wcst")
+        features = derive_wcst_features(data_dir=data_dir)
     else:
-        features = derive_all_features(force_rebuild=args.force_rebuild)
+        features = derive_all_features(
+            force_rebuild=args.force_rebuild,
+            data_dir=data_dir,
+            tasks=[args.dataset],
+        )
 
     if args.output:
         features.to_csv(args.output, index=False, encoding="utf-8-sig")

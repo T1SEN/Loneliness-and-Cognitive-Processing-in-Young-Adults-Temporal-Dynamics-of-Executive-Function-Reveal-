@@ -3,7 +3,7 @@ from firebase_admin import credentials, firestore
 import pandas as pd
 from pathlib import Path
 
-from publication.data import filter_complete_participants
+from publication.preprocessing.dataset_builder import build_all_datasets
 
 # 스크립트 위치 기준 경로 설정
 SCRIPT_DIR = Path(__file__).parent
@@ -167,5 +167,5 @@ save_to_csv(wcst_trial_data, '4b_wcst_trials.csv')
 save_to_csv(stroop_trial_data, '4c_stroop_trials.csv')
 
 print(f"\n[COMPLETE] 작업 완료! RAW 데이터는 '{RAW_DIR}' 폴더에서 확인할 수 있습니다.")
-print("\n[FILTER] RAW 데이터를 기반으로 COMPLETE 폴더를 갱신합니다...")
-filter_complete_participants.filter_and_save()
+print("\n[FILTER] RAW 데이터를 기반으로 task별 COMPLETE 폴더를 갱신합니다...")
+build_all_datasets(save=True, verbose=True)

@@ -4,18 +4,20 @@ Publication Preprocessing Module
 
 Independent data loading, cleaning, and feature extraction for publication.
 
-Usage:
-    from publication.preprocessing import (
-        load_master_dataset,
-        load_prp_trials,
-        standardize_predictors,
-        prepare_gender_variable,
-    )
+Task-specific datasets:
+    from publication.preprocessing import load_master_dataset
+    df_stroop = load_master_dataset(task='stroop')
+    df_prp = load_master_dataset(task='prp')
+    df_wcst = load_master_dataset(task='wcst')
+
+CLI:
+    python -m publication.preprocessing --build stroop
+    python -m publication.preprocessing --build all
+    python -m publication.preprocessing --list
 """
 
 # Constants
 from .constants import (
-    RESULTS_DIR,
     ANALYSIS_OUTPUT_DIR,
     DEFAULT_RT_MIN,
     DEFAULT_RT_MAX,
@@ -23,9 +25,14 @@ from .constants import (
     STROOP_RT_MAX,
     DEFAULT_SOA_SHORT,
     DEFAULT_SOA_LONG,
-    MASTER_CACHE_PATH,
     STANDARDIZE_COLS,
     PARTICIPANT_ID_ALIASES,
+    # New exports
+    RAW_DIR,
+    DATA_DIR,
+    VALID_TASKS,
+    get_results_dir,
+    get_cache_path,
 )
 
 # Core loaders (from loaders.py)
@@ -72,9 +79,29 @@ from .standardization import (
     DEFAULT_PREDICTOR_COLUMNS,
 )
 
+# Filters (from filters.py)
+from .filters import (
+    SurveyQCCriteria,
+    StroopQCCriteria,
+    PRPQCCriteria,
+    WCSTQCCriteria,
+    get_survey_valid_participants,
+    get_stroop_valid_participants,
+    get_prp_valid_participants,
+    get_wcst_valid_participants,
+    get_task_valid_participants,
+)
+
+# Dataset builder (from dataset_builder.py)
+from .dataset_builder import (
+    build_task_dataset,
+    build_all_datasets,
+    get_dataset_info,
+    print_dataset_summary,
+)
+
 __all__ = [
     # Constants
-    'RESULTS_DIR',
     'ANALYSIS_OUTPUT_DIR',
     'DEFAULT_RT_MIN',
     'DEFAULT_RT_MAX',
@@ -82,11 +109,16 @@ __all__ = [
     'STROOP_RT_MAX',
     'DEFAULT_SOA_SHORT',
     'DEFAULT_SOA_LONG',
-    'MASTER_CACHE_PATH',
     'STANDARDIZE_COLS',
     'PARTICIPANT_ID_ALIASES',
     'PREDICTOR_COLUMN_MAPPING',
     'DEFAULT_PREDICTOR_COLUMNS',
+    # New constants
+    'RAW_DIR',
+    'DATA_DIR',
+    'VALID_TASKS',
+    'get_results_dir',
+    'get_cache_path',
     # Loaders
     'load_master_dataset',
     'load_participants',
@@ -117,4 +149,19 @@ __all__ = [
     'prepare_gender_variable',
     'apply_fdr_correction',
     'find_interaction_term',
+    # Filters
+    'SurveyQCCriteria',
+    'StroopQCCriteria',
+    'PRPQCCriteria',
+    'WCSTQCCriteria',
+    'get_survey_valid_participants',
+    'get_stroop_valid_participants',
+    'get_prp_valid_participants',
+    'get_wcst_valid_participants',
+    'get_task_valid_participants',
+    # Dataset builder
+    'build_task_dataset',
+    'build_all_datasets',
+    'get_dataset_info',
+    'print_dataset_summary',
 ]

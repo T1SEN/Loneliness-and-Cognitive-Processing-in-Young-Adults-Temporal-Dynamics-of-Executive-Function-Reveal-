@@ -2,9 +2,6 @@
   "permissions": {
     "allow": [
       "Bash(dir:*)",
-      "Bash(ls -la \"C:\\\\Users\\\\ansel\\\\my_research_exporter\\\\publication\\\\data\"\" | grep -E \"^d)",
-      "Bash(.csv)",
-      "Bash(.py \")",
       "Bash(.\\\\venv\\\\Scripts\\\\python.exe:*)",
       "Bash(cmd.exe /c \"venv\\\\Scripts\\\\python.exe publication\\\\data\\\\export_alldata.py\")",
       "Bash(powershell.exe -Command \"Set-Location ''C:\\\\Users\\\\ansel\\\\my_research_exporter''; $env:PYTHONIOENCODING=''utf-8''; & ''.\\\\venv\\\\Scripts\\\\python.exe'' ''publication\\\\data\\\\export_alldata.py''\")",
@@ -23,7 +20,14 @@
       "Bash(powershell.exe -Command \"& ''C:\\\\Users\\\\ansel\\\\my_research_exporter\\\\venv\\\\Scripts\\\\python.exe'' -c \"\"\nimport pandas as pd\n\ntarget_id = ''YzmMCD3ZmzbWlV4pTQ6hvDdnuMk2''\n\n# 1. 기존 complete_filtered에 있었는지\nold_filtered = pd.read_csv\\(''C:/Users/ansel/my_research_exporter/publication/data/complete_filtered/1_participants_info.csv'', encoding=''utf-8-sig''\\)\nin_old = target_id in old_filtered[''participantId''].values\nprint\\(''1. 기존 complete_filtered \\(185명\\)에 있었나?'', in_old\\)\n\n# 2. raw 데이터\nnew_raw = pd.read_csv\\(''C:/Users/ansel/my_research_exporter/publication/data/raw/1_participants_info.csv'', encoding=''utf-8-sig''\\)\np = new_raw[new_raw[''participantId''] == target_id]\nprint\\(''\\\\n2. raw 데이터:''\\)\nprint\\(p[[''studentId'', ''gender'', ''age'', ''createdAt'']].to_string\\(index=False\\)\\)\n\n# 3. 새 complete에 있는지\nnew_complete = pd.read_csv\\(''C:/Users/ansel/my_research_exporter/publication/data/complete/1_participants_info.csv'', encoding=''utf-8-sig''\\)\nin_new = target_id in new_complete[''participantId''].values\nprint\\(''\\\\n3. 새 complete \\(205명\\)에 있나?'', in_new\\)\n\"\"\")",
       "Bash(powershell.exe -Command \"& ''C:\\\\Users\\\\ansel\\\\my_research_exporter\\\\venv\\\\Scripts\\\\python.exe'' -c \"\"\nimport pandas as pd\n\ntarget_id = ''YzmMCD3ZmzbWlV4pTQ6hvDdnuMk2''\n\n# 현재 인지과제 데이터\ncog = pd.read_csv\\(''C:/Users/ansel/my_research_exporter/publication/data/raw/3_cognitive_tests_summary.csv'', encoding=''utf-8-sig''\\)\np_cog = cog[cog[''participantId''] == target_id]\nprint\\(''현재 인지과제 데이터:''\\)\nprint\\(p_cog[[''testName'', ''n_trials'', ''accuracy'']].to_string\\(index=False\\)\\)\n\"\"\")",
       "Bash(C:Usersanselmy_research_exportervenvScriptsactivate)",
-      "Bash(source /c/Users/ansel/my_research_exporter/venv/Scripts/activate)"
+      "Bash(source /c/Users/ansel/my_research_exporter/venv/Scripts/activate)",
+      "Bash(.venvScriptspython.exe -m publication.preprocessing --list)",
+      "Bash(powershell.exe -Command \"& ''C:\\\\Users\\\\ansel\\\\my_research_exporter\\\\venv\\\\Scripts\\\\python.exe'' -m publication.preprocessing --list\")",
+      "Bash(powershell.exe -Command \"& ''C:\\\\Users\\\\ansel\\\\my_research_exporter\\\\venv\\\\Scripts\\\\python.exe'' -m publication.preprocessing --build all\")",
+      "Bash(powershell.exe -Command \"& ''C:\\\\Users\\\\ansel\\\\my_research_exporter\\\\venv\\\\Scripts\\\\python.exe'' -c \"\"\nimport pandas as pd\ndf = pd.read_csv\\(''C:/Users/ansel/my_research_exporter/publication/data/raw/3_cognitive_tests_summary.csv'', encoding=''utf-8-sig''\\)\nprp = df[df[''testName''].str.lower\\(\\) == ''prp'']\nprint\\(''PRP summary columns:'', prp.columns.tolist\\(\\)\\)\nprint\\(''n_trials distribution:''\\)\nprint\\(prp[''n_trials''].value_counts\\(\\)\\)\nprint\\(''\\\\nmrt_t2 null count:'', prp[''mrt_t2''].isna\\(\\).sum\\(\\)\\)\nprint\\(''rt2_soa_50 null count:'', prp[''rt2_soa_50''].isna\\(\\).sum\\(\\)\\)\nprint\\(''rt2_soa_1200 null count:'', prp[''rt2_soa_1200''].isna\\(\\).sum\\(\\)\\)\n\"\"\")",
+      "Bash(powershell.exe -Command \"& ''C:\\\\Users\\\\ansel\\\\my_research_exporter\\\\venv\\\\Scripts\\\\python.exe'' -m publication.preprocessing --build prp\")",
+      "Bash(powershell.exe:*)",
+      "Bash(./venv/Scripts/python.exe:*)"
     ]
   }
 }

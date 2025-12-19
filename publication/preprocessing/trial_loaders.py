@@ -19,8 +19,8 @@ from .constants import (
     STROOP_RT_MAX,
     DEFAULT_SOA_SHORT,
     DEFAULT_SOA_LONG,
-    RESULTS_DIR,
     ANALYSIS_OUTPUT_DIR,
+    get_results_dir,
 )
 from .loaders import ensure_participant_id
 
@@ -29,8 +29,18 @@ CACHE_DIR = ANALYSIS_OUTPUT_DIR / "trial_cache"
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
 
-def _generate_cache_key(prefix: str, **params) -> str:
-    """Generate unique cache key based on filter parameters."""
+def _generate_cache_key(prefix: str, data_dir: Path = None, **params) -> str:
+    """Generate unique cache key based on filter parameters and data directory.
+
+    Args:
+        prefix: Cache key prefix (e.g., 'prp_trials')
+        data_dir: Data directory (used to differentiate task-specific caches)
+        **params: Additional filter parameters
+    """
+    # Include data_dir in cache key to differentiate task-specific caches
+    if data_dir is not None:
+        # Use only the last part of the path for the cache key
+        params['data_dir'] = data_dir.name
     param_str = "_".join(f"{k}={v}" for k, v in sorted(params.items()))
     param_hash = hashlib.md5(param_str.encode()).hexdigest()[:8]
     return f"{prefix}_{param_hash}.parquet"
@@ -56,6 +66,7 @@ def _load_cached(path: Path):
 
 
 def load_prp_trials(
+    data_dir: Path | None = None,
     use_cache: bool = True,
     force_rebuild: bool = False,
     rt_min: int = DEFAULT_RT_MIN,
@@ -65,8 +76,11 @@ def load_prp_trials(
     require_t2_correct_for_rt: bool = True,
     drop_timeouts: bool = True,
 ) -> Tuple[pd.DataFrame, Dict[str, Any]]:
+    if data_dir is None:
+        data_dir = get_results_dir("prp")
     cache_key = _generate_cache_key(
         "prp_trials",
+        data_dir=data_dir,
         rt_min=rt_min,
         rt_max=rt_max,
         require_t1_correct=require_t1_correct,
@@ -80,7 +94,7 @@ def load_prp_trials(
         if cached is not None:
             return cached, {"cached": True}
 
-    df = pd.read_csv(RESULTS_DIR / "4a_prp_trials.csv", encoding="utf-8")
+    df = pd.read_csv(data_dir / "4a_prp_trials.csv", encoding="utf-8")
     df = ensure_participant_id(df)
 
     # Prefer _ms columns (have more data) over legacy columns
@@ -150,6 +164,7 @@ def load_prp_trials(
 
 
 def load_stroop_trials(
+    data_dir: Path | None = None,
     use_cache: bool = True,
     force_rebuild: bool = False,
     rt_min: int = DEFAULT_RT_MIN,
@@ -157,8 +172,11 @@ def load_stroop_trials(
     require_correct_for_rt: bool = True,
     drop_timeouts: bool = True,
 ) -> Tuple[pd.DataFrame, Dict[str, Any]]:
+    if data_dir is None:
+        data_dir = get_results_dir("stroop")
     cache_key = _generate_cache_key(
         "stroop_trials",
+        data_dir=data_dir,
         rt_min=rt_min,
         rt_max=rt_max,
         require_correct_for_rt=require_correct_for_rt,
@@ -170,7 +188,7 @@ def load_stroop_trials(
         if cached is not None:
             return cached, {"cached": True}
 
-    df = pd.read_csv(RESULTS_DIR / "4c_stroop_trials.csv", encoding="utf-8")
+    df = pd.read_csv(data_dir / "4c_stroop_trials.csv", encoding="utf-8")
     df = ensure_participant_id(df)
 
     # Prefer rt_ms (has more data) over legacy rt column
@@ -219,16 +237,20 @@ def load_stroop_trials(
 
 
 def load_wcst_trials(
+    data_dir: Path | None = None,
     use_cache: bool = True,
     force_rebuild: bool = False,
 ) -> Tuple[pd.DataFrame, Dict[str, Any]]:
-    cache_path = CACHE_DIR / "wcst_trials.parquet"
+    if data_dir is None:
+        data_dir = get_results_dir("wcst")
+    cache_key = _generate_cache_key("wcst_trials", data_dir=data_dir)
+    cache_path = CACHE_DIR / cache_key
     if use_cache and not force_rebuild:
         cached = _load_cached(cache_path)
         if cached is not None:
             return cached, {"cached": True}
 
-    df = pd.read_csv(RESULTS_DIR / "4b_wcst_trials.csv", encoding="utf-8")
+    df = pd.read_csv(data_dir / "4b_wcst_trials.csv", encoding="utf-8")
     df = ensure_participant_id(df)
 
     # isPE parsing

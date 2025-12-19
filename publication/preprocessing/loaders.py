@@ -11,7 +11,6 @@ import re
 from typing import Optional
 
 from .constants import (
-    RESULTS_DIR,
     ANALYSIS_OUTPUT_DIR,
     DEFAULT_RT_MIN,
     DEFAULT_RT_MAX,
@@ -19,13 +18,15 @@ from .constants import (
     STROOP_RT_MAX,
     DEFAULT_SOA_SHORT,
     DEFAULT_SOA_LONG,
-    MASTER_CACHE_PATH,
     STANDARDIZE_COLS,
     MALE_TOKENS_EXACT,
     FEMALE_TOKENS_EXACT,
     MALE_TOKENS_CONTAINS,
     FEMALE_TOKENS_CONTAINS,
     PARTICIPANT_ID_ALIASES,
+    VALID_TASKS,
+    get_results_dir,
+    get_cache_path,
 )
 
 
@@ -103,18 +104,18 @@ def normalize_gender_series(series: pd.Series) -> pd.Series:
     mapped = series.apply(normalize_gender_value)
     return pd.Series(mapped, index=series.index, dtype="object")
 
-def load_participants():
+def load_participants(data_dir: Path):
     """Load and normalize participant info."""
-    df = pd.read_csv(RESULTS_DIR / "1_participants_info.csv", encoding="utf-8")
+    df = pd.read_csv(data_dir / "1_participants_info.csv", encoding="utf-8")
 
     df = ensure_participant_id(df)
     df["gender"] = normalize_gender_series(df["gender"])
 
     return df[['participant_id', 'age', 'gender', 'education']]
 
-def load_ucla_scores():
+def load_ucla_scores(data_dir: Path):
     """Load UCLA loneliness scores."""
-    surveys = pd.read_csv(RESULTS_DIR / "2_surveys_results.csv", encoding="utf-8")
+    surveys = pd.read_csv(data_dir / "2_surveys_results.csv", encoding="utf-8")
 
     surveys = ensure_participant_id(surveys)
 
@@ -135,9 +136,9 @@ def load_ucla_scores():
 
     return ucla_scores
 
-def load_dass_scores():
+def load_dass_scores(data_dir: Path):
     """Load DASS component scores (Depression, Anxiety, Stress)."""
-    surveys = pd.read_csv(RESULTS_DIR / "2_surveys_results.csv", encoding="utf-8")
+    surveys = pd.read_csv(data_dir / "2_surveys_results.csv", encoding="utf-8")
 
     surveys = ensure_participant_id(surveys)
 
@@ -191,12 +192,12 @@ def load_dass_scores():
     return dass_summary
 
 
-def load_survey_items():
+def load_survey_items(data_dir: Path):
     """
     Load raw UCLA/DASS item responses from 2_surveys_results.csv and return wide format.
     Columns are renamed to ucla_1..ucla_20 and dass_1..dass_21 when available.
     """
-    surveys = pd.read_csv(RESULTS_DIR / "2_surveys_results.csv", encoding="utf-8")
+    surveys = pd.read_csv(data_dir / "2_surveys_results.csv", encoding="utf-8")
     surveys = ensure_participant_id(surveys)
 
     def _extract_items(df: pd.DataFrame, prefix: str, n_items: int) -> pd.DataFrame:
@@ -226,17 +227,19 @@ def load_survey_items():
     survey_items = ucla_items.merge(dass_items, on="participant_id", how="outer")
     return survey_items
 
-def load_wcst_summary(rt_min: int = DEFAULT_RT_MIN, rt_max: Optional[int] = None):
+def load_wcst_summary(data_dir: Path, rt_min: int = DEFAULT_RT_MIN, rt_max: Optional[int] = None):
     """Load WCST summary metrics including PE rate.
 
     Parameters
     ----------
+    data_dir : Path
+        Data directory
     rt_min : int
         Minimum RT threshold (default: 100ms, removes anticipatory responses)
     rt_max : int or None
         Maximum RT threshold (default: None, no upper bound since WCST has no timeout)
     """
-    wcst_trials = pd.read_csv(RESULTS_DIR / "4b_wcst_trials.csv", encoding="utf-8")
+    wcst_trials = pd.read_csv(data_dir / "4b_wcst_trials.csv", encoding="utf-8")
 
     wcst_trials = ensure_participant_id(wcst_trials)
 
@@ -276,9 +279,9 @@ def load_wcst_summary(rt_min: int = DEFAULT_RT_MIN, rt_max: Optional[int] = None
 
     return wcst_summary
 
-def load_prp_summary():
+def load_prp_summary(data_dir: Path):
     """Load PRP summary metrics including bottleneck effect."""
-    prp_trials = pd.read_csv(RESULTS_DIR / "4a_prp_trials.csv", encoding="utf-8")
+    prp_trials = pd.read_csv(data_dir / "4a_prp_trials.csv", encoding="utf-8")
 
     prp_trials = ensure_participant_id(prp_trials)
 
@@ -360,9 +363,9 @@ def load_prp_summary():
 
     return prp_wide
 
-def load_stroop_summary():
+def load_stroop_summary(data_dir: Path):
     """Load Stroop summary metrics including interference."""
-    stroop_trials = pd.read_csv(RESULTS_DIR / "4c_stroop_trials.csv", encoding="utf-8")
+    stroop_trials = pd.read_csv(data_dir / "4c_stroop_trials.csv", encoding="utf-8")
 
     stroop_trials = ensure_participant_id(stroop_trials)
 
@@ -418,9 +421,10 @@ def load_stroop_summary():
     return stroop_wide
 
 def load_master_dataset(
+    task: str,
     use_cache: bool = True,
     force_rebuild: bool = False,
-    cache_path: Path = MASTER_CACHE_PATH,
+    cache_path: Path | None = None,
     add_standardized: bool = True,
     merge_cognitive_summary: bool = True,
     merge_trial_features: bool = True,
@@ -438,19 +442,29 @@ def load_master_dataset(
 
     Parameters
     ----------
+    task : str
+        Task-specific dataset to load: 'stroop', 'prp', or 'wcst'.
     use_cache : bool
         If True, load cached parquet when available.
     force_rebuild : bool
         If True, ignore cache and rebuild from source CSVs.
-    cache_path : Path
-        Location to store/read the master parquet.
+    cache_path : Path or None
+        Location to store/read the master parquet. If None, uses task-specific cache path.
     add_standardized : bool
         If True, add z-scored versions of STANDARDIZE_COLS (prefixed with 'z_').
     merge_cognitive_summary : bool
         If True, merge cognitive summary file (3_cognitive_tests_summary.csv) when present.
     merge_trial_features : bool
-        If True, merge trial-derived feature aggregates (WCST/PRP/Stroop advanced metrics).
+        If True, merge trial-derived feature aggregates for the selected task.
     """
+    # Validate task parameter
+    if task not in VALID_TASKS:
+        raise ValueError(f"Unknown task: {task}. Valid tasks: {VALID_TASKS}")
+
+    # Determine data directory and cache path based on task
+    data_dir = get_results_dir(task)
+    if cache_path is None:
+        cache_path = get_cache_path(task)
     cache_path = Path(cache_path)
 
     def _merge_trial_features_if_needed(master_df: pd.DataFrame, log: bool = False) -> pd.DataFrame:
@@ -459,7 +473,7 @@ def load_master_dataset(
             return master_df
         try:
             from .features import derive_all_features  # Local import avoids circular dependency
-            trial_features = derive_all_features(use_cache=True)
+            trial_features = derive_all_features(use_cache=True, data_dir=data_dir, tasks=[task])
         except Exception as exc:  # pragma: no cover - defensive
             print(f"  Warning: Failed to load trial features ({exc})")
             return master_df
@@ -488,7 +502,7 @@ def load_master_dataset(
             cached = pd.read_csv(csv_fallback)
             return _merge_trial_features_if_needed(cached, log=False)
 
-    participants = load_participants()
+    participants = load_participants(data_dir)
     participants["gender_normalized"] = normalize_gender_series(participants["gender"])
     participants["gender_male"] = participants["gender_normalized"].map({"male": 1, "female": 0})
 
@@ -500,33 +514,46 @@ def load_master_dataset(
         print(f"  Merge {df_name} + {merge_name}: {before} -> {after} rows (left join on '{key}')")
         return merged
 
-    ucla = load_ucla_scores().rename(columns={"ucla_total": "ucla_score"})
+    ucla = load_ucla_scores(data_dir).rename(columns={"ucla_total": "ucla_score"})
     if "ucla_total" not in ucla.columns and "ucla_score" in ucla.columns:
         ucla["ucla_total"] = ucla["ucla_score"]
 
-    dass = load_dass_scores()
-    survey_items = load_survey_items()
-    wcst = load_wcst_summary()
-    prp = load_prp_summary()
-    stroop = load_stroop_summary()
+    dass = load_dass_scores(data_dir)
+    survey_items = load_survey_items(data_dir)
+
+    wcst = None
+    prp = None
+    stroop = None
+    if task == "wcst":
+        wcst = load_wcst_summary(data_dir)
+    elif task == "prp":
+        prp = load_prp_summary(data_dir)
+    elif task == "stroop":
+        stroop = load_stroop_summary(data_dir)
 
     master = participants.merge(ucla, on="participant_id", how="inner")
     print(f"  Merge participants + UCLA (inner): {len(participants)} -> {len(master)} rows")
     master = _log_merge(master, "master", dass, "dass")
     if not survey_items.empty:
         master = _log_merge(master, "master", survey_items, "survey_items")
-    master = _log_merge(master, "master", wcst, "wcst")
-    master = _log_merge(master, "master", prp, "prp")
-    master = _log_merge(master, "master", stroop, "stroop")
+    if wcst is not None:
+        master = _log_merge(master, "master", wcst, "wcst")
+    if prp is not None:
+        master = _log_merge(master, "master", prp, "prp")
+    if stroop is not None:
+        master = _log_merge(master, "master", stroop, "stroop")
 
     # Merge advanced trial-derived features (PES, post-switch errors, variability, etc.)
     master = _merge_trial_features_if_needed(master, log=True)
 
     if merge_cognitive_summary:
-        summary_path = RESULTS_DIR / "3_cognitive_tests_summary.csv"
+        summary_path = data_dir / "3_cognitive_tests_summary.csv"
         if summary_path.exists():
             cognitive = pd.read_csv(summary_path, encoding="utf-8")
             cognitive = ensure_participant_id(cognitive)
+            if "testName" in cognitive.columns:
+                cognitive["testName"] = cognitive["testName"].str.lower()
+                cognitive = cognitive[cognitive["testName"] == task]
             cognitive = cognitive.sort_values("participant_id").drop_duplicates(subset=["participant_id"])
             master = _log_merge(master, "master", cognitive, "cognitive_summary")
 

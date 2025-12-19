@@ -14,21 +14,28 @@ Research data analysis pipeline for a psychology study examining the relationshi
 ## Data Flow
 
 ```
-Firebase (Firestore) → export_alldata.py → publication/data/raw/ → filter_complete_participants.py → publication/data/complete/
-                                                                                                   ↓
-                                                     python -m analysis → results/gold_standard/ & results/analysis_outputs/
-                                                     python -m publication.* → results/publication/
+Firebase (Firestore) → export_alldata.py → publication/data/raw/
+                                              ↓
+                       python -m publication.preprocessing --build all
+                                              ↓
+                       ├── publication/data/complete_stroop/  (N ~ 200)
+                       ├── publication/data/complete_prp/     (N ~ 195)
+                       └── publication/data/complete_wcst/    (N ~ 190)
+                                              ↓
+                       python -m analysis → results/gold_standard/ & results/analysis_outputs/
+                       python -m publication.* → results/publication/
 ```
 
 ### Key Data Files (`publication/data/`)
 | Directory | Contents |
 |-----------|----------|
-| `raw/` | Raw exported data (all participants) |
-| `complete/` | Completion-filtered data (finished all tasks) |
-| `complete_filtered/` | Quality-controlled data (N=185, removes outliers) |
+| `raw/` | Raw exported data (all participants, N=251) |
+| `complete_stroop/` | Stroop + 설문 완료자 (N ~ 200) |
+| `complete_prp/` | PRP + 설문 완료자 (N ~ 195) |
+| `complete_wcst/` | WCST + 설문 완료자 (N ~ 190) |
 | `outputs/` | Generated outputs (master_dataset.csv, analysis results) |
 
-**Data file structure (same across raw/complete/complete_filtered):**
+**Data file structure (same across raw/complete_*):**
 | File | Contents |
 |------|----------|
 | `1_participants_info.csv` | Demographics (age, gender, education) |
@@ -37,6 +44,8 @@ Firebase (Firestore) → export_alldata.py → publication/data/raw/ → filter_
 | `4a_prp_trials.csv` | Trial-level PRP data |
 | `4b_wcst_trials.csv` | Trial-level WCST data |
 | `4c_stroop_trials.csv` | Trial-level Stroop data |
+
+Note: task? complete_* ?????? ?? task? trial ??? ?????.
 
 ## Essential Commands
 
@@ -81,6 +90,13 @@ python -m analysis.ml.nested_cv --task classification --features demo_dass
 
 # Export data from Firebase (requires serviceAccountKey.json)
 PYTHONIOENCODING=utf-8 .\venv\Scripts\python.exe export_alldata.py
+
+# Preprocessing: Build task-specific datasets
+python -m publication.preprocessing --build stroop   # Stroop 완료자 데이터셋
+python -m publication.preprocessing --build prp      # PRP 완료자 데이터셋
+python -m publication.preprocessing --build wcst     # WCST 완료자 데이터셋
+python -m publication.preprocessing --build all      # 모든 task 데이터셋 빌드
+python -m publication.preprocessing --list           # 데이터셋 현황 조회
 ```
 
 ## Analysis Architecture
@@ -139,11 +155,8 @@ analysis/
 publication/
 ├── data/                       # 데이터 파일
 │   ├── raw/                    # 원본 데이터 (전체 참가자)
-│   ├── complete/               # 완료자 필터링 (모든 과제 완료)
-│   ├── complete_filtered/      # 품질 통제 데이터 (N=185, 이상치 제거)
 │   ├── outputs/                # 생성된 데이터 (master_dataset.csv 등)
 │   ├── export_alldata.py       # Firebase 데이터 추출
-│   └── filter_complete_participants.py  # 완료자 필터링
 │
 ├── preprocessing/              # 데이터 전처리
 │   ├── loaders.py              # load_master_dataset, load_*_scores
@@ -270,13 +283,24 @@ from analysis.preprocessing import (
 ### `publication/preprocessing/` - Publication Data Loading
 ```python
 from publication.preprocessing import (
-    load_master_dataset,              # publication/data/complete/ 기반 데이터셋
+    # Task-specific datasets (권장)
+    load_master_dataset,              # task='stroop', 'prp', 'wcst'
+    # Trial loaders
     load_prp_trials, load_stroop_trials, load_wcst_trials,
     derive_all_features,              # 모든 파생 변수 계산
-    DATA_DIR, COMPLETE_DIR, RAW_DIR,  # 데이터 경로 상수
+    # Dataset builder
+    build_task_dataset, build_all_datasets,  # task별 데이터셋 빌드
+    # Path utilities
+    get_results_dir, get_cache_path,  # task별 경로 분기
+    RAW_DIR, DATA_DIR, VALID_TASKS,   # 경로 상수
 )
+
+# Task-specific dataset usage:
+df_stroop = load_master_dataset(task='stroop')  # N ~ 200
+df_prp = load_master_dataset(task='prp')        # N ~ 195
+df_wcst = load_master_dataset(task='wcst')      # N ~ 190
 ```
-Note: `publication/preprocessing/` mirrors `analysis/preprocessing/` but uses `publication/data/` paths.
+Note: Each task has its own complete dataset. Task correlations are ~0.1, so they are treated independently.
 
 ## Implementation Details
 
