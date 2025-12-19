@@ -10,6 +10,7 @@ import pandas as pd
 
 from ..core import coefficient_of_variation
 from .loaders import load_wcst_trials
+from .mechanism import load_or_compute_wcst_mechanism_features
 
 
 def derive_wcst_features(
@@ -86,4 +87,16 @@ def derive_wcst_features(
             "wcst_trials": len(grp),
         })
 
-    return pd.DataFrame(records)
+    features_df = pd.DataFrame(records)
+
+    mechanism_df = load_or_compute_wcst_mechanism_features(data_dir=data_dir)
+    if mechanism_df.empty:
+        return features_df
+    if features_df.empty:
+        return mechanism_df
+
+    overlap = [c for c in mechanism_df.columns if c != "participant_id" and c in features_df.columns]
+    if overlap:
+        features_df = features_df.drop(columns=overlap)
+
+    return features_df.merge(mechanism_df, on="participant_id", how="left")

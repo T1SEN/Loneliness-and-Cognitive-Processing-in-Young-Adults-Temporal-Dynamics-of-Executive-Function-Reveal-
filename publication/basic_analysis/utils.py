@@ -104,6 +104,53 @@ TIER1_OUTCOMES = [
     ('stroop_cv_incong', 'Stroop RT CV (Incongruent)'),
     ('stroop_cv_cong', 'Stroop RT CV (Congruent)'),
     ('stroop_trials', 'Stroop Valid Trial Count'),
+
+    # PRP Ex-Gaussian parameters
+    ('prp_exg_short_mu', 'PRP Ex-Gaussian mu (Short SOA)'),
+    ('prp_exg_short_sigma', 'PRP Ex-Gaussian sigma (Short SOA)'),
+    ('prp_exg_short_tau', 'PRP Ex-Gaussian tau (Short SOA)'),
+    ('prp_exg_long_mu', 'PRP Ex-Gaussian mu (Long SOA)'),
+    ('prp_exg_long_sigma', 'PRP Ex-Gaussian sigma (Long SOA)'),
+    ('prp_exg_long_tau', 'PRP Ex-Gaussian tau (Long SOA)'),
+    ('prp_exg_overall_mu', 'PRP Ex-Gaussian mu (Overall)'),
+    ('prp_exg_overall_sigma', 'PRP Ex-Gaussian sigma (Overall)'),
+    ('prp_exg_overall_tau', 'PRP Ex-Gaussian tau (Overall)'),
+    ('prp_exg_mu_bottleneck', 'PRP Ex-Gaussian mu (Bottleneck)'),
+    ('prp_exg_sigma_bottleneck', 'PRP Ex-Gaussian sigma (Bottleneck)'),
+    ('prp_exg_tau_bottleneck', 'PRP Ex-Gaussian tau (Bottleneck)'),
+
+    # Stroop Ex-Gaussian parameters
+    ('stroop_exg_congruent_mu', 'Stroop Ex-Gaussian mu (Congruent)'),
+    ('stroop_exg_congruent_sigma', 'Stroop Ex-Gaussian sigma (Congruent)'),
+    ('stroop_exg_congruent_tau', 'Stroop Ex-Gaussian tau (Congruent)'),
+    ('stroop_exg_incongruent_mu', 'Stroop Ex-Gaussian mu (Incongruent)'),
+    ('stroop_exg_incongruent_sigma', 'Stroop Ex-Gaussian sigma (Incongruent)'),
+    ('stroop_exg_incongruent_tau', 'Stroop Ex-Gaussian tau (Incongruent)'),
+    ('stroop_exg_neutral_mu', 'Stroop Ex-Gaussian mu (Neutral)'),
+    ('stroop_exg_neutral_sigma', 'Stroop Ex-Gaussian sigma (Neutral)'),
+    ('stroop_exg_neutral_tau', 'Stroop Ex-Gaussian tau (Neutral)'),
+    ('stroop_exg_mu_interference', 'Stroop Ex-Gaussian mu (Interference)'),
+    ('stroop_exg_sigma_interference', 'Stroop Ex-Gaussian sigma (Interference)'),
+    ('stroop_exg_tau_interference', 'Stroop Ex-Gaussian tau (Interference)'),
+
+    # WCST HMM parameters
+    ('wcst_hmm_lapse_occupancy', 'WCST HMM Lapse Occupancy (%)'),
+    ('wcst_hmm_trans_to_lapse', 'WCST HMM P(Focus->Lapse)'),
+    ('wcst_hmm_trans_to_focus', 'WCST HMM P(Lapse->Focus)'),
+    ('wcst_hmm_stay_lapse', 'WCST HMM P(Lapse->Lapse)'),
+    ('wcst_hmm_stay_focus', 'WCST HMM P(Focus->Focus)'),
+    ('wcst_hmm_lapse_rt_mean', 'WCST HMM Lapse RT Mean'),
+    ('wcst_hmm_focus_rt_mean', 'WCST HMM Focus RT Mean'),
+    ('wcst_hmm_rt_diff', 'WCST HMM RT Difference'),
+    ('wcst_hmm_state_changes', 'WCST HMM State Changes'),
+
+    # WCST RL parameters
+    ('wcst_rl_alpha', 'WCST RL alpha'),
+    ('wcst_rl_beta', 'WCST RL beta'),
+    ('wcst_rl_alpha_pos', 'WCST RL alpha (pos)'),
+    ('wcst_rl_alpha_neg', 'WCST RL alpha (neg)'),
+    ('wcst_rl_alpha_asymmetry', 'WCST RL alpha asymmetry'),
+    ('wcst_rl_beta_asym', 'WCST RL beta (asym)'),
 ]
 
 # Standardized predictor columns (already computed in master dataset)

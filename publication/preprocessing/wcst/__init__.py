@@ -9,6 +9,12 @@ from .filters import (
     get_wcst_valid_participants,
 )
 from .features import derive_wcst_features
+from .mechanism import (
+    compute_wcst_hmm_features,
+    compute_wcst_rl_features,
+    compute_wcst_mechanism_features,
+    load_or_compute_wcst_mechanism_features,
+)
 from .dataset import build_wcst_dataset, get_wcst_complete_participants
 
 __all__ = [
@@ -20,6 +26,10 @@ __all__ = [
     "compute_wcst_qc_stats",
     "get_wcst_valid_participants",
     "derive_wcst_features",
+    "compute_wcst_hmm_features",
+    "compute_wcst_rl_features",
+    "compute_wcst_mechanism_features",
+    "load_or_compute_wcst_mechanism_features",
     "build_wcst_dataset",
     "get_wcst_complete_participants",
 ]
