@@ -16,6 +16,7 @@ ANALYSIS_OUTPUT_DIR = DATA_DIR / "outputs"
 COMPLETE_STROOP_DIR = DATA_DIR / "complete_stroop"
 COMPLETE_PRP_DIR = DATA_DIR / "complete_prp"
 COMPLETE_WCST_DIR = DATA_DIR / "complete_wcst"
+COMPLETE_OVERALL_DIR = DATA_DIR / "complete_overall"
 
 TASK_DIRS = {
     'stroop': COMPLETE_STROOP_DIR,
