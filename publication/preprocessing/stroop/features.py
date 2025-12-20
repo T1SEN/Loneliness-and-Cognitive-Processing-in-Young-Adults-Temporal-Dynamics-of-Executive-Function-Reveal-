@@ -8,7 +8,7 @@ from typing import List, Dict
 import numpy as np
 import pandas as pd
 
-from ..constants import STROOP_RT_MIN, STROOP_RT_MAX
+from ..constants import DEFAULT_RT_MIN
 from ..core import coefficient_of_variation
 from .loaders import load_stroop_trials
 from .exgaussian_mechanism import load_or_compute_stroop_mechanism_features
@@ -16,21 +16,19 @@ from .lba_mechanism import load_or_compute_stroop_lba_mechanism_features
 
 
 def derive_stroop_features(
-    rt_min: float = STROOP_RT_MIN,
-    rt_max: float = STROOP_RT_MAX,
+    rt_min: float = DEFAULT_RT_MIN,
+    rt_max: float | None = None,
     data_dir: None | str | Path = None,
 ) -> pd.DataFrame:
     stroop, _ = load_stroop_trials(
         data_dir=data_dir,
         rt_min=rt_min,
         rt_max=rt_max,
-        drop_timeouts=True,
-        require_correct_for_rt=False,
+        apply_trial_filters=True,
     )
 
     rt_col = "rt" if "rt" in stroop.columns else "rt_ms"
     stroop["rt_ms"] = pd.to_numeric(stroop[rt_col], errors="coerce")
-    stroop = stroop[stroop["rt_ms"].notna()]
 
     trial_col = None
     for cand in ("trial", "trialIndex", "idx", "trial_index"):
@@ -75,14 +73,15 @@ def derive_stroop_features(
             incong = grp[cond_lower == "incongruent"]
             cong = grp[cond_lower == "congruent"]
 
-            if len(incong) >= 5 and incong["trial_order"].nunique() > 1:
-                x = incong["trial_order"].values
-                y = incong["rt_ms"].values
+            incong_valid = incong.dropna(subset=["trial_order", "rt_ms"])
+            if len(incong_valid) >= 5 and incong_valid["trial_order"].nunique() > 1:
+                x = incong_valid["trial_order"].values
+                y = incong_valid["rt_ms"].values
                 coef = np.polyfit(x, y, 1)
                 slope = coef[0]
 
-            cv_incong = coefficient_of_variation(incong["rt_ms"])
-            cv_cong = coefficient_of_variation(cong["rt_ms"])
+            cv_incong = coefficient_of_variation(incong["rt_ms"].dropna())
+            cv_cong = coefficient_of_variation(cong["rt_ms"].dropna())
 
         records.append({
             "participant_id": pid,
@@ -90,7 +89,7 @@ def derive_stroop_features(
             "stroop_post_error_rt": post_error_mean,
             "stroop_post_correct_rt": post_correct_mean,
             "stroop_incong_slope": slope,
-            "stroop_cv_all": coefficient_of_variation(grp["rt_ms"]),
+            "stroop_cv_all": coefficient_of_variation(grp["rt_ms"].dropna()),
             "stroop_cv_incong": cv_incong,
             "stroop_cv_cong": cv_cong,
             "stroop_trials": len(grp),

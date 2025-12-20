@@ -87,7 +87,7 @@ def _prepare_wsls_trials(df: pd.DataFrame) -> pd.DataFrame:
 def compute_wcst_wsls_features(
     data_dir: Path | None = None,
 ) -> pd.DataFrame:
-    trials, _ = load_wcst_trials(data_dir=data_dir, filter_rt=False)
+    trials, _ = load_wcst_trials(data_dir=data_dir, apply_trial_filters=True)
     prepared = _prepare_wsls_trials(trials)
     if prepared.empty:
         return pd.DataFrame()

@@ -10,7 +10,7 @@ import pandas as pd
 from scipy.optimize import minimize
 from scipy.stats import exponnorm
 
-from ..constants import STROOP_RT_MIN, STROOP_RT_MAX, get_results_dir
+from ..constants import STROOP_RT_MAX, get_results_dir
 from .loaders import load_stroop_trials
 
 MECHANISM_FILENAME = "5_stroop_mechanism_features.csv"
@@ -61,10 +61,7 @@ def compute_stroop_exgaussian_features(
 ) -> pd.DataFrame:
     trials, _ = load_stroop_trials(
         data_dir=data_dir,
-        rt_min=STROOP_RT_MIN,
-        rt_max=STROOP_RT_MAX,
-        require_correct_for_rt=True,
-        drop_timeouts=True,
+        apply_trial_filters=True,
     )
 
     rt_col = "rt" if "rt" in trials.columns else "rt_ms"

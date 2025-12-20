@@ -208,7 +208,7 @@ def _fit_bayesian_rule_model(
 def compute_wcst_bayesianrl_features(
     data_dir: Path | None = None,
 ) -> pd.DataFrame:
-    trials, _ = load_wcst_trials(data_dir=data_dir, filter_rt=False)
+    trials, _ = load_wcst_trials(data_dir=data_dir, apply_trial_filters=True)
     prepared = _prepare_brl_trials(trials)
     if prepared.empty:
         return pd.DataFrame()

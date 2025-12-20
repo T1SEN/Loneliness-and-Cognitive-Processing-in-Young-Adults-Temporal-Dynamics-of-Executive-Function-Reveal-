@@ -18,9 +18,12 @@ from .bayesianrl_mechanism import load_or_compute_wcst_bayesianrl_mechanism_feat
 
 def derive_wcst_features(
     data_dir: None | str | Path = None,
-    filter_rt: bool = True,
+    filter_rt: bool = False,
 ) -> pd.DataFrame:
-    wcst, _ = load_wcst_trials(data_dir=data_dir, filter_rt=filter_rt)
+    if filter_rt:
+        wcst, _ = load_wcst_trials(data_dir=data_dir, clean=True, filter_rt=True, apply_trial_filters=False)
+    else:
+        wcst, _ = load_wcst_trials(data_dir=data_dir, apply_trial_filters=True)
 
     rt_col = None
     for cand in ("reactionTimeMs", "rt_ms", "reaction_time_ms", "rt"):

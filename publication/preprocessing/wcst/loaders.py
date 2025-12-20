@@ -8,7 +8,7 @@ from typing import Dict, Any, Tuple
 
 import pandas as pd
 
-from ..constants import get_results_dir
+from ..constants import WCST_RT_MIN, get_results_dir
 from .filters import clean_wcst_trials, filter_wcst_rt_trials
 from ..core import ensure_participant_id
 
@@ -36,6 +36,7 @@ def load_wcst_trials(
     data_dir: Path | None = None,
     clean: bool = True,
     filter_rt: bool = False,
+    apply_trial_filters: bool = True,
 ) -> Tuple[pd.DataFrame, Dict[str, Any]]:
     if data_dir is None:
         data_dir = get_results_dir("wcst")
@@ -48,16 +49,24 @@ def load_wcst_trials(
         "n_participants": df["participant_id"].nunique(),
     }
 
-    if clean:
+    if apply_trial_filters:
         df, clean_stats = clean_wcst_trials(df)
         summary.update(clean_stats)
+        df["rt_ms"] = pd.to_numeric(df["rt_ms"], errors="coerce")
+        df = df[df["rt_ms"].notna()]
+        df = df[df["rt_ms"] >= WCST_RT_MIN]
         summary["rows_after"] = len(df)
+    else:
+        if clean:
+            df, clean_stats = clean_wcst_trials(df)
+            summary.update(clean_stats)
+            summary["rows_after"] = len(df)
 
-    if filter_rt:
-        before_rt = len(df)
-        df = filter_wcst_rt_trials(df)
-        summary["rt_filtered"] = before_rt - len(df)
-        summary["rows_after"] = len(df)
+        if filter_rt:
+            before_rt = len(df)
+            df = filter_wcst_rt_trials(df)
+            summary["rt_filtered"] = before_rt - len(df)
+            summary["rows_after"] = len(df)
 
     if "correct" in df.columns:
         df["correct"] = _coerce_bool_series(df["correct"])
@@ -92,18 +101,19 @@ def load_wcst_summary(data_dir: Path) -> pd.DataFrame:
     wcst_trials["extra_dict"] = wcst_trials["extra"].apply(_parse_wcst_extra)
     wcst_trials["is_pe"] = wcst_trials["extra_dict"].apply(lambda x: x.get("isPE", False))
 
-    rt_trials = filter_wcst_rt_trials(wcst_trials)
-    rt_col = "rt_ms"
+    wcst_trials["rt_ms"] = pd.to_numeric(wcst_trials["rt_ms"], errors="coerce")
+    wcst_trials = wcst_trials[wcst_trials["rt_ms"].notna()]
+    wcst_trials = wcst_trials[wcst_trials["rt_ms"] >= WCST_RT_MIN]
 
-    wcst_trials["correct"] = wcst_trials["correct"].fillna(False).astype(bool)
+    wcst_trials["correct"] = _coerce_bool_series(wcst_trials["correct"])
     wcst_summary = wcst_trials.groupby("participant_id").agg(
         pe_count=("is_pe", "sum"),
         total_trials=("is_pe", "count"),
         wcst_accuracy=("correct", lambda x: (x.sum() / len(x)) * 100),
     ).reset_index()
-    rt_summary = rt_trials.groupby("participant_id").agg(
-        wcst_mean_rt=(rt_col, "mean"),
-        wcst_sd_rt=(rt_col, "std"),
+    rt_summary = wcst_trials.groupby("participant_id").agg(
+        wcst_mean_rt=("rt_ms", "mean"),
+        wcst_sd_rt=("rt_ms", "std"),
     ).reset_index()
     wcst_summary = wcst_summary.merge(rt_summary, on="participant_id", how="left")
     wcst_summary["pe_rate"] = (wcst_summary["pe_count"] / wcst_summary["total_trials"]) * 100

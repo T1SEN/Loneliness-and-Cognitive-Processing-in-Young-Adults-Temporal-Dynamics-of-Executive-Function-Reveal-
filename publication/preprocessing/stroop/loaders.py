@@ -8,19 +8,34 @@ from typing import Dict, Any, Tuple
 import pandas as pd
 
 from ..constants import (
-    STROOP_RT_MIN,
-    STROOP_RT_MAX,
+    DEFAULT_RT_MIN,
     get_results_dir,
 )
 from ..core import ensure_participant_id
 
 
+def _coerce_bool(series: pd.Series) -> pd.Series:
+    if series.dtype == bool:
+        return series
+    text = series.astype(str).str.strip().str.lower()
+    mapped = text.map({
+        "true": True,
+        "false": False,
+        "1": True,
+        "0": False,
+        "yes": True,
+        "no": False,
+    })
+    return mapped.fillna(False).astype(bool)
+
+
 def load_stroop_trials(
     data_dir: Path | None = None,
-    rt_min: int = STROOP_RT_MIN,
-    rt_max: int = STROOP_RT_MAX,
-    require_correct_for_rt: bool = True,
+    rt_min: int = DEFAULT_RT_MIN,
+    rt_max: int | None = None,
+    require_correct_for_rt: bool = False,
     drop_timeouts: bool = True,
+    apply_trial_filters: bool = True,
 ) -> Tuple[pd.DataFrame, Dict[str, Any]]:
     if data_dir is None:
         data_dir = get_results_dir("stroop")
@@ -36,6 +51,7 @@ def load_stroop_trials(
             df[rt_col] = df[rt_col].fillna(df["rt"])
             df = df.drop(columns=["rt"])
         df = df.rename(columns={rt_col: "rt"})
+    df["rt"] = pd.to_numeric(df["rt"], errors="coerce")
 
     cond_col = None
     for cand in ["type", "condition", "cond"]:
@@ -47,14 +63,18 @@ def load_stroop_trials(
 
     for bool_col in ["correct", "timeout"]:
         if bool_col in df.columns:
-            df[bool_col] = df[bool_col].fillna(False).astype(bool)
+            df[bool_col] = _coerce_bool(df[bool_col])
 
     before = len(df)
-    if drop_timeouts and "timeout" in df.columns:
-        df = df[df["timeout"] == False]
-    if require_correct_for_rt and "correct" in df.columns:
-        df = df[df["correct"] == True]
-    df = df[df["rt"].between(rt_min, rt_max)]
+    if apply_trial_filters:
+        if drop_timeouts and "timeout" in df.columns:
+            df = df[df["timeout"] == False]
+        if require_correct_for_rt and "correct" in df.columns:
+            df = df[df["correct"] == True]
+        df = df[df["rt"].notna()]
+        df = df[df["rt"] >= rt_min]
+        if rt_max is not None:
+            df = df[df["rt"] <= rt_max]
 
     summary = {
         "rows_before": before,
@@ -62,6 +82,7 @@ def load_stroop_trials(
         "n_participants": df["participant_id"].nunique(),
         "rt_min": rt_min,
         "rt_max": rt_max,
+        "filters_applied": apply_trial_filters,
     }
     return df, summary
 
@@ -84,19 +105,19 @@ def load_stroop_summary(data_dir: Path) -> pd.DataFrame:
     if cond_col is None:
         raise KeyError("Stroop trials missing condition column ('type', 'condition', or 'cond').")
 
-    stroop_trials["correct"] = stroop_trials["correct"].fillna(False).astype(bool)
+    stroop_trials["correct"] = _coerce_bool(stroop_trials["correct"])
     if "timeout" in stroop_trials.columns:
-        stroop_trials["timeout"] = stroop_trials["timeout"].fillna(False).astype(bool)
+        stroop_trials["timeout"] = _coerce_bool(stroop_trials["timeout"])
+    stroop_trials[rt_col] = pd.to_numeric(stroop_trials[rt_col], errors="coerce")
     acc_summary = stroop_trials.groupby(["participant_id", cond_col]).agg(
         accuracy=("correct", "mean")
     ).reset_index()
 
-    rt_trials = stroop_trials[
-        ((stroop_trials["timeout"] == False) if "timeout" in stroop_trials.columns else True)
-        & (stroop_trials["correct"] == True)
-        & (stroop_trials[rt_col] >= STROOP_RT_MIN)
-        & (stroop_trials[rt_col] <= STROOP_RT_MAX)
-    ].copy()
+    rt_trials = stroop_trials.copy()
+    if "timeout" in rt_trials.columns:
+        rt_trials = rt_trials[rt_trials["timeout"] == False]
+    rt_trials = rt_trials[rt_trials[rt_col].notna()]
+    rt_trials = rt_trials[rt_trials[rt_col] >= DEFAULT_RT_MIN]
 
     rt_summary = rt_trials.groupby(["participant_id", cond_col]).agg(
         rt_mean=(rt_col, "mean")

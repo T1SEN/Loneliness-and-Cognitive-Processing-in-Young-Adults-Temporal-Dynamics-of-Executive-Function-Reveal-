@@ -9,9 +9,7 @@ import re
 import pandas as pd
 
 from ..constants import (
-    PRP_RT_MIN,
-    PRP_RT_MAX,
-    PRP_IRI_MIN,
+    DEFAULT_RT_MIN,
     DEFAULT_SOA_SHORT,
     DEFAULT_SOA_LONG,
     get_results_dir,
@@ -34,17 +32,33 @@ def _normalize_response_order(value: object) -> str | None:
     return None
 
 
+def _coerce_bool(series: pd.Series) -> pd.Series:
+    if series.dtype == bool:
+        return series
+    text = series.astype(str).str.strip().str.lower()
+    mapped = text.map({
+        "true": True,
+        "false": False,
+        "1": True,
+        "0": False,
+        "yes": True,
+        "no": False,
+    })
+    return mapped.fillna(False).astype(bool)
+
+
 def load_prp_trials(
     data_dir: Path | None = None,
-    rt_min: int = PRP_RT_MIN,
-    rt_max: int = PRP_RT_MAX,
-    require_t1_correct: bool = True,
-    enforce_short_long_only: bool = True,
-    require_t2_correct_for_rt: bool = True,
+    rt_min: int = DEFAULT_RT_MIN,
+    rt_max: int | None = None,
+    require_t1_correct: bool = False,
+    enforce_short_long_only: bool = False,
+    require_t2_correct_for_rt: bool = False,
     drop_timeouts: bool = True,
     require_valid_order: bool = True,
-    iri_min: int = PRP_IRI_MIN,
+    iri_min: int = 0,
     exclude_t2_pressed_while_pending: bool = True,
+    apply_trial_filters: bool = True,
 ) -> Tuple[pd.DataFrame, Dict[str, Any]]:
     if data_dir is None:
         data_dir = get_results_dir("prp")
@@ -76,38 +90,27 @@ def load_prp_trials(
 
     for bool_col in ["t1_correct", "t2_correct", "t1_timeout", "t2_timeout"]:
         if bool_col in df.columns:
-            df[bool_col] = df[bool_col].fillna(False).astype(bool)
+            df[bool_col] = _coerce_bool(df[bool_col])
     if "t2_pressed_while_t1_pending" in df.columns:
-        df["t2_pressed_while_t1_pending"] = (
-            df["t2_pressed_while_t1_pending"].fillna(False).astype(bool)
-        )
+        df["t2_pressed_while_t1_pending"] = _coerce_bool(df["t2_pressed_while_t1_pending"])
 
-    before = len(df)
-    df = df[df["t2_rt"].between(rt_min, rt_max)]
-    if drop_timeouts:
-        if "t1_timeout" in df.columns:
-            df = df[df["t1_timeout"] == False]
-        if "t2_timeout" in df.columns:
-            df = df[df["t2_timeout"] == False]
-    if require_t1_correct:
-        df = df[df["t1_correct"] == True]
-    if require_t2_correct_for_rt and "t2_correct" in df.columns:
-        df = df[df["t2_correct"] == True]
-
-    if require_valid_order and "response_order" in df.columns:
+    if "response_order" in df.columns:
         df["order_norm"] = df["response_order"].apply(_normalize_response_order)
-        df = df[df["order_norm"] == "t1_t2"]
-        if exclude_t2_pressed_while_pending and "t2_pressed_while_t1_pending" in df.columns:
-            df = df[df["t2_pressed_while_t1_pending"] == False]
+    else:
+        df["order_norm"] = None
 
-    if iri_min > 0 and "t1_resp_ms" in df.columns and "t2_resp_ms" in df.columns:
+    df["t2_rt"] = pd.to_numeric(df["t2_rt"], errors="coerce")
+    df["soa"] = pd.to_numeric(df["soa"], errors="coerce")
+    if "t1_resp_ms" in df.columns and "t2_resp_ms" in df.columns:
         df["t1_resp_ms"] = pd.to_numeric(df["t1_resp_ms"], errors="coerce")
         df["t2_resp_ms"] = pd.to_numeric(df["t2_resp_ms"], errors="coerce")
         df["iri_ms"] = df["t2_resp_ms"] - df["t1_resp_ms"]
-        iri_valid = df["iri_ms"] >= iri_min
-        df = df[iri_valid]
+    else:
+        df["iri_ms"] = pd.NA
 
     def bin_soa(soa_val):
+        if pd.isna(soa_val):
+            return None
         if soa_val <= DEFAULT_SOA_SHORT:
             return "short"
         if soa_val >= DEFAULT_SOA_LONG:
@@ -115,8 +118,30 @@ def load_prp_trials(
         return "other"
 
     df["soa_bin"] = df["soa"].apply(bin_soa)
-    if enforce_short_long_only:
-        df = df[df["soa_bin"].isin(["short", "long"])]
+    before = len(df)
+    if apply_trial_filters:
+        df = df[df["t2_rt"].notna()]
+        if rt_max is None:
+            df = df[df["t2_rt"] >= rt_min]
+        else:
+            df = df[df["t2_rt"].between(rt_min, rt_max)]
+        if drop_timeouts:
+            if "t1_timeout" in df.columns:
+                df = df[df["t1_timeout"] == False]
+            if "t2_timeout" in df.columns:
+                df = df[df["t2_timeout"] == False]
+        if require_t1_correct:
+            df = df[df["t1_correct"] == True]
+        if require_t2_correct_for_rt and "t2_correct" in df.columns:
+            df = df[df["t2_correct"] == True]
+        if require_valid_order and "response_order" in df.columns:
+            df = df[df["order_norm"] == "t1_t2"]
+        if exclude_t2_pressed_while_pending and "t2_pressed_while_t1_pending" in df.columns:
+            df = df[df["t2_pressed_while_t1_pending"] == False]
+        if iri_min > 0 and "t1_resp_ms" in df.columns and "t2_resp_ms" in df.columns:
+            df = df[df["iri_ms"] >= iri_min]
+        if enforce_short_long_only:
+            df = df[df["soa_bin"].isin(["short", "long"])]
 
     summary = {
         "rows_before": before,
@@ -124,6 +149,7 @@ def load_prp_trials(
         "n_participants": df["participant_id"].nunique(),
         "rt_min": rt_min,
         "rt_max": rt_max,
+        "filters_applied": apply_trial_filters,
     }
     return df, summary
 
@@ -154,56 +180,55 @@ def load_prp_summary(data_dir: Path) -> pd.DataFrame:
             prp_trials = prp_trials.drop(columns=["soa"])
         prp_trials = prp_trials.rename(columns={soa_col: "soa"})
 
-    prp_trials["t1_correct"] = prp_trials["t1_correct"].fillna(False).astype(bool)
+    prp_trials["t2_rt"] = pd.to_numeric(prp_trials["t2_rt"], errors="coerce")
+    prp_trials["soa"] = pd.to_numeric(prp_trials["soa"], errors="coerce")
+
+    prp_trials["t1_correct"] = _coerce_bool(prp_trials["t1_correct"])
     if "t2_correct" in prp_trials.columns:
-        prp_trials["t2_correct"] = prp_trials["t2_correct"].fillna(False).astype(bool)
+        prp_trials["t2_correct"] = _coerce_bool(prp_trials["t2_correct"])
     else:
         prp_trials["t2_correct"] = True
-    prp_trials["t1_timeout"] = prp_trials.get("t1_timeout", False)
-    if isinstance(prp_trials["t1_timeout"], pd.Series):
-        prp_trials["t1_timeout"] = prp_trials["t1_timeout"].fillna(False).astype(bool)
-    prp_trials["t2_timeout"] = prp_trials.get("t2_timeout", False)
-    if isinstance(prp_trials["t2_timeout"], pd.Series):
-        prp_trials["t2_timeout"] = prp_trials["t2_timeout"].fillna(False).astype(bool)
+    if "t1_timeout" in prp_trials.columns:
+        prp_trials["t1_timeout"] = _coerce_bool(prp_trials["t1_timeout"])
+    if "t2_timeout" in prp_trials.columns:
+        prp_trials["t2_timeout"] = _coerce_bool(prp_trials["t2_timeout"])
     if "t2_pressed_while_t1_pending" in prp_trials.columns:
-        prp_trials["t2_pressed_while_t1_pending"] = (
-            prp_trials["t2_pressed_while_t1_pending"].fillna(False).astype(bool)
+        prp_trials["t2_pressed_while_t1_pending"] = _coerce_bool(
+            prp_trials["t2_pressed_while_t1_pending"]
         )
-
-    if "response_order" in prp_trials.columns:
-        prp_trials["order_norm"] = prp_trials["response_order"].apply(_normalize_response_order)
-        prp_trials = prp_trials[prp_trials["order_norm"] == "t1_t2"]
-        if "t2_pressed_while_t1_pending" in prp_trials.columns:
-            prp_trials = prp_trials[prp_trials["t2_pressed_while_t1_pending"] == False]
 
     if "t1_resp_ms" in prp_trials.columns and "t2_resp_ms" in prp_trials.columns:
         prp_trials["t1_resp_ms"] = pd.to_numeric(prp_trials["t1_resp_ms"], errors="coerce")
         prp_trials["t2_resp_ms"] = pd.to_numeric(prp_trials["t2_resp_ms"], errors="coerce")
         prp_trials["iri_ms"] = prp_trials["t2_resp_ms"] - prp_trials["t1_resp_ms"]
 
-    prp_rt = prp_trials[
-        (prp_trials["t1_correct"] == True)
-        & (prp_trials["t2_correct"] == True)
-        & (prp_trials["t1_timeout"] == False)
-        & (prp_trials["t2_timeout"] == False)
-        & (prp_trials["t2_rt"] >= PRP_RT_MIN)
-        & (prp_trials["t2_rt"] <= PRP_RT_MAX)
-    ].copy()
-
-    if "iri_ms" in prp_rt.columns:
-        prp_rt = prp_rt[prp_rt["iri_ms"] >= PRP_IRI_MIN]
+    if "response_order" in prp_trials.columns:
+        prp_trials["order_norm"] = prp_trials["response_order"].apply(_normalize_response_order)
 
     def bin_soa(soa):
+        if pd.isna(soa):
+            return None
         if soa <= DEFAULT_SOA_SHORT:
             return "short"
         if soa >= DEFAULT_SOA_LONG:
             return "long"
         return "other"
 
-    prp_rt["soa_bin"] = prp_rt["soa"].apply(bin_soa)
-    prp_rt = prp_rt[prp_rt["soa_bin"].isin(["short", "long"])].copy()
+    prp_trials["soa_bin"] = prp_trials["soa"].apply(bin_soa)
 
-    prp_summary = prp_rt.groupby(["participant_id", "soa_bin"]).agg(
+    rt_trials = prp_trials.copy()
+    if "t1_timeout" in rt_trials.columns:
+        rt_trials = rt_trials[rt_trials["t1_timeout"] == False]
+    if "t2_timeout" in rt_trials.columns:
+        rt_trials = rt_trials[rt_trials["t2_timeout"] == False]
+    if "order_norm" in rt_trials.columns:
+        rt_trials = rt_trials[rt_trials["order_norm"] == "t1_t2"]
+    if "t2_pressed_while_t1_pending" in rt_trials.columns:
+        rt_trials = rt_trials[rt_trials["t2_pressed_while_t1_pending"] == False]
+    rt_trials = rt_trials[rt_trials["t2_rt"].notna()]
+    rt_trials = rt_trials[rt_trials["t2_rt"] >= DEFAULT_RT_MIN]
+
+    prp_summary = rt_trials.groupby(["participant_id", "soa_bin"]).agg(
         t2_rt_mean=("t2_rt", "mean"),
         t2_rt_sd=("t2_rt", "std"),
         n_trials=("t2_rt", "count"),

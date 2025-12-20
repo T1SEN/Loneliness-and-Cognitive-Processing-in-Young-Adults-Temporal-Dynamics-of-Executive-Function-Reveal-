@@ -27,9 +27,13 @@ def compute_wcst_hmm_features(
     if not HMM_AVAILABLE:
         return pd.DataFrame()
 
-    trials, _ = load_wcst_trials(data_dir=data_dir, filter_rt=True)
+    trials, _ = load_wcst_trials(data_dir=data_dir, apply_trial_filters=True)
 
-    rt_col = "rt_ms" if "rt_ms" in trials.columns else "reactiontimems" if "reactiontimems" in trials.columns else None
+    rt_col = None
+    for cand in ("rt_ms", "reactionTimeMs", "reaction_time_ms", "reactiontimems", "rt"):
+        if cand in trials.columns:
+            rt_col = cand
+            break
     if rt_col is None:
         return pd.DataFrame()
     trials["rt_ms"] = pd.to_numeric(trials[rt_col], errors="coerce")

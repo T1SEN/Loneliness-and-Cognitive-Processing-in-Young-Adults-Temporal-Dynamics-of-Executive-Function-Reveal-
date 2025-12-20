@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 from scipy.optimize import curve_fit
 
-from ..constants import PRP_IRI_MIN, PRP_RT_MIN, PRP_RT_MAX, get_results_dir
+from ..constants import PRP_RT_MIN, PRP_RT_MAX, get_results_dir
 from .loaders import load_prp_trials
 
 MECHANISM_FILENAME = "5_prp_bottleneck_mechanism_features.csv"
@@ -61,15 +61,7 @@ def compute_prp_bottleneck_features(
 ) -> pd.DataFrame:
     trials, _ = load_prp_trials(
         data_dir=data_dir,
-        rt_min=PRP_RT_MIN,
-        rt_max=PRP_RT_MAX,
-        require_t1_correct=True,
-        require_t2_correct_for_rt=True,
-        enforce_short_long_only=False,
-        drop_timeouts=True,
-        require_valid_order=True,
-        iri_min=PRP_IRI_MIN,
-        exclude_t2_pressed_while_pending=True,
+        apply_trial_filters=True,
     )
 
     trials["t2_rt"] = pd.to_numeric(trials["t2_rt"], errors="coerce")

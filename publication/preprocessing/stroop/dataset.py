@@ -8,7 +8,7 @@ from typing import Dict, Optional, Set
 
 import pandas as pd
 
-from ..constants import RAW_DIR, get_results_dir
+from ..constants import DEFAULT_RT_MIN, RAW_DIR, get_results_dir
 from ..surveys import get_survey_valid_participants, SurveyQCCriteria
 from .filters import get_stroop_valid_participants, StroopQCCriteria
 
@@ -91,6 +91,24 @@ def build_stroop_dataset(
         if filename == "3_cognitive_tests_summary.csv" and "testName" in df_filtered.columns:
             df_filtered["testName"] = df_filtered["testName"].str.lower()
             df_filtered = df_filtered[df_filtered["testName"] == "stroop"]
+        if filename == "4c_stroop_trials.csv":
+            rt_col = "rt_ms" if "rt_ms" in df_filtered.columns else "rt" if "rt" in df_filtered.columns else None
+            if rt_col is None:
+                if verbose:
+                    print("  [ERROR] Stroop trials missing RT column")
+                continue
+            df_filtered[rt_col] = pd.to_numeric(df_filtered[rt_col], errors="coerce")
+            if "timeout" in df_filtered.columns:
+                timeout = df_filtered["timeout"]
+                if timeout.dtype != bool:
+                    timeout = timeout.astype(str).str.strip().str.lower().map(
+                        {"true": True, "1": True, "false": False, "0": False}
+                    )
+                    timeout = timeout.fillna(False)
+                df_filtered["timeout"] = timeout.astype(bool)
+                df_filtered = df_filtered[df_filtered["timeout"] == False]
+            df_filtered = df_filtered[df_filtered[rt_col].notna()]
+            df_filtered = df_filtered[df_filtered[rt_col] >= DEFAULT_RT_MIN]
 
         results[filename] = df_filtered
 

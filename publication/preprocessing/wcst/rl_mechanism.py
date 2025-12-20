@@ -141,7 +141,7 @@ def _fit_model(
 def compute_wcst_rl_features(
     data_dir: Path | None = None,
 ) -> pd.DataFrame:
-    trials, _ = load_wcst_trials(data_dir=data_dir, filter_rt=False)
+    trials, _ = load_wcst_trials(data_dir=data_dir, apply_trial_filters=True)
     trials = _prepare_actions(trials)
 
     if "action" not in trials.columns:

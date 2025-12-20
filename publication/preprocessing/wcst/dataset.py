@@ -8,7 +8,7 @@ from typing import Dict, Optional, Set
 
 import pandas as pd
 
-from ..constants import RAW_DIR, get_results_dir
+from ..constants import RAW_DIR, WCST_RT_MIN, get_results_dir
 from ..surveys import get_survey_valid_participants, SurveyQCCriteria
 from .filters import clean_wcst_trials, get_wcst_valid_participants, WCSTQCCriteria
 
@@ -93,7 +93,9 @@ def build_wcst_dataset(
             df_filtered = df_filtered[df_filtered["testName"] == "wcst"]
         if filename == "4b_wcst_trials.csv":
             df_filtered, _ = clean_wcst_trials(df_filtered)
-
+            df_filtered["rt_ms"] = pd.to_numeric(df_filtered["rt_ms"], errors="coerce")
+            df_filtered = df_filtered[df_filtered["rt_ms"].notna()]
+            df_filtered = df_filtered[df_filtered["rt_ms"] >= WCST_RT_MIN]
         results[filename] = df_filtered
 
         if save:

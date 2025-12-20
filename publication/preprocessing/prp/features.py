@@ -8,7 +8,7 @@ from typing import List, Dict
 import numpy as np
 import pandas as pd
 
-from ..constants import PRP_RT_MIN, PRP_RT_MAX
+from ..constants import DEFAULT_RT_MIN
 from ..core import coefficient_of_variation
 from .loaders import load_prp_trials
 from .exgaussian_mechanism import load_or_compute_prp_mechanism_features
@@ -16,23 +16,19 @@ from .bottleneck_mechanism import load_or_compute_prp_bottleneck_mechanism_featu
 
 
 def derive_prp_features(
-    rt_min: float = PRP_RT_MIN,
-    rt_max: float = PRP_RT_MAX,
+    rt_min: float = DEFAULT_RT_MIN,
+    rt_max: float | None = None,
     data_dir: Path | None = None,
 ) -> pd.DataFrame:
     prp, _ = load_prp_trials(
         data_dir=data_dir,
         rt_min=rt_min,
         rt_max=rt_max,
-        require_t1_correct=False,
-        require_t2_correct_for_rt=False,
-        enforce_short_long_only=False,
-        drop_timeouts=True,
+        apply_trial_filters=True,
     )
 
     prp["t2_rt_ms"] = pd.to_numeric(prp.get("t2_rt", prp.get("t2_rt_ms")), errors="coerce")
     prp["soa_ms"] = pd.to_numeric(prp.get("soa", prp.get("soa_nominal_ms")), errors="coerce")
-    prp = prp[(prp["t2_rt_ms"].notna()) & (prp["t2_rt_ms"] > 0)]
 
     for col in ["t1_correct", "t2_correct"]:
         if col in prp.columns and prp[col].dtype == "object":
@@ -43,7 +39,7 @@ def derive_prp_features(
 
     records: List[Dict] = []
     for pid, group in prp.groupby("participant_id"):
-        overall_cv = coefficient_of_variation(group["t2_rt_ms"])
+        overall_cv = coefficient_of_variation(group["t2_rt_ms"].dropna())
         short_soa = group[group["soa_ms"] <= 150]
         long_soa = group[group["soa_ms"] >= 1200]
 
@@ -85,8 +81,8 @@ def derive_prp_features(
         records.append({
             "participant_id": pid,
             "prp_t2_cv_all": overall_cv,
-            "prp_t2_cv_short": coefficient_of_variation(short_soa["t2_rt_ms"]),
-            "prp_t2_cv_long": coefficient_of_variation(long_soa["t2_rt_ms"]),
+            "prp_t2_cv_short": coefficient_of_variation(short_soa["t2_rt_ms"].dropna()),
+            "prp_t2_cv_long": coefficient_of_variation(long_soa["t2_rt_ms"].dropna()),
             "prp_cascade_rate": cascade_rate,
             "prp_cascade_inflation": cascade_inflation,
             "prp_pes": pes,
