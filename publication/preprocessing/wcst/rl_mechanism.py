@@ -92,6 +92,60 @@ class AsymmetricRWModel(RescorlaWagnerModel):
             self.Q[action] += self.alpha_neg * prediction_error
 
 
+class StickyRWModel(RescorlaWagnerModel):
+    def __init__(self, alpha: float = 0.5, beta: float = 1.0, stickiness: float = 0.5, lapse: float = 0.05):
+        super().__init__(alpha, beta)
+        self.stickiness = stickiness
+        self.lapse = lapse
+
+    def negative_log_likelihood(self, trials: pd.DataFrame) -> float:
+        self.reset()
+        nll = 0.0
+        prev_action = None
+        for _, trial in trials.iterrows():
+            action = trial.get("action", np.nan)
+            if pd.isna(action):
+                continue
+            action = int(action) % self.n_actions
+            reward = 1.0 if trial.get("correct", False) else 0.0
+
+            logits = self.beta * (self.Q - np.max(self.Q))
+            if prev_action is not None:
+                logits[prev_action] += self.stickiness
+            exp_logits = np.exp(logits - np.max(logits))
+            probs = exp_logits / np.sum(exp_logits)
+            probs = (1.0 - self.lapse) * probs + self.lapse * (1.0 / self.n_actions)
+
+            prob = probs[action]
+            nll -= np.log(max(prob, 1e-10))
+            self.update(action, reward)
+            prev_action = action
+        return nll
+
+
+class DecayRWModel(RescorlaWagnerModel):
+    def __init__(self, alpha0: float = 0.5, decay: float = 0.01, beta: float = 1.0):
+        super().__init__(alpha0, beta)
+        self.alpha0 = alpha0
+        self.decay = decay
+
+    def negative_log_likelihood(self, trials: pd.DataFrame) -> float:
+        self.reset()
+        nll = 0.0
+        for t, trial in enumerate(trials.itertuples(index=False)):
+            action = getattr(trial, "action", np.nan)
+            if pd.isna(action):
+                continue
+            action = int(action) % self.n_actions
+            reward = 1.0 if getattr(trial, "correct", False) else 0.0
+            prob = self.get_action_prob(action)
+            nll -= np.log(max(prob, 1e-10))
+            alpha_t = float(self.alpha0 * np.exp(-self.decay * t))
+            prediction_error = reward - self.Q[action]
+            self.Q[action] += alpha_t * prediction_error
+        return nll
+
+
 def _fit_model(
     model_class,
     trials: pd.DataFrame,
@@ -135,6 +189,8 @@ def _fit_model(
     for name, value in zip(param_names, best_params):
         result[name] = float(value)
     result["n_trials"] = int(len(trials))
+    result["nll"] = float(best_nll)
+    result["converged"] = True
     return result
 
 
@@ -162,10 +218,16 @@ def compute_wcst_rl_features(
             record["wcst_rl_alpha"] = basic["alpha"]
             record["wcst_rl_beta"] = basic["beta"]
             record["wcst_rl_n_trials"] = basic["n_trials"]
+            record["wcst_rl_negloglik"] = basic["nll"]
+            record["wcst_rl_aic"] = 2 * 2 + 2 * basic["nll"]
+            record["wcst_rl_bic"] = 2 * np.log(max(basic["n_trials"], 1)) + 2 * basic["nll"]
         else:
             record["wcst_rl_alpha"] = np.nan
             record["wcst_rl_beta"] = np.nan
             record["wcst_rl_n_trials"] = np.nan
+            record["wcst_rl_negloglik"] = np.nan
+            record["wcst_rl_aic"] = np.nan
+            record["wcst_rl_bic"] = np.nan
 
         asym = _fit_model(
             AsymmetricRWModel,
@@ -179,12 +241,66 @@ def compute_wcst_rl_features(
             record["wcst_rl_alpha_asymmetry"] = asym["alpha_pos"] - asym["alpha_neg"]
             record["wcst_rl_beta_asym"] = asym["beta"]
             record["wcst_rl_asym_n_trials"] = asym["n_trials"]
+            record["wcst_rl_asym_negloglik"] = asym["nll"]
+            record["wcst_rl_asym_aic"] = 2 * 3 + 2 * asym["nll"]
+            record["wcst_rl_asym_bic"] = 3 * np.log(max(asym["n_trials"], 1)) + 2 * asym["nll"]
         else:
             record["wcst_rl_alpha_pos"] = np.nan
             record["wcst_rl_alpha_neg"] = np.nan
             record["wcst_rl_alpha_asymmetry"] = np.nan
             record["wcst_rl_beta_asym"] = np.nan
             record["wcst_rl_asym_n_trials"] = np.nan
+            record["wcst_rl_asym_negloglik"] = np.nan
+            record["wcst_rl_asym_aic"] = np.nan
+            record["wcst_rl_asym_bic"] = np.nan
+
+        sticky = _fit_model(
+            StickyRWModel,
+            pdata,
+            bounds=[(0.01, 0.99), (0.1, 10.0), (-2.0, 2.0), (0.0, 0.2)],
+            param_names=["alpha", "beta", "stickiness", "lapse"],
+        )
+        if sticky is not None:
+            record["wcst_rl_sticky_alpha"] = sticky["alpha"]
+            record["wcst_rl_sticky_beta"] = sticky["beta"]
+            record["wcst_rl_stickiness"] = sticky["stickiness"]
+            record["wcst_rl_lapse"] = sticky["lapse"]
+            record["wcst_rl_sticky_n_trials"] = sticky["n_trials"]
+            record["wcst_rl_sticky_negloglik"] = sticky["nll"]
+            record["wcst_rl_sticky_aic"] = 2 * 4 + 2 * sticky["nll"]
+            record["wcst_rl_sticky_bic"] = 4 * np.log(max(sticky["n_trials"], 1)) + 2 * sticky["nll"]
+        else:
+            record["wcst_rl_sticky_alpha"] = np.nan
+            record["wcst_rl_sticky_beta"] = np.nan
+            record["wcst_rl_stickiness"] = np.nan
+            record["wcst_rl_lapse"] = np.nan
+            record["wcst_rl_sticky_n_trials"] = np.nan
+            record["wcst_rl_sticky_negloglik"] = np.nan
+            record["wcst_rl_sticky_aic"] = np.nan
+            record["wcst_rl_sticky_bic"] = np.nan
+
+        decay = _fit_model(
+            DecayRWModel,
+            pdata,
+            bounds=[(0.01, 0.99), (0.0, 0.1), (0.1, 10.0)],
+            param_names=["alpha0", "decay", "beta"],
+        )
+        if decay is not None:
+            record["wcst_rl_alpha0"] = decay["alpha0"]
+            record["wcst_rl_alpha_decay"] = decay["decay"]
+            record["wcst_rl_beta_decay"] = decay["beta"]
+            record["wcst_rl_decay_n_trials"] = decay["n_trials"]
+            record["wcst_rl_decay_negloglik"] = decay["nll"]
+            record["wcst_rl_decay_aic"] = 2 * 3 + 2 * decay["nll"]
+            record["wcst_rl_decay_bic"] = 3 * np.log(max(decay["n_trials"], 1)) + 2 * decay["nll"]
+        else:
+            record["wcst_rl_alpha0"] = np.nan
+            record["wcst_rl_alpha_decay"] = np.nan
+            record["wcst_rl_beta_decay"] = np.nan
+            record["wcst_rl_decay_n_trials"] = np.nan
+            record["wcst_rl_decay_negloglik"] = np.nan
+            record["wcst_rl_decay_aic"] = np.nan
+            record["wcst_rl_decay_bic"] = np.nan
 
         results.append(record)
 

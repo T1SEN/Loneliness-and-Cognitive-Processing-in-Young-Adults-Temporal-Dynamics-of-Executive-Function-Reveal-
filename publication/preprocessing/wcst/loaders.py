@@ -70,6 +70,9 @@ def load_wcst_trials(
 
     if "correct" in df.columns:
         df["correct"] = _coerce_bool_series(df["correct"])
+    for col in ("isPE", "isNPE", "isPR", "timeout"):
+        if col in df.columns:
+            df[col] = _coerce_bool_series(df[col])
 
     if "isPE" not in df.columns:
         def parse_extra(extra_str):
@@ -81,6 +84,7 @@ def load_wcst_trials(
                 return {}
         df["extra_dict"] = df["extra"].apply(parse_extra) if "extra" in df.columns else {}
         df["isPE"] = df.get("extra_dict", {}).apply(lambda x: x.get("isPE", False) if isinstance(x, dict) else False)
+        df["isPE"] = _coerce_bool_series(df["isPE"])
 
     return df, summary
 

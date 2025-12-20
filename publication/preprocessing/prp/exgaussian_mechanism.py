@@ -67,9 +67,16 @@ def compute_prp_exgaussian_features(
     trials["t2_rt"] = pd.to_numeric(trials["t2_rt"], errors="coerce")
     trials = trials[trials["t2_rt"].notna()]
 
+    soa_levels = sorted(trials["soa"].dropna().unique()) if "soa" in trials.columns else []
+
     results = []
     for pid, group in trials.groupby("participant_id"):
         record = {"participant_id": pid}
+        if "t2_correct" in group.columns:
+            group_correct = group[group["t2_correct"] == True].copy()
+        else:
+            group_correct = group.copy()
+
         for soa in ("short", "long"):
             subset = group[group["soa_bin"] == soa]
             params = _fit_exgaussian(subset["t2_rt"].values, min_trials=min_trials)
@@ -77,10 +84,21 @@ def compute_prp_exgaussian_features(
             record[f"prp_exg_{soa}_sigma"] = params["sigma"]
             record[f"prp_exg_{soa}_tau"] = params["tau"]
 
+            subset_correct = group_correct[group_correct["soa_bin"] == soa]
+            params_correct = _fit_exgaussian(subset_correct["t2_rt"].values, min_trials=min_trials)
+            record[f"prp_exg_correct_{soa}_mu"] = params_correct["mu"]
+            record[f"prp_exg_correct_{soa}_sigma"] = params_correct["sigma"]
+            record[f"prp_exg_correct_{soa}_tau"] = params_correct["tau"]
+
         overall_params = _fit_exgaussian(group["t2_rt"].values, min_trials=min_trials)
         record["prp_exg_overall_mu"] = overall_params["mu"]
         record["prp_exg_overall_sigma"] = overall_params["sigma"]
         record["prp_exg_overall_tau"] = overall_params["tau"]
+
+        overall_correct = _fit_exgaussian(group_correct["t2_rt"].values, min_trials=min_trials)
+        record["prp_exg_correct_overall_mu"] = overall_correct["mu"]
+        record["prp_exg_correct_overall_sigma"] = overall_correct["sigma"]
+        record["prp_exg_correct_overall_tau"] = overall_correct["tau"]
 
         record["prp_exg_mu_bottleneck"] = (
             record["prp_exg_short_mu"] - record["prp_exg_long_mu"]
@@ -97,6 +115,54 @@ def compute_prp_exgaussian_features(
             if pd.notna(record["prp_exg_short_tau"]) and pd.notna(record["prp_exg_long_tau"])
             else np.nan
         )
+
+        record["prp_exg_correct_mu_bottleneck"] = (
+            record["prp_exg_correct_short_mu"] - record["prp_exg_correct_long_mu"]
+            if pd.notna(record["prp_exg_correct_short_mu"]) and pd.notna(record["prp_exg_correct_long_mu"])
+            else np.nan
+        )
+        record["prp_exg_correct_sigma_bottleneck"] = (
+            record["prp_exg_correct_short_sigma"] - record["prp_exg_correct_long_sigma"]
+            if pd.notna(record["prp_exg_correct_short_sigma"]) and pd.notna(record["prp_exg_correct_long_sigma"])
+            else np.nan
+        )
+        record["prp_exg_correct_tau_bottleneck"] = (
+            record["prp_exg_correct_short_tau"] - record["prp_exg_correct_long_tau"]
+            if pd.notna(record["prp_exg_correct_short_tau"]) and pd.notna(record["prp_exg_correct_long_tau"])
+            else np.nan
+        )
+
+        if pd.notna(record["prp_exg_short_tau"]) and pd.notna(record["prp_exg_long_tau"]):
+            if record["prp_exg_long_tau"] > 0:
+                record["prp_exg_tau_ratio_short_long"] = record["prp_exg_short_tau"] / record["prp_exg_long_tau"]
+            else:
+                record["prp_exg_tau_ratio_short_long"] = np.nan
+        else:
+            record["prp_exg_tau_ratio_short_long"] = np.nan
+
+        if pd.notna(record["prp_exg_correct_short_tau"]) and pd.notna(record["prp_exg_correct_long_tau"]):
+            if record["prp_exg_correct_long_tau"] > 0:
+                record["prp_exg_correct_tau_ratio_short_long"] = (
+                    record["prp_exg_correct_short_tau"] / record["prp_exg_correct_long_tau"]
+                )
+            else:
+                record["prp_exg_correct_tau_ratio_short_long"] = np.nan
+        else:
+            record["prp_exg_correct_tau_ratio_short_long"] = np.nan
+
+        for soa_val in soa_levels:
+            label = int(round(float(soa_val)))
+            subset = group[group["soa"] == soa_val]
+            params = _fit_exgaussian(subset["t2_rt"].values, min_trials=min_trials)
+            record[f"prp_exg_soa_{label}_mu"] = params["mu"]
+            record[f"prp_exg_soa_{label}_sigma"] = params["sigma"]
+            record[f"prp_exg_soa_{label}_tau"] = params["tau"]
+
+            subset_correct = group_correct[group_correct["soa"] == soa_val]
+            params_correct = _fit_exgaussian(subset_correct["t2_rt"].values, min_trials=min_trials)
+            record[f"prp_exg_correct_soa_{label}_mu"] = params_correct["mu"]
+            record[f"prp_exg_correct_soa_{label}_sigma"] = params_correct["sigma"]
+            record[f"prp_exg_correct_soa_{label}_tau"] = params_correct["tau"]
 
         results.append(record)
 

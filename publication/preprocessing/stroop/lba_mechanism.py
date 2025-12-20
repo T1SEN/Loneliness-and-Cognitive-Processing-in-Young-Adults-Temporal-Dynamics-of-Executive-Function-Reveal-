@@ -120,6 +120,8 @@ def _fit_lba_model(
         "b": float(b),
         "t0": float(t0),
         "n_trials": int(len(rts_ms)),
+        "nll": float(best_nll),
+        "converged": True,
     }
 
 
@@ -171,6 +173,19 @@ def compute_stroop_lba_features(
             record[f"stroop_lba_{cond}_b"] = fit.get("b", np.nan)
             record[f"stroop_lba_{cond}_t0"] = fit.get("t0", np.nan)
             record[f"stroop_lba_{cond}_n_trials"] = n_cond
+            record[f"stroop_lba_{cond}_negloglik"] = fit.get("nll", np.nan)
+            record[f"stroop_lba_{cond}_converged"] = fit.get("converged", False)
+
+            if "nll" in fit and pd.notna(fit["nll"]):
+                k_params = 5
+                n_obs = max(n_cond, 1)
+                aic = 2 * k_params + 2 * fit["nll"]
+                bic = k_params * np.log(n_obs) + 2 * fit["nll"]
+                record[f"stroop_lba_{cond}_aic"] = float(aic)
+                record[f"stroop_lba_{cond}_bic"] = float(bic)
+            else:
+                record[f"stroop_lba_{cond}_aic"] = np.nan
+                record[f"stroop_lba_{cond}_bic"] = np.nan
 
         if (
             pd.notna(record["stroop_lba_congruent_v_correct"])

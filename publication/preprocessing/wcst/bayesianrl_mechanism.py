@@ -205,6 +205,66 @@ def _fit_bayesian_rule_model(
     }
 
 
+def _summarize_bayesian_rule_model(
+    trials: pd.DataFrame,
+    hazard: float,
+    noise: float,
+    beta: float,
+) -> Dict[str, float]:
+    model = BayesianRuleLearner(hazard, noise, beta)
+    model.reset()
+
+    entropies = []
+    entropy_drops = []
+    max_posteriors = []
+    surprise_vals = []
+    change_point_probs = []
+
+    for row in trials.itertuples(index=False):
+        rule_indices = (
+            int(row.rule_idx_color),
+            int(row.rule_idx_shape),
+            int(row.rule_idx_number),
+        )
+        chosen_idx = int(row.chosen_idx)
+        correct = bool(row.correct)
+
+        prior = model._apply_hazard()
+        prior_entropy = -float(np.sum(prior * np.log(np.clip(prior, 1e-12, 1.0))))
+        change_point_probs.append(float(1.0 - np.max(prior)))
+
+        likelihood = np.zeros(model.n_rules)
+        for r_idx, card_idx in enumerate(rule_indices):
+            predicts_correct = card_idx == chosen_idx
+            if correct:
+                likelihood[r_idx] = (1.0 - noise) if predicts_correct else noise
+            else:
+                likelihood[r_idx] = (1.0 - noise) if not predicts_correct else noise
+
+        feedback_prob = float(np.sum(prior * likelihood))
+        surprise_vals.append(float(-np.log(max(feedback_prob, 1e-12))))
+
+        posterior = prior * likelihood
+        total = posterior.sum()
+        if total <= 0:
+            posterior = np.ones(model.n_rules) / model.n_rules
+        else:
+            posterior = posterior / total
+        post_entropy = -float(np.sum(posterior * np.log(np.clip(posterior, 1e-12, 1.0))))
+        entropies.append(post_entropy)
+        entropy_drops.append(prior_entropy - post_entropy)
+        max_posteriors.append(float(np.max(posterior)))
+        model.belief = posterior
+
+    return {
+        "wcst_brl_posterior_entropy_mean": float(np.mean(entropies)) if entropies else np.nan,
+        "wcst_brl_entropy_drop_mean": float(np.mean(entropy_drops)) if entropy_drops else np.nan,
+        "wcst_brl_p_rule_max_mean": float(np.mean(max_posteriors)) if max_posteriors else np.nan,
+        "wcst_brl_change_point_prob_mean": float(np.mean(change_point_probs)) if change_point_probs else np.nan,
+        "wcst_brl_surprise_mean": float(np.mean(surprise_vals)) if surprise_vals else np.nan,
+    }
+
+
 def compute_wcst_bayesianrl_features(
     data_dir: Path | None = None,
 ) -> pd.DataFrame:
@@ -228,14 +288,21 @@ def compute_wcst_bayesianrl_features(
                 "wcst_brl_beta": np.nan,
                 "wcst_brl_negloglik": np.nan,
                 "wcst_brl_n_trials": np.nan,
+                "wcst_brl_posterior_entropy_mean": np.nan,
+                "wcst_brl_entropy_drop_mean": np.nan,
+                "wcst_brl_p_rule_max_mean": np.nan,
+                "wcst_brl_change_point_prob_mean": np.nan,
+                "wcst_brl_surprise_mean": np.nan,
             })
         else:
+            summary = _summarize_bayesian_rule_model(pdata, fit["hazard"], fit["noise"], fit["beta"])
             record.update({
                 "wcst_brl_hazard": fit["hazard"],
                 "wcst_brl_noise": fit["noise"],
                 "wcst_brl_beta": fit["beta"],
                 "wcst_brl_negloglik": fit["neg_loglik"],
                 "wcst_brl_n_trials": fit["n_trials"],
+                **summary,
             })
         results.append(record)
 

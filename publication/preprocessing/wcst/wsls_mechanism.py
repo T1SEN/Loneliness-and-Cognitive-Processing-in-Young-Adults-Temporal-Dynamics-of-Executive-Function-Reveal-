@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -39,6 +39,7 @@ def _prepare_wsls_trials(df: pd.DataFrame) -> pd.DataFrame:
     shape_col = _pick_column(df, ["cardShape", "card_shape", "shape"])
     number_col = _pick_column(df, ["cardNumber", "card_number", "count"])
     trial_col = _pick_column(df, ["trialIndex", "trial_index", "trial"])
+    rule_col = _pick_column(df, ["ruleAtThatTime", "rule_at_that_time", "rule_at_time", "rule"])
 
     required = [chosen_col, color_col, shape_col, number_col, "correct", "participant_id"]
     if any(col is None for col in required):
@@ -57,6 +58,8 @@ def _prepare_wsls_trials(df: pd.DataFrame) -> pd.DataFrame:
     out["chosen_color"] = out["chosen_card"].map(CARD_COLORS)
     out["chosen_shape"] = out["chosen_card"].map(CARD_SHAPES)
     out["chosen_number"] = out["chosen_card"].map(CARD_NUMBERS)
+    if rule_col:
+        out["rule_at_time"] = out[rule_col].astype(str).str.strip().str.lower()
 
     valid_mask = (
         out["chosen_card"].isin(CARD_ATTRS)
@@ -113,12 +116,56 @@ def compute_wcst_wsls_features(
 
         p_stay_win = win_stay / win_total if win_total > 0 else np.nan
         p_shift_lose = lose_shift / lose_total if lose_total > 0 else np.nan
+        p_shift_win = (1 - p_stay_win) if win_total > 0 else np.nan
+        p_stay_lose = (1 - p_shift_lose) if lose_total > 0 else np.nan
         excluded_n = int(rule_choice.isna().sum())
+
+        p_stay_win_switch = np.nan
+        p_shift_lose_switch = np.nan
+        p_stay_win_stable = np.nan
+        p_shift_lose_stable = np.nan
+        rule_specific = {}
+
+        if "rule_at_time" in grp.columns:
+            rule_change = grp["rule_at_time"].ne(grp["rule_at_time"].shift(1)).fillna(True)
+            segment_id = rule_change.cumsum()
+            grp["trial_since_switch"] = grp.groupby(segment_id).cumcount()
+            switch_mask = grp["trial_since_switch"] <= 4
+            stable_mask = grp["trial_since_switch"] >= 5
+
+            def _wsls_by_mask(mask: pd.Series) -> Tuple[float, float]:
+                win_total_mask = int((valid_pairs & win_mask & mask).sum())
+                lose_total_mask = int((valid_pairs & lose_mask & mask).sum())
+                win_stay_mask = int((valid_pairs & win_mask & stay & mask).sum())
+                lose_shift_mask = int((valid_pairs & lose_mask & ~stay & mask).sum())
+                p_stay = win_stay_mask / win_total_mask if win_total_mask > 0 else np.nan
+                p_shift = lose_shift_mask / lose_total_mask if lose_total_mask > 0 else np.nan
+                return p_stay, p_shift
+
+            p_stay_win_switch, p_shift_lose_switch = _wsls_by_mask(switch_mask)
+            p_stay_win_stable, p_shift_lose_stable = _wsls_by_mask(stable_mask)
+
+            for rule in ("colour", "shape", "number"):
+                rule_mask = grp["rule_at_time"] == rule
+                p_stay_rule, p_shift_rule = _wsls_by_mask(rule_mask)
+                rule_specific[rule] = (p_stay_rule, p_shift_rule)
 
         records.append({
             "participant_id": pid,
             "wcst_wsls_p_stay_win": p_stay_win,
             "wcst_wsls_p_shift_lose": p_shift_lose,
+            "wcst_wsls_p_shift_win": p_shift_win,
+            "wcst_wsls_p_stay_lose": p_stay_lose,
+            "wcst_wsls_p_stay_win_switch": p_stay_win_switch,
+            "wcst_wsls_p_shift_lose_switch": p_shift_lose_switch,
+            "wcst_wsls_p_stay_win_stable": p_stay_win_stable,
+            "wcst_wsls_p_shift_lose_stable": p_shift_lose_stable,
+            "wcst_wsls_p_stay_win_colour": rule_specific.get("colour", (np.nan, np.nan))[0],
+            "wcst_wsls_p_shift_lose_colour": rule_specific.get("colour", (np.nan, np.nan))[1],
+            "wcst_wsls_p_stay_win_shape": rule_specific.get("shape", (np.nan, np.nan))[0],
+            "wcst_wsls_p_shift_lose_shape": rule_specific.get("shape", (np.nan, np.nan))[1],
+            "wcst_wsls_p_stay_win_number": rule_specific.get("number", (np.nan, np.nan))[0],
+            "wcst_wsls_p_shift_lose_number": rule_specific.get("number", (np.nan, np.nan))[1],
             "wcst_wsls_win_n": win_total,
             "wcst_wsls_lose_n": lose_total,
             "wcst_wsls_pair_n": int(valid_pairs.sum()),
