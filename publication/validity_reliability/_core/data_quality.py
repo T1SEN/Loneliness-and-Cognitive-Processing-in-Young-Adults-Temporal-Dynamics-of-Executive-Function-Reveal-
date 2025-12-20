@@ -1,6 +1,6 @@
 """
-Data Quality Suite
-==================
+Data Quality Analysis
+=====================
 
 Online experiment data quality validation for academic publication.
 
@@ -19,10 +19,10 @@ Analyses:
    - Original N -> exclusion criteria -> Final analysis N
 
 Usage:
-    python -m publication.validity_reliability.data_quality_suite
+    python -m publication.validity_reliability.complete_overall.data_quality
 
 Output:
-    results/analysis_outputs/validity_reliability/
+    publication/data/outputs/validity_reliability/<dataset>/
     - data_quality_report.csv
     - exclusion_summary.json
     - rt_distribution.png
@@ -45,8 +45,9 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 from pathlib import Path
+from typing import Iterable, List
 
-from publication.preprocessing import RESULTS_DIR, ANALYSIS_OUTPUT_DIR
+from publication.preprocessing.constants import ANALYSIS_OUTPUT_DIR, get_results_dir
 from publication.preprocessing import ensure_participant_id
 from publication.preprocessing import DEFAULT_RT_MIN, STROOP_RT_MAX, PRP_RT_MAX
 
@@ -63,13 +64,31 @@ OUTPUT_DIR = ANALYSIS_OUTPUT_DIR / "validity_reliability"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 
+def _resolve_data_dir(data_dir: Path | None, fallback_task: str) -> Path:
+    if data_dir is not None:
+        return data_dir
+    return get_results_dir(fallback_task)
+
+
+def _normalize_tasks(tasks: Iterable[str] | None) -> List[str]:
+    if tasks is None:
+        return ["stroop", "wcst", "prp"]
+    normalized = []
+    for task in tasks:
+        if not task:
+            continue
+        normalized.append(str(task).strip().lower())
+    return normalized
+
+
 # =============================================================================
 # SURVEY RESPONSE QUALITY
 # =============================================================================
 
-def load_survey_data() -> tuple[pd.DataFrame, pd.DataFrame]:
+def load_survey_data(data_dir: Path | None = None) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Load survey responses with duration info."""
-    surveys_path = RESULTS_DIR / "2_surveys_results.csv"
+    data_dir = _resolve_data_dir(data_dir, "overall")
+    surveys_path = data_dir / "2_surveys_results.csv"
     surveys = pd.read_csv(surveys_path, encoding='utf-8-sig')
 
     ucla_df = surveys[surveys['surveyName'] == 'ucla'].copy()
@@ -219,7 +238,7 @@ def check_reverse_item_consistency(df: pd.DataFrame, item_cols: list, reverse_it
     }
 
 
-def analyze_survey_quality() -> dict:
+def analyze_survey_quality(data_dir: Path | None = None) -> dict:
     """
     Comprehensive survey response quality analysis.
 
@@ -228,7 +247,7 @@ def analyze_survey_quality() -> dict:
     dict
         All survey quality metrics
     """
-    ucla_df, dass_df = load_survey_data()
+    ucla_df, dass_df = load_survey_data(data_dir=data_dir)
 
     results = {}
 
@@ -427,7 +446,10 @@ def analyze_trial_counts(task_name: str, trials_df: pd.DataFrame, min_trials: in
     }
 
 
-def analyze_cognitive_quality() -> dict:
+def analyze_cognitive_quality(
+    data_dir: Path | None = None,
+    tasks: Iterable[str] | None = None,
+) -> dict:
     """
     Comprehensive cognitive task quality analysis.
 
@@ -442,47 +464,53 @@ def analyze_cognitive_quality() -> dict:
     """
     results = {}
 
-    # Stroop - load RAW CSV for quality analysis (bypass RT filter)
-    try:
-        stroop = pd.read_csv(RESULTS_DIR / "4c_stroop_trials.csv", encoding="utf-8")
-        stroop = ensure_participant_id(stroop)
-        # Use rt_ms column if available, otherwise rt
-        if "rt_ms" in stroop.columns and "rt" not in stroop.columns:
-            stroop["rt"] = stroop["rt_ms"]
-        elif "rt_ms" in stroop.columns:
-            # Prefer rt_ms (has more data)
-            stroop["rt"] = stroop["rt_ms"]
-        results['stroop_rt'] = analyze_rt_quality('Stroop', stroop, DEFAULT_RT_MIN, STROOP_RT_MAX)
-        results['stroop_accuracy'] = analyze_participant_accuracy('Stroop', stroop, 0.5)
-        results['stroop_trials'] = analyze_trial_counts('Stroop', stroop, 20)
-    except Exception as e:
-        print(f"Stroop analysis failed: {e}")
+    data_dir = _resolve_data_dir(data_dir, "overall")
+    task_list = _normalize_tasks(tasks)
 
-    # WCST - load RAW CSV for quality analysis
-    try:
-        wcst = pd.read_csv(RESULTS_DIR / "4b_wcst_trials.csv", encoding="utf-8")
-        wcst = ensure_participant_id(wcst)
-        results['wcst_rt'] = analyze_rt_quality('WCST', wcst, DEFAULT_RT_MIN, 5000)  # WCST has longer timeout
-        results['wcst_accuracy'] = analyze_participant_accuracy('WCST', wcst, 0.25)  # 4 options = 25% chance
-        results['wcst_trials'] = analyze_trial_counts('WCST', wcst, 30)
-    except Exception as e:
-        print(f"WCST analysis failed: {e}")
+    if "stroop" in task_list:
+        # Stroop - load RAW CSV for quality analysis (bypass RT filter)
+        try:
+            stroop = pd.read_csv(data_dir / "4c_stroop_trials.csv", encoding="utf-8")
+            stroop = ensure_participant_id(stroop)
+            # Use rt_ms column if available, otherwise rt
+            if "rt_ms" in stroop.columns and "rt" not in stroop.columns:
+                stroop["rt"] = stroop["rt_ms"]
+            elif "rt_ms" in stroop.columns:
+                # Prefer rt_ms (has more data)
+                stroop["rt"] = stroop["rt_ms"]
+            results['stroop_rt'] = analyze_rt_quality('Stroop', stroop, DEFAULT_RT_MIN, STROOP_RT_MAX)
+            results['stroop_accuracy'] = analyze_participant_accuracy('Stroop', stroop, 0.5)
+            results['stroop_trials'] = analyze_trial_counts('Stroop', stroop, 20)
+        except Exception as e:
+            print(f"Stroop analysis failed: {e}")
 
-    # PRP - load RAW CSV for quality analysis (bypass RT filter)
-    try:
-        prp = pd.read_csv(RESULTS_DIR / "4a_prp_trials.csv", encoding="utf-8")
-        prp = ensure_participant_id(prp)
-        # Use t2_rt_ms column if available
-        if "t2_rt_ms" in prp.columns:
-            prp["t2_rt"] = prp["t2_rt_ms"]
-        # PRP uses t2_correct for Task 2 accuracy
-        if 't2_correct' in prp.columns:
-            prp['correct'] = prp['t2_correct']
-        results['prp_rt'] = analyze_rt_quality('PRP', prp, DEFAULT_RT_MIN, PRP_RT_MAX)
-        results['prp_accuracy'] = analyze_participant_accuracy('PRP', prp, 0.5)
-        results['prp_trials'] = analyze_trial_counts('PRP', prp, 20)
-    except Exception as e:
-        print(f"PRP analysis failed: {e}")
+    if "wcst" in task_list:
+        # WCST - load RAW CSV for quality analysis
+        try:
+            wcst = pd.read_csv(data_dir / "4b_wcst_trials.csv", encoding="utf-8")
+            wcst = ensure_participant_id(wcst)
+            results['wcst_rt'] = analyze_rt_quality('WCST', wcst, DEFAULT_RT_MIN, 5000)  # WCST has longer timeout
+            results['wcst_accuracy'] = analyze_participant_accuracy('WCST', wcst, 0.25)  # 4 options = 25% chance
+            results['wcst_trials'] = analyze_trial_counts('WCST', wcst, 30)
+        except Exception as e:
+            print(f"WCST analysis failed: {e}")
+
+    if "prp" in task_list:
+        # PRP - load RAW CSV for quality analysis (bypass RT filter)
+        try:
+            prp = pd.read_csv(data_dir / "4a_prp_trials.csv", encoding="utf-8")
+            prp = ensure_participant_id(prp)
+            # Use t2_rt_ms column if available
+            if "t2_rt_ms" in prp.columns:
+                prp["t2_rt"] = prp["t2_rt_ms"]
+            # PRP uses t2_correct for Task 2 accuracy
+            if 't2_correct' in prp.columns:
+                prp['correct'] = prp['t2_correct']
+            results['prp_rt'] = analyze_rt_quality('PRP', prp, DEFAULT_RT_MIN, PRP_RT_MAX)
+            results['prp_accuracy'] = analyze_participant_accuracy('PRP', prp, 0.5)
+            results['prp_trials'] = analyze_trial_counts('PRP', prp, 20)
+        except Exception as e:
+            print(f"PRP analysis failed: {e}")
 
     return results
 
@@ -491,7 +519,7 @@ def analyze_cognitive_quality() -> dict:
 # SAMPLE ATTRITION
 # =============================================================================
 
-def calculate_sample_attrition() -> dict:
+def calculate_sample_attrition(data_dir: Path | None = None) -> dict:
     """
     Calculate sample sizes at each stage of data processing.
 
@@ -501,19 +529,20 @@ def calculate_sample_attrition() -> dict:
         Sample sizes and attrition at each stage
     """
     # Participants info
-    participants_path = RESULTS_DIR / "1_participants_info.csv"
+    data_dir = _resolve_data_dir(data_dir, "overall")
+    participants_path = data_dir / "1_participants_info.csv"
     participants = pd.read_csv(participants_path, encoding='utf-8-sig')
     n_registered = len(participants)
 
     # Survey completers
-    surveys_path = RESULTS_DIR / "2_surveys_results.csv"
+    surveys_path = data_dir / "2_surveys_results.csv"
     surveys = pd.read_csv(surveys_path, encoding='utf-8-sig')
 
     ucla_completers = surveys[surveys['surveyName'] == 'ucla']['participantId'].nunique()
     dass_completers = surveys[surveys['surveyName'] == 'dass']['participantId'].nunique()
 
     # Cognitive task completers
-    cognitive_path = RESULTS_DIR / "3_cognitive_tests_summary.csv"
+    cognitive_path = data_dir / "3_cognitive_tests_summary.csv"
     try:
         cognitive = pd.read_csv(cognitive_path, encoding='utf-8-sig')
         cognitive_completers = cognitive['participantId'].nunique() if 'participantId' in cognitive.columns else 0
@@ -535,11 +564,18 @@ def calculate_sample_attrition() -> dict:
 # VISUALIZATION
 # =============================================================================
 
-def plot_rt_distributions(save_path: Path):
+def plot_rt_distributions(
+    save_path: Path,
+    data_dir: Path | None = None,
+    tasks: Iterable[str] | None = None,
+):
     """Create RT distribution plots for all tasks."""
     if not HAS_MATPLOTLIB:
         print("Matplotlib not available, skipping plots")
         return
+
+    data_dir = _resolve_data_dir(data_dir, "overall")
+    task_list = _normalize_tasks(tasks)
 
     fig, axes = plt.subplots(1, 3, figsize=(15, 4))
 
@@ -547,28 +583,31 @@ def plot_rt_distributions(save_path: Path):
     tasks_data = []
 
     # Stroop
-    try:
-        stroop = pd.read_csv(RESULTS_DIR / "4c_stroop_trials.csv", encoding="utf-8")
-        rt_col = "rt_ms" if "rt_ms" in stroop.columns else "rt"
-        tasks_data.append(('Stroop', stroop, rt_col, DEFAULT_RT_MIN, STROOP_RT_MAX))
-    except Exception as e:
-        tasks_data.append(('Stroop', None, None, DEFAULT_RT_MIN, STROOP_RT_MAX))
+    if "stroop" in task_list:
+        try:
+            stroop = pd.read_csv(data_dir / "4c_stroop_trials.csv", encoding="utf-8")
+            rt_col = "rt_ms" if "rt_ms" in stroop.columns else "rt"
+            tasks_data.append(('Stroop', stroop, rt_col, DEFAULT_RT_MIN, STROOP_RT_MAX))
+        except Exception:
+            tasks_data.append(('Stroop', None, None, DEFAULT_RT_MIN, STROOP_RT_MAX))
 
     # WCST
-    try:
-        wcst = pd.read_csv(RESULTS_DIR / "4b_wcst_trials.csv", encoding="utf-8")
-        rt_col = "rt_ms" if "rt_ms" in wcst.columns else "rt"
-        tasks_data.append(('WCST', wcst, rt_col, DEFAULT_RT_MIN, 5000))
-    except Exception as e:
-        tasks_data.append(('WCST', None, None, DEFAULT_RT_MIN, 5000))
+    if "wcst" in task_list:
+        try:
+            wcst = pd.read_csv(data_dir / "4b_wcst_trials.csv", encoding="utf-8")
+            rt_col = "rt_ms" if "rt_ms" in wcst.columns else "rt"
+            tasks_data.append(('WCST', wcst, rt_col, DEFAULT_RT_MIN, 5000))
+        except Exception:
+            tasks_data.append(('WCST', None, None, DEFAULT_RT_MIN, 5000))
 
     # PRP
-    try:
-        prp = pd.read_csv(RESULTS_DIR / "4a_prp_trials.csv", encoding="utf-8")
-        rt_col = "t2_rt_ms" if "t2_rt_ms" in prp.columns else "t2_rt"
-        tasks_data.append(('PRP', prp, rt_col, DEFAULT_RT_MIN, PRP_RT_MAX))
-    except Exception as e:
-        tasks_data.append(('PRP', None, None, DEFAULT_RT_MIN, PRP_RT_MAX))
+    if "prp" in task_list:
+        try:
+            prp = pd.read_csv(data_dir / "4a_prp_trials.csv", encoding="utf-8")
+            rt_col = "t2_rt_ms" if "t2_rt_ms" in prp.columns else "t2_rt"
+            tasks_data.append(('PRP', prp, rt_col, DEFAULT_RT_MIN, PRP_RT_MAX))
+        except Exception:
+            tasks_data.append(('PRP', None, None, DEFAULT_RT_MIN, PRP_RT_MAX))
 
     for ax, (task_name, trials, rt_col, rt_min, rt_max) in zip(axes, tasks_data):
         try:
@@ -597,8 +636,17 @@ def plot_rt_distributions(save_path: Path):
 # MAIN
 # =============================================================================
 
-def run():
+def run(
+    data_dir: Path | None = None,
+    output_dir: Path | None = None,
+    tasks: Iterable[str] | None = None,
+):
     """Run all data quality analyses."""
+    data_dir = _resolve_data_dir(data_dir, "overall")
+    task_list = _normalize_tasks(tasks)
+    output_dir = output_dir or OUTPUT_DIR
+    output_dir.mkdir(parents=True, exist_ok=True)
+
     print("=" * 60)
     print("DATA QUALITY SUITE")
     print("=" * 60)
@@ -606,7 +654,7 @@ def run():
     # Survey quality
     print("\n[1] Survey Response Quality")
     print("-" * 50)
-    survey_quality = analyze_survey_quality()
+    survey_quality = analyze_survey_quality(data_dir=data_dir)
 
     for survey in ['ucla', 'dass']:
         duration_key = f'{survey}_duration'
@@ -626,9 +674,9 @@ def run():
     # Cognitive quality
     print("\n[2] Cognitive Task Quality")
     print("-" * 50)
-    cognitive_quality = analyze_cognitive_quality()
+    cognitive_quality = analyze_cognitive_quality(data_dir=data_dir, tasks=task_list)
 
-    for task in ['stroop', 'wcst', 'prp']:
+    for task in task_list:
         rt_key = f'{task}_rt'
         acc_key = f'{task}_accuracy'
 
@@ -648,7 +696,7 @@ def run():
     # Sample attrition
     print("\n[3] Sample Attrition")
     print("-" * 50)
-    attrition = calculate_sample_attrition()
+    attrition = calculate_sample_attrition(data_dir=data_dir)
 
     print(f"  Registered: {attrition['n_registered']}")
     print(f"  UCLA completed: {attrition['n_ucla_completed']}")
@@ -679,7 +727,7 @@ def run():
 
     all_results_clean = clean_for_json(all_results)
 
-    with open(OUTPUT_DIR / "data_quality_report.json", 'w', encoding='utf-8') as f:
+    with open(output_dir / "data_quality_report.json", 'w', encoding='utf-8') as f:
         json.dump(all_results_clean, f, indent=2, ensure_ascii=False)
 
     # Create summary CSV
@@ -705,7 +753,7 @@ def run():
             })
 
     # Cognitive summaries
-    for task in ['stroop', 'wcst', 'prp']:
+    for task in task_list:
         if f'{task}_rt' in cognitive_quality:
             r = cognitive_quality[f'{task}_rt']
             summary_rows.append({
@@ -717,15 +765,15 @@ def run():
             })
 
     summary_df = pd.DataFrame(summary_rows)
-    summary_df.to_csv(OUTPUT_DIR / "data_quality_summary.csv", index=False, encoding='utf-8-sig')
+    summary_df.to_csv(output_dir / "data_quality_summary.csv", index=False, encoding='utf-8-sig')
 
     # RT distribution plot
     if HAS_MATPLOTLIB:
-        plot_rt_distributions(OUTPUT_DIR / "rt_distributions.png")
+        plot_rt_distributions(output_dir / "rt_distributions.png", data_dir=data_dir, tasks=task_list)
         print(f"\n  Saved: rt_distributions.png")
 
     print("\n" + "=" * 60)
-    print(f"Results saved to: {OUTPUT_DIR}")
+    print(f"Results saved to: {output_dir}")
     print("  - data_quality_report.json")
     print("  - data_quality_summary.csv")
     if HAS_MATPLOTLIB:

@@ -1,18 +1,19 @@
 """
-Validity & Reliability Analysis Suite
-=====================================
+Validity & Reliability Analysis
+================================
 
 Online experiment psychometric validation for academic publication.
 
-Modules:
-- reliability_suite: Internal consistency (Cronbach's alpha) and split-half reliability
-- validity_suite: Factor analysis, convergent/discriminant validity
-- data_quality_suite: Response time validation, careless responding detection
+Dataset-specific runners:
+- complete_overall/reliability.py, validity.py, data_quality.py
+- complete_stroop/reliability.py, validity.py, data_quality.py
+- complete_prp/reliability.py, validity.py, data_quality.py
+- complete_wcst/reliability.py, validity.py, data_quality.py
 
 Usage:
-    python -m publication.validity_reliability.reliability_suite
-    python -m publication.validity_reliability.validity_suite
-    python -m publication.validity_reliability.data_quality_suite
+    python -m publication.validity_reliability.complete_overall.reliability
+    python -m publication.validity_reliability.complete_overall.validity
+    python -m publication.validity_reliability.complete_overall.data_quality
 """
 
 from pathlib import Path

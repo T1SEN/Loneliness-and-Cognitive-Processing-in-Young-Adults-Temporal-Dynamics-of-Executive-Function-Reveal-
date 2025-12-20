@@ -1,6 +1,6 @@
 """
-Reliability Analysis Suite
-==========================
+Reliability Analysis
+====================
 
 Internal consistency and split-half reliability for online experiment measures.
 
@@ -15,11 +15,12 @@ Analyses:
    - PRP: Odd/even trial bottleneck effect correlation
 
 Usage:
-    python -m publication.validity_reliability.reliability_suite
+    python -m publication.validity_reliability.complete_overall.reliability
 
 Output:
-    results/analysis_outputs/validity_reliability/
-    - reliability_results.csv
+    publication/data/outputs/validity_reliability/<dataset>/
+    - survey_reliability.csv
+    - cognitive_reliability.csv
     - reliability_summary.json
 
 Author: Research Team
@@ -40,8 +41,9 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 from pathlib import Path
+from typing import Iterable, List
 
-from publication.preprocessing import RESULTS_DIR, ANALYSIS_OUTPUT_DIR
+from publication.preprocessing.constants import ANALYSIS_OUTPUT_DIR, get_results_dir
 from publication.preprocessing import load_stroop_trials, load_wcst_trials, load_prp_trials
 from publication.preprocessing import DEFAULT_RT_MIN, STROOP_RT_MAX, PRP_RT_MAX
 
@@ -53,6 +55,22 @@ OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 # =============================================================================
 # HELPER FUNCTIONS
 # =============================================================================
+
+def _resolve_data_dir(data_dir: Path | None, fallback_task: str) -> Path:
+    if data_dir is not None:
+        return data_dir
+    return get_results_dir(fallback_task)
+
+
+def _normalize_tasks(tasks: Iterable[str] | None) -> List[str]:
+    if tasks is None:
+        return ["stroop", "wcst", "prp"]
+    normalized = []
+    for task in tasks:
+        if not task:
+            continue
+        normalized.append(str(task).strip().lower())
+    return normalized
 
 def cronbach_alpha(df: pd.DataFrame) -> float:
     """
@@ -126,7 +144,7 @@ def interpret_alpha(alpha: float) -> str:
 # SURVEY RELIABILITY
 # =============================================================================
 
-def load_survey_items() -> tuple[pd.DataFrame, pd.DataFrame]:
+def load_survey_items(data_dir: Path | None = None) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
     Load survey item-level responses.
 
@@ -135,7 +153,8 @@ def load_survey_items() -> tuple[pd.DataFrame, pd.DataFrame]:
     tuple
         (ucla_items, dass_items) DataFrames with item responses
     """
-    surveys_path = RESULTS_DIR / "2_surveys_results.csv"
+    data_dir = _resolve_data_dir(data_dir, "overall")
+    surveys_path = data_dir / "2_surveys_results.csv"
     surveys = pd.read_csv(surveys_path, encoding='utf-8-sig')
 
     # UCLA items (q1-q20)
@@ -151,7 +170,7 @@ def load_survey_items() -> tuple[pd.DataFrame, pd.DataFrame]:
     return ucla_items, dass_items
 
 
-def calculate_survey_reliability() -> pd.DataFrame:
+def calculate_survey_reliability(data_dir: Path | None = None) -> pd.DataFrame:
     """
     Calculate Cronbach's alpha for UCLA and DASS scales.
 
@@ -160,7 +179,7 @@ def calculate_survey_reliability() -> pd.DataFrame:
     pd.DataFrame
         Reliability results for each scale/subscale
     """
-    ucla_items, dass_items = load_survey_items()
+    ucla_items, dass_items = load_survey_items(data_dir=data_dir)
 
     results = []
 
@@ -225,13 +244,14 @@ def calculate_survey_reliability() -> pd.DataFrame:
 # COGNITIVE TASK RELIABILITY
 # =============================================================================
 
-def calculate_stroop_reliability() -> dict:
+def calculate_stroop_reliability(data_dir: Path | None = None) -> dict:
     """
     Calculate split-half reliability for Stroop interference effect.
 
     Method: Odd/even trial split, calculate interference per half, correlate.
     """
-    stroop, _ = load_stroop_trials()  # Returns (df, metadata) tuple
+    data_dir = _resolve_data_dir(data_dir, "stroop")
+    stroop, _ = load_stroop_trials(data_dir=data_dir)  # Returns (df, metadata) tuple
 
     # Determine RT column name
     rt_col = 'rt_ms' if 'rt_ms' in stroop.columns else 'rt'
@@ -294,13 +314,14 @@ def calculate_stroop_reliability() -> dict:
     return {'r': r, 'r_sb': r_sb, 'n': len(int_pivot)}
 
 
-def calculate_wcst_reliability() -> dict:
+def calculate_wcst_reliability(data_dir: Path | None = None) -> dict:
     """
     Calculate split-half reliability for WCST perseverative error rate.
 
     Method: First/second half split, calculate PE rate per half, correlate.
     """
-    wcst, _ = load_wcst_trials()  # Returns (df, metadata) tuple
+    data_dir = _resolve_data_dir(data_dir, "wcst")
+    wcst, _ = load_wcst_trials(data_dir=data_dir)  # Returns (df, metadata) tuple
 
     pid_col = 'participantId' if 'participantId' in wcst.columns else 'participant_id'
 
@@ -354,13 +375,14 @@ def calculate_wcst_reliability() -> dict:
     return {'r': r, 'r_sb': r_sb, 'n': len(pe_pivot)}
 
 
-def calculate_prp_reliability() -> dict:
+def calculate_prp_reliability(data_dir: Path | None = None) -> dict:
     """
     Calculate split-half reliability for PRP bottleneck effect.
 
     Method: Odd/even trial split, calculate bottleneck per half, correlate.
     """
-    prp, _ = load_prp_trials()  # Returns (df, metadata) tuple
+    data_dir = _resolve_data_dir(data_dir, "prp")
+    prp, _ = load_prp_trials(data_dir=data_dir)  # Returns (df, metadata) tuple
 
     # Determine column names (PRP has t2_rt for Task 2 response time)
     rt_col = 't2_rt' if 't2_rt' in prp.columns else ('rt_ms' if 'rt_ms' in prp.columns else 'rt')
@@ -420,7 +442,10 @@ def calculate_prp_reliability() -> dict:
     return {'r': r, 'r_sb': r_sb, 'n': len(bn_pivot)}
 
 
-def calculate_cognitive_reliability() -> pd.DataFrame:
+def calculate_cognitive_reliability(
+    data_dir: Path | None = None,
+    tasks: Iterable[str] | None = None,
+) -> pd.DataFrame:
     """
     Calculate split-half reliability for all cognitive tasks.
 
@@ -431,41 +456,43 @@ def calculate_cognitive_reliability() -> pd.DataFrame:
     """
     results = []
 
-    # Stroop
-    stroop_rel = calculate_stroop_reliability()
-    results.append({
-        'task': 'Stroop',
-        'measure': 'Interference Effect',
-        'method': 'Odd/Even Split-Half',
-        'n_participants': stroop_rel['n'],
-        'split_half_r': stroop_rel['r'],
-        'spearman_brown_r': stroop_rel['r_sb'],
-        'interpretation': interpret_alpha(stroop_rel['r_sb'])
-    })
+    task_list = _normalize_tasks(tasks)
 
-    # WCST
-    wcst_rel = calculate_wcst_reliability()
-    results.append({
-        'task': 'WCST',
-        'measure': 'Perseverative Error Rate',
-        'method': 'First/Second Half Split',
-        'n_participants': wcst_rel['n'],
-        'split_half_r': wcst_rel['r'],
-        'spearman_brown_r': wcst_rel['r_sb'],
-        'interpretation': interpret_alpha(wcst_rel['r_sb'])
-    })
+    if "stroop" in task_list:
+        stroop_rel = calculate_stroop_reliability(data_dir=data_dir)
+        results.append({
+            'task': 'Stroop',
+            'measure': 'Interference Effect',
+            'method': 'Odd/Even Split-Half',
+            'n_participants': stroop_rel['n'],
+            'split_half_r': stroop_rel['r'],
+            'spearman_brown_r': stroop_rel['r_sb'],
+            'interpretation': interpret_alpha(stroop_rel['r_sb'])
+        })
 
-    # PRP
-    prp_rel = calculate_prp_reliability()
-    results.append({
-        'task': 'PRP',
-        'measure': 'Bottleneck Effect',
-        'method': 'Odd/Even Split-Half',
-        'n_participants': prp_rel['n'],
-        'split_half_r': prp_rel['r'],
-        'spearman_brown_r': prp_rel['r_sb'],
-        'interpretation': interpret_alpha(prp_rel['r_sb'])
-    })
+    if "wcst" in task_list:
+        wcst_rel = calculate_wcst_reliability(data_dir=data_dir)
+        results.append({
+            'task': 'WCST',
+            'measure': 'Perseverative Error Rate',
+            'method': 'First/Second Half Split',
+            'n_participants': wcst_rel['n'],
+            'split_half_r': wcst_rel['r'],
+            'spearman_brown_r': wcst_rel['r_sb'],
+            'interpretation': interpret_alpha(wcst_rel['r_sb'])
+        })
+
+    if "prp" in task_list:
+        prp_rel = calculate_prp_reliability(data_dir=data_dir)
+        results.append({
+            'task': 'PRP',
+            'measure': 'Bottleneck Effect',
+            'method': 'Odd/Even Split-Half',
+            'n_participants': prp_rel['n'],
+            'split_half_r': prp_rel['r'],
+            'spearman_brown_r': prp_rel['r_sb'],
+            'interpretation': interpret_alpha(prp_rel['r_sb'])
+        })
 
     return pd.DataFrame(results)
 
@@ -474,8 +501,16 @@ def calculate_cognitive_reliability() -> pd.DataFrame:
 # MAIN
 # =============================================================================
 
-def run():
+def run(
+    data_dir: Path | None = None,
+    output_dir: Path | None = None,
+    tasks: Iterable[str] | None = None,
+):
     """Run all reliability analyses."""
+    task_list = _normalize_tasks(tasks)
+    output_dir = output_dir or OUTPUT_DIR
+    output_dir.mkdir(parents=True, exist_ok=True)
+
     print("=" * 60)
     print("RELIABILITY ANALYSIS SUITE")
     print("=" * 60)
@@ -483,7 +518,7 @@ def run():
     # Survey reliability
     print("\n[1] Survey Internal Consistency (Cronbach's Alpha)")
     print("-" * 50)
-    survey_results = calculate_survey_reliability()
+    survey_results = calculate_survey_reliability(data_dir=data_dir)
 
     for _, row in survey_results.iterrows():
         print(f"  {row['scale']}")
@@ -493,7 +528,7 @@ def run():
     # Cognitive task reliability
     print("\n[2] Cognitive Task Reliability (Split-Half)")
     print("-" * 50)
-    cognitive_results = calculate_cognitive_reliability()
+    cognitive_results = calculate_cognitive_reliability(data_dir=data_dir, tasks=task_list)
 
     for _, row in cognitive_results.iterrows():
         print(f"  {row['task']} - {row['measure']}")
@@ -504,10 +539,34 @@ def run():
             print("    Insufficient data")
 
     # Save results
-    survey_results.to_csv(OUTPUT_DIR / "survey_reliability.csv", index=False, encoding='utf-8-sig')
-    cognitive_results.to_csv(OUTPUT_DIR / "cognitive_reliability.csv", index=False, encoding='utf-8-sig')
+    survey_results.to_csv(output_dir / "survey_reliability.csv", index=False, encoding='utf-8-sig')
+    cognitive_results.to_csv(output_dir / "cognitive_reliability.csv", index=False, encoding='utf-8-sig')
 
     # Summary JSON
+    def _get_task_rsb(task_name: str) -> float | None:
+        row = cognitive_results[cognitive_results['task'] == task_name]
+        if row.empty:
+            return None
+        value = row['spearman_brown_r'].values[0]
+        return float(value) if pd.notna(value) else None
+
+    cognitive_summary = {}
+    if "stroop" in task_list:
+        cognitive_summary['stroop'] = {
+            'r_sb': _get_task_rsb('Stroop'),
+            'method': 'odd_even_split_half',
+        }
+    if "wcst" in task_list:
+        cognitive_summary['wcst'] = {
+            'r_sb': _get_task_rsb('WCST'),
+            'method': 'first_second_half_split',
+        }
+    if "prp" in task_list:
+        cognitive_summary['prp'] = {
+            'r_sb': _get_task_rsb('PRP'),
+            'method': 'odd_even_split_half',
+        }
+
     summary = {
         'survey_reliability': {
             'UCLA': {
@@ -531,20 +590,7 @@ def run():
                 'n_items': 7
             }
         },
-        'cognitive_reliability': {
-            'stroop': {
-                'r_sb': float(cognitive_results[cognitive_results['task'] == 'Stroop']['spearman_brown_r'].values[0]) if not np.isnan(cognitive_results[cognitive_results['task'] == 'Stroop']['spearman_brown_r'].values[0]) else None,
-                'method': 'odd_even_split_half'
-            },
-            'wcst': {
-                'r_sb': float(cognitive_results[cognitive_results['task'] == 'WCST']['spearman_brown_r'].values[0]) if not np.isnan(cognitive_results[cognitive_results['task'] == 'WCST']['spearman_brown_r'].values[0]) else None,
-                'method': 'first_second_half_split'
-            },
-            'prp': {
-                'r_sb': float(cognitive_results[cognitive_results['task'] == 'PRP']['spearman_brown_r'].values[0]) if not np.isnan(cognitive_results[cognitive_results['task'] == 'PRP']['spearman_brown_r'].values[0]) else None,
-                'method': 'odd_even_split_half'
-            }
-        },
+        'cognitive_reliability': cognitive_summary,
         'interpretation_guide': {
             '>=0.9': 'Excellent',
             '>=0.8': 'Good',
@@ -561,11 +607,11 @@ def run():
         )
     }
 
-    with open(OUTPUT_DIR / "reliability_summary.json", 'w', encoding='utf-8') as f:
+    with open(output_dir / "reliability_summary.json", 'w', encoding='utf-8') as f:
         json.dump(summary, f, indent=2, ensure_ascii=False)
 
     print("\n" + "=" * 60)
-    print(f"Results saved to: {OUTPUT_DIR}")
+    print(f"Results saved to: {output_dir}")
     print("  - survey_reliability.csv")
     print("  - cognitive_reliability.csv")
     print("  - reliability_summary.json")

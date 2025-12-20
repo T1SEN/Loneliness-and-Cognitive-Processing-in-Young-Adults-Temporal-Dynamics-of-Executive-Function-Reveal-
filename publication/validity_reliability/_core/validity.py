@@ -1,6 +1,6 @@
 """
-Validity Analysis Suite
-=======================
+Validity Analysis
+=================
 
 Construct, convergent/discriminant, and criterion validity for online experiment measures.
 
@@ -17,10 +17,10 @@ Analyses:
    - UCLA prediction of EF task performance (R-squared)
 
 Usage:
-    python -m publication.validity_reliability.validity_suite
+    python -m publication.validity_reliability.complete_overall.validity
 
 Output:
-    results/analysis_outputs/validity_reliability/
+    publication/data/outputs/validity_reliability/<dataset>/
     - validity_correlation_matrix.csv
     - efa_loadings.csv
     - validity_summary.json
@@ -45,8 +45,13 @@ from scipy import stats
 from pathlib import Path
 import statsmodels.formula.api as smf
 
-from publication.preprocessing import RESULTS_DIR, ANALYSIS_OUTPUT_DIR
-from publication.preprocessing import load_master_dataset, safe_zscore, prepare_gender_variable
+from publication.preprocessing.constants import ANALYSIS_OUTPUT_DIR, get_results_dir
+from publication.preprocessing import (
+    ensure_participant_id,
+    load_master_dataset,
+    safe_zscore,
+    prepare_gender_variable,
+)
 
 # Output directory
 OUTPUT_DIR = ANALYSIS_OUTPUT_DIR / "validity_reliability"
@@ -56,6 +61,28 @@ OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 # =============================================================================
 # HELPER FUNCTIONS
 # =============================================================================
+
+def _resolve_data_dir(data_dir: Path | None, task: str) -> Path:
+    if data_dir is not None:
+        return data_dir
+    return get_results_dir(task)
+
+
+def _load_filtered_ids(data_dir: Path) -> set[str] | None:
+    ids_path = data_dir / "filtered_participant_ids.csv"
+    if ids_path.exists():
+        df = pd.read_csv(ids_path, encoding="utf-8-sig")
+        for col in ("participantId", "participant_id"):
+            if col in df.columns:
+                return set(df[col].dropna().astype(str))
+        if df.columns.tolist():
+            return set(df[df.columns[0]].dropna().astype(str))
+    participants_path = data_dir / "1_participants_info.csv"
+    if participants_path.exists():
+        df = pd.read_csv(participants_path, encoding="utf-8-sig")
+        df = ensure_participant_id(df)
+        return set(df["participant_id"].dropna().astype(str))
+    return None
 
 def kmo_test(df: pd.DataFrame) -> tuple[float, np.ndarray]:
     """
@@ -158,14 +185,18 @@ def interpret_kmo(kmo: float) -> str:
 # CONSTRUCT VALIDITY (EFA)
 # =============================================================================
 
-def load_ucla_items() -> pd.DataFrame:
+def load_ucla_items(data_dir: Path | None = None, task: str = "overall") -> pd.DataFrame:
     """Load UCLA item-level responses."""
-    surveys_path = RESULTS_DIR / "2_surveys_results.csv"
+    data_dir = _resolve_data_dir(data_dir, task)
+    surveys_path = data_dir / "2_surveys_results.csv"
     surveys = pd.read_csv(surveys_path, encoding='utf-8-sig')
 
     ucla_df = surveys[surveys['surveyName'] == 'ucla'].copy()
     ucla_item_cols = [f'q{i}' for i in range(1, 21)]
     ucla_items = ucla_df[['participantId'] + ucla_item_cols].dropna(subset=ucla_item_cols, how='all')
+    filtered_ids = _load_filtered_ids(data_dir)
+    if filtered_ids:
+        ucla_items = ucla_items[ucla_items["participantId"].astype(str).isin(filtered_ids)]
 
     return ucla_items
 
@@ -218,7 +249,7 @@ def perform_efa(df: pd.DataFrame, n_factors: int = 2) -> tuple[np.ndarray, np.nd
     return loadings, variance_explained
 
 
-def calculate_construct_validity() -> dict:
+def calculate_construct_validity(data_dir: Path | None = None, task: str = "overall") -> dict:
     """
     Assess construct validity through factorability tests and EFA.
 
@@ -227,11 +258,11 @@ def calculate_construct_validity() -> dict:
     dict
         Factorability and EFA results
     """
-    ucla_items = load_ucla_items()
+    ucla_items = load_ucla_items(data_dir=data_dir, task=task)
     item_cols = [f'q{i}' for i in range(1, 21)]
     items_df = ucla_items[item_cols].copy()
 
-    # Reverse-code items before EFA (same as reliability_suite.py)
+    # Reverse-code items before EFA (same as reliability.py)
     # UCLA reverse-coded items (1-indexed): 1, 5, 6, 9, 10, 15, 16, 19, 20
     ucla_reverse_items = ['q1', 'q5', 'q6', 'q9', 'q10', 'q15', 'q16', 'q19', 'q20']
     for col in ucla_reverse_items:
@@ -274,7 +305,7 @@ def calculate_construct_validity() -> dict:
 # CONVERGENT/DISCRIMINANT VALIDITY
 # =============================================================================
 
-def calculate_convergent_discriminant_validity() -> pd.DataFrame:
+def calculate_convergent_discriminant_validity(task: str = "overall") -> pd.DataFrame:
     """
     Calculate correlation matrix between UCLA and DASS subscales.
 
@@ -283,7 +314,7 @@ def calculate_convergent_discriminant_validity() -> pd.DataFrame:
     pd.DataFrame
         Correlation matrix with p-values
     """
-    master = load_master_dataset(task="overall")
+    master = load_master_dataset(task=task)
 
     # Ensure required columns
     required_cols = ['ucla_total', 'dass_depression', 'dass_anxiety', 'dass_stress']
@@ -340,7 +371,7 @@ def calculate_convergent_discriminant_validity() -> pd.DataFrame:
 # CRITERION VALIDITY
 # =============================================================================
 
-def calculate_criterion_validity() -> pd.DataFrame:
+def calculate_criterion_validity(task: str = "overall") -> pd.DataFrame:
     """
     Assess UCLA prediction of EF task outcomes.
 
@@ -349,7 +380,7 @@ def calculate_criterion_validity() -> pd.DataFrame:
     pd.DataFrame
         R-squared values for UCLA predicting each EF outcome
     """
-    master = load_master_dataset(task="overall", merge_cognitive_summary=True)
+    master = load_master_dataset(task=task, merge_cognitive_summary=True)
     master = prepare_gender_variable(master)
 
     # Ensure ucla column
@@ -422,8 +453,16 @@ def calculate_criterion_validity() -> pd.DataFrame:
 # MAIN
 # =============================================================================
 
-def run():
+def run(
+    task: str = "overall",
+    data_dir: Path | None = None,
+    output_dir: Path | None = None,
+):
     """Run all validity analyses."""
+    data_dir = _resolve_data_dir(data_dir, task)
+    output_dir = output_dir or OUTPUT_DIR
+    output_dir.mkdir(parents=True, exist_ok=True)
+
     print("=" * 60)
     print("VALIDITY ANALYSIS SUITE")
     print("=" * 60)
@@ -431,7 +470,7 @@ def run():
     # Construct validity (EFA)
     print("\n[1] Construct Validity (Factorability & EFA)")
     print("-" * 50)
-    construct_results = calculate_construct_validity()
+    construct_results = calculate_construct_validity(data_dir=data_dir, task=task)
 
     print(f"  KMO: {construct_results['kmo']:.3f} ({construct_results['kmo_interpretation']})")
     bartlett_p = construct_results['bartlett_p']
@@ -448,26 +487,26 @@ def run():
         print("\n  Factor Loadings (2-factor solution):")
         loadings_df = construct_results['loadings_df']
         print(loadings_df.to_string())
-        loadings_df.to_csv(OUTPUT_DIR / "efa_loadings.csv", encoding='utf-8-sig')
+        loadings_df.to_csv(output_dir / "efa_loadings.csv", encoding='utf-8-sig')
         print(f"\n  Saved: efa_loadings.csv")
 
     # Convergent/Discriminant validity
     print("\n[2] Convergent/Discriminant Validity")
     print("-" * 50)
-    convergent_results = calculate_convergent_discriminant_validity()
+    convergent_results = calculate_convergent_discriminant_validity(task=task)
 
     print("  UCLA vs DASS Correlations:")
     for _, row in convergent_results.iterrows():
         sig_marker = "*" if row['significant'] else ""
         print(f"    {row['variable_1']} - {row['variable_2']}: r = {row['r']:.3f}{sig_marker}")
 
-    convergent_results.to_csv(OUTPUT_DIR / "validity_correlation_matrix.csv", index=False, encoding='utf-8-sig')
+    convergent_results.to_csv(output_dir / "validity_correlation_matrix.csv", index=False, encoding='utf-8-sig')
     print(f"\n  Saved: validity_correlation_matrix.csv")
 
     # Criterion validity
     print("\n[3] Criterion Validity (UCLA -> EF Prediction)")
     print("-" * 50)
-    criterion_results = calculate_criterion_validity()
+    criterion_results = calculate_criterion_validity(task=task)
 
     print("  UCLA Prediction of Executive Function:")
     for _, row in criterion_results.iterrows():
@@ -475,7 +514,7 @@ def run():
         print(f"    {row['outcome']}: beta = {row['ucla_beta']:.3f}, p = {row['ucla_p']:.3f}{sig_marker}")
         print(f"      R2 change = {row['delta_r2']:.4f}")
 
-    criterion_results.to_csv(OUTPUT_DIR / "criterion_validity.csv", index=False, encoding='utf-8-sig')
+    criterion_results.to_csv(output_dir / "criterion_validity.csv", index=False, encoding='utf-8-sig')
     print(f"\n  Saved: criterion_validity.csv")
 
     # Summary JSON
@@ -514,11 +553,11 @@ def run():
         }
     }
 
-    with open(OUTPUT_DIR / "validity_summary.json", 'w', encoding='utf-8') as f:
+    with open(output_dir / "validity_summary.json", 'w', encoding='utf-8') as f:
         json.dump(summary, f, indent=2, ensure_ascii=False, default=lambda x: float(x) if isinstance(x, (np.floating, np.integer)) else str(x))
 
     print("\n" + "=" * 60)
-    print(f"Results saved to: {OUTPUT_DIR}")
+    print(f"Results saved to: {output_dir}")
     print("  - efa_loadings.csv")
     print("  - validity_correlation_matrix.csv")
     print("  - criterion_validity.csv")
