@@ -590,23 +590,23 @@ Outcome: PRP CB Base RT (ms) (N = 209)
 --------------------------------------------------
 
 Model Comparison:
-  Step 1 (DASS):        Delta R^2 = 0.0320, p = 0.081
-  Step 2 (UCLA):        Delta R^2 = 0.0002, p = 0.842 (HC3 Wald)
-  Step 3 (Interaction): Delta R^2 = 0.0004, p = 0.814 (HC3 Wald)
+  Step 1 (DASS):        Delta R^2 = 0.0286, p = 0.109
+  Step 2 (UCLA):        Delta R^2 = 0.0000, p = 0.983 (HC3 Wald)
+  Step 3 (Interaction): Delta R^2 = 0.0000, p = 0.940 (HC3 Wald)
 
 UCLA Main Effect (Model 2):
-  beta = -3.5113, SE = 17.6181, t = -0.20, p = 0.842
+  beta = 0.3883, SE = 18.2288, t = 0.02, p = 0.983
 
 UCLA x Gender Interaction (Model 3):
-  beta = -7.6399, SE = 32.3646, p = 0.813
+  beta = 2.4479, SE = 32.6565, p = 0.940
 
 Gender-Stratified UCLA Effects:
-  Female (n=127): beta = 14.4782, p = 0.537
-  Male (n=82):   beta = -41.7105, p = 0.169
+  Female (n=127): beta = 10.7446, p = 0.653
+  Male (n=82):   beta = -24.5221, p = 0.436
 
 Diagnostics:
   VIF max: 2.65
-  Breusch-Pagan p: 0.549
+  Breusch-Pagan p: 0.771
   Shapiro-Wilk p: < 0.001
 
 
@@ -614,47 +614,47 @@ Outcome: PRP CB Bottleneck Duration (ms) (N = 209)
 --------------------------------------------------
 
 Model Comparison:
-  Step 1 (DASS):        Delta R^2 = 0.0032, p = 0.864
-  Step 2 (UCLA):        Delta R^2 = 0.0078, p = 0.218 (HC3 Wald)
-  Step 3 (Interaction): Delta R^2 = 0.0181, p = 0.069 (HC3 Wald)
+  Step 1 (DASS):        Delta R^2 = 0.0024, p = 0.909
+  Step 2 (UCLA):        Delta R^2 = 0.0058, p = 0.301 (HC3 Wald)
+  Step 3 (Interaction): Delta R^2 = 0.0148, p = 0.105 (HC3 Wald)
 
 UCLA Main Effect (Model 2):
-  beta = 22.4193, SE = 18.1286, t = 1.24, p = 0.216
+  beta = 18.1209, SE = 17.4618, t = 1.04, p = 0.299
 
 UCLA x Gender Interaction (Model 3):
-  beta = 51.0110, SE = 27.9337, p = 0.068
+  beta = 43.1320, SE = 26.5031, p = 0.104
 
 Gender-Stratified UCLA Effects:
-  Female (n=127): beta = 4.1912, p = 0.850
-  Male (n=82):   beta = 44.7009, p = 0.124
+  Female (n=127): beta = 8.6453, p = 0.689
+  Male (n=82):   beta = 24.2563, p = 0.403
 
 Diagnostics:
   VIF max: 2.65
-  Breusch-Pagan p: 0.617
-  Shapiro-Wilk p: 0.172
+  Breusch-Pagan p: 0.707
+  Shapiro-Wilk p: 0.185
 
 
 Outcome: PRP CB Model R-squared (N = 209)
 --------------------------------------------------
 
 Model Comparison:
-  Step 1 (DASS):        Delta R^2 = 0.0095, p = 0.577
-  Step 2 (UCLA):        Delta R^2 = 0.0275, p = 0.020 (HC3 Wald)
-  Step 3 (Interaction): Delta R^2 = 0.0143, p = 0.158 (HC3 Wald)
+  Step 1 (DASS):        Delta R^2 = 0.0101, p = 0.549
+  Step 2 (UCLA):        Delta R^2 = 0.0267, p = 0.028 (HC3 Wald)
+  Step 3 (Interaction): Delta R^2 = 0.0150, p = 0.155 (HC3 Wald)
 
 UCLA Main Effect (Model 2):
-  beta = 0.0351, SE = 0.0149, t = 2.35, p = 0.019
+  beta = 0.0382, SE = 0.0173, t = 2.21, p = 0.027
 
 UCLA x Gender Interaction (Model 3):
-  beta = 0.0378, SE = 0.0266, p = 0.156
+  beta = 0.0427, SE = 0.0299, p = 0.154
 
 Gender-Stratified UCLA Effects:
-  Female (n=127): beta = 0.0207, p = 0.214
-  Male (n=82):   beta = 0.0544, p = 0.060
+  Female (n=127): beta = 0.0238, p = 0.195
+  Male (n=82):   beta = 0.0552, p = 0.103
 
 Diagnostics:
   VIF max: 2.65
-  Breusch-Pagan p: 0.139
+  Breusch-Pagan p: 0.100
   Shapiro-Wilk p: < 0.001
 
 

@@ -1,0 +1,2 @@
+﻿task,measure,method,n_participants,split_half_r,spearman_brown_r,interpretation
+WCST,Perseverative Error Rate,First/Second Half Split,212,0.5932933117881622,0.7447383446583427,Acceptable

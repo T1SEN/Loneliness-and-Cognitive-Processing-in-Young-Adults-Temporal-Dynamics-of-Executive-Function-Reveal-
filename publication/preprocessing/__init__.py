@@ -119,6 +119,11 @@ from .datasets import (
     get_dataset_info,
     print_dataset_summary,
 )
+from .standardization import (
+    safe_zscore,
+    standardize_predictors,
+    prepare_gender_variable,
+)
 
 __all__ = [
     "ANALYSIS_OUTPUT_DIR",
@@ -210,4 +215,7 @@ __all__ = [
     "build_all_datasets",
     "get_dataset_info",
     "print_dataset_summary",
+    "safe_zscore",
+    "standardize_predictors",
+    "prepare_gender_variable",
 ]

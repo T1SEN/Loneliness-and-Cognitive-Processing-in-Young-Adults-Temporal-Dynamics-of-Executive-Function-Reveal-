@@ -1,0 +1,2 @@
+﻿outcome,outcome_variable,n,r2_baseline,r2_with_ucla,delta_r2,ucla_beta,ucla_p,ucla_significant
+PRP Bottleneck Effect,prp_bottleneck,209,0.017749415489156983,0.036993645629851635,0.01924423014069465,29.73716403553976,0.04531753360288425,True

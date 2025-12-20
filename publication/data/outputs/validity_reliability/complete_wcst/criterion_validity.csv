@@ -1,0 +1,2 @@
+﻿outcome,outcome_variable,n,r2_baseline,r2_with_ucla,delta_r2,ucla_beta,ucla_p,ucla_significant
+WCST Perseverative Error,pe_rate,212,0.026086428061973255,0.026238632274631746,0.00015220421265849104,-0.10215752657734067,0.8577681400122188,False

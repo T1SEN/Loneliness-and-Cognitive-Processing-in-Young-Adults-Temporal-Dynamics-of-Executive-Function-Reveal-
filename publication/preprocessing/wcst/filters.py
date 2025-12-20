@@ -23,15 +23,15 @@ from ..core import ensure_participant_id
 
 @dataclass
 class WCSTQCCriteria:
-    max_total_errors: int = 60
-    max_perseverative_responses: int = 60
-    min_completed_categories: int = 1
-    require_metrics: bool = True
     min_trials: int = WCST_MIN_TRIALS
-    min_median_rt: float = WCST_MIN_MEDIAN_RT
     max_single_choice_ratio: float = WCST_MAX_SINGLE_CHOICE
+    min_median_rt: Optional[float] = None
     rt_min: float = WCST_RT_MIN
     rt_max: float = WCST_RT_MAX
+    max_total_errors: int = 0
+    max_perseverative_responses: int = 0
+    min_completed_categories: int = 0
+    require_metrics: bool = False
 
 
 def clean_wcst_trials(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, int]]:
@@ -82,6 +82,7 @@ def clean_wcst_trials(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, int]]:
     df["rt_ms"] = pd.to_numeric(df["rt_ms"], errors="coerce")
     df = df[df["rt_ms"].notna()]
     df = df[df["rt_ms"] >= 0]
+    df = df[df["rt_ms"] >= WCST_RT_MIN]
 
     stats = {
         "duplicates_removed": dup_removed,
@@ -124,9 +125,10 @@ def compute_wcst_qc_stats(
     qc = pd.concat([n_trials, median_rt, choice_ratio], axis=1).fillna(0).reset_index()
     qc["qc_passed"] = (
         (qc["n_trials"] >= criteria.min_trials)
-        & (qc["median_rt"] >= criteria.min_median_rt)
         & (qc["max_choice_ratio"] <= criteria.max_single_choice_ratio)
     )
+    if criteria.min_median_rt is not None:
+        qc["qc_passed"] = qc["qc_passed"] & (qc["median_rt"] >= criteria.min_median_rt)
     return qc
 
 
@@ -148,58 +150,14 @@ def get_wcst_valid_participants(
 
     trials = pd.read_csv(trials_path, encoding="utf-8-sig")
     trials = ensure_participant_id(trials)
-    raw_counts = trials.groupby("participant_id").size()
     cleaned, _ = clean_wcst_trials(trials)
     qc = compute_wcst_qc_stats(cleaned, criteria)
 
-    summary_path = data_dir / "3_cognitive_tests_summary.csv"
-    if not summary_path.exists():
-        if verbose:
-            print(f"[WARN] cognitive summary file not found: {summary_path}")
-        summary_valid = set(qc[qc["qc_passed"]]["participant_id"].unique())
-        return summary_valid
-
-    summary_df = pd.read_csv(summary_path, encoding="utf-8-sig")
-    summary_df["testName"] = summary_df["testName"].str.lower()
-
-    wcst_df = summary_df[summary_df["testName"] == "wcst"].copy()
-    if wcst_df.empty:
-        return set()
-
-    if criteria.require_metrics:
-        mask = (
-            (wcst_df["totalTrialCount"] >= criteria.min_trials)
-            & (wcst_df["completedCategories"] >= criteria.min_completed_categories)
-            & (wcst_df["perseverativeErrorCount"].notna())
-        )
-        wcst_df = wcst_df[mask]
-
-    if criteria.max_total_errors > 0 and "totalErrorCount" in wcst_df.columns:
-        wcst_df = wcst_df[wcst_df["totalErrorCount"] < criteria.max_total_errors]
-
-    if criteria.max_perseverative_responses > 0 and "perseverativeResponses" in wcst_df.columns:
-        wcst_df = wcst_df[wcst_df["perseverativeResponses"] < criteria.max_perseverative_responses]
-
-    summary_valid = set(wcst_df["participantId"].unique())
-    mismatch_ids = set()
-    if "totalTrialCount" in wcst_df.columns:
-        total_counts = pd.to_numeric(wcst_df["totalTrialCount"], errors="coerce")
-        for pid, total in zip(wcst_df["participantId"], total_counts):
-            if pd.isna(total):
-                continue
-            raw_count = raw_counts.get(pid)
-            if raw_count is not None and int(raw_count) != int(total):
-                mismatch_ids.add(pid)
-        summary_valid -= mismatch_ids
-    trial_valid = set(qc[qc["qc_passed"]]["participant_id"].unique())
-    valid_ids = summary_valid & trial_valid
+    valid_ids = set(qc[qc["qc_passed"]]["participant_id"].unique())
 
     if verbose:
-        all_wcst = set(summary_df[summary_df["testName"] == "wcst"]["participantId"].unique())
-        excluded = all_wcst - valid_ids
+        excluded = set(qc["participant_id"].unique()) - valid_ids
         if excluded:
             print(f"  [INFO] WCST QC failed: {len(excluded)}")
-        if mismatch_ids:
-            print(f"  [INFO] WCST trial count mismatch: {len(mismatch_ids)}")
 
     return valid_ids

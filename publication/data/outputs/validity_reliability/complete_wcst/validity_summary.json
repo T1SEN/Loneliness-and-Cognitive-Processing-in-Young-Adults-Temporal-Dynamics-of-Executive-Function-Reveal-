@@ -1,0 +1,57 @@
+{
+  "construct_validity": {
+    "kmo": 0.9398526821691473,
+    "kmo_interpretation": "Marvelous",
+    "bartlett_chi_sq": 2406.1674481810123,
+    "bartlett_p": 0.0,
+    "bartlett_significant": "True",
+    "efa_factors": 2,
+    "n_participants": 212
+  },
+  "convergent_discriminant_validity": {
+    "UCLA Loneliness_vs_DASS Depression": {
+      "r": 0.6630124738444944,
+      "p": 3.2336847135335967e-28,
+      "significant": true
+    },
+    "UCLA Loneliness_vs_DASS Anxiety": {
+      "r": 0.49718566679008425,
+      "p": 1.2288847621940506e-14,
+      "significant": true
+    },
+    "UCLA Loneliness_vs_DASS Stress": {
+      "r": 0.5499267615364971,
+      "p": 3.739492366876818e-18,
+      "significant": true
+    },
+    "DASS Depression_vs_DASS Anxiety": {
+      "r": 0.6587191775051929,
+      "p": 9.3730041555441e-28,
+      "significant": true
+    },
+    "DASS Depression_vs_DASS Stress": {
+      "r": 0.6672201699450862,
+      "p": 1.1201396136334373e-28,
+      "significant": true
+    },
+    "DASS Anxiety_vs_DASS Stress": {
+      "r": 0.7517039134317044,
+      "p": 7.905221161436262e-40,
+      "significant": true
+    }
+  },
+  "criterion_validity": {
+    "pe_rate": {
+      "beta": -0.10215752657734067,
+      "p": 0.8577681400122188,
+      "delta_r2": 0.00015220421265849104,
+      "significant": false
+    }
+  },
+  "interpretation": {
+    "kmo_threshold": ">=0.6 for adequate sampling",
+    "bartlett_threshold": "p<0.05 indicates factorability",
+    "convergent_validity": "High UCLA-Depression correlation expected (r > 0.5)",
+    "discriminant_validity": "UCLA should differ from depression (not identical construct)"
+  }
+}

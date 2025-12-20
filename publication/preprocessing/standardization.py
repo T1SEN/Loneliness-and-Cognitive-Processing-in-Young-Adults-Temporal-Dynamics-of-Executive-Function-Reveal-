@@ -204,7 +204,7 @@ def prepare_gender_variable(
             raise ValueError("No gender column found. Provide gender_col parameter.")
 
     # Normalize to canonical tokens using shared preprocessing logic
-    from .loaders import normalize_gender_series
+    from .core import normalize_gender_series
 
     normalized = normalize_gender_series(result[gender_col])
     fallback = (

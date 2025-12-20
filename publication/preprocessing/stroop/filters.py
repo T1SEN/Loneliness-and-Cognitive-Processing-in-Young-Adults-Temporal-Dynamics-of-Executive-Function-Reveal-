@@ -49,6 +49,21 @@ def _normalize_condition(value: object) -> Optional[str]:
     return None
 
 
+def _coerce_bool(series: pd.Series) -> pd.Series:
+    if series.dtype == bool:
+        return series
+    text = series.astype(str).str.strip().str.lower()
+    mapped = text.map({
+        "true": True,
+        "false": False,
+        "1": True,
+        "0": False,
+        "yes": True,
+        "no": False,
+    })
+    return mapped.fillna(False).astype(bool)
+
+
 def compute_stroop_qc_stats(
     trials_df: pd.DataFrame,
     rt_min: float = STROOP_RT_MIN,
@@ -66,16 +81,16 @@ def compute_stroop_qc_stats(
 
     trials_df["condition_norm"] = trials_df[cond_col].apply(_normalize_condition)
 
-    timeout = trials_df.get("timeout", False)
+    timeout = trials_df.get("timeout")
     if isinstance(timeout, pd.Series):
-        timeout = timeout.fillna(False).astype(bool)
+        timeout = _coerce_bool(timeout)
     else:
         timeout = pd.Series(False, index=trials_df.index)
     trials_df["timeout"] = timeout
 
-    correct = trials_df.get("correct", False)
+    correct = trials_df.get("correct")
     if isinstance(correct, pd.Series):
-        correct = correct.fillna(False).astype(bool)
+        correct = _coerce_bool(correct)
     else:
         correct = pd.Series(False, index=trials_df.index)
     trials_df["correct"] = correct & (~trials_df["timeout"])

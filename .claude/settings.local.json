@@ -45,7 +45,8 @@
       "WebFetch(domain:rdrr.io)",
       "Bash(powershell -Command \"Get-ChildItem ''C:\\\\Users\\\\ansel\\\\my_research_exporter\\\\publication\\\\data\\\\complete_stroop\\\\5_stroop_lba*.csv'' | Select-Object Name, Length, LastWriteTime\")",
       "Bash(powershell -Command \"& ''C:\\\\Users\\\\ansel\\\\my_research_exporter\\\\venv\\\\Scripts\\\\python.exe'' -c \"\"\nimport pandas as pd\nimport numpy as np\n\n# PRP Bottleneck\nprp = pd.read_csv\\(''C:/Users/ansel/my_research_exporter/publication/data/complete_prp/5_prp_bottleneck_mechanism_features.csv'', encoding=''utf-8-sig''\\)\nprint\\(''=== PRP Central Bottleneck Features ===''\\)\nprint\\(f''N participants: {len\\(prp\\)}''\\)\nprint\\(f''Valid fits \\(R² not NaN\\): {prp[\"\"prp_cb_r_squared\"\"].notna\\(\\).sum\\(\\)}''\\)\nprint\\(\\)\nprint\\(''Descriptive Statistics:''\\)\ncols = [''prp_cb_base'', ''prp_cb_bottleneck'', ''prp_cb_r_squared'', ''prp_cb_slope'']\nfor col in cols:\n    if col in prp.columns:\n        print\\(f''  {col}: M={prp[col].mean\\(\\):.2f}, SD={prp[col].std\\(\\):.2f}, range=[{prp[col].min\\(\\):.2f}, {prp[col].max\\(\\):.2f}]''\\)\n\"\"\")",
-      "Bash(powershell -Command:*)"
+      "Bash(powershell -Command:*)",
+      "Bash(find:*)"
     ]
   }
 }

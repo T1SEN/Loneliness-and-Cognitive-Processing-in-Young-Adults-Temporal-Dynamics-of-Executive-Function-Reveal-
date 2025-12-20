@@ -326,7 +326,20 @@ def calculate_wcst_reliability(data_dir: Path | None = None) -> dict:
     pid_col = 'participantId' if 'participantId' in wcst.columns else 'participant_id'
 
     # Filter valid trials
-    wcst = wcst[wcst['timeout'] == False].copy()
+    timeout = wcst.get("timeout")
+    if isinstance(timeout, pd.Series):
+        if timeout.dtype != bool:
+            timeout = timeout.astype(str).str.strip().str.lower().map({
+                "true": True,
+                "false": False,
+                "1": True,
+                "0": False,
+                "yes": True,
+                "no": False,
+            }).fillna(False).astype(bool)
+        wcst = wcst[timeout == False].copy()
+    else:
+        wcst = wcst.copy()
 
     # Add trial number within participant
     wcst['trial_num'] = wcst.groupby(pid_col).cumcount()

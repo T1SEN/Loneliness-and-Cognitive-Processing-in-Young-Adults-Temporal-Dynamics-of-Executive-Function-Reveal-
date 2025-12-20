@@ -1,0 +1,2 @@
+﻿task,measure,method,n_participants,split_half_r,spearman_brown_r,interpretation
+Stroop,Interference Effect,Odd/Even Split-Half,219,0.4149174997340948,0.5864900247711547,Poor
