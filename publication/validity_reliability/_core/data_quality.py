@@ -11,7 +11,7 @@ Analyses:
    - Reverse-coded item consistency check
 
 2. Cognitive Task Quality
-   - RT distribution (anticipations < 100ms, timeouts)
+   - RT distribution (anticipations below task-specific RT min, timeouts)
    - Accuracy-based exclusion (below chance performance)
    - Trial count sufficiency
 
@@ -47,9 +47,9 @@ from scipy import stats
 from pathlib import Path
 from typing import Iterable, List
 
-from publication.preprocessing.constants import ANALYSIS_OUTPUT_DIR, get_results_dir
+from publication.preprocessing.constants import ANALYSIS_OUTPUT_DIR, RAW_DIR, get_results_dir
 from publication.preprocessing import ensure_participant_id
-from publication.preprocessing import DEFAULT_RT_MIN, STROOP_RT_MAX, PRP_RT_MAX
+from publication.preprocessing import PRP_RT_MAX, PRP_RT_MIN, STROOP_RT_MAX, STROOP_RT_MIN, WCST_RT_MIN
 
 try:
     import matplotlib.pyplot as plt
@@ -478,8 +478,8 @@ def analyze_cognitive_quality(
             elif "rt_ms" in stroop.columns:
                 # Prefer rt_ms (has more data)
                 stroop["rt"] = stroop["rt_ms"]
-            results['stroop_rt'] = analyze_rt_quality('Stroop', stroop, DEFAULT_RT_MIN, STROOP_RT_MAX)
-            results['stroop_accuracy'] = analyze_participant_accuracy('Stroop', stroop, 0.5)
+            results['stroop_rt'] = analyze_rt_quality('Stroop', stroop, STROOP_RT_MIN, STROOP_RT_MAX)
+            results['stroop_accuracy'] = analyze_participant_accuracy('Stroop', stroop, 0.25)
             results['stroop_trials'] = analyze_trial_counts('Stroop', stroop, 20)
         except Exception as e:
             print(f"Stroop analysis failed: {e}")
@@ -489,7 +489,7 @@ def analyze_cognitive_quality(
         try:
             wcst = pd.read_csv(data_dir / "4b_wcst_trials.csv", encoding="utf-8")
             wcst = ensure_participant_id(wcst)
-            results['wcst_rt'] = analyze_rt_quality('WCST', wcst, DEFAULT_RT_MIN, 5000)  # WCST has longer timeout
+            results['wcst_rt'] = analyze_rt_quality('WCST', wcst, WCST_RT_MIN, 5000)  # WCST has longer timeout
             results['wcst_accuracy'] = analyze_participant_accuracy('WCST', wcst, 0.25)  # 4 options = 25% chance
             results['wcst_trials'] = analyze_trial_counts('WCST', wcst, 30)
         except Exception as e:
@@ -506,7 +506,7 @@ def analyze_cognitive_quality(
             # PRP uses t2_correct for Task 2 accuracy
             if 't2_correct' in prp.columns:
                 prp['correct'] = prp['t2_correct']
-            results['prp_rt'] = analyze_rt_quality('PRP', prp, DEFAULT_RT_MIN, PRP_RT_MAX)
+            results['prp_rt'] = analyze_rt_quality('PRP', prp, PRP_RT_MIN, PRP_RT_MAX)
             results['prp_accuracy'] = analyze_participant_accuracy('PRP', prp, 0.5)
             results['prp_trials'] = analyze_trial_counts('PRP', prp, 20)
         except Exception as e:
@@ -528,21 +528,21 @@ def calculate_sample_attrition(data_dir: Path | None = None) -> dict:
     dict
         Sample sizes and attrition at each stage
     """
-    # Participants info
-    data_dir = _resolve_data_dir(data_dir, "overall")
-    participants_path = data_dir / "1_participants_info.csv"
+    # Participants info (prefer raw directory for attrition)
+    attrition_dir = RAW_DIR if (RAW_DIR / "1_participants_info.csv").exists() else _resolve_data_dir(data_dir, "overall")
+    participants_path = attrition_dir / "1_participants_info.csv"
     participants = pd.read_csv(participants_path, encoding='utf-8-sig')
     n_registered = len(participants)
 
     # Survey completers
-    surveys_path = data_dir / "2_surveys_results.csv"
+    surveys_path = attrition_dir / "2_surveys_results.csv"
     surveys = pd.read_csv(surveys_path, encoding='utf-8-sig')
 
     ucla_completers = surveys[surveys['surveyName'] == 'ucla']['participantId'].nunique()
     dass_completers = surveys[surveys['surveyName'] == 'dass']['participantId'].nunique()
 
     # Cognitive task completers
-    cognitive_path = data_dir / "3_cognitive_tests_summary.csv"
+    cognitive_path = attrition_dir / "3_cognitive_tests_summary.csv"
     try:
         cognitive = pd.read_csv(cognitive_path, encoding='utf-8-sig')
         cognitive_completers = cognitive['participantId'].nunique() if 'participantId' in cognitive.columns else 0
@@ -587,27 +587,27 @@ def plot_rt_distributions(
         try:
             stroop = pd.read_csv(data_dir / "4c_stroop_trials.csv", encoding="utf-8")
             rt_col = "rt_ms" if "rt_ms" in stroop.columns else "rt"
-            tasks_data.append(('Stroop', stroop, rt_col, DEFAULT_RT_MIN, STROOP_RT_MAX))
+            tasks_data.append(('Stroop', stroop, rt_col, STROOP_RT_MIN, STROOP_RT_MAX))
         except Exception:
-            tasks_data.append(('Stroop', None, None, DEFAULT_RT_MIN, STROOP_RT_MAX))
+            tasks_data.append(('Stroop', None, None, STROOP_RT_MIN, STROOP_RT_MAX))
 
     # WCST
     if "wcst" in task_list:
         try:
             wcst = pd.read_csv(data_dir / "4b_wcst_trials.csv", encoding="utf-8")
             rt_col = "rt_ms" if "rt_ms" in wcst.columns else "rt"
-            tasks_data.append(('WCST', wcst, rt_col, DEFAULT_RT_MIN, 5000))
+            tasks_data.append(('WCST', wcst, rt_col, WCST_RT_MIN, 5000))
         except Exception:
-            tasks_data.append(('WCST', None, None, DEFAULT_RT_MIN, 5000))
+            tasks_data.append(('WCST', None, None, WCST_RT_MIN, 5000))
 
     # PRP
     if "prp" in task_list:
         try:
             prp = pd.read_csv(data_dir / "4a_prp_trials.csv", encoding="utf-8")
             rt_col = "t2_rt_ms" if "t2_rt_ms" in prp.columns else "t2_rt"
-            tasks_data.append(('PRP', prp, rt_col, DEFAULT_RT_MIN, PRP_RT_MAX))
+            tasks_data.append(('PRP', prp, rt_col, PRP_RT_MIN, PRP_RT_MAX))
         except Exception:
-            tasks_data.append(('PRP', None, None, DEFAULT_RT_MIN, PRP_RT_MAX))
+            tasks_data.append(('PRP', None, None, PRP_RT_MIN, PRP_RT_MAX))
 
     for ax, (task_name, trials, rt_col, rt_min, rt_max) in zip(axes, tasks_data):
         try:

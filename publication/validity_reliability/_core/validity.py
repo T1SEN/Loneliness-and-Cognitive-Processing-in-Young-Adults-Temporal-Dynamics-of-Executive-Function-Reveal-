@@ -380,7 +380,7 @@ def calculate_criterion_validity(task: str = "overall") -> pd.DataFrame:
     pd.DataFrame
         R-squared values for UCLA predicting each EF outcome
     """
-    master = load_master_dataset(task=task, merge_cognitive_summary=True)
+    master = load_master_dataset(task=task, merge_cognitive_summary=False)
     master = prepare_gender_variable(master)
 
     # Ensure ucla column

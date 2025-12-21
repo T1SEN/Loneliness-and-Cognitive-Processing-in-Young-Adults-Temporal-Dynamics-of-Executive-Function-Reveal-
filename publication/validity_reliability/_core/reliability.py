@@ -45,7 +45,7 @@ from typing import Iterable, List
 
 from publication.preprocessing.constants import ANALYSIS_OUTPUT_DIR, get_results_dir
 from publication.preprocessing import load_stroop_trials, load_wcst_trials, load_prp_trials
-from publication.preprocessing import DEFAULT_RT_MIN, STROOP_RT_MAX, PRP_RT_MAX
+from publication.preprocessing import PRP_RT_MAX, PRP_RT_MIN, STROOP_RT_MAX, STROOP_RT_MIN
 
 # Output directory
 OUTPUT_DIR = ANALYSIS_OUTPUT_DIR / "validity_reliability"
@@ -260,7 +260,7 @@ def calculate_stroop_reliability(data_dir: Path | None = None) -> dict:
     # Filter valid trials
     stroop = stroop[
         (stroop['timeout'] == False) &
-        (stroop[rt_col] > DEFAULT_RT_MIN) &
+        (stroop[rt_col] > STROOP_RT_MIN) &
         (stroop[rt_col] < STROOP_RT_MAX) &
         (stroop['correct'] == True)
     ].copy()
@@ -357,20 +357,24 @@ def calculate_wcst_reliability(data_dir: Path | None = None) -> dict:
             if len(half_data) < 5:
                 continue
 
-            # Perseverative errors
-            if 'is_perseverative_error' in half_data.columns:
-                pe_rate = half_data['is_perseverative_error'].mean()
+            # Perseverative errors (use trial-level PE flags)
+            if 'isPE' in half_data.columns:
+                pe_series = half_data['isPE']
+            elif 'is_perseverative_error' in half_data.columns:
+                pe_series = half_data['is_perseverative_error']
             elif 'errorType' in half_data.columns:
-                pe_rate = (half_data['errorType'] == 'perseverative').mean()
+                pe_series = half_data['errorType'].astype(str).str.lower().eq('perseverative')
             else:
-                pe_rate = (~half_data['correct']).mean() if 'correct' in half_data.columns else np.nan
+                pe_series = None
 
-            if pd.notna(pe_rate):
-                pe_data.append({
-                    'participantId': pid,
-                    'half': half,
-                    'pe_rate': pe_rate
-                })
+            if pe_series is not None:
+                pe_rate = pe_series.fillna(False).astype(bool).mean()
+                if pd.notna(pe_rate):
+                    pe_data.append({
+                        'participantId': pid,
+                        'half': half,
+                        'pe_rate': pe_rate
+                    })
 
     if not pe_data:
         return {'r': np.nan, 'r_sb': np.nan, 'n': 0}
@@ -413,7 +417,7 @@ def calculate_prp_reliability(data_dir: Path | None = None) -> dict:
         prp = prp.copy()
 
     prp = prp[
-        (prp[rt_col] > DEFAULT_RT_MIN) &
+        (prp[rt_col] > PRP_RT_MIN) &
         (prp[rt_col] < PRP_RT_MAX)
     ]
 
