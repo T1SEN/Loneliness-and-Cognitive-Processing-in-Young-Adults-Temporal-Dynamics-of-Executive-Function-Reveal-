@@ -287,7 +287,6 @@ from publication.preprocessing import (
     PRP_RT_MAX,           # 3000 ms; PRP task timeout
     STROOP_RT_MAX,        # 3000 ms; Stroop task timeout
     WCST_RT_MIN,          # 100 ms; WCST anticipation cutoff
-    WCST_RT_MAX,          # 15000 ms; WCST attention lapse cutoff
     # PRP SOA Binning
     DEFAULT_SOA_SHORT,    # 150 ms; short bin upper bound
     DEFAULT_SOA_LONG,     # 1200 ms; long bin lower bound

@@ -8,7 +8,7 @@ from typing import Dict, Optional, Set
 
 import pandas as pd
 
-from ..constants import DEFAULT_RT_MIN, RAW_DIR, COMPLETE_OVERALL_DIR, WCST_RT_MIN
+from ..constants import PRP_RT_MIN, STROOP_RT_MIN, RAW_DIR, COMPLETE_OVERALL_DIR, WCST_RT_MIN
 from ..surveys import get_survey_valid_participants, SurveyQCCriteria
 from ..prp.filters import get_prp_valid_participants, PRPQCCriteria
 from ..stroop.filters import get_stroop_valid_participants, StroopQCCriteria
@@ -149,7 +149,7 @@ def build_overall_dataset(
                 df_filtered["t2_pressed_while_t1_pending"] = pending.astype(bool)
                 df_filtered = df_filtered[df_filtered["t2_pressed_while_t1_pending"] == False]
             df_filtered = df_filtered[df_filtered[rt_col].notna()]
-            df_filtered = df_filtered[df_filtered[rt_col] >= DEFAULT_RT_MIN]
+            df_filtered = df_filtered[df_filtered[rt_col] >= PRP_RT_MIN]
         if filename == "4b_wcst_trials.csv":
             df_filtered, _ = clean_wcst_trials(df_filtered)
             df_filtered["rt_ms"] = pd.to_numeric(df_filtered["rt_ms"], errors="coerce")
@@ -172,7 +172,7 @@ def build_overall_dataset(
                 df_filtered["timeout"] = timeout.astype(bool)
                 df_filtered = df_filtered[df_filtered["timeout"] == False]
             df_filtered = df_filtered[df_filtered[rt_col].notna()]
-            df_filtered = df_filtered[df_filtered[rt_col] >= DEFAULT_RT_MIN]
+            df_filtered = df_filtered[df_filtered[rt_col] >= STROOP_RT_MIN]
         results[filename] = df_filtered
 
         if save:

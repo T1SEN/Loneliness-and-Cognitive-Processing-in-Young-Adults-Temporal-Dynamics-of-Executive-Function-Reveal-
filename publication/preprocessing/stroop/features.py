@@ -8,7 +8,7 @@ from typing import List, Dict
 import numpy as np
 import pandas as pd
 
-from ..constants import DEFAULT_RT_MIN
+from ..constants import STROOP_RT_MIN
 from ..core import coefficient_of_variation
 from .loaders import load_stroop_trials
 from .exgaussian_mechanism import load_or_compute_stroop_mechanism_features
@@ -82,7 +82,7 @@ def _ez_ddm_params(rt_correct: pd.Series, acc: float, n_trials: int, s: float = 
 
 
 def derive_stroop_features(
-    rt_min: float = DEFAULT_RT_MIN,
+    rt_min: float = STROOP_RT_MIN,
     rt_max: float | None = None,
     data_dir: None | str | Path = None,
 ) -> pd.DataFrame:

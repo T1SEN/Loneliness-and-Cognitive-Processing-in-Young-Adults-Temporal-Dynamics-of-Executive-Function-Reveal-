@@ -9,7 +9,7 @@ import re
 import pandas as pd
 
 from ..constants import (
-    DEFAULT_RT_MIN,
+    PRP_RT_MIN,
     DEFAULT_SOA_SHORT,
     DEFAULT_SOA_LONG,
     get_results_dir,
@@ -49,7 +49,7 @@ def _coerce_bool(series: pd.Series) -> pd.Series:
 
 def load_prp_trials(
     data_dir: Path | None = None,
-    rt_min: int = DEFAULT_RT_MIN,
+    rt_min: int = PRP_RT_MIN,
     rt_max: int | None = None,
     require_t1_correct: bool = False,
     enforce_short_long_only: bool = False,
@@ -226,7 +226,7 @@ def load_prp_summary(data_dir: Path) -> pd.DataFrame:
     if "t2_pressed_while_t1_pending" in rt_trials.columns:
         rt_trials = rt_trials[rt_trials["t2_pressed_while_t1_pending"] == False]
     rt_trials = rt_trials[rt_trials["t2_rt"].notna()]
-    rt_trials = rt_trials[rt_trials["t2_rt"] >= DEFAULT_RT_MIN]
+    rt_trials = rt_trials[rt_trials["t2_rt"] >= PRP_RT_MIN]
 
     prp_summary = rt_trials.groupby(["participant_id", "soa_bin"]).agg(
         t2_rt_mean=("t2_rt", "mean"),
@@ -240,5 +240,35 @@ def load_prp_summary(data_dir: Path) -> pd.DataFrame:
 
     if "t2_rt_mean_short" in prp_wide.columns and "t2_rt_mean_long" in prp_wide.columns:
         prp_wide["prp_bottleneck"] = prp_wide["t2_rt_mean_short"] - prp_wide["t2_rt_mean_long"]
+
+    rt_trials_correct = rt_trials.copy()
+    if "t2_correct" in rt_trials_correct.columns:
+        rt_trials_correct = rt_trials_correct[rt_trials_correct["t2_correct"] == True]
+
+    prp_summary_correct = rt_trials_correct.groupby(["participant_id", "soa_bin"]).agg(
+        t2_rt_mean=("t2_rt", "mean"),
+        t2_rt_sd=("t2_rt", "std"),
+        n_trials=("t2_rt", "count"),
+    ).reset_index()
+
+    prp_wide_correct = prp_summary_correct.pivot(
+        index="participant_id", columns="soa_bin", values=["t2_rt_mean", "t2_rt_sd"]
+    )
+    prp_wide_correct.columns = ["_".join(col).rstrip("_") for col in prp_wide_correct.columns.values]
+    prp_wide_correct = prp_wide_correct.reset_index()
+    prp_wide_correct = prp_wide_correct.rename(
+        columns={c: f"{c}_correct" for c in prp_wide_correct.columns if c != "participant_id"}
+    )
+
+    if (
+        "t2_rt_mean_short_correct" in prp_wide_correct.columns
+        and "t2_rt_mean_long_correct" in prp_wide_correct.columns
+    ):
+        prp_wide_correct["prp_bottleneck_correct"] = (
+            prp_wide_correct["t2_rt_mean_short_correct"] - prp_wide_correct["t2_rt_mean_long_correct"]
+        )
+
+    if not prp_wide_correct.empty:
+        prp_wide = prp_wide.merge(prp_wide_correct, on="participant_id", how="left")
 
     return prp_wide

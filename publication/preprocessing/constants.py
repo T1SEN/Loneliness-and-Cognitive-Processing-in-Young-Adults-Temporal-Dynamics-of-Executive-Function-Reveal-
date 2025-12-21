@@ -56,11 +56,10 @@ DEFAULT_SOA_LONG = 1200       # ms; long bin lower bound
 # PRP QC constants
 PRP_IRI_MIN = 100             # ms; response grouping threshold
 PRP_ACC_THRESHOLD = 0.70      # participant-level accuracy cutoff
-PRP_LONG_SOA_MIN = 600        # ms; long SOA definition for QC (600/1200)
+PRP_LONG_SOA_MIN = DEFAULT_SOA_LONG  # ms; long SOA definition for QC (aligned with DEFAULT_SOA_LONG)
 
 # WCST filtering constants
 WCST_RT_MIN = 100             # ms; anticipatory response cutoff
-WCST_RT_MAX = 15000           # ms; attention lapse cutoff
 WCST_VALID_CONDS = {"colour", "shape", "number"}
 WCST_VALID_CARDS = {
     "one_yellow_circle",

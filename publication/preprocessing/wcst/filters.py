@@ -11,7 +11,6 @@ import pandas as pd
 from ..constants import (
     RAW_DIR,
     WCST_RT_MIN,
-    WCST_RT_MAX,
     WCST_VALID_CONDS,
     WCST_VALID_CARDS,
     WCST_MIN_TRIALS,
@@ -26,12 +25,6 @@ class WCSTQCCriteria:
     min_trials: int = WCST_MIN_TRIALS
     max_single_choice_ratio: float = WCST_MAX_SINGLE_CHOICE
     min_median_rt: Optional[float] = None
-    rt_min: float = WCST_RT_MIN
-    rt_max: float = WCST_RT_MAX
-    max_total_errors: int = 0
-    max_perseverative_responses: int = 0
-    min_completed_categories: int = 0
-    require_metrics: bool = False
 
 
 def clean_wcst_trials(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, int]]:
@@ -94,12 +87,11 @@ def clean_wcst_trials(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, int]]:
 def filter_wcst_rt_trials(
     df: pd.DataFrame,
     rt_min: float = WCST_RT_MIN,
-    rt_max: float = WCST_RT_MAX,
 ) -> pd.DataFrame:
     df = df.copy()
     df["rt_ms"] = pd.to_numeric(df["rt_ms"], errors="coerce")
     df = df[df["rt_ms"].notna()]
-    df = df[(df["rt_ms"] > rt_min) & (df["rt_ms"] <= rt_max)]
+    df = df[df["rt_ms"] > rt_min]
     return df
 
 

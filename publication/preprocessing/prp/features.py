@@ -8,7 +8,7 @@ from typing import List, Dict
 import numpy as np
 import pandas as pd
 
-from ..constants import DEFAULT_RT_MIN, DEFAULT_SOA_LONG, DEFAULT_SOA_SHORT
+from ..constants import PRP_RT_MIN, DEFAULT_SOA_LONG, DEFAULT_SOA_SHORT
 from ..core import coefficient_of_variation
 from .loaders import load_prp_trials
 from .exgaussian_mechanism import load_or_compute_prp_mechanism_features
@@ -30,7 +30,7 @@ def _run_lengths(mask: pd.Series) -> List[int]:
 
 
 def derive_prp_features(
-    rt_min: float = DEFAULT_RT_MIN,
+    rt_min: float = PRP_RT_MIN,
     rt_max: float | None = None,
     data_dir: Path | None = None,
 ) -> pd.DataFrame:

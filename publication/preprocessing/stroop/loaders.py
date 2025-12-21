@@ -8,7 +8,7 @@ from typing import Dict, Any, Tuple
 import pandas as pd
 
 from ..constants import (
-    DEFAULT_RT_MIN,
+    STROOP_RT_MIN,
     get_results_dir,
 )
 from ..core import ensure_participant_id
@@ -31,7 +31,7 @@ def _coerce_bool(series: pd.Series) -> pd.Series:
 
 def load_stroop_trials(
     data_dir: Path | None = None,
-    rt_min: int = DEFAULT_RT_MIN,
+    rt_min: int = STROOP_RT_MIN,
     rt_max: int | None = None,
     require_correct_for_rt: bool = False,
     drop_timeouts: bool = True,
@@ -117,19 +117,35 @@ def load_stroop_summary(data_dir: Path) -> pd.DataFrame:
     if "timeout" in rt_trials.columns:
         rt_trials = rt_trials[rt_trials["timeout"] == False]
     rt_trials = rt_trials[rt_trials[rt_col].notna()]
-    rt_trials = rt_trials[rt_trials[rt_col] >= DEFAULT_RT_MIN]
+    rt_trials = rt_trials[rt_trials[rt_col] >= STROOP_RT_MIN]
 
     rt_summary = rt_trials.groupby(["participant_id", cond_col]).agg(
         rt_mean=(rt_col, "mean")
     ).reset_index()
 
-    stroop_summary = acc_summary.merge(rt_summary, on=["participant_id", cond_col], how="left")
+    rt_trials_correct = rt_trials[rt_trials["correct"] == True]
+    rt_summary_correct = rt_trials_correct.groupby(["participant_id", cond_col]).agg(
+        rt_mean_correct=(rt_col, "mean")
+    ).reset_index()
 
-    stroop_wide = stroop_summary.pivot(index="participant_id", columns=cond_col, values=["rt_mean", "accuracy"])
+    stroop_summary = acc_summary.merge(rt_summary, on=["participant_id", cond_col], how="left")
+    stroop_summary = stroop_summary.merge(rt_summary_correct, on=["participant_id", cond_col], how="left")
+
+    stroop_wide = stroop_summary.pivot(
+        index="participant_id", columns=cond_col, values=["rt_mean", "rt_mean_correct", "accuracy"]
+    )
     stroop_wide.columns = ["_".join(col).rstrip("_") for col in stroop_wide.columns.values]
     stroop_wide = stroop_wide.reset_index()
 
     if "rt_mean_incongruent" in stroop_wide.columns and "rt_mean_congruent" in stroop_wide.columns:
         stroop_wide["stroop_interference"] = stroop_wide["rt_mean_incongruent"] - stroop_wide["rt_mean_congruent"]
+
+    if (
+        "rt_mean_correct_incongruent" in stroop_wide.columns
+        and "rt_mean_correct_congruent" in stroop_wide.columns
+    ):
+        stroop_wide["stroop_interference_correct"] = (
+            stroop_wide["rt_mean_correct_incongruent"] - stroop_wide["rt_mean_correct_congruent"]
+        )
 
     return stroop_wide

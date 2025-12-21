@@ -8,7 +8,7 @@ from typing import Dict, Optional, Set
 
 import pandas as pd
 
-from ..constants import DEFAULT_RT_MIN, RAW_DIR, get_results_dir
+from ..constants import PRP_RT_MIN, RAW_DIR, get_results_dir
 from ..surveys import get_survey_valid_participants, SurveyQCCriteria
 from .filters import get_prp_valid_participants, PRPQCCriteria
 
@@ -139,7 +139,7 @@ def build_prp_dataset(
                 df_filtered = df_filtered[df_filtered["t2_pressed_while_t1_pending"] == False]
 
             df_filtered = df_filtered[df_filtered[rt_col].notna()]
-            df_filtered = df_filtered[df_filtered[rt_col] >= DEFAULT_RT_MIN]
+            df_filtered = df_filtered[df_filtered[rt_col] >= PRP_RT_MIN]
 
         results[filename] = df_filtered
 

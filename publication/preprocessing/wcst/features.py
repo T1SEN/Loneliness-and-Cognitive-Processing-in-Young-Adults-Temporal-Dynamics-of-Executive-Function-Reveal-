@@ -193,10 +193,11 @@ def derive_wcst_features(
         is_pe = grp["isPE"].astype(bool).values if "isPE" in grp.columns else np.zeros(total_trials, dtype=bool)
         is_pr = grp["isPR"].astype(bool).values if "isPR" in grp.columns else np.zeros(total_trials, dtype=bool)
         is_npe = grp["isNPE"].astype(bool).values if "isNPE" in grp.columns else np.zeros(total_trials, dtype=bool)
+        has_is_npe = "isNPE" in grp.columns
 
         pe_count = int(is_pe.sum())
         pr_count = int(is_pr.sum())
-        npe_count = int(is_npe.sum()) if "isNPE" in grp.columns else max(total_errors - pe_count, 0)
+        npe_count = int(is_npe.sum()) if has_is_npe else max(total_errors - pe_count, 0)
 
         pe_rate = (pe_count / total_trials) * 100 if total_trials else np.nan
         pr_percent = (pr_count / total_trials) * 100 if total_trials else np.nan
@@ -287,19 +288,43 @@ def derive_wcst_features(
                 trials_to_reacq = float(np.mean(reacq_vals))
 
         failure_to_maintain_set = np.nan
-        if rule_col and total_trials:
+        if total_trials and has_is_npe:
+            # Match Flutter FMS definition: first NPE after 5+ consecutive correct (one per episode).
             ftm = 0
-            streak = 0
-            rules = grp[rule_col].astype(str).str.lower().values
+            consecutive_correct = 0
+            in_fms_eligible = False
+            fms_episode_active = False
+            rules = grp[rule_col].astype(str).str.lower().values if rule_col else None
+            prev_rule = None
+
             for i in range(total_trials):
-                if i > 0 and rules[i] != rules[i - 1]:
-                    streak = 0
-                if correct[i]:
-                    streak += 1
+                if rules is not None:
+                    rule = rules[i]
+                    if prev_rule is None:
+                        prev_rule = rule
+                    elif rule != prev_rule:
+                        consecutive_correct = 0
+                        in_fms_eligible = False
+                        fms_episode_active = False
+                        prev_rule = rule
+
+                is_correct = bool(correct[i])
+                is_npe_flag = bool(is_npe[i])
+                if (not is_correct) and is_npe_flag and in_fms_eligible and (not fms_episode_active):
+                    ftm += 1
+                    fms_episode_active = True
+
+                if is_correct:
+                    consecutive_correct += 1
+                    if consecutive_correct == 5:
+                        in_fms_eligible = True
+                        fms_episode_active = False
+                    if fms_episode_active:
+                        fms_episode_active = False
                 else:
-                    if streak >= 5:
-                        ftm += 1
-                    streak = 0
+                    consecutive_correct = 0
+                    in_fms_eligible = False
+
             failure_to_maintain_set = float(ftm)
 
         records.append({

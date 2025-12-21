@@ -28,7 +28,7 @@ from .overall.features import derive_overall_features
 def load_master_dataset(
     task: str,
     add_standardized: bool = True,
-    merge_cognitive_summary: bool = True,
+    merge_cognitive_summary: bool = False,
     merge_trial_features: bool = True,
 ) -> pd.DataFrame:
     if task not in VALID_TASKS:
@@ -112,7 +112,7 @@ def load_master_dataset(
             cognitive = cognitive.sort_values("participant_id").drop_duplicates(subset=["participant_id"])
             master = _log_merge(master, "master", cognitive, "cognitive_summary")
         elif summary_path.exists() and task == "overall":
-            print("  Skipping cognitive summary merge for overall (already merged in task summaries)")
+            print("  Skipping cognitive summary merge for overall (preprocessing-only default)")
 
     if add_standardized:
         for col in STANDARDIZE_COLS:
