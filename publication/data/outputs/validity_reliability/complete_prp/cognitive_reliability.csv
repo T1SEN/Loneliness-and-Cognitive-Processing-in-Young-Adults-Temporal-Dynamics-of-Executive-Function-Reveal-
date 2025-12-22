@@ -1,2 +1,2 @@
 ﻿task,measure,method,n_participants,split_half_r,spearman_brown_r,interpretation
-PRP,Bottleneck Effect,Odd/Even Split-Half,209,0.5025770612845635,0.6689534590058321,Questionable
+PRP,Bottleneck Effect,Odd/Even Split-Half,209,0.5072911669495584,0.6731163534597094,Questionable

@@ -184,6 +184,11 @@ TIER1_OUTCOMES = [
 # Additional outcomes for expanded metrics
 # -----------------------------------------------------------------------------
 STROOP_EXTRA_OUTCOMES = [
+    ('stroop_slow_prob_baseline', 'Stroop Slow-State Probability (Baseline)'),
+    ('stroop_slow_prob_post_error', 'Stroop Slow-State Prob (Post-Error)'),
+    ('stroop_slow_prob_post_error_delta', 'Stroop Slow-State Prob Delta (Post-Error)'),
+    ('stroop_slow_prob_stable', 'Stroop Slow-State Prob (Stable)'),
+    ('stroop_slow_prob_stable_delta', 'Stroop Slow-State Prob Delta (Stable)'),
     ('stroop_rt_interference', 'Stroop RT Interference'),
     ('stroop_acc_interference', 'Stroop Accuracy Interference'),
     ('stroop_rt_facilitation', 'Stroop RT Facilitation'),
@@ -249,6 +254,11 @@ STROOP_EXTRA_OUTCOMES += [
 ]
 
 PRP_EXTRA_OUTCOMES = [
+    ('prp_slow_prob_baseline', 'PRP Slow-State Probability (Baseline)'),
+    ('prp_slow_prob_post_error', 'PRP Slow-State Prob (Post-Error)'),
+    ('prp_slow_prob_post_error_delta', 'PRP Slow-State Prob Delta (Post-Error)'),
+    ('prp_slow_prob_stable', 'PRP Slow-State Prob (Stable)'),
+    ('prp_slow_prob_stable_delta', 'PRP Slow-State Prob Delta (Stable)'),
     ('prp_t1_cost', 'PRP T1 Cost (Short - Long)'),
     ('prp_rt1_rt2_coupling', 'PRP RT1-RT2 Coupling'),
     ('prp_t2_rt_t1_error', 'PRP T2 RT (T1 Error)'),
@@ -385,6 +395,23 @@ WCST_EXTRA_OUTCOMES = [
     ('wcst_hmm_lapse_rt_sd', 'WCST HMM Lapse RT SD'),
     ('wcst_hmm_focus_rt_sd', 'WCST HMM Focus RT SD'),
     ('wcst_hmm_state_entropy', 'WCST HMM State Entropy'),
+    ('wcst_slow_prob_baseline', 'WCST Slow-State Probability (Baseline)'),
+    ('wcst_slow_prob_post_error', 'WCST Slow-State Prob (Post-Error)'),
+    ('wcst_slow_prob_post_error_delta', 'WCST Slow-State Prob Delta (Post-Error)'),
+    ('wcst_slow_prob_stable', 'WCST Slow-State Prob (Stable)'),
+    ('wcst_slow_prob_stable_delta', 'WCST Slow-State Prob Delta (Stable)'),
+    ('wcst_slow_prob_shift_k0', 'WCST Slow-State Prob (Shift k0)'),
+    ('wcst_slow_prob_shift_k1', 'WCST Slow-State Prob (Shift k1)'),
+    ('wcst_slow_prob_shift_k2', 'WCST Slow-State Prob (Shift k2)'),
+    ('wcst_slow_prob_shift_k3', 'WCST Slow-State Prob (Shift k3)'),
+    ('wcst_slow_prob_shift_k4', 'WCST Slow-State Prob (Shift k4)'),
+    ('wcst_slow_prob_shift_k5', 'WCST Slow-State Prob (Shift k5)'),
+    ('wcst_slow_prob_shift_k0_delta', 'WCST Slow-State Prob Delta (Shift k0)'),
+    ('wcst_slow_prob_shift_k1_delta', 'WCST Slow-State Prob Delta (Shift k1)'),
+    ('wcst_slow_prob_shift_k2_delta', 'WCST Slow-State Prob Delta (Shift k2)'),
+    ('wcst_slow_prob_shift_k3_delta', 'WCST Slow-State Prob Delta (Shift k3)'),
+    ('wcst_slow_prob_shift_k4_delta', 'WCST Slow-State Prob Delta (Shift k4)'),
+    ('wcst_slow_prob_shift_k5_delta', 'WCST Slow-State Prob Delta (Shift k5)'),
     ('wcst_hmm2d_lapse_occupancy', 'WCST HMM2D Lapse Occupancy'),
     ('wcst_hmm2d_trans_to_lapse', 'WCST HMM2D P(Focus->Lapse)'),
     ('wcst_hmm2d_trans_to_focus', 'WCST HMM2D P(Lapse->Focus)'),

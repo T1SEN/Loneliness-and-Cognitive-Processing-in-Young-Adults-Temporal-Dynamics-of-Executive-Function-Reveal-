@@ -23,15 +23,15 @@
   },
   "cognitive_reliability": {
     "stroop": {
-      "r_sb": 0.5875165204145234,
+      "r_sb": 0.5862246468001766,
       "method": "odd_even_split_half"
     },
     "wcst": {
-      "r_sb": 0.727842550292144,
+      "r_sb": 0.7307148346319564,
       "method": "first_second_half_split"
     },
     "prp": {
-      "r_sb": 0.6584674455002525,
+      "r_sb": 0.6628580904132411,
       "method": "odd_even_split_half"
     }
   },

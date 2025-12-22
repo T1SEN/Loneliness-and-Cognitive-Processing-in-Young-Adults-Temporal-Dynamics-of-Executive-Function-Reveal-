@@ -12,6 +12,7 @@ from ..constants import PRP_RT_MIN, DEFAULT_SOA_LONG, DEFAULT_SOA_SHORT
 from ..core import coefficient_of_variation
 from .loaders import load_prp_trials
 from .exgaussian_mechanism import load_or_compute_prp_mechanism_features
+from .hmm_event_features import load_or_compute_prp_hmm_event_features
 from .bottleneck_mechanism import load_or_compute_prp_bottleneck_mechanism_features
 
 
@@ -244,6 +245,16 @@ def derive_prp_features(
             if overlap:
                 features_df = features_df.drop(columns=overlap)
             features_df = features_df.merge(mechanism_df, on="participant_id", how="left")
+
+    hmm_df = load_or_compute_prp_hmm_event_features(data_dir=data_dir)
+    if not hmm_df.empty:
+        if features_df.empty:
+            features_df = hmm_df
+        else:
+            overlap = [c for c in hmm_df.columns if c != "participant_id" and c in features_df.columns]
+            if overlap:
+                features_df = features_df.drop(columns=overlap)
+            features_df = features_df.merge(hmm_df, on="participant_id", how="left")
 
     bottleneck_df = load_or_compute_prp_bottleneck_mechanism_features(data_dir=data_dir)
     if bottleneck_df.empty:

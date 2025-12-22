@@ -23,7 +23,7 @@
   },
   "cognitive_reliability": {
     "prp": {
-      "r_sb": 0.6689534590058321,
+      "r_sb": 0.6731163534597094,
       "method": "odd_even_split_half"
     }
   },

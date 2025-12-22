@@ -658,6 +658,126 @@ Diagnostics:
   Shapiro-Wilk p: 0.200
 
 
+Outcome: Stroop Slow-State Probability (Baseline) (N = 219)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        Delta R^2 = 0.0193, p = 0.243
+  Step 2 (UCLA):        Delta R^2 = 0.0010, p = 0.646 (HC3 Wald)
+  Step 3 (Interaction): Delta R^2 = 0.0062, p = 0.234 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  beta = 0.0086, SE = 0.0187, t = 0.46, p = 0.646
+
+UCLA x Gender Interaction (Model 3):
+  beta = 0.0326, SE = 0.0273, p = 0.233
+
+Gender-Stratified UCLA Effects:
+  Female (n=135): beta = -0.0090, p = 0.724
+  Male (n=84):   beta = 0.0352, p = 0.223
+
+Diagnostics:
+  VIF max: 2.64
+  Breusch-Pagan p: 0.139
+  Shapiro-Wilk p: < 0.001
+
+
+Outcome: Stroop Slow-State Prob (Post-Error) (N = 135)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        Delta R^2 = 0.0305, p = 0.260
+  Step 2 (UCLA):        Delta R^2 = 0.0047, p = 0.479 (HC3 Wald)
+  Step 3 (Interaction): Delta R^2 = 0.0107, p = 0.318 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  beta = 0.0341, SE = 0.0481, t = 0.71, p = 0.478
+
+UCLA x Gender Interaction (Model 3):
+  beta = 0.0747, SE = 0.0746, p = 0.316
+
+Gender-Stratified UCLA Effects:
+  Female (n=78): beta = 0.0060, p = 0.931
+  Male (n=57):   beta = 0.0459, p = 0.574
+
+Diagnostics:
+  VIF max: 2.89
+  Breusch-Pagan p: 0.573
+  Shapiro-Wilk p: < 0.001
+
+
+Outcome: Stroop Slow-State Prob Delta (Post-Error) (N = 135)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        Delta R^2 = 0.0183, p = 0.494
+  Step 2 (UCLA):        Delta R^2 = 0.0014, p = 0.675 (HC3 Wald)
+  Step 3 (Interaction): Delta R^2 = 0.0034, p = 0.533 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  beta = 0.0159, SE = 0.0377, t = 0.42, p = 0.674
+
+UCLA x Gender Interaction (Model 3):
+  beta = 0.0360, SE = 0.0576, p = 0.532
+
+Gender-Stratified UCLA Effects:
+  Female (n=78): beta = 0.0211, p = 0.669
+  Male (n=57):   beta = -0.0156, p = 0.822
+
+Diagnostics:
+  VIF max: 2.89
+  Breusch-Pagan p: 0.281
+  Shapiro-Wilk p: 0.005
+
+
+Outcome: Stroop Slow-State Prob (Stable) (N = 219)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        Delta R^2 = 0.0159, p = 0.327
+  Step 2 (UCLA):        Delta R^2 = 0.0008, p = 0.668 (HC3 Wald)
+  Step 3 (Interaction): Delta R^2 = 0.0075, p = 0.188 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  beta = 0.0081, SE = 0.0188, t = 0.43, p = 0.668
+
+UCLA x Gender Interaction (Model 3):
+  beta = 0.0362, SE = 0.0274, p = 0.187
+
+Gender-Stratified UCLA Effects:
+  Female (n=135): beta = -0.0115, p = 0.651
+  Male (n=84):   beta = 0.0380, p = 0.194
+
+Diagnostics:
+  VIF max: 2.64
+  Breusch-Pagan p: 0.133
+  Shapiro-Wilk p: < 0.001
+
+
+Outcome: Stroop Slow-State Prob Delta (Stable) (N = 219)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        Delta R^2 = 0.0176, p = 0.272
+  Step 2 (UCLA):        Delta R^2 = 0.0003, p = 0.762 (HC3 Wald)
+  Step 3 (Interaction): Delta R^2 = 0.0078, p = 0.166 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  beta = -0.0005, SE = 0.0017, t = -0.30, p = 0.762
+
+UCLA x Gender Interaction (Model 3):
+  beta = 0.0036, SE = 0.0026, p = 0.164
+
+Gender-Stratified UCLA Effects:
+  Female (n=135): beta = -0.0025, p = 0.131
+  Male (n=84):   beta = 0.0028, p = 0.442
+
+Diagnostics:
+  VIF max: 2.64
+  Breusch-Pagan p: 0.508
+  Shapiro-Wilk p: < 0.001
+
+
 Outcome: Stroop RT Interference (N = 219)
 --------------------------------------------------
 

@@ -155,12 +155,12 @@
     }
   },
   "sample_attrition": {
-    "n_registered": 212,
-    "n_ucla_completed": 212,
-    "n_dass_completed": 212,
-    "n_cognitive_completed": 212,
-    "attrition_ucla": 0,
-    "attrition_dass": 0,
-    "attrition_rate_overall": 0.0
+    "n_registered": 251,
+    "n_ucla_completed": 241,
+    "n_dass_completed": 235,
+    "n_cognitive_completed": 233,
+    "attrition_ucla": 10,
+    "attrition_dass": 6,
+    "attrition_rate_overall": 7.171314741035861
   }
 }

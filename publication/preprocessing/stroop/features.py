@@ -13,6 +13,7 @@ from ..core import coefficient_of_variation
 from .loaders import load_stroop_trials
 from .exgaussian_mechanism import load_or_compute_stroop_mechanism_features
 from .lba_mechanism import load_or_compute_stroop_lba_mechanism_features
+from .hmm_event_features import load_or_compute_stroop_hmm_event_features
 
 
 def _normalize_condition(value: object) -> str | None:
@@ -450,6 +451,16 @@ def derive_stroop_features(
             if overlap:
                 features_df = features_df.drop(columns=overlap)
             features_df = features_df.merge(mechanism_df, on="participant_id", how="left")
+
+    hmm_df = load_or_compute_stroop_hmm_event_features(data_dir=data_dir)
+    if not hmm_df.empty:
+        if features_df.empty:
+            features_df = hmm_df
+        else:
+            overlap = [c for c in hmm_df.columns if c != "participant_id" and c in features_df.columns]
+            if overlap:
+                features_df = features_df.drop(columns=overlap)
+            features_df = features_df.merge(hmm_df, on="participant_id", how="left")
 
     lba_df = load_or_compute_stroop_lba_mechanism_features(data_dir=data_dir)
     if lba_df.empty:

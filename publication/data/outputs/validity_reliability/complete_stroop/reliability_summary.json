@@ -23,7 +23,7 @@
   },
   "cognitive_reliability": {
     "stroop": {
-      "r_sb": 0.5864900247711547,
+      "r_sb": 0.5851677704633277,
       "method": "odd_even_split_half"
     }
   },

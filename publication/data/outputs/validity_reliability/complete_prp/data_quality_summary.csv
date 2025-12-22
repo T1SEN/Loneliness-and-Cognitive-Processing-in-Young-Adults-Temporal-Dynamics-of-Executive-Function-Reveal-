@@ -3,4 +3,4 @@ survey,UCLA_duration,mean_seconds,152.02857142857144,210
 survey,UCLA_too_fast,percent,0.4761904761904762,1
 survey,DASS_duration,mean_seconds,83.94761904761904,210
 survey,DASS_too_fast,percent,15.714285714285714,33
-cognitive,PRP_valid_trials,percent,99.9875570302779,24107
+cognitive,PRP_valid_trials,percent,99.9875482505292,24090

@@ -115,21 +115,21 @@
   "cognitive_quality": {
     "stroop_rt": {
       "task": "Stroop",
-      "n_total_trials": 23599,
+      "n_total_trials": 23598,
       "n_timeout": 0.0,
       "pct_timeout": 0.0,
       "n_anticipation": 0.0,
       "pct_anticipation": 0.0,
       "n_slow": 1.0,
-      "pct_slow": 0.004237467689308869,
-      "n_valid": 23598.0,
-      "pct_valid": 99.99576253231069,
-      "rt_threshold_min": 100,
+      "pct_slow": 0.004237647258242224,
+      "n_valid": 23597.0,
+      "pct_valid": 99.99576235274176,
+      "rt_threshold_min": 200,
       "rt_threshold_max": 3000,
-      "rt_mean": 901.7415670814701,
+      "rt_mean": 901.7746705084709,
       "rt_median": 830.5,
-      "rt_sd": 344.26687176004833,
-      "rt_min": 120.60000014305116,
+      "rt_sd": 344.23660643295165,
+      "rt_min": 224.0,
       "rt_max": 2927.5
     },
     "stroop_accuracy": {
@@ -139,7 +139,7 @@
       "accuracy_sd": 0.014319747589420397,
       "accuracy_min": 0.8981481481481481,
       "accuracy_max": 1.0,
-      "chance_level": 0.5,
+      "chance_level": 0.25,
       "n_below_chance": 0,
       "pct_below_chance": 0.0,
       "below_chance_participants": []
@@ -147,8 +147,8 @@
     "stroop_trials": {
       "task": "Stroop",
       "n_participants": 219,
-      "trials_mean": 107.7579908675799,
-      "trials_sd": 0.8409625218872531,
+      "trials_mean": 107.75342465753425,
+      "trials_sd": 0.842356163386202,
       "trials_min": 100.0,
       "trials_max": 108.0,
       "min_required": 20,
@@ -158,12 +158,12 @@
     }
   },
   "sample_attrition": {
-    "n_registered": 219,
-    "n_ucla_completed": 219,
-    "n_dass_completed": 219,
-    "n_cognitive_completed": 219,
-    "attrition_ucla": 0,
-    "attrition_dass": 0,
-    "attrition_rate_overall": 0.0
+    "n_registered": 251,
+    "n_ucla_completed": 241,
+    "n_dass_completed": 235,
+    "n_cognitive_completed": 233,
+    "attrition_ucla": 10,
+    "attrition_dass": 6,
+    "attrition_rate_overall": 7.171314741035861
   }
 }

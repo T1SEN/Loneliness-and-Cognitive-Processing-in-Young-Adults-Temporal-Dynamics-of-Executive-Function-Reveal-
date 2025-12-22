@@ -11,6 +11,19 @@ from ..constants import get_results_dir
 from .loaders import load_wcst_trials
 
 MECHANISM_FILENAME = "5_wcst_hmm_mechanism_features.csv"
+SHIFT_K_MAX = 5
+STABLE_RUN_MIN = 5
+EVENT_COLUMNS = [
+    "wcst_slow_prob_baseline",
+    "wcst_slow_prob_post_error",
+    "wcst_slow_prob_post_error_delta",
+    "wcst_slow_prob_stable",
+    "wcst_slow_prob_stable_delta",
+] + [
+    f"wcst_slow_prob_shift_k{k}" for k in range(SHIFT_K_MAX + 1)
+] + [
+    f"wcst_slow_prob_shift_k{k}_delta" for k in range(SHIFT_K_MAX + 1)
+]
 
 try:
     from hmmlearn import hmm as hmm_module
@@ -33,6 +46,87 @@ def _run_lengths(states: np.ndarray, target: int) -> list[int]:
     return lengths
 
 
+def _compute_event_metrics(
+    p_slow: np.ndarray,
+    rules: np.ndarray | None,
+    correct: np.ndarray | None,
+    stable_len: int = STABLE_RUN_MIN,
+    max_k: int = SHIFT_K_MAX,
+) -> dict[str, float]:
+    metrics: dict[str, float] = {}
+    baseline = float(np.nanmean(p_slow)) if len(p_slow) else np.nan
+    metrics["wcst_slow_prob_baseline"] = baseline
+
+    # Shift-aligned slow-state probability (k=0..max_k).
+    if rules is None:
+        for k in range(max_k + 1):
+            metrics[f"wcst_slow_prob_shift_k{k}"] = np.nan
+            metrics[f"wcst_slow_prob_shift_k{k}_delta"] = np.nan
+    else:
+        change_indices = [i for i in range(1, len(rules)) if rules[i] != rules[i - 1]]
+        for k in range(max_k + 1):
+            vals = []
+            for idx in change_indices:
+                j = idx + k
+                if j < len(p_slow):
+                    vals.append(p_slow[j])
+            if vals:
+                mean_val = float(np.mean(vals))
+                metrics[f"wcst_slow_prob_shift_k{k}"] = mean_val
+                metrics[f"wcst_slow_prob_shift_k{k}_delta"] = (
+                    mean_val - baseline if np.isfinite(baseline) else np.nan
+                )
+            else:
+                metrics[f"wcst_slow_prob_shift_k{k}"] = np.nan
+                metrics[f"wcst_slow_prob_shift_k{k}_delta"] = np.nan
+
+    # Post-error and stable-run metrics.
+    if correct is None or len(correct) == 0:
+        metrics["wcst_slow_prob_post_error"] = np.nan
+        metrics["wcst_slow_prob_post_error_delta"] = np.nan
+        metrics["wcst_slow_prob_stable"] = np.nan
+        metrics["wcst_slow_prob_stable_delta"] = np.nan
+        return metrics
+
+    post_error_vals = [
+        p_slow[i + 1] for i in range(len(correct) - 1) if not correct[i]
+    ]
+    if post_error_vals:
+        post_error_mean = float(np.mean(post_error_vals))
+        metrics["wcst_slow_prob_post_error"] = post_error_mean
+        metrics["wcst_slow_prob_post_error_delta"] = (
+            post_error_mean - baseline if np.isfinite(baseline) else np.nan
+        )
+    else:
+        metrics["wcst_slow_prob_post_error"] = np.nan
+        metrics["wcst_slow_prob_post_error_delta"] = np.nan
+
+    stable_mask = np.zeros(len(correct), dtype=bool)
+    run_len = 0
+    prev_rule = rules[0] if rules is not None and len(rules) else None
+    for i in range(len(correct)):
+        if rules is not None and rules[i] != prev_rule:
+            run_len = 0
+            prev_rule = rules[i]
+        if correct[i]:
+            run_len += 1
+        else:
+            run_len = 0
+        if run_len >= stable_len:
+            stable_mask[i] = True
+    if stable_mask.any():
+        stable_mean = float(np.mean(p_slow[stable_mask]))
+        metrics["wcst_slow_prob_stable"] = stable_mean
+        metrics["wcst_slow_prob_stable_delta"] = (
+            stable_mean - baseline if np.isfinite(baseline) else np.nan
+        )
+    else:
+        metrics["wcst_slow_prob_stable"] = np.nan
+        metrics["wcst_slow_prob_stable_delta"] = np.nan
+
+    return metrics
+
+
 def compute_wcst_hmm_features(
     data_dir: Path | None = None,
     n_states: int = 2,
@@ -52,6 +146,20 @@ def compute_wcst_hmm_features(
         return pd.DataFrame()
     trials["rt_ms"] = pd.to_numeric(trials[rt_col], errors="coerce")
     trials = trials[trials["rt_ms"].notna()]
+
+    trial_col = None
+    for cand in ("trialIndex", "trial_index", "trial"):
+        if cand in trials.columns:
+            trial_col = cand
+            break
+    if trial_col:
+        trials = trials.sort_values(["participant_id", trial_col])
+
+    rule_col = None
+    for cand in ("ruleAtThatTime", "rule_at_that_time", "rule", "cond"):
+        if cand in trials.columns:
+            rule_col = cand
+            break
 
     results = []
     for pid, pdata in trials.groupby("participant_id"):
@@ -74,6 +182,11 @@ def compute_wcst_hmm_features(
             focus_state = 1 - lapse_state
 
             trans_matrix = model.transmat_
+            try:
+                post = model.predict_proba(rts)
+                p_slow = post[:, lapse_state]
+            except Exception:
+                p_slow = (states == lapse_state).astype(float)
 
             lapse_runs = _run_lengths(states, lapse_state)
             focus_runs = _run_lengths(states, focus_state)
@@ -106,6 +219,17 @@ def compute_wcst_hmm_features(
                 "wcst_hmm_focus_rt_sd": focus_rt_sd,
                 "wcst_hmm_state_entropy": state_entropy,
             }
+            rules = (
+                pdata[rule_col].astype(str).str.lower().values
+                if rule_col and rule_col in pdata.columns
+                else None
+            )
+            correct = (
+                pdata["correct"].astype(bool).values
+                if "correct" in pdata.columns
+                else None
+            )
+            record.update(_compute_event_metrics(p_slow, rules, correct))
 
             if "correct" in pdata.columns:
                 acc = pdata["correct"].astype(float).values.reshape(-1, 1)
@@ -162,7 +286,9 @@ def load_or_compute_wcst_hmm_mechanism_features(
 
     output_path = data_dir / MECHANISM_FILENAME
     if output_path.exists() and not overwrite:
-        return pd.read_csv(output_path, encoding="utf-8-sig")
+        existing = pd.read_csv(output_path, encoding="utf-8-sig")
+        if all(col in existing.columns for col in EVENT_COLUMNS):
+            return existing
 
     features = compute_wcst_hmm_features(data_dir=data_dir)
     if save and not features.empty:

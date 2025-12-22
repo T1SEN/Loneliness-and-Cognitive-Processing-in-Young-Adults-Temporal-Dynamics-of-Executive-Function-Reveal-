@@ -23,7 +23,7 @@
   },
   "cognitive_reliability": {
     "wcst": {
-      "r_sb": 0.7447383446583427,
+      "r_sb": 0.7396069511079371,
       "method": "first_second_half_split"
     }
   },

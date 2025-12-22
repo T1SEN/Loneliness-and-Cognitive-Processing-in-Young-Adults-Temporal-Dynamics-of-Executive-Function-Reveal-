@@ -8,6 +8,7 @@ from .lba_mechanism import (
     compute_stroop_lba_features,
     load_or_compute_stroop_lba_mechanism_features,
 )
+from .hmm_event_features import compute_stroop_hmm_event_features, load_or_compute_stroop_hmm_event_features
 from .dataset import build_stroop_dataset, get_stroop_complete_participants
 
 __all__ = [
@@ -21,6 +22,8 @@ __all__ = [
     "load_or_compute_stroop_mechanism_features",
     "compute_stroop_lba_features",
     "load_or_compute_stroop_lba_mechanism_features",
+    "compute_stroop_hmm_event_features",
+    "load_or_compute_stroop_hmm_event_features",
     "build_stroop_dataset",
     "get_stroop_complete_participants",
 ]

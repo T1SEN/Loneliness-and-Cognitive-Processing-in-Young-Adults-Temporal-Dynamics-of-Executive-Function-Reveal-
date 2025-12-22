@@ -115,28 +115,28 @@
   "cognitive_quality": {
     "prp_rt": {
       "task": "PRP",
-      "n_total_trials": 24110,
+      "n_total_trials": 24093,
       "n_timeout": 0.0,
       "pct_timeout": 0.0,
       "n_anticipation": 0.0,
       "pct_anticipation": 0.0,
       "n_slow": 3.0,
-      "pct_slow": 0.01244296972210701,
-      "n_valid": 24107.0,
-      "pct_valid": 99.9875570302779,
-      "rt_threshold_min": 100,
+      "pct_slow": 0.012451749470800648,
+      "n_valid": 24090.0,
+      "pct_valid": 99.9875482505292,
+      "rt_threshold_min": 200,
       "rt_threshold_max": 3000,
-      "rt_mean": 1032.3961712352361,
-      "rt_median": 925.100000023842,
-      "rt_sd": 502.88244080392843,
-      "rt_min": 100.5999999642372,
+      "rt_mean": 1033.0207887076976,
+      "rt_median": 925.6500000119559,
+      "rt_sd": 502.50900384065125,
+      "rt_min": 200.5999999998603,
       "rt_max": 2991.899999999907
     },
     "prp_accuracy": {
       "task": "PRP",
       "n_participants": 210,
-      "accuracy_mean": 0.9751425862806979,
-      "accuracy_sd": 0.02296348068021983,
+      "accuracy_mean": 0.9754245832294894,
+      "accuracy_sd": 0.022554286481699107,
       "accuracy_min": 0.875,
       "accuracy_max": 1.0,
       "chance_level": 0.5,
@@ -147,8 +147,8 @@
     "prp_trials": {
       "task": "PRP",
       "n_participants": 210,
-      "trials_mean": 114.80952380952381,
-      "trials_sd": 13.585170100595347,
+      "trials_mean": 114.72857142857143,
+      "trials_sd": 13.599804489769157,
       "trials_min": 1.0,
       "trials_max": 120.0,
       "min_required": 20,
@@ -160,12 +160,12 @@
     }
   },
   "sample_attrition": {
-    "n_registered": 210,
-    "n_ucla_completed": 210,
-    "n_dass_completed": 210,
-    "n_cognitive_completed": 210,
-    "attrition_ucla": 0,
-    "attrition_dass": 0,
-    "attrition_rate_overall": 0.0
+    "n_registered": 251,
+    "n_ucla_completed": 241,
+    "n_dass_completed": 235,
+    "n_cognitive_completed": 233,
+    "attrition_ucla": 10,
+    "attrition_dass": 6,
+    "attrition_rate_overall": 7.171314741035861
   }
 }
