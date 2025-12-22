@@ -76,6 +76,10 @@ TIER1_OUTCOMES = [
     ('wcst_pes', 'WCST Post-Error Slowing (ms)'),
     ('wcst_post_switch_error_rate', 'WCST Post-Switch Error Rate'),
     ('wcst_cv_rt', 'WCST Reaction Time Coefficient of Variation'),
+    ('wcst_mad_rt', 'WCST RT MAD'),
+    ('wcst_iqr_rt', 'WCST RT IQR'),
+    ('wcst_mad_rt_correct', 'WCST RT MAD (correct)'),
+    ('wcst_iqr_rt_correct', 'WCST RT IQR (correct)'),
     ('wcst_trials', 'WCST Valid Trial Count'),
 
     # PRP summary metrics (SOA-specific RT/variability)
@@ -88,6 +92,18 @@ TIER1_OUTCOMES = [
     ('prp_t2_cv_all', 'PRP T2 Coefficient of Variation (All)'),
     ('prp_t2_cv_short', 'PRP T2 CV (Short SOA)'),
     ('prp_t2_cv_long', 'PRP T2 CV (Long SOA)'),
+    ('prp_t2_mad_all', 'PRP T2 MAD (All)'),
+    ('prp_t2_mad_short', 'PRP T2 MAD (Short SOA)'),
+    ('prp_t2_mad_long', 'PRP T2 MAD (Long SOA)'),
+    ('prp_t2_iqr_all', 'PRP T2 IQR (All)'),
+    ('prp_t2_iqr_short', 'PRP T2 IQR (Short SOA)'),
+    ('prp_t2_iqr_long', 'PRP T2 IQR (Long SOA)'),
+    ('prp_t2_mad_all_correct', 'PRP T2 MAD (All, correct)'),
+    ('prp_t2_mad_short_correct', 'PRP T2 MAD (Short SOA, correct)'),
+    ('prp_t2_mad_long_correct', 'PRP T2 MAD (Long SOA, correct)'),
+    ('prp_t2_iqr_all_correct', 'PRP T2 IQR (All, correct)'),
+    ('prp_t2_iqr_short_correct', 'PRP T2 IQR (Short SOA, correct)'),
+    ('prp_t2_iqr_long_correct', 'PRP T2 IQR (Long SOA, correct)'),
     ('prp_cascade_rate', 'PRP Error Cascade Rate'),
     ('prp_cascade_inflation', 'PRP Cascade Inflation'),
     ('prp_pes', 'PRP Post-Error Slowing (ms)'),
@@ -110,6 +126,18 @@ TIER1_OUTCOMES = [
     ('stroop_cv_all', 'Stroop RT Coefficient of Variation (All)'),
     ('stroop_cv_incong', 'Stroop RT CV (Incongruent)'),
     ('stroop_cv_cong', 'Stroop RT CV (Congruent)'),
+    ('stroop_mad_all', 'Stroop RT MAD (All)'),
+    ('stroop_mad_incong', 'Stroop RT MAD (Incongruent)'),
+    ('stroop_mad_cong', 'Stroop RT MAD (Congruent)'),
+    ('stroop_iqr_all', 'Stroop RT IQR (All)'),
+    ('stroop_iqr_incong', 'Stroop RT IQR (Incongruent)'),
+    ('stroop_iqr_cong', 'Stroop RT IQR (Congruent)'),
+    ('stroop_mad_all_correct', 'Stroop RT MAD (All, correct)'),
+    ('stroop_mad_incong_correct', 'Stroop RT MAD (Incongruent, correct)'),
+    ('stroop_mad_cong_correct', 'Stroop RT MAD (Congruent, correct)'),
+    ('stroop_iqr_all_correct', 'Stroop RT IQR (All, correct)'),
+    ('stroop_iqr_incong_correct', 'Stroop RT IQR (Incongruent, correct)'),
+    ('stroop_iqr_cong_correct', 'Stroop RT IQR (Congruent, correct)'),
     ('stroop_trials', 'Stroop Valid Trial Count'),
 
     # PRP Ex-Gaussian parameters
@@ -209,6 +237,18 @@ STROOP_EXTRA_OUTCOMES = [
     ('stroop_error_run_length_mean', 'Stroop Error Run Length Mean'),
     ('stroop_error_run_length_max', 'Stroop Error Run Length Max'),
     ('stroop_error_recovery_rt', 'Stroop Error Recovery RT Slope'),
+    ('stroop_dfa_alpha_correct', 'Stroop DFA Alpha (correct)'),
+    ('stroop_lag1_correct', 'Stroop Lag-1 Autocorr (correct)'),
+    ('stroop_slow_run_mean_correct', 'Stroop Slow Run Mean (correct)'),
+    ('stroop_slow_run_max_correct', 'Stroop Slow Run Max (correct)'),
+    ('stroop_fast_run_mean_correct', 'Stroop Fast Run Mean (correct)'),
+    ('stroop_fast_run_max_correct', 'Stroop Fast Run Max (correct)'),
+    ('stroop_dfa_alpha_incong_correct', 'Stroop DFA Alpha (incongruent, correct)'),
+    ('stroop_lag1_incong_correct', 'Stroop Lag-1 Autocorr (incongruent, correct)'),
+    ('stroop_slow_run_mean_incong_correct', 'Stroop Slow Run Mean (incongruent, correct)'),
+    ('stroop_slow_run_max_incong_correct', 'Stroop Slow Run Max (incongruent, correct)'),
+    ('stroop_fast_run_mean_incong_correct', 'Stroop Fast Run Mean (incongruent, correct)'),
+    ('stroop_fast_run_max_incong_correct', 'Stroop Fast Run Max (incongruent, correct)'),
     ('stroop_exg_correct_mu_interference', 'Stroop Ex-Gaussian mu (Interference, correct)'),
     ('stroop_exg_correct_sigma_interference', 'Stroop Ex-Gaussian sigma (Interference, correct)'),
     ('stroop_exg_correct_tau_interference', 'Stroop Ex-Gaussian tau (Interference, correct)'),
@@ -253,6 +293,49 @@ STROOP_EXTRA_OUTCOMES += [
     for param in STROOP_LBA_PARAMS
 ]
 
+STROOP_EXTRA_OUTCOMES += [
+    ('stroop_rt_fatigue_slope', 'Stroop RT Fatigue Slope (Q4-Q1)'),
+    ('stroop_cv_fatigue_slope', 'Stroop CV Fatigue Slope (Q4-Q1)'),
+    ('stroop_acc_fatigue_slope', 'Stroop Accuracy Fatigue Slope (Q4-Q1)'),
+    ('stroop_tau_q1', 'Stroop Tau Q1'),
+    ('stroop_tau_q2', 'Stroop Tau Q2'),
+    ('stroop_tau_q3', 'Stroop Tau Q3'),
+    ('stroop_tau_q4', 'Stroop Tau Q4'),
+    ('stroop_tau_slope', 'Stroop Tau Slope (Q4-Q1)'),
+    ('stroop_error_cascade_count', 'Stroop Error Cascade Count'),
+    ('stroop_error_cascade_rate', 'Stroop Error Cascade Rate'),
+    ('stroop_error_cascade_mean_len', 'Stroop Error Cascade Mean Length'),
+    ('stroop_error_cascade_max_len', 'Stroop Error Cascade Max Length'),
+    ('stroop_error_cascade_trials', 'Stroop Error Cascade Trials'),
+    ('stroop_error_cascade_prop', 'Stroop Error Cascade Proportion'),
+    ('stroop_recovery_rt_slope', 'Stroop Recovery RT Slope'),
+    ('stroop_recovery_acc_slope', 'Stroop Recovery Accuracy Slope'),
+    ('stroop_momentum_slope', 'Stroop Momentum Slope'),
+    ('stroop_momentum_mean_streak', 'Stroop Momentum Mean Streak'),
+    ('stroop_momentum_max_streak', 'Stroop Momentum Max Streak'),
+    ('stroop_volatility_rmssd', 'Stroop Volatility RMSSD'),
+    ('stroop_volatility_adj', 'Stroop Volatility (Detrended SD)'),
+    ('stroop_intercept', 'Stroop IIV Intercept'),
+    ('stroop_slope', 'Stroop IIV Slope'),
+    ('stroop_residual_sd', 'Stroop IIV Residual SD'),
+    ('stroop_raw_cv', 'Stroop IIV Raw CV'),
+    ('stroop_iiv_r_squared', 'Stroop IIV R-squared'),
+    ('stroop_post_error_cv_reduction', 'Stroop Post-Error CV Reduction'),
+    ('stroop_post_error_acc_diff', 'Stroop Post-Error Accuracy Diff'),
+    ('stroop_post_error_recovery_rate', 'Stroop Post-Error Recovery Rate'),
+    ('stroop_pes_adaptive', 'Stroop Adaptive PES Flag'),
+    ('stroop_pes_maladaptive', 'Stroop Maladaptive PES Flag'),
+    ('stroop_error_awareness_index', 'Stroop Error Awareness Index'),
+]
+STROOP_EXTRA_OUTCOMES += [
+    (f"stroop_recovery_rt_lag{k}", f"Stroop Recovery RT Lag{k}")
+    for k in range(1, 6)
+]
+STROOP_EXTRA_OUTCOMES += [
+    (f"stroop_recovery_acc_lag{k}", f"Stroop Recovery Accuracy Lag{k}")
+    for k in range(1, 6)
+]
+
 PRP_EXTRA_OUTCOMES = [
     ('prp_slow_prob_baseline', 'PRP Slow-State Probability (Baseline)'),
     ('prp_slow_prob_post_error', 'PRP Slow-State Prob (Post-Error)'),
@@ -278,6 +361,18 @@ PRP_EXTRA_OUTCOMES = [
     ('prp_t2_error_run_max', 'PRP T2 Error Run Max'),
     ('prp_cascade_run_mean', 'PRP Cascade Run Mean'),
     ('prp_cascade_run_max', 'PRP Cascade Run Max'),
+    ('prp_dfa_alpha_short_correct', 'PRP DFA Alpha (Short SOA, correct)'),
+    ('prp_dfa_alpha_long_correct', 'PRP DFA Alpha (Long SOA, correct)'),
+    ('prp_lag1_short_correct', 'PRP Lag-1 Autocorr (Short SOA, correct)'),
+    ('prp_lag1_long_correct', 'PRP Lag-1 Autocorr (Long SOA, correct)'),
+    ('prp_slow_run_mean_short_correct', 'PRP Slow Run Mean (Short SOA, correct)'),
+    ('prp_slow_run_max_short_correct', 'PRP Slow Run Max (Short SOA, correct)'),
+    ('prp_fast_run_mean_short_correct', 'PRP Fast Run Mean (Short SOA, correct)'),
+    ('prp_fast_run_max_short_correct', 'PRP Fast Run Max (Short SOA, correct)'),
+    ('prp_slow_run_mean_long_correct', 'PRP Slow Run Mean (Long SOA, correct)'),
+    ('prp_slow_run_max_long_correct', 'PRP Slow Run Max (Long SOA, correct)'),
+    ('prp_fast_run_mean_long_correct', 'PRP Fast Run Mean (Long SOA, correct)'),
+    ('prp_fast_run_max_long_correct', 'PRP Fast Run Max (Long SOA, correct)'),
     ('prp_exg_correct_mu_bottleneck', 'PRP Ex-Gaussian mu (Bottleneck, correct)'),
     ('prp_exg_correct_sigma_bottleneck', 'PRP Ex-Gaussian sigma (Bottleneck, correct)'),
     ('prp_exg_correct_tau_bottleneck', 'PRP Ex-Gaussian tau (Bottleneck, correct)'),
@@ -302,6 +397,45 @@ PRP_EXTRA_OUTCOMES = [
     ('prp_mix_rmse', 'PRP Mix RMSE'),
     ('prp_mix_aic', 'PRP Mix AIC'),
     ('prp_mix_bic', 'PRP Mix BIC'),
+]
+
+PRP_EXTRA_OUTCOMES += [
+    ('prp_rt_fatigue_slope', 'PRP RT Fatigue Slope (Q4-Q1)'),
+    ('prp_cv_fatigue_slope', 'PRP CV Fatigue Slope (Q4-Q1)'),
+    ('prp_acc_fatigue_slope', 'PRP Accuracy Fatigue Slope (Q4-Q1)'),
+    ('prp_error_cascade_count', 'PRP Error Cascade Count'),
+    ('prp_error_cascade_rate', 'PRP Error Cascade Rate'),
+    ('prp_error_cascade_mean_len', 'PRP Error Cascade Mean Length'),
+    ('prp_error_cascade_max_len', 'PRP Error Cascade Max Length'),
+    ('prp_error_cascade_trials', 'PRP Error Cascade Trials'),
+    ('prp_error_cascade_prop', 'PRP Error Cascade Proportion'),
+    ('prp_recovery_rt_slope', 'PRP Recovery RT Slope'),
+    ('prp_recovery_acc_slope', 'PRP Recovery Accuracy Slope'),
+    ('prp_momentum_slope', 'PRP Momentum Slope'),
+    ('prp_momentum_mean_streak', 'PRP Momentum Mean Streak'),
+    ('prp_momentum_max_streak', 'PRP Momentum Max Streak'),
+    ('prp_volatility_rmssd', 'PRP Volatility RMSSD'),
+    ('prp_volatility_adj', 'PRP Volatility (Detrended SD)'),
+    ('prp_intercept', 'PRP IIV Intercept'),
+    ('prp_slope', 'PRP IIV Slope'),
+    ('prp_residual_sd', 'PRP IIV Residual SD'),
+    ('prp_raw_cv', 'PRP IIV Raw CV'),
+    ('prp_iiv_r_squared', 'PRP IIV R-squared'),
+    ('prp_post_error_cv_reduction', 'PRP Post-Error CV Reduction'),
+    ('prp_post_error_accuracy', 'PRP Post-Error Accuracy'),
+    ('prp_post_error_acc_diff', 'PRP Post-Error Accuracy Diff'),
+    ('prp_post_error_recovery_rate', 'PRP Post-Error Recovery Rate'),
+    ('prp_pes_adaptive', 'PRP Adaptive PES Flag'),
+    ('prp_pes_maladaptive', 'PRP Maladaptive PES Flag'),
+    ('prp_error_awareness_index', 'PRP Error Awareness Index'),
+]
+PRP_EXTRA_OUTCOMES += [
+    (f"prp_recovery_rt_lag{k}", f"PRP Recovery RT Lag{k}")
+    for k in range(1, 6)
+]
+PRP_EXTRA_OUTCOMES += [
+    (f"prp_recovery_acc_lag{k}", f"PRP Recovery Accuracy Lag{k}")
+    for k in range(1, 6)
 ]
 
 PRP_EXTRA_OUTCOMES += [
@@ -353,6 +487,14 @@ PRP_EXTRA_OUTCOMES += [
     for param in ("mu", "sigma", "tau")
 ]
 
+PRP_EXTRA_OUTCOMES += [
+    ('prp_delta_plot_slope_bottleneck_correct', 'PRP Delta Plot Slope (Bottleneck, correct)'),
+]
+PRP_EXTRA_OUTCOMES += [
+    (f"prp_vincentile_bottleneck_p{p}_correct", f"PRP Vincentile Bottleneck p{p} (correct)")
+    for p in STROOP_VINCENTILES
+]
+
 WCST_EXTRA_OUTCOMES = [
     ('wcst_total_errors', 'WCST Total Errors'),
     ('wcst_error_rate', 'WCST Error Rate'),
@@ -377,6 +519,12 @@ WCST_EXTRA_OUTCOMES = [
     ('wcst_rt_slope_within_category', 'WCST RT Slope within Category'),
     ('wcst_acc_slope_within_category', 'WCST Accuracy Slope within Category'),
     ('wcst_rt_jump_at_switch', 'WCST RT Jump at Switch'),
+    ('wcst_dfa_alpha_correct', 'WCST DFA Alpha (correct)'),
+    ('wcst_lag1_correct', 'WCST Lag-1 Autocorr (correct)'),
+    ('wcst_slow_run_mean_correct', 'WCST Slow Run Mean (correct)'),
+    ('wcst_slow_run_max_correct', 'WCST Slow Run Max (correct)'),
+    ('wcst_fast_run_mean_correct', 'WCST Fast Run Mean (correct)'),
+    ('wcst_fast_run_max_correct', 'WCST Fast Run Max (correct)'),
     ('wcst_failure_to_maintain_set', 'WCST Failure to Maintain Set'),
     ('wcst_trials_to_rule_reacquisition', 'WCST Trials to Rule Reacquisition'),
     ('wcst_clr_count', 'WCST CLR Count'),
@@ -459,6 +607,50 @@ WCST_EXTRA_OUTCOMES = [
 ]
 
 WCST_EXTRA_OUTCOMES += [
+    ('wcst_rt_fatigue_slope', 'WCST RT Fatigue Slope (Q4-Q1)'),
+    ('wcst_cv_fatigue_slope', 'WCST CV Fatigue Slope (Q4-Q1)'),
+    ('wcst_acc_fatigue_slope', 'WCST Accuracy Fatigue Slope (Q4-Q1)'),
+    ('wcst_tau_q1', 'WCST Tau Q1'),
+    ('wcst_tau_q2', 'WCST Tau Q2'),
+    ('wcst_tau_q3', 'WCST Tau Q3'),
+    ('wcst_tau_q4', 'WCST Tau Q4'),
+    ('wcst_tau_slope', 'WCST Tau Slope (Q4-Q1)'),
+    ('wcst_error_cascade_count', 'WCST Error Cascade Count'),
+    ('wcst_error_cascade_rate', 'WCST Error Cascade Rate'),
+    ('wcst_error_cascade_mean_len', 'WCST Error Cascade Mean Length'),
+    ('wcst_error_cascade_max_len', 'WCST Error Cascade Max Length'),
+    ('wcst_error_cascade_trials', 'WCST Error Cascade Trials'),
+    ('wcst_error_cascade_prop', 'WCST Error Cascade Proportion'),
+    ('wcst_recovery_rt_slope', 'WCST Recovery RT Slope'),
+    ('wcst_recovery_acc_slope', 'WCST Recovery Accuracy Slope'),
+    ('wcst_momentum_slope', 'WCST Momentum Slope'),
+    ('wcst_momentum_mean_streak', 'WCST Momentum Mean Streak'),
+    ('wcst_momentum_max_streak', 'WCST Momentum Max Streak'),
+    ('wcst_volatility_rmssd', 'WCST Volatility RMSSD'),
+    ('wcst_volatility_adj', 'WCST Volatility (Detrended SD)'),
+    ('wcst_intercept', 'WCST IIV Intercept'),
+    ('wcst_slope', 'WCST IIV Slope'),
+    ('wcst_residual_sd', 'WCST IIV Residual SD'),
+    ('wcst_raw_cv', 'WCST IIV Raw CV'),
+    ('wcst_iiv_r_squared', 'WCST IIV R-squared'),
+    ('wcst_post_error_cv_reduction', 'WCST Post-Error CV Reduction'),
+    ('wcst_post_error_accuracy', 'WCST Post-Error Accuracy'),
+    ('wcst_post_error_acc_diff', 'WCST Post-Error Accuracy Diff'),
+    ('wcst_post_error_recovery_rate', 'WCST Post-Error Recovery Rate'),
+    ('wcst_pes_adaptive', 'WCST Adaptive PES Flag'),
+    ('wcst_pes_maladaptive', 'WCST Maladaptive PES Flag'),
+    ('wcst_error_awareness_index', 'WCST Error Awareness Index'),
+]
+WCST_EXTRA_OUTCOMES += [
+    (f"wcst_recovery_rt_lag{k}", f"WCST Recovery RT Lag{k}")
+    for k in range(1, 6)
+]
+WCST_EXTRA_OUTCOMES += [
+    (f"wcst_recovery_acc_lag{k}", f"WCST Recovery Accuracy Lag{k}")
+    for k in range(1, 6)
+]
+
+WCST_EXTRA_OUTCOMES += [
     (f"wcst_trials_per_category_{idx}", f"WCST Trials per Category {idx}")
     for idx in range(1, WCST_CATEGORY_MAX + 1)
 ]
@@ -470,8 +662,22 @@ WCST_EXTRA_OUTCOMES += [
     (f"wcst_switch_cost_rt_k{k}", f"WCST Switch Cost RT k{k}")
     for k in WCST_SWITCH_K
 ]
+WCST_EXTRA_OUTCOMES += [
+    ('wcst_delta_plot_slope_correct', 'WCST Delta Plot Slope (correct)'),
+]
+WCST_EXTRA_OUTCOMES += [
+    (f"wcst_rt_vincentile_p{p}_correct", f"WCST RT Vincentile p{p} (correct)")
+    for p in STROOP_VINCENTILES
+]
 
 TIER1_OUTCOMES += STROOP_EXTRA_OUTCOMES + PRP_EXTRA_OUTCOMES + WCST_EXTRA_OUTCOMES
+TIER1_OUTCOMES += [
+    ('sustained_attention_index', 'Sustained Attention Index'),
+    ('sustained_attention_cv_slope', 'Sustained Attention CV Slope'),
+    ('sustained_attention_tau_slope', 'Sustained Attention Tau Slope'),
+    ('sustained_attention_acc_slope', 'Sustained Attention Accuracy Slope'),
+    ('sustained_attention_rt_slope', 'Sustained Attention RT Slope'),
+]
 
 # Task-specific Tier 1 outcomes
 TIER1_OUTCOMES_BY_TASK = {

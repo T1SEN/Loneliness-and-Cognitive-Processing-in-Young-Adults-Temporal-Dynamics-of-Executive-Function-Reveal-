@@ -10,7 +10,24 @@ import numpy as np
 import pandas as pd
 
 from ..constants import get_results_dir
-from ..core import coefficient_of_variation, ensure_participant_id
+from ..core import (
+    coefficient_of_variation,
+    ensure_participant_id,
+    median_absolute_deviation,
+    interquartile_range,
+    dfa_alpha,
+    lag1_autocorrelation,
+    run_length_stats,
+    compute_error_cascade_metrics,
+    compute_post_error_recovery_metrics,
+    compute_momentum_metrics,
+    compute_volatility_metrics,
+    compute_iiv_parameters,
+    compute_fatigue_slopes,
+    compute_tau_quartile_metrics,
+    compute_error_awareness_metrics,
+)
+from ..standardization import safe_zscore
 from .loaders import load_wcst_trials
 from .hmm_mechanism import load_or_compute_wcst_hmm_mechanism_features
 from .rl_mechanism import load_or_compute_wcst_rl_mechanism_features
@@ -150,6 +167,30 @@ def derive_wcst_features(
     records: List[Dict] = []
     for pid, grp in wcst.groupby("participant_id"):
         grp = grp.reset_index(drop=True)
+        grp_sorted = grp.sort_values(trial_col) if trial_col else grp
+        rt_series = pd.to_numeric(grp_sorted[rt_col], errors="coerce")
+        mad_rt = median_absolute_deviation(rt_series)
+        iqr_rt = interquartile_range(rt_series)
+        if "correct" in grp_sorted.columns:
+            rt_correct = rt_series[grp_sorted["correct"] == True]
+        else:
+            rt_correct = rt_series
+        mad_rt_correct = median_absolute_deviation(rt_correct)
+        iqr_rt_correct = interquartile_range(rt_correct)
+        dfa_rt_correct = dfa_alpha(rt_correct)
+        lag1_rt_correct = lag1_autocorrelation(rt_correct)
+        run_rt_correct = run_length_stats(rt_correct)
+
+        vincentile_quantiles = [0.1, 0.3, 0.5, 0.7, 0.9]
+        vincentile_labels = [10, 30, 50, 70, 90]
+        vincentile_vals = {f"wcst_rt_vincentile_p{label}_correct": np.nan for label in vincentile_labels}
+        delta_plot_slope = np.nan
+        rt_quant = rt_correct.dropna()
+        if len(rt_quant) >= 20:
+            q_vals = np.quantile(rt_quant, vincentile_quantiles)
+            for label, val in zip(vincentile_labels, q_vals):
+                vincentile_vals[f"wcst_rt_vincentile_p{label}_correct"] = float(val)
+            delta_plot_slope = float(q_vals[-1] - q_vals[0])
 
         pes = np.nan
         if "correct" in grp.columns:
@@ -327,11 +368,32 @@ def derive_wcst_features(
 
             failure_to_maintain_set = float(ftm)
 
+        seq_rt = rt_series
+        seq_correct = grp_sorted["correct"] if "correct" in grp_sorted.columns else pd.Series(dtype=object)
+        fatigue_metrics = compute_fatigue_slopes(seq_rt, seq_correct)
+        tau_metrics = compute_tau_quartile_metrics(seq_rt, seq_correct)
+        cascade_metrics = compute_error_cascade_metrics(seq_correct)
+        recovery_metrics = compute_post_error_recovery_metrics(seq_rt, seq_correct, max_lag=5)
+        momentum_metrics = compute_momentum_metrics(seq_rt, seq_correct)
+        volatility_metrics = compute_volatility_metrics(seq_rt)
+        iiv_metrics = compute_iiv_parameters(seq_rt)
+        awareness_metrics = compute_error_awareness_metrics(seq_rt, seq_correct)
+
         records.append({
             "participant_id": pid,
             "wcst_pes": pes,
             "wcst_post_switch_error_rate": post_switch_error_rate,
             "wcst_cv_rt": coefficient_of_variation(grp[rt_col].dropna()),
+            "wcst_mad_rt": mad_rt,
+            "wcst_iqr_rt": iqr_rt,
+            "wcst_mad_rt_correct": mad_rt_correct,
+            "wcst_iqr_rt_correct": iqr_rt_correct,
+            "wcst_dfa_alpha_correct": dfa_rt_correct,
+            "wcst_lag1_correct": lag1_rt_correct,
+            "wcst_slow_run_mean_correct": run_rt_correct["slow_run_mean"],
+            "wcst_slow_run_max_correct": run_rt_correct["slow_run_max"],
+            "wcst_fast_run_mean_correct": run_rt_correct["fast_run_mean"],
+            "wcst_fast_run_max_correct": run_rt_correct["fast_run_max"],
             "wcst_trials": len(grp),
             "wcst_total_errors": total_errors,
             "wcst_error_rate": error_rate,
@@ -356,7 +418,62 @@ def derive_wcst_features(
             "wcst_rt_jump_at_switch": rt_jump_at_switch,
             "wcst_failure_to_maintain_set": failure_to_maintain_set,
             "wcst_trials_to_rule_reacquisition": trials_to_reacq,
+            "wcst_delta_plot_slope_correct": delta_plot_slope,
+            "wcst_rt_fatigue_slope": fatigue_metrics["rt_fatigue_slope"],
+            "wcst_cv_fatigue_slope": fatigue_metrics["cv_fatigue_slope"],
+            "wcst_acc_fatigue_slope": fatigue_metrics["acc_fatigue_slope"],
+            "wcst_tau_q1": tau_metrics["tau_q1"],
+            "wcst_tau_q2": tau_metrics["tau_q2"],
+            "wcst_tau_q3": tau_metrics["tau_q3"],
+            "wcst_tau_q4": tau_metrics["tau_q4"],
+            "wcst_tau_slope": tau_metrics["tau_slope"],
+            "wcst_error_cascade_count": cascade_metrics["error_cascade_count"],
+            "wcst_error_cascade_rate": cascade_metrics["error_cascade_rate"],
+            "wcst_error_cascade_mean_len": cascade_metrics["error_cascade_mean_len"],
+            "wcst_error_cascade_max_len": cascade_metrics["error_cascade_max_len"],
+            "wcst_error_cascade_trials": cascade_metrics["error_cascade_trials"],
+            "wcst_error_cascade_prop": cascade_metrics["error_cascade_prop"],
+            "wcst_recovery_rt_lag1": recovery_metrics["recovery_rt_lag1"],
+            "wcst_recovery_rt_lag2": recovery_metrics["recovery_rt_lag2"],
+            "wcst_recovery_rt_lag3": recovery_metrics["recovery_rt_lag3"],
+            "wcst_recovery_rt_lag4": recovery_metrics["recovery_rt_lag4"],
+            "wcst_recovery_rt_lag5": recovery_metrics["recovery_rt_lag5"],
+            "wcst_recovery_acc_lag1": recovery_metrics["recovery_acc_lag1"],
+            "wcst_recovery_acc_lag2": recovery_metrics["recovery_acc_lag2"],
+            "wcst_recovery_acc_lag3": recovery_metrics["recovery_acc_lag3"],
+            "wcst_recovery_acc_lag4": recovery_metrics["recovery_acc_lag4"],
+            "wcst_recovery_acc_lag5": recovery_metrics["recovery_acc_lag5"],
+            "wcst_recovery_rt_slope": recovery_metrics["recovery_rt_slope"],
+            "wcst_recovery_acc_slope": recovery_metrics["recovery_acc_slope"],
+            "wcst_momentum_slope": momentum_metrics["momentum_slope"],
+            "wcst_momentum_mean_streak": momentum_metrics["momentum_mean_streak"],
+            "wcst_momentum_max_streak": momentum_metrics["momentum_max_streak"],
+            "wcst_momentum_rt_streak_0": momentum_metrics["momentum_rt_streak_0"],
+            "wcst_momentum_rt_streak_1": momentum_metrics["momentum_rt_streak_1"],
+            "wcst_momentum_rt_streak_2": momentum_metrics["momentum_rt_streak_2"],
+            "wcst_momentum_rt_streak_3": momentum_metrics["momentum_rt_streak_3"],
+            "wcst_momentum_rt_streak_4": momentum_metrics["momentum_rt_streak_4"],
+            "wcst_momentum_rt_streak_5": momentum_metrics["momentum_rt_streak_5"],
+            "wcst_volatility_rmssd": volatility_metrics["volatility_rmssd"],
+            "wcst_volatility_adj": volatility_metrics["volatility_adj"],
+            "wcst_intercept": iiv_metrics["iiv_intercept"],
+            "wcst_slope": iiv_metrics["iiv_slope"],
+            "wcst_slope_p": iiv_metrics["iiv_slope_p"],
+            "wcst_residual_sd": iiv_metrics["iiv_residual_sd"],
+            "wcst_raw_cv": iiv_metrics["iiv_raw_cv"],
+            "wcst_iiv_trials": iiv_metrics["iiv_n_trials"],
+            "wcst_iiv_r_squared": iiv_metrics["iiv_r_squared"],
+            "wcst_post_error_cv": awareness_metrics["post_error_cv"],
+            "wcst_post_correct_cv": awareness_metrics["post_correct_cv"],
+            "wcst_post_error_cv_reduction": awareness_metrics["post_error_cv_reduction"],
+            "wcst_post_error_accuracy": awareness_metrics["post_error_acc"],
+            "wcst_post_correct_accuracy": awareness_metrics["post_correct_acc"],
+            "wcst_post_error_acc_diff": awareness_metrics["post_error_acc_diff"],
+            "wcst_post_error_recovery_rate": awareness_metrics["post_error_recovery_rate"],
+            "wcst_pes_adaptive": awareness_metrics["pes_adaptive"],
+            "wcst_pes_maladaptive": awareness_metrics["pes_maladaptive"],
         })
+        records[-1].update(vincentile_vals)
 
         if trials_per_category:
             record = records[-1]
@@ -379,6 +496,17 @@ def derive_wcst_features(
                 record[f"wcst_switch_cost_rt_k{k}"] = switch_cost_rt[k]
 
     features_df = pd.DataFrame(records)
+    if not features_df.empty:
+        required_cols = [
+            "wcst_post_error_cv_reduction",
+            "wcst_post_error_accuracy",
+            "wcst_post_error_recovery_rate",
+        ]
+        if all(col in features_df.columns for col in required_cols):
+            z_cv = safe_zscore(features_df["wcst_post_error_cv_reduction"])
+            z_acc = safe_zscore(features_df["wcst_post_error_accuracy"])
+            z_rec = safe_zscore(features_df["wcst_post_error_recovery_rate"])
+            features_df["wcst_error_awareness_index"] = (z_cv + z_acc + z_rec) / 3
 
     hmm_df = load_or_compute_wcst_hmm_mechanism_features(data_dir=data_dir)
     rl_df = load_or_compute_wcst_rl_mechanism_features(data_dir=data_dir)

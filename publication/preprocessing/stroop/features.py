@@ -9,7 +9,23 @@ import numpy as np
 import pandas as pd
 
 from ..constants import STROOP_RT_MIN
-from ..core import coefficient_of_variation
+from ..core import (
+    coefficient_of_variation,
+    median_absolute_deviation,
+    interquartile_range,
+    dfa_alpha,
+    lag1_autocorrelation,
+    run_length_stats,
+    compute_error_cascade_metrics,
+    compute_post_error_recovery_metrics,
+    compute_momentum_metrics,
+    compute_volatility_metrics,
+    compute_iiv_parameters,
+    compute_fatigue_slopes,
+    compute_tau_quartile_metrics,
+    compute_error_awareness_metrics,
+)
+from ..standardization import safe_zscore
 from .loaders import load_stroop_trials
 from .exgaussian_mechanism import load_or_compute_stroop_mechanism_features
 from .lba_mechanism import load_or_compute_stroop_lba_mechanism_features
@@ -134,6 +150,7 @@ def derive_stroop_features(
     for pid, group in stroop.groupby("participant_id"):
         grp = group.copy()
         acc_grp = acc_groups.get(pid, pd.DataFrame())
+        grp_sorted = grp.sort_values("trial_order") if "trial_order" in grp.columns else grp.sort_index()
 
         if "correct" in grp.columns:
             grp["prev_correct"] = grp["correct"].shift(1)
@@ -151,24 +168,70 @@ def derive_stroop_features(
             post_error_mean = np.nan
             post_correct_mean = np.nan
 
+        rt_all = grp["rt_ms"].dropna()
+        mad_all = median_absolute_deviation(rt_all)
+        iqr_all = interquartile_range(rt_all)
+
         slope = np.nan
         cv_incong = np.nan
         cv_cong = np.nan
-        if cond_col and "trial_order" in grp.columns:
+        mad_incong = np.nan
+        iqr_incong = np.nan
+        mad_cong = np.nan
+        iqr_cong = np.nan
+        if cond_col:
             incong = grp[grp["condition_norm"] == "incongruent"]
             cong = grp[grp["condition_norm"] == "congruent"]
 
-            incong_valid = incong.dropna(subset=["trial_order", "rt_ms"])
-            if len(incong_valid) >= 5 and incong_valid["trial_order"].nunique() > 1:
-                x = incong_valid["trial_order"].values
-                y = incong_valid["rt_ms"].values
-                coef = np.polyfit(x, y, 1)
-                slope = coef[0]
+            if "trial_order" in grp.columns:
+                incong_valid = incong.dropna(subset=["trial_order", "rt_ms"])
+                if len(incong_valid) >= 5 and incong_valid["trial_order"].nunique() > 1:
+                    x = incong_valid["trial_order"].values
+                    y = incong_valid["rt_ms"].values
+                    coef = np.polyfit(x, y, 1)
+                    slope = coef[0]
 
             cv_incong = coefficient_of_variation(incong["rt_ms"].dropna())
             cv_cong = coefficient_of_variation(cong["rt_ms"].dropna())
+            mad_incong = median_absolute_deviation(incong["rt_ms"].dropna())
+            iqr_incong = interquartile_range(incong["rt_ms"].dropna())
+            mad_cong = median_absolute_deviation(cong["rt_ms"].dropna())
+            iqr_cong = interquartile_range(cong["rt_ms"].dropna())
 
-        rt_correct = grp[grp["correct"] == True] if "correct" in grp.columns else grp
+        rt_correct = grp_sorted[grp_sorted["correct"] == True] if "correct" in grp_sorted.columns else grp_sorted
+        rt_correct_all = rt_correct["rt_ms"].dropna()
+        temporal_all = run_length_stats(rt_correct_all)
+        dfa_all = dfa_alpha(rt_correct_all)
+        lag1_all = lag1_autocorrelation(rt_correct_all)
+
+        dfa_incong = np.nan
+        lag1_incong = np.nan
+        temporal_incong = {
+            "slow_run_mean": np.nan,
+            "slow_run_max": np.nan,
+            "fast_run_mean": np.nan,
+            "fast_run_max": np.nan,
+        }
+        if cond_col:
+            incong_correct = rt_correct[rt_correct["condition_norm"] == "incongruent"]
+            rt_incong = incong_correct["rt_ms"].dropna()
+            dfa_incong = dfa_alpha(rt_incong)
+            lag1_incong = lag1_autocorrelation(rt_incong)
+            temporal_incong = run_length_stats(rt_incong)
+        rt_correct_all = rt_correct["rt_ms"].dropna()
+        mad_all_correct = median_absolute_deviation(rt_correct_all)
+        iqr_all_correct = interquartile_range(rt_correct_all)
+        mad_incong_correct = np.nan
+        iqr_incong_correct = np.nan
+        mad_cong_correct = np.nan
+        iqr_cong_correct = np.nan
+        if cond_col:
+            incong_correct = rt_correct[rt_correct["condition_norm"] == "incongruent"]
+            cong_correct = rt_correct[rt_correct["condition_norm"] == "congruent"]
+            mad_incong_correct = median_absolute_deviation(incong_correct["rt_ms"].dropna())
+            iqr_incong_correct = interquartile_range(incong_correct["rt_ms"].dropna())
+            mad_cong_correct = median_absolute_deviation(cong_correct["rt_ms"].dropna())
+            iqr_cong_correct = interquartile_range(cong_correct["rt_ms"].dropna())
 
         rt_interference = np.nan
         rt_facilitation = np.nan
@@ -367,6 +430,18 @@ def derive_stroop_features(
                 if all(pd.notna(v) for v in lag_means):
                     error_recovery_rt = float(np.polyfit(range(1, max_lag + 1), lag_means, 1)[0])
 
+        seq_rt = grp_sorted["rt_ms"] if "rt_ms" in grp_sorted.columns else pd.Series(dtype=float)
+        seq_correct = grp_sorted["correct"] if "correct" in grp_sorted.columns else pd.Series(dtype=object)
+
+        fatigue_metrics = compute_fatigue_slopes(seq_rt, seq_correct)
+        tau_metrics = compute_tau_quartile_metrics(seq_rt, seq_correct if "correct" in grp_sorted.columns else None)
+        cascade_metrics = compute_error_cascade_metrics(seq_correct)
+        recovery_metrics = compute_post_error_recovery_metrics(seq_rt, seq_correct, max_lag=5)
+        momentum_metrics = compute_momentum_metrics(seq_rt, seq_correct)
+        volatility_metrics = compute_volatility_metrics(seq_rt)
+        iiv_metrics = compute_iiv_parameters(seq_rt)
+        awareness_metrics = compute_error_awareness_metrics(seq_rt, seq_correct)
+
         records.append({
             "participant_id": pid,
             "stroop_post_error_slowing": pes,
@@ -376,6 +451,30 @@ def derive_stroop_features(
             "stroop_cv_all": coefficient_of_variation(grp["rt_ms"].dropna()),
             "stroop_cv_incong": cv_incong,
             "stroop_cv_cong": cv_cong,
+            "stroop_mad_all": mad_all,
+            "stroop_iqr_all": iqr_all,
+            "stroop_mad_incong": mad_incong,
+            "stroop_iqr_incong": iqr_incong,
+            "stroop_mad_cong": mad_cong,
+            "stroop_iqr_cong": iqr_cong,
+            "stroop_mad_all_correct": mad_all_correct,
+            "stroop_iqr_all_correct": iqr_all_correct,
+            "stroop_mad_incong_correct": mad_incong_correct,
+            "stroop_iqr_incong_correct": iqr_incong_correct,
+            "stroop_mad_cong_correct": mad_cong_correct,
+            "stroop_iqr_cong_correct": iqr_cong_correct,
+            "stroop_dfa_alpha_correct": dfa_all,
+            "stroop_lag1_correct": lag1_all,
+            "stroop_slow_run_mean_correct": temporal_all["slow_run_mean"],
+            "stroop_slow_run_max_correct": temporal_all["slow_run_max"],
+            "stroop_fast_run_mean_correct": temporal_all["fast_run_mean"],
+            "stroop_fast_run_max_correct": temporal_all["fast_run_max"],
+            "stroop_dfa_alpha_incong_correct": dfa_incong,
+            "stroop_lag1_incong_correct": lag1_incong,
+            "stroop_slow_run_mean_incong_correct": temporal_incong["slow_run_mean"],
+            "stroop_slow_run_max_incong_correct": temporal_incong["slow_run_max"],
+            "stroop_fast_run_mean_incong_correct": temporal_incong["fast_run_mean"],
+            "stroop_fast_run_max_incong_correct": temporal_incong["fast_run_max"],
             "stroop_rt_interference": rt_interference,
             "stroop_rt_facilitation": rt_facilitation,
             "stroop_rt_incong_minus_neutral": rt_incong_neutral,
@@ -396,6 +495,57 @@ def derive_stroop_features(
             "stroop_error_run_length_mean": error_run_mean,
             "stroop_error_run_length_max": error_run_max,
             "stroop_error_recovery_rt": error_recovery_rt,
+            "stroop_rt_fatigue_slope": fatigue_metrics["rt_fatigue_slope"],
+            "stroop_cv_fatigue_slope": fatigue_metrics["cv_fatigue_slope"],
+            "stroop_acc_fatigue_slope": fatigue_metrics["acc_fatigue_slope"],
+            "stroop_tau_q1": tau_metrics["tau_q1"],
+            "stroop_tau_q2": tau_metrics["tau_q2"],
+            "stroop_tau_q3": tau_metrics["tau_q3"],
+            "stroop_tau_q4": tau_metrics["tau_q4"],
+            "stroop_tau_slope": tau_metrics["tau_slope"],
+            "stroop_error_cascade_count": cascade_metrics["error_cascade_count"],
+            "stroop_error_cascade_rate": cascade_metrics["error_cascade_rate"],
+            "stroop_error_cascade_mean_len": cascade_metrics["error_cascade_mean_len"],
+            "stroop_error_cascade_max_len": cascade_metrics["error_cascade_max_len"],
+            "stroop_error_cascade_trials": cascade_metrics["error_cascade_trials"],
+            "stroop_error_cascade_prop": cascade_metrics["error_cascade_prop"],
+            "stroop_recovery_rt_lag1": recovery_metrics["recovery_rt_lag1"],
+            "stroop_recovery_rt_lag2": recovery_metrics["recovery_rt_lag2"],
+            "stroop_recovery_rt_lag3": recovery_metrics["recovery_rt_lag3"],
+            "stroop_recovery_rt_lag4": recovery_metrics["recovery_rt_lag4"],
+            "stroop_recovery_rt_lag5": recovery_metrics["recovery_rt_lag5"],
+            "stroop_recovery_acc_lag1": recovery_metrics["recovery_acc_lag1"],
+            "stroop_recovery_acc_lag2": recovery_metrics["recovery_acc_lag2"],
+            "stroop_recovery_acc_lag3": recovery_metrics["recovery_acc_lag3"],
+            "stroop_recovery_acc_lag4": recovery_metrics["recovery_acc_lag4"],
+            "stroop_recovery_acc_lag5": recovery_metrics["recovery_acc_lag5"],
+            "stroop_recovery_rt_slope": recovery_metrics["recovery_rt_slope"],
+            "stroop_recovery_acc_slope": recovery_metrics["recovery_acc_slope"],
+            "stroop_momentum_slope": momentum_metrics["momentum_slope"],
+            "stroop_momentum_mean_streak": momentum_metrics["momentum_mean_streak"],
+            "stroop_momentum_max_streak": momentum_metrics["momentum_max_streak"],
+            "stroop_momentum_rt_streak_0": momentum_metrics["momentum_rt_streak_0"],
+            "stroop_momentum_rt_streak_1": momentum_metrics["momentum_rt_streak_1"],
+            "stroop_momentum_rt_streak_2": momentum_metrics["momentum_rt_streak_2"],
+            "stroop_momentum_rt_streak_3": momentum_metrics["momentum_rt_streak_3"],
+            "stroop_momentum_rt_streak_4": momentum_metrics["momentum_rt_streak_4"],
+            "stroop_momentum_rt_streak_5": momentum_metrics["momentum_rt_streak_5"],
+            "stroop_volatility_rmssd": volatility_metrics["volatility_rmssd"],
+            "stroop_volatility_adj": volatility_metrics["volatility_adj"],
+            "stroop_intercept": iiv_metrics["iiv_intercept"],
+            "stroop_slope": iiv_metrics["iiv_slope"],
+            "stroop_slope_p": iiv_metrics["iiv_slope_p"],
+            "stroop_residual_sd": iiv_metrics["iiv_residual_sd"],
+            "stroop_raw_cv": iiv_metrics["iiv_raw_cv"],
+            "stroop_iiv_trials": iiv_metrics["iiv_n_trials"],
+            "stroop_iiv_r_squared": iiv_metrics["iiv_r_squared"],
+            "stroop_post_error_cv": awareness_metrics["post_error_cv"],
+            "stroop_post_correct_cv": awareness_metrics["post_correct_cv"],
+            "stroop_post_error_cv_reduction": awareness_metrics["post_error_cv_reduction"],
+            "stroop_post_error_acc_diff": awareness_metrics["post_error_acc_diff"],
+            "stroop_post_error_recovery_rate": awareness_metrics["post_error_recovery_rate"],
+            "stroop_pes_adaptive": awareness_metrics["pes_adaptive"],
+            "stroop_pes_maladaptive": awareness_metrics["pes_maladaptive"],
             "stroop_trials": len(grp),
         })
 
@@ -441,6 +591,17 @@ def derive_stroop_features(
                 record["stroop_ez_t0_interference"] = np.nan
 
     features_df = pd.DataFrame(records)
+    if not features_df.empty:
+        required_cols = [
+            "stroop_post_error_cv_reduction",
+            "stroop_post_error_accuracy",
+            "stroop_post_error_recovery_rate",
+        ]
+        if all(col in features_df.columns for col in required_cols):
+            z_cv = safe_zscore(features_df["stroop_post_error_cv_reduction"])
+            z_acc = safe_zscore(features_df["stroop_post_error_accuracy"])
+            z_rec = safe_zscore(features_df["stroop_post_error_recovery_rate"])
+            features_df["stroop_error_awareness_index"] = (z_cv + z_acc + z_rec) / 3
 
     mechanism_df = load_or_compute_stroop_mechanism_features(data_dir=data_dir)
     if not mechanism_df.empty:
