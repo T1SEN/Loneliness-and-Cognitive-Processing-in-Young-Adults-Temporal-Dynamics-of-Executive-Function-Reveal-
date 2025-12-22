@@ -23,12 +23,15 @@ from ..core import (
     compute_iiv_parameters,
     compute_fatigue_slopes,
     compute_error_awareness_metrics,
+    compute_pre_error_slope_metrics,
+    compute_speed_accuracy_metrics,
 )
 from ..standardization import safe_zscore
 from .loaders import load_prp_trials
 from .exgaussian_mechanism import load_or_compute_prp_mechanism_features
 from .hmm_event_features import load_or_compute_prp_hmm_event_features
 from .bottleneck_mechanism import load_or_compute_prp_bottleneck_mechanism_features
+from .bottleneck_shape import load_or_compute_prp_bottleneck_shape_features
 
 
 def _run_lengths(mask: pd.Series) -> List[int]:
@@ -263,6 +266,8 @@ def derive_prp_features(
         volatility_metrics = compute_volatility_metrics(seq_rt)
         iiv_metrics = compute_iiv_parameters(seq_rt)
         awareness_metrics = compute_error_awareness_metrics(seq_rt, seq_correct)
+        speed_metrics = compute_speed_accuracy_metrics(seq_rt, seq_correct)
+        pre_error_metrics = compute_pre_error_slope_metrics(seq_rt, seq_correct)
 
         record = {
             "participant_id": pid,
@@ -275,6 +280,13 @@ def derive_prp_features(
             "prp_t2_iqr_all": iqr_all,
             "prp_t2_iqr_short": iqr_short,
             "prp_t2_iqr_long": iqr_long,
+            "prp_t2_mean_rt_all": speed_metrics["mean_rt"],
+            "prp_t2_accuracy_all": speed_metrics["accuracy"],
+            "prp_t2_error_rate_all": speed_metrics["error_rate"],
+            "prp_t2_ies": speed_metrics["ies"],
+            "prp_pre_error_slope_mean": pre_error_metrics["pre_error_slope_mean"],
+            "prp_pre_error_slope_std": pre_error_metrics["pre_error_slope_std"],
+            "prp_pre_error_n": pre_error_metrics["pre_error_n"],
             "prp_t2_mad_all_correct": mad_all_correct,
             "prp_t2_mad_short_correct": mad_short_correct,
             "prp_t2_mad_long_correct": mad_long_correct,
@@ -426,13 +438,23 @@ def derive_prp_features(
             features_df = features_df.merge(hmm_df, on="participant_id", how="left")
 
     bottleneck_df = load_or_compute_prp_bottleneck_mechanism_features(data_dir=data_dir)
-    if bottleneck_df.empty:
-        return features_df
-    if features_df.empty:
-        return bottleneck_df
+    if not bottleneck_df.empty:
+        if features_df.empty:
+            features_df = bottleneck_df
+        else:
+            overlap = [c for c in bottleneck_df.columns if c != "participant_id" and c in features_df.columns]
+            if overlap:
+                features_df = features_df.drop(columns=overlap)
+            features_df = features_df.merge(bottleneck_df, on="participant_id", how="left")
 
-    overlap = [c for c in bottleneck_df.columns if c != "participant_id" and c in features_df.columns]
-    if overlap:
-        features_df = features_df.drop(columns=overlap)
+    shape_df = load_or_compute_prp_bottleneck_shape_features(data_dir=data_dir)
+    if not shape_df.empty:
+        if features_df.empty:
+            features_df = shape_df
+        else:
+            overlap = [c for c in shape_df.columns if c != "participant_id" and c in features_df.columns]
+            if overlap:
+                features_df = features_df.drop(columns=overlap)
+            features_df = features_df.merge(shape_df, on="participant_id", how="left")
 
-    return features_df.merge(bottleneck_df, on="participant_id", how="left")
+    return features_df

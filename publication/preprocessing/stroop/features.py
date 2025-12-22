@@ -24,6 +24,8 @@ from ..core import (
     compute_fatigue_slopes,
     compute_tau_quartile_metrics,
     compute_error_awareness_metrics,
+    compute_pre_error_slope_metrics,
+    compute_speed_accuracy_metrics,
 )
 from ..standardization import safe_zscore
 from .loaders import load_stroop_trials
@@ -441,12 +443,21 @@ def derive_stroop_features(
         volatility_metrics = compute_volatility_metrics(seq_rt)
         iiv_metrics = compute_iiv_parameters(seq_rt)
         awareness_metrics = compute_error_awareness_metrics(seq_rt, seq_correct)
+        speed_metrics = compute_speed_accuracy_metrics(seq_rt, seq_correct)
+        pre_error_metrics = compute_pre_error_slope_metrics(seq_rt, seq_correct)
 
         records.append({
             "participant_id": pid,
             "stroop_post_error_slowing": pes,
             "stroop_post_error_rt": post_error_mean,
             "stroop_post_correct_rt": post_correct_mean,
+            "stroop_mean_rt_all": speed_metrics["mean_rt"],
+            "stroop_accuracy_all": speed_metrics["accuracy"],
+            "stroop_error_rate_all": speed_metrics["error_rate"],
+            "stroop_ies": speed_metrics["ies"],
+            "stroop_pre_error_slope_mean": pre_error_metrics["pre_error_slope_mean"],
+            "stroop_pre_error_slope_std": pre_error_metrics["pre_error_slope_std"],
+            "stroop_pre_error_n": pre_error_metrics["pre_error_n"],
             "stroop_incong_slope": slope,
             "stroop_cv_all": coefficient_of_variation(grp["rt_ms"].dropna()),
             "stroop_cv_incong": cv_incong,

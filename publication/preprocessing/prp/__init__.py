@@ -8,6 +8,10 @@ from .bottleneck_mechanism import (
     compute_prp_bottleneck_features,
     load_or_compute_prp_bottleneck_mechanism_features,
 )
+from .bottleneck_shape import (
+    compute_prp_bottleneck_shape_features,
+    load_or_compute_prp_bottleneck_shape_features,
+)
 from .hmm_event_features import compute_prp_hmm_event_features, load_or_compute_prp_hmm_event_features
 from .dataset import build_prp_dataset, get_prp_complete_participants
 
@@ -22,6 +26,8 @@ __all__ = [
     "load_or_compute_prp_mechanism_features",
     "compute_prp_bottleneck_features",
     "load_or_compute_prp_bottleneck_mechanism_features",
+    "compute_prp_bottleneck_shape_features",
+    "load_or_compute_prp_bottleneck_shape_features",
     "compute_prp_hmm_event_features",
     "load_or_compute_prp_hmm_event_features",
     "build_prp_dataset",

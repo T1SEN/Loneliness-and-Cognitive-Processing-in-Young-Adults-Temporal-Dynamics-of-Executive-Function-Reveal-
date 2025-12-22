@@ -335,6 +335,15 @@ STROOP_EXTRA_OUTCOMES += [
     (f"stroop_recovery_acc_lag{k}", f"Stroop Recovery Accuracy Lag{k}")
     for k in range(1, 6)
 ]
+STROOP_EXTRA_OUTCOMES += [
+    ('stroop_mean_rt_all', 'Stroop Mean RT (All)'),
+    ('stroop_accuracy_all', 'Stroop Accuracy (All)'),
+    ('stroop_error_rate_all', 'Stroop Error Rate (All)'),
+    ('stroop_ies', 'Stroop Inverse Efficiency Score'),
+    ('stroop_pre_error_slope_mean', 'Stroop Pre-Error RT Slope (Mean)'),
+    ('stroop_pre_error_slope_std', 'Stroop Pre-Error RT Slope (SD)'),
+    ('stroop_pre_error_n', 'Stroop Pre-Error Events (N)'),
+]
 
 PRP_EXTRA_OUTCOMES = [
     ('prp_slow_prob_baseline', 'PRP Slow-State Probability (Baseline)'),
@@ -430,6 +439,15 @@ PRP_EXTRA_OUTCOMES += [
     ('prp_error_awareness_index', 'PRP Error Awareness Index'),
 ]
 PRP_EXTRA_OUTCOMES += [
+    ('prp_t2_mean_rt_all', 'PRP T2 Mean RT (All)'),
+    ('prp_t2_accuracy_all', 'PRP T2 Accuracy (All)'),
+    ('prp_t2_error_rate_all', 'PRP T2 Error Rate (All)'),
+    ('prp_t2_ies', 'PRP T2 Inverse Efficiency Score'),
+    ('prp_pre_error_slope_mean', 'PRP Pre-Error RT Slope (Mean)'),
+    ('prp_pre_error_slope_std', 'PRP Pre-Error RT Slope (SD)'),
+    ('prp_pre_error_n', 'PRP Pre-Error Events (N)'),
+]
+PRP_EXTRA_OUTCOMES += [
     (f"prp_recovery_rt_lag{k}", f"PRP Recovery RT Lag{k}")
     for k in range(1, 6)
 ]
@@ -493,6 +511,19 @@ PRP_EXTRA_OUTCOMES += [
 PRP_EXTRA_OUTCOMES += [
     (f"prp_vincentile_bottleneck_p{p}_correct", f"PRP Vincentile Bottleneck p{p} (correct)")
     for p in STROOP_VINCENTILES
+]
+PRP_EXTRA_OUTCOMES += [
+    ('prp_shape_linear_slope', 'PRP Shape Linear Slope'),
+    ('prp_shape_linear_intercept', 'PRP Shape Linear Intercept'),
+    ('prp_shape_linear_r2', 'PRP Shape Linear R-squared'),
+    ('prp_shape_exp_amplitude', 'PRP Shape Exp Amplitude'),
+    ('prp_shape_exp_decay_rate', 'PRP Shape Exp Decay Rate'),
+    ('prp_shape_exp_asymptote', 'PRP Shape Exp Asymptote'),
+    ('prp_shape_exp_r2', 'PRP Shape Exp R-squared'),
+    ('prp_shape_recovery_half_life', 'PRP Shape Recovery Half-life'),
+    ('prp_shape_bottleneck_traditional', 'PRP Shape Bottleneck (Short-Long)'),
+    ('prp_shape_exp_better_fit', 'PRP Shape Exp Better Fit'),
+    ('prp_shape_n_soa', 'PRP Shape SOA Count'),
 ]
 
 WCST_EXTRA_OUTCOMES = [
@@ -669,6 +700,22 @@ WCST_EXTRA_OUTCOMES += [
     (f"wcst_rt_vincentile_p{p}_correct", f"WCST RT Vincentile p{p} (correct)")
     for p in STROOP_VINCENTILES
 ]
+WCST_EXTRA_OUTCOMES += [
+    ('wcst_mean_rt_all', 'WCST Mean RT (All)'),
+    ('wcst_accuracy_all', 'WCST Accuracy (All)'),
+    ('wcst_error_rate_all', 'WCST Error Rate (All)'),
+    ('wcst_ies', 'WCST Inverse Efficiency Score'),
+    ('wcst_pre_error_slope_mean', 'WCST Pre-Error RT Slope (Mean)'),
+    ('wcst_pre_error_slope_std', 'WCST Pre-Error RT Slope (SD)'),
+    ('wcst_pre_error_n', 'WCST Pre-Error Events (N)'),
+    ('wcst_block_pe_slope', 'WCST Block PE Slope'),
+    ('wcst_block_pe_intercept', 'WCST Block PE Intercept'),
+    ('wcst_block_pe_r2', 'WCST Block PE R-squared'),
+    ('wcst_block_pe_initial', 'WCST Block PE Initial'),
+    ('wcst_block_pe_final', 'WCST Block PE Final'),
+    ('wcst_block_pe_change', 'WCST Block PE Change'),
+    ('wcst_block_pe_blocks', 'WCST Block PE Blocks'),
+]
 
 TIER1_OUTCOMES += STROOP_EXTRA_OUTCOMES + PRP_EXTRA_OUTCOMES + WCST_EXTRA_OUTCOMES
 TIER1_OUTCOMES += [
@@ -677,6 +724,13 @@ TIER1_OUTCOMES += [
     ('sustained_attention_tau_slope', 'Sustained Attention Tau Slope'),
     ('sustained_attention_acc_slope', 'Sustained Attention Accuracy Slope'),
     ('sustained_attention_rt_slope', 'Sustained Attention RT Slope'),
+]
+TIER1_OUTCOMES += [
+    ('cross_task_cv', 'Cross-Task CV'),
+    ('cross_task_range', 'Cross-Task Range'),
+    ('cross_task_mean', 'Cross-Task Mean'),
+    ('cross_task_sd', 'Cross-Task SD'),
+    ('cross_task_n_tasks', 'Cross-Task N Tasks'),
 ]
 
 # Task-specific Tier 1 outcomes

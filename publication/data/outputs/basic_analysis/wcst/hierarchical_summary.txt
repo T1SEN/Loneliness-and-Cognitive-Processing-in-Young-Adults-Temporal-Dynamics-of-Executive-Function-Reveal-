@@ -3250,6 +3250,1037 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
+Outcome: WCST RT Fatigue Slope (Q4-Q1) (N = 212)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        Delta R^2 = 0.0033, p = 0.878
+  Step 2 (UCLA):        Delta R^2 = 0.0083, p = 0.191 (HC3 Wald)
+  Step 3 (Interaction): Delta R^2 = 0.0007, p = 0.692 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  beta = -91.5620, SE = 69.8628, t = -1.31, p = 0.190
+
+UCLA x Gender Interaction (Model 3):
+  beta = 39.3596, SE = 99.3702, p = 0.692
+
+Gender-Stratified UCLA Effects:
+  Female (n=130): beta = -141.9248, p = 0.117
+  Male (n=82):   beta = 14.3626, p = 0.888
+
+Diagnostics:
+  VIF max: 2.68
+  Breusch-Pagan p: 0.959
+  Shapiro-Wilk p: < 0.001
+
+
+Outcome: WCST CV Fatigue Slope (Q4-Q1) (N = 212)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        Delta R^2 = 0.0027, p = 0.907
+  Step 2 (UCLA):        Delta R^2 = 0.0005, p = 0.769 (HC3 Wald)
+  Step 3 (Interaction): Delta R^2 = 0.0025, p = 0.416 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  beta = -0.0143, SE = 0.0487, t = -0.29, p = 0.769
+
+UCLA x Gender Interaction (Model 3):
+  beta = 0.0479, SE = 0.0587, p = 0.415
+
+Gender-Stratified UCLA Effects:
+  Female (n=130): beta = -0.0295, p = 0.673
+  Male (n=82):   beta = -0.0011, p = 0.983
+
+Diagnostics:
+  VIF max: 2.68
+  Breusch-Pagan p: 0.311
+  Shapiro-Wilk p: < 0.001
+
+
+Outcome: WCST Accuracy Fatigue Slope (Q4-Q1) (N = 212)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        Delta R^2 = 0.0101, p = 0.550
+  Step 2 (UCLA):        Delta R^2 = 0.0000, p = 0.938 (HC3 Wald)
+  Step 3 (Interaction): Delta R^2 = 0.0017, p = 0.546 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  beta = 0.0014, SE = 0.0182, t = 0.08, p = 0.938
+
+UCLA x Gender Interaction (Model 3):
+  beta = -0.0138, SE = 0.0229, p = 0.545
+
+Gender-Stratified UCLA Effects:
+  Female (n=130): beta = 0.0025, p = 0.910
+  Male (n=82):   beta = 0.0052, p = 0.880
+
+Diagnostics:
+  VIF max: 2.68
+  Breusch-Pagan p: 0.947
+  Shapiro-Wilk p: < 0.001
+
+
+Outcome: WCST Tau Q1 (N = 49)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        Delta R^2 = 0.1809, p = 0.034
+  Step 2 (UCLA):        Delta R^2 = 0.0001, p = 0.960 (HC3 Wald)
+  Step 3 (Interaction): Delta R^2 = 0.0118, p = 0.583 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  beta = -8.0731, SE = 158.9830, t = -0.05, p = 0.960
+
+UCLA x Gender Interaction (Model 3):
+  beta = -157.9569, SE = 285.4191, p = 0.580
+
+Gender-Stratified UCLA Effects:
+  Female (n=27): beta = -95.6232, p = 0.540
+  Male (n=22):   beta = 358.4192, p = 0.221
+
+Diagnostics:
+  VIF max: 3.42
+  Breusch-Pagan p: 0.118
+  Shapiro-Wilk p: 0.097
+
+
+Outcome: WCST Tau Q2 (N = 38)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        Delta R^2 = 0.0407, p = 0.709
+  Step 2 (UCLA):        Delta R^2 = 0.0733, p = 0.354 (HC3 Wald)
+  Step 3 (Interaction): Delta R^2 = 0.1705, p = 0.237 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  beta = 432.0251, SE = 459.4294, t = 0.94, p = 0.347
+
+UCLA x Gender Interaction (Model 3):
+  beta = 891.8412, SE = 738.5751, p = 0.227
+
+Gender-Stratified UCLA Effects:
+  Female (n=21): beta = -63.1586, p = 0.868
+  Male (n=17):   beta = 1364.4392, p = 0.309
+
+Diagnostics:
+  VIF max: 3.64
+  Breusch-Pagan p: 0.062
+  Shapiro-Wilk p: 0.003
+
+
+Outcome: WCST Tau Q3 (N = 35)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        Delta R^2 = 0.0565, p = 0.606
+  Step 2 (UCLA):        Delta R^2 = 0.0714, p = 0.237 (HC3 Wald)
+  Step 3 (Interaction): Delta R^2 = 0.0291, p = 0.535 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  beta = 266.4780, SE = 220.4521, t = 1.21, p = 0.227
+
+UCLA x Gender Interaction (Model 3):
+  beta = 232.5614, SE = 370.0537, p = 0.530
+
+Gender-Stratified UCLA Effects:
+  Female (n=21): beta = 43.3952, p = 0.822
+
+Diagnostics:
+  VIF max: 3.43
+  Breusch-Pagan p: 0.265
+  Shapiro-Wilk p: 0.005
+
+
+Outcome: WCST Tau Q4 (N = 43)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        Delta R^2 = 0.0429, p = 0.595
+  Step 2 (UCLA):        Delta R^2 = 0.0125, p = 0.334 (HC3 Wald)
+  Step 3 (Interaction): Delta R^2 = 0.0187, p = 0.344 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  beta = -161.0827, SE = 164.6221, t = -0.98, p = 0.328
+
+UCLA x Gender Interaction (Model 3):
+  beta = 275.4070, SE = 287.2409, p = 0.338
+
+Gender-Stratified UCLA Effects:
+  Female (n=23): beta = -242.3514, p = 0.383
+  Male (n=20):   beta = -128.5648, p = 0.248
+
+Diagnostics:
+  VIF max: 3.82
+  Breusch-Pagan p: 0.718
+  Shapiro-Wilk p: < 0.001
+
+
+Outcome: WCST Tau Slope (Q4-Q1) (N = 43)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        Delta R^2 = 0.1324, p = 0.122
+  Step 2 (UCLA):        Delta R^2 = 0.0161, p = 0.407 (HC3 Wald)
+  Step 3 (Interaction): Delta R^2 = 0.0311, p = 0.399 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  beta = -224.0464, SE = 267.2446, t = -0.84, p = 0.402
+
+UCLA x Gender Interaction (Model 3):
+  beta = 433.9498, SE = 508.0707, p = 0.393
+
+Gender-Stratified UCLA Effects:
+  Female (n=23): beta = -164.6434, p = 0.644
+  Male (n=20):   beta = -402.9541, p = 0.234
+
+Diagnostics:
+  VIF max: 3.82
+  Breusch-Pagan p: 0.786
+  Shapiro-Wilk p: 0.038
+
+
+Outcome: WCST Error Cascade Count (N = 212)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        Delta R^2 = 0.0038, p = 0.850
+  Step 2 (UCLA):        Delta R^2 = 0.0016, p = 0.584 (HC3 Wald)
+  Step 3 (Interaction): Delta R^2 = 0.0122, p = 0.236 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  beta = -0.2008, SE = 0.3656, t = -0.55, p = 0.583
+
+UCLA x Gender Interaction (Model 3):
+  beta = 0.8394, SE = 0.7070, p = 0.235
+
+Gender-Stratified UCLA Effects:
+  Female (n=130): beta = -0.3810, p = 0.435
+  Male (n=82):   beta = -0.0532, p = 0.931
+
+Diagnostics:
+  VIF max: 2.68
+  Breusch-Pagan p: 0.272
+  Shapiro-Wilk p: < 0.001
+
+
+Outcome: WCST Error Cascade Rate (N = 212)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        Delta R^2 = 0.0050, p = 0.787
+  Step 2 (UCLA):        Delta R^2 = 0.0019, p = 0.533 (HC3 Wald)
+  Step 3 (Interaction): Delta R^2 = 0.0159, p = 0.157 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  beta = -0.1735, SE = 0.2779, t = -0.62, p = 0.532
+
+UCLA x Gender Interaction (Model 3):
+  beta = 0.7578, SE = 0.5329, p = 0.155
+
+Gender-Stratified UCLA Effects:
+  Female (n=130): beta = -0.3682, p = 0.318
+  Male (n=82):   beta = 0.0552, p = 0.908
+
+Diagnostics:
+  VIF max: 2.68
+  Breusch-Pagan p: 0.224
+  Shapiro-Wilk p: < 0.001
+
+
+Outcome: WCST Error Cascade Mean Length (N = 212)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        Delta R^2 = 0.0079, p = 0.646
+  Step 2 (UCLA):        Delta R^2 = 0.0041, p = 0.355 (HC3 Wald)
+  Step 3 (Interaction): Delta R^2 = 0.0015, p = 0.573 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  beta = -0.0866, SE = 0.0934, t = -0.93, p = 0.354
+
+UCLA x Gender Interaction (Model 3):
+  beta = -0.0800, SE = 0.1418, p = 0.573
+
+Gender-Stratified UCLA Effects:
+  Female (n=130): beta = -0.0420, p = 0.653
+  Male (n=82):   beta = -0.1711, p = 0.437
+
+Diagnostics:
+  VIF max: 2.68
+  Breusch-Pagan p: 0.872
+  Shapiro-Wilk p: < 0.001
+
+
+Outcome: WCST Error Cascade Max Length (N = 212)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        Delta R^2 = 0.0066, p = 0.707
+  Step 2 (UCLA):        Delta R^2 = 0.0000, p = 0.922 (HC3 Wald)
+  Step 3 (Interaction): Delta R^2 = 0.0097, p = 0.285 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  beta = 0.0261, SE = 0.2648, t = 0.10, p = 0.922
+
+UCLA x Gender Interaction (Model 3):
+  beta = 0.5835, SE = 0.5447, p = 0.284
+
+Gender-Stratified UCLA Effects:
+  Female (n=130): beta = -0.1323, p = 0.668
+  Male (n=82):   beta = 0.1653, p = 0.785
+
+Diagnostics:
+  VIF max: 2.68
+  Breusch-Pagan p: 0.286
+  Shapiro-Wilk p: < 0.001
+
+
+Outcome: WCST Error Cascade Trials (N = 212)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        Delta R^2 = 0.0050, p = 0.793
+  Step 2 (UCLA):        Delta R^2 = 0.0006, p = 0.751 (HC3 Wald)
+  Step 3 (Interaction): Delta R^2 = 0.0101, p = 0.239 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  beta = -0.4558, SE = 1.4322, t = -0.32, p = 0.750
+
+UCLA x Gender Interaction (Model 3):
+  beta = 2.8692, SE = 2.4294, p = 0.238
+
+Gender-Stratified UCLA Effects:
+  Female (n=130): beta = -1.3756, p = 0.450
+  Male (n=82):   beta = 0.6687, p = 0.801
+
+Diagnostics:
+  VIF max: 2.68
+  Breusch-Pagan p: 0.354
+  Shapiro-Wilk p: < 0.001
+
+
+Outcome: WCST Error Cascade Proportion (N = 212)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        Delta R^2 = 0.0034, p = 0.869
+  Step 2 (UCLA):        Delta R^2 = 0.0008, p = 0.709 (HC3 Wald)
+  Step 3 (Interaction): Delta R^2 = 0.0124, p = 0.181 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  beta = -0.4046, SE = 1.0846, t = -0.37, p = 0.709
+
+UCLA x Gender Interaction (Model 3):
+  beta = 2.4675, SE = 1.8363, p = 0.179
+
+Gender-Stratified UCLA Effects:
+  Female (n=130): beta = -1.2381, p = 0.371
+  Male (n=82):   beta = 0.7209, p = 0.722
+
+Diagnostics:
+  VIF max: 2.68
+  Breusch-Pagan p: 0.390
+  Shapiro-Wilk p: < 0.001
+
+
+Outcome: WCST Recovery RT Slope (N = 210)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        Delta R^2 = 0.0095, p = 0.581
+  Step 2 (UCLA):        Delta R^2 = 0.0112, p = 0.163 (HC3 Wald)
+  Step 3 (Interaction): Delta R^2 = 0.0016, p = 0.622 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  beta = -31.8936, SE = 22.7720, t = -1.40, p = 0.161
+
+UCLA x Gender Interaction (Model 3):
+  beta = -18.1826, SE = 36.8745, p = 0.622
+
+Gender-Stratified UCLA Effects:
+  Female (n=128): beta = -17.1687, p = 0.614
+  Male (n=82):   beta = -60.9384, p = 0.019
+
+Diagnostics:
+  VIF max: 2.73
+  Breusch-Pagan p: 0.484
+  Shapiro-Wilk p: < 0.001
+
+
+Outcome: WCST Recovery Accuracy Slope (N = 210)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        Delta R^2 = 0.0103, p = 0.532
+  Step 2 (UCLA):        Delta R^2 = 0.0037, p = 0.421 (HC3 Wald)
+  Step 3 (Interaction): Delta R^2 = 0.0002, p = 0.859 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  beta = 0.0029, SE = 0.0036, t = 0.81, p = 0.420
+
+UCLA x Gender Interaction (Model 3):
+  beta = 0.0010, SE = 0.0053, p = 0.858
+
+Gender-Stratified UCLA Effects:
+  Female (n=128): beta = 0.0039, p = 0.410
+  Male (n=82):   beta = 0.0009, p = 0.870
+
+Diagnostics:
+  VIF max: 2.73
+  Breusch-Pagan p: 0.151
+  Shapiro-Wilk p: 0.317
+
+
+Outcome: WCST Momentum Slope (N = 196)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        Delta R^2 = 0.0082, p = 0.668
+  Step 2 (UCLA):        Delta R^2 = 0.0077, p = 0.408 (HC3 Wald)
+  Step 3 (Interaction): Delta R^2 = 0.0000, p = 0.969 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  beta = -25.4737, SE = 30.7219, t = -0.83, p = 0.407
+
+UCLA x Gender Interaction (Model 3):
+  beta = -1.6411, SE = 41.6380, p = 0.969
+
+Gender-Stratified UCLA Effects:
+  Female (n=121): beta = -8.5735, p = 0.818
+  Male (n=75):   beta = -72.4925, p = 0.216
+
+Diagnostics:
+  VIF max: 2.81
+  Breusch-Pagan p: 0.055
+  Shapiro-Wilk p: < 0.001
+
+
+Outcome: WCST Momentum Mean Streak (N = 212)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        Delta R^2 = 0.0054, p = 0.771
+  Step 2 (UCLA):        Delta R^2 = 0.0072, p = 0.201 (HC3 Wald)
+  Step 3 (Interaction): Delta R^2 = 0.0000, p = 0.971 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  beta = 0.3730, SE = 0.2910, t = 1.28, p = 0.200
+
+UCLA x Gender Interaction (Model 3):
+  beta = 0.0161, SE = 0.4375, p = 0.971
+
+Gender-Stratified UCLA Effects:
+  Female (n=130): beta = 0.2683, p = 0.425
+  Male (n=82):   beta = 0.5655, p = 0.358
+
+Diagnostics:
+  VIF max: 2.68
+  Breusch-Pagan p: 0.948
+  Shapiro-Wilk p: < 0.001
+
+
+Outcome: WCST Momentum Max Streak (N = 212)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        Delta R^2 = 0.0070, p = 0.691
+  Step 2 (UCLA):        Delta R^2 = 0.0073, p = 0.259 (HC3 Wald)
+  Step 3 (Interaction): Delta R^2 = 0.0000, p = 0.955 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  beta = 0.9380, SE = 0.8292, t = 1.13, p = 0.258
+
+UCLA x Gender Interaction (Model 3):
+  beta = -0.0719, SE = 1.2665, p = 0.955
+
+Gender-Stratified UCLA Effects:
+  Female (n=130): beta = 0.5779, p = 0.484
+  Male (n=82):   beta = 1.5095, p = 0.430
+
+Diagnostics:
+  VIF max: 2.68
+  Breusch-Pagan p: 0.951
+  Shapiro-Wilk p: < 0.001
+
+
+Outcome: WCST Volatility RMSSD (N = 212)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        Delta R^2 = 0.0157, p = 0.351
+  Step 2 (UCLA):        Delta R^2 = 0.0085, p = 0.294 (HC3 Wald)
+  Step 3 (Interaction): Delta R^2 = 0.0000, p = 0.999 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  beta = 301.7945, SE = 286.9481, t = 1.05, p = 0.293
+
+UCLA x Gender Interaction (Model 3):
+  beta = -0.1837, SE = 226.4138, p = 0.999
+
+Gender-Stratified UCLA Effects:
+  Female (n=130): beta = 331.3626, p = 0.410
+  Male (n=82):   beta = 222.5150, p = 0.456
+
+Diagnostics:
+  VIF max: 2.68
+  Breusch-Pagan p: 0.573
+  Shapiro-Wilk p: < 0.001
+
+
+Outcome: WCST Volatility (Detrended SD) (N = 212)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        Delta R^2 = 0.0188, p = 0.268
+  Step 2 (UCLA):        Delta R^2 = 0.0103, p = 0.245 (HC3 Wald)
+  Step 3 (Interaction): Delta R^2 = 0.0000, p = 0.894 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  beta = 235.1215, SE = 201.8646, t = 1.16, p = 0.244
+
+UCLA x Gender Interaction (Model 3):
+  beta = -21.8798, SE = 163.3020, p = 0.893
+
+Gender-Stratified UCLA Effects:
+  Female (n=130): beta = 259.6549, p = 0.355
+  Male (n=82):   beta = 177.8310, p = 0.426
+
+Diagnostics:
+  VIF max: 2.68
+  Breusch-Pagan p: 0.558
+  Shapiro-Wilk p: < 0.001
+
+
+Outcome: WCST IIV Intercept (N = 212)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        Delta R^2 = 0.0100, p = 0.553
+  Step 2 (UCLA):        Delta R^2 = 0.0208, p = 0.060 (HC3 Wald)
+  Step 3 (Interaction): Delta R^2 = 0.0000, p = 0.913 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  beta = 183.0011, SE = 96.6235, t = 1.89, p = 0.058
+
+UCLA x Gender Interaction (Model 3):
+  beta = 12.8939, SE = 117.6459, p = 0.913
+
+Gender-Stratified UCLA Effects:
+  Female (n=130): beta = 206.6526, p = 0.068
+  Male (n=82):   beta = 109.8817, p = 0.538
+
+Diagnostics:
+  VIF max: 2.68
+  Breusch-Pagan p: 0.574
+  Shapiro-Wilk p: < 0.001
+
+
+Outcome: WCST IIV Slope (N = 212)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        Delta R^2 = 0.0004, p = 0.995
+  Step 2 (UCLA):        Delta R^2 = 0.0078, p = 0.215 (HC3 Wald)
+  Step 3 (Interaction): Delta R^2 = 0.0008, p = 0.702 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  beta = -112.9358, SE = 90.7655, t = -1.24, p = 0.213
+
+UCLA x Gender Interaction (Model 3):
+  beta = 53.5034, SE = 139.8746, p = 0.702
+
+Gender-Stratified UCLA Effects:
+  Female (n=130): beta = -159.1660, p = 0.154
+  Male (n=82):   beta = -16.9464, p = 0.914
+
+Diagnostics:
+  VIF max: 2.68
+  Breusch-Pagan p: 0.843
+  Shapiro-Wilk p: < 0.001
+
+
+Outcome: WCST IIV Residual SD (N = 212)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        Delta R^2 = 0.0188, p = 0.268
+  Step 2 (UCLA):        Delta R^2 = 0.0103, p = 0.245 (HC3 Wald)
+  Step 3 (Interaction): Delta R^2 = 0.0000, p = 0.893 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  beta = 236.1569, SE = 202.6726, t = 1.17, p = 0.244
+
+UCLA x Gender Interaction (Model 3):
+  beta = -22.0191, SE = 164.1151, p = 0.893
+
+Gender-Stratified UCLA Effects:
+  Female (n=130): beta = 260.7129, p = 0.355
+  Male (n=82):   beta = 178.8527, p = 0.425
+
+Diagnostics:
+  VIF max: 2.68
+  Breusch-Pagan p: 0.559
+  Shapiro-Wilk p: < 0.001
+
+
+Outcome: WCST IIV Raw CV (N = 212)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        Delta R^2 = 0.0125, p = 0.455
+  Step 2 (UCLA):        Delta R^2 = 0.0007, p = 0.741 (HC3 Wald)
+  Step 3 (Interaction): Delta R^2 = 0.0000, p = 0.998 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  beta = 0.0137, SE = 0.0414, t = 0.33, p = 0.741
+
+UCLA x Gender Interaction (Model 3):
+  beta = 0.0001, SE = 0.0495, p = 0.998
+
+Gender-Stratified UCLA Effects:
+  Female (n=130): beta = 0.0020, p = 0.970
+  Male (n=82):   beta = 0.0442, p = 0.459
+
+Diagnostics:
+  VIF max: 2.68
+  Breusch-Pagan p: 0.811
+  Shapiro-Wilk p: < 0.001
+
+
+Outcome: WCST IIV R-squared (N = 212)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        Delta R^2 = 0.0038, p = 0.850
+  Step 2 (UCLA):        Delta R^2 = 0.0096, p = 0.142 (HC3 Wald)
+  Step 3 (Interaction): Delta R^2 = 0.0007, p = 0.744 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  beta = 0.0097, SE = 0.0066, t = 1.48, p = 0.140
+
+UCLA x Gender Interaction (Model 3):
+  beta = 0.0039, SE = 0.0119, p = 0.743
+
+Gender-Stratified UCLA Effects:
+  Female (n=130): beta = 0.0167, p = 0.043
+  Male (n=82):   beta = -0.0095, p = 0.360
+
+Diagnostics:
+  VIF max: 2.68
+  Breusch-Pagan p: 0.812
+  Shapiro-Wilk p: < 0.001
+
+
+Outcome: WCST Post-Error CV Reduction (N = 210)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        Delta R^2 = 0.0228, p = 0.193
+  Step 2 (UCLA):        Delta R^2 = 0.0086, p = 0.225 (HC3 Wald)
+  Step 3 (Interaction): Delta R^2 = 0.0165, p = 0.093 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  beta = 0.0450, SE = 0.0370, t = 1.22, p = 0.224
+
+UCLA x Gender Interaction (Model 3):
+  beta = -0.0943, SE = 0.0559, p = 0.092
+
+Gender-Stratified UCLA Effects:
+  Female (n=128): beta = 0.0758, p = 0.098
+  Male (n=82):   beta = -0.0015, p = 0.982
+
+Diagnostics:
+  VIF max: 2.73
+  Breusch-Pagan p: 0.841
+  Shapiro-Wilk p: < 0.001
+
+
+Outcome: WCST Post-Error Accuracy (N = 210)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        Delta R^2 = 0.0098, p = 0.556
+  Step 2 (UCLA):        Delta R^2 = 0.0000, p = 0.931 (HC3 Wald)
+  Step 3 (Interaction): Delta R^2 = 0.0057, p = 0.299 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  beta = 0.0014, SE = 0.0157, t = 0.09, p = 0.931
+
+UCLA x Gender Interaction (Model 3):
+  beta = -0.0258, SE = 0.0248, p = 0.298
+
+Gender-Stratified UCLA Effects:
+  Female (n=128): beta = 0.0103, p = 0.583
+  Male (n=82):   beta = -0.0116, p = 0.710
+
+Diagnostics:
+  VIF max: 2.73
+  Breusch-Pagan p: 0.790
+  Shapiro-Wilk p: 0.088
+
+
+Outcome: WCST Post-Error Accuracy Diff (N = 210)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        Delta R^2 = 0.0253, p = 0.147
+  Step 2 (UCLA):        Delta R^2 = 0.0005, p = 0.740 (HC3 Wald)
+  Step 3 (Interaction): Delta R^2 = 0.0023, p = 0.478 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  beta = -0.0044, SE = 0.0133, t = -0.33, p = 0.740
+
+UCLA x Gender Interaction (Model 3):
+  beta = -0.0143, SE = 0.0201, p = 0.478
+
+Gender-Stratified UCLA Effects:
+  Female (n=128): beta = 0.0043, p = 0.786
+  Male (n=82):   beta = -0.0213, p = 0.395
+
+Diagnostics:
+  VIF max: 2.73
+  Breusch-Pagan p: 0.960
+  Shapiro-Wilk p: 0.028
+
+
+Outcome: WCST Post-Error Recovery Rate (N = 210)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        Delta R^2 = 0.0097, p = 0.562
+  Step 2 (UCLA):        Delta R^2 = 0.0001, p = 0.917 (HC3 Wald)
+  Step 3 (Interaction): Delta R^2 = 0.0058, p = 0.294 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  beta = 0.0016, SE = 0.0157, t = 0.10, p = 0.917
+
+UCLA x Gender Interaction (Model 3):
+  beta = -0.0261, SE = 0.0248, p = 0.293
+
+Gender-Stratified UCLA Effects:
+  Female (n=128): beta = 0.0106, p = 0.569
+  Male (n=82):   beta = -0.0114, p = 0.712
+
+Diagnostics:
+  VIF max: 2.73
+  Breusch-Pagan p: 0.780
+  Shapiro-Wilk p: 0.070
+
+
+Outcome: WCST Adaptive PES Flag (N = 210)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        Delta R^2 = 0.0047, p = 0.808
+  Step 2 (UCLA):        Delta R^2 = 0.0000, p = 0.978 (HC3 Wald)
+  Step 3 (Interaction): Delta R^2 = 0.0017, p = 0.563 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  beta = -0.0007, SE = 0.0236, t = -0.03, p = 0.978
+
+UCLA x Gender Interaction (Model 3):
+  beta = 0.0241, SE = 0.0417, p = 0.563
+
+Gender-Stratified UCLA Effects:
+  Female (n=128): beta = -0.0232, p = 0.357
+  Male (n=82):   beta = 0.0432, p = 0.378
+
+Diagnostics:
+  VIF max: 2.73
+  Breusch-Pagan p: 0.951
+  Shapiro-Wilk p: < 0.001
+
+
+Outcome: WCST Maladaptive PES Flag (N = 210)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        Delta R^2 = 0.0148, p = 0.385
+  Step 2 (UCLA):        Delta R^2 = 0.0000, p = 0.949 (HC3 Wald)
+  Step 3 (Interaction): Delta R^2 = 0.0020, p = 0.548 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  beta = -0.0020, SE = 0.0307, t = -0.06, p = 0.949
+
+UCLA x Gender Interaction (Model 3):
+  beta = -0.0321, SE = 0.0534, p = 0.548
+
+Gender-Stratified UCLA Effects:
+  Female (n=128): beta = 0.0115, p = 0.761
+  Male (n=82):   beta = -0.0199, p = 0.704
+
+Diagnostics:
+  VIF max: 2.73
+  Breusch-Pagan p: 0.935
+  Shapiro-Wilk p: < 0.001
+
+
+Outcome: WCST Error Awareness Index (N = 210)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        Delta R^2 = 0.0036, p = 0.859
+  Step 2 (UCLA):        Delta R^2 = 0.0022, p = 0.522 (HC3 Wald)
+  Step 3 (Interaction): Delta R^2 = 0.0151, p = 0.089 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  beta = 0.0483, SE = 0.0753, t = 0.64, p = 0.521
+
+UCLA x Gender Interaction (Model 3):
+  beta = -0.1928, SE = 0.1126, p = 0.087
+
+Gender-Stratified UCLA Effects:
+  Female (n=128): beta = 0.1131, p = 0.247
+  Male (n=82):   beta = -0.0476, p = 0.713
+
+Diagnostics:
+  VIF max: 2.73
+  Breusch-Pagan p: 0.486
+  Shapiro-Wilk p: 0.240
+
+
+Outcome: WCST Recovery RT Lag1 (N = 210)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        Delta R^2 = 0.0040, p = 0.839
+  Step 2 (UCLA):        Delta R^2 = 0.0233, p = 0.055 (HC3 Wald)
+  Step 3 (Interaction): Delta R^2 = 0.0038, p = 0.436 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  beta = 230.6158, SE = 119.2902, t = 1.93, p = 0.053
+
+UCLA x Gender Interaction (Model 3):
+  beta = 141.5120, SE = 181.4818, p = 0.436
+
+Gender-Stratified UCLA Effects:
+  Female (n=128): beta = 150.7405, p = 0.338
+  Male (n=82):   beta = 364.5439, p = 0.058
+
+Diagnostics:
+  VIF max: 2.73
+  Breusch-Pagan p: 0.575
+  Shapiro-Wilk p: < 0.001
+
+
+Outcome: WCST Recovery RT Lag2 (N = 210)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        Delta R^2 = 0.0321, p = 0.079
+  Step 2 (UCLA):        Delta R^2 = 0.0325, p = 0.040 (HC3 Wald)
+  Step 3 (Interaction): Delta R^2 = 0.0026, p = 0.439 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  beta = 222.1207, SE = 107.6660, t = 2.06, p = 0.039
+
+UCLA x Gender Interaction (Model 3):
+  beta = 94.0042, SE = 121.2093, p = 0.438
+
+Gender-Stratified UCLA Effects:
+  Female (n=128): beta = 200.0359, p = 0.122
+  Male (n=82):   beta = 232.9781, p = 0.225
+
+Diagnostics:
+  VIF max: 2.73
+  Breusch-Pagan p: 0.217
+  Shapiro-Wilk p: < 0.001
+
+
+Outcome: WCST Recovery RT Lag3 (N = 210)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        Delta R^2 = 0.0120, p = 0.476
+  Step 2 (UCLA):        Delta R^2 = 0.0089, p = 0.298 (HC3 Wald)
+  Step 3 (Interaction): Delta R^2 = 0.0013, p = 0.661 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  beta = 101.9223, SE = 97.6435, t = 1.04, p = 0.297
+
+UCLA x Gender Interaction (Model 3):
+  beta = 59.7209, SE = 135.8067, p = 0.660
+
+Gender-Stratified UCLA Effects:
+  Female (n=128): beta = 63.9469, p = 0.459
+  Male (n=82):   beta = 157.2061, p = 0.490
+
+Diagnostics:
+  VIF max: 2.73
+  Breusch-Pagan p: 0.697
+  Shapiro-Wilk p: < 0.001
+
+
+Outcome: WCST Recovery RT Lag4 (N = 210)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        Delta R^2 = 0.0248, p = 0.155
+  Step 2 (UCLA):        Delta R^2 = 0.0141, p = 0.174 (HC3 Wald)
+  Step 3 (Interaction): Delta R^2 = 0.0041, p = 0.283 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  beta = 130.6055, SE = 95.7719, t = 1.36, p = 0.173
+
+UCLA x Gender Interaction (Model 3):
+  beta = 106.4345, SE = 98.9519, p = 0.282
+
+Gender-Stratified UCLA Effects:
+  Female (n=128): beta = 105.1135, p = 0.367
+  Male (n=82):   beta = 150.0671, p = 0.371
+
+Diagnostics:
+  VIF max: 2.73
+  Breusch-Pagan p: 0.240
+  Shapiro-Wilk p: < 0.001
+
+
+Outcome: WCST Recovery RT Lag5 (N = 210)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        Delta R^2 = 0.0145, p = 0.381
+  Step 2 (UCLA):        Delta R^2 = 0.0144, p = 0.188 (HC3 Wald)
+  Step 3 (Interaction): Delta R^2 = 0.0009, p = 0.643 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  beta = 116.9053, SE = 88.5245, t = 1.32, p = 0.187
+
+UCLA x Gender Interaction (Model 3):
+  beta = 44.3837, SE = 95.5496, p = 0.642
+
+Gender-Stratified UCLA Effects:
+  Female (n=128): beta = 112.3581, p = 0.268
+  Male (n=82):   beta = 101.3075, p = 0.553
+
+Diagnostics:
+  VIF max: 2.73
+  Breusch-Pagan p: 0.124
+  Shapiro-Wilk p: < 0.001
+
+
+Outcome: WCST Recovery Accuracy Lag1 (N = 210)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        Delta R^2 = 0.0098, p = 0.556
+  Step 2 (UCLA):        Delta R^2 = 0.0000, p = 0.931 (HC3 Wald)
+  Step 3 (Interaction): Delta R^2 = 0.0057, p = 0.299 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  beta = 0.0014, SE = 0.0157, t = 0.09, p = 0.931
+
+UCLA x Gender Interaction (Model 3):
+  beta = -0.0258, SE = 0.0248, p = 0.298
+
+Gender-Stratified UCLA Effects:
+  Female (n=128): beta = 0.0103, p = 0.583
+  Male (n=82):   beta = -0.0116, p = 0.710
+
+Diagnostics:
+  VIF max: 2.73
+  Breusch-Pagan p: 0.790
+  Shapiro-Wilk p: 0.088
+
+
+Outcome: WCST Recovery Accuracy Lag2 (N = 210)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        Delta R^2 = 0.0017, p = 0.949
+  Step 2 (UCLA):        Delta R^2 = 0.0016, p = 0.594 (HC3 Wald)
+  Step 3 (Interaction): Delta R^2 = 0.0027, p = 0.509 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  beta = 0.0093, SE = 0.0174, t = 0.53, p = 0.593
+
+UCLA x Gender Interaction (Model 3):
+  beta = -0.0179, SE = 0.0271, p = 0.508
+
+Gender-Stratified UCLA Effects:
+  Female (n=128): beta = 0.0138, p = 0.513
+  Male (n=82):   beta = 0.0052, p = 0.881
+
+Diagnostics:
+  VIF max: 2.73
+  Breusch-Pagan p: 0.590
+  Shapiro-Wilk p: < 0.001
+
+
+Outcome: WCST Recovery Accuracy Lag3 (N = 210)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        Delta R^2 = 0.0120, p = 0.478
+  Step 2 (UCLA):        Delta R^2 = 0.0087, p = 0.211 (HC3 Wald)
+  Step 3 (Interaction): Delta R^2 = 0.0089, p = 0.226 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  beta = 0.0227, SE = 0.0181, t = 1.25, p = 0.210
+
+UCLA x Gender Interaction (Model 3):
+  beta = -0.0345, SE = 0.0284, p = 0.224
+
+Gender-Stratified UCLA Effects:
+  Female (n=128): beta = 0.0361, p = 0.099
+  Male (n=82):   beta = 0.0044, p = 0.902
+
+Diagnostics:
+  VIF max: 2.73
+  Breusch-Pagan p: 0.598
+  Shapiro-Wilk p: < 0.001
+
+
+Outcome: WCST Recovery Accuracy Lag4 (N = 210)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        Delta R^2 = 0.0038, p = 0.853
+  Step 2 (UCLA):        Delta R^2 = 0.0080, p = 0.239 (HC3 Wald)
+  Step 3 (Interaction): Delta R^2 = 0.0043, p = 0.411 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  beta = 0.0216, SE = 0.0183, t = 1.18, p = 0.238
+
+UCLA x Gender Interaction (Model 3):
+  beta = -0.0238, SE = 0.0289, p = 0.410
+
+Gender-Stratified UCLA Effects:
+  Female (n=128): beta = 0.0353, p = 0.109
+  Male (n=82):   beta = -0.0014, p = 0.970
+
+Diagnostics:
+  VIF max: 2.73
+  Breusch-Pagan p: 0.605
+  Shapiro-Wilk p: < 0.001
+
+
+Outcome: WCST Recovery Accuracy Lag5 (N = 210)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        Delta R^2 = 0.0037, p = 0.860
+  Step 2 (UCLA):        Delta R^2 = 0.0018, p = 0.590 (HC3 Wald)
+  Step 3 (Interaction): Delta R^2 = 0.0027, p = 0.507 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  beta = 0.0099, SE = 0.0183, t = 0.54, p = 0.590
+
+UCLA x Gender Interaction (Model 3):
+  beta = -0.0181, SE = 0.0273, p = 0.506
+
+Gender-Stratified UCLA Effects:
+  Female (n=128): beta = 0.0192, p = 0.395
+  Male (n=82):   beta = -0.0039, p = 0.909
+
+Diagnostics:
+  VIF max: 2.73
+  Breusch-Pagan p: 0.621
+  Shapiro-Wilk p: < 0.001
+
+
 Outcome: WCST Trials per Category 1 (N = 212)
 --------------------------------------------------
 
@@ -3775,6 +4806,342 @@ Gender-Stratified UCLA Effects:
 Diagnostics:
   VIF max: 2.68
   Breusch-Pagan p: 0.252
+  Shapiro-Wilk p: < 0.001
+
+
+Outcome: WCST Mean RT (All) (N = 212)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        Delta R^2 = 0.0183, p = 0.266
+  Step 2 (UCLA):        Delta R^2 = 0.0204, p = 0.089 (HC3 Wald)
+  Step 3 (Interaction): Delta R^2 = 0.0009, p = 0.609 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  beta = 126.5332, SE = 74.1592, t = 1.71, p = 0.088
+
+UCLA x Gender Interaction (Model 3):
+  beta = 39.6456, SE = 77.4727, p = 0.609
+
+Gender-Stratified UCLA Effects:
+  Female (n=130): beta = 127.0697, p = 0.175
+  Male (n=82):   beta = 101.4085, p = 0.390
+
+Diagnostics:
+  VIF max: 2.68
+  Breusch-Pagan p: 0.280
+  Shapiro-Wilk p: < 0.001
+
+
+Outcome: WCST Accuracy (All) (N = 212)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        Delta R^2 = 0.0036, p = 0.859
+  Step 2 (UCLA):        Delta R^2 = 0.0026, p = 0.494 (HC3 Wald)
+  Step 3 (Interaction): Delta R^2 = 0.0074, p = 0.319 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  beta = 0.0076, SE = 0.0111, t = 0.69, p = 0.493
+
+UCLA x Gender Interaction (Model 3):
+  beta = -0.0194, SE = 0.0195, p = 0.318
+
+Gender-Stratified UCLA Effects:
+  Female (n=130): beta = 0.0132, p = 0.344
+  Male (n=82):   beta = 0.0012, p = 0.955
+
+Diagnostics:
+  VIF max: 2.68
+  Breusch-Pagan p: 0.331
+  Shapiro-Wilk p: < 0.001
+
+
+Outcome: WCST Error Rate (All) (N = 212)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        Delta R^2 = 0.0036, p = 0.859
+  Step 2 (UCLA):        Delta R^2 = 0.0026, p = 0.494 (HC3 Wald)
+  Step 3 (Interaction): Delta R^2 = 0.0074, p = 0.319 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  beta = -0.0076, SE = 0.0111, t = -0.69, p = 0.493
+
+UCLA x Gender Interaction (Model 3):
+  beta = 0.0194, SE = 0.0195, p = 0.318
+
+Gender-Stratified UCLA Effects:
+  Female (n=130): beta = -0.0132, p = 0.344
+  Male (n=82):   beta = -0.0012, p = 0.955
+
+Diagnostics:
+  VIF max: 2.68
+  Breusch-Pagan p: 0.331
+  Shapiro-Wilk p: < 0.001
+
+
+Outcome: WCST Inverse Efficiency Score (N = 212)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        Delta R^2 = 0.0189, p = 0.259
+  Step 2 (UCLA):        Delta R^2 = 0.0117, p = 0.198 (HC3 Wald)
+  Step 3 (Interaction): Delta R^2 = 0.0013, p = 0.472 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  beta = 231.1366, SE = 179.0152, t = 1.29, p = 0.197
+
+UCLA x Gender Interaction (Model 3):
+  beta = 117.5348, SE = 163.1038, p = 0.471
+
+Gender-Stratified UCLA Effects:
+  Female (n=130): beta = 245.7324, p = 0.324
+  Male (n=82):   beta = 137.0417, p = 0.496
+
+Diagnostics:
+  VIF max: 2.68
+  Breusch-Pagan p: 0.443
+  Shapiro-Wilk p: < 0.001
+
+
+Outcome: WCST Pre-Error RT Slope (Mean) (N = 208)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        Delta R^2 = 0.0291, p = 0.111
+  Step 2 (UCLA):        Delta R^2 = 0.0215, p = 0.079 (HC3 Wald)
+  Step 3 (Interaction): Delta R^2 = 0.0015, p = 0.585 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  beta = 52.7643, SE = 29.8799, t = 1.77, p = 0.077
+
+UCLA x Gender Interaction (Model 3):
+  beta = 21.1402, SE = 38.6815, p = 0.585
+
+Gender-Stratified UCLA Effects:
+  Female (n=127): beta = 28.6707, p = 0.412
+  Male (n=81):   beta = 96.5562, p = 0.062
+
+Diagnostics:
+  VIF max: 2.70
+  Breusch-Pagan p: 0.492
+  Shapiro-Wilk p: < 0.001
+
+
+Outcome: WCST Pre-Error RT Slope (SD) (N = 208)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        Delta R^2 = 0.0251, p = 0.158
+  Step 2 (UCLA):        Delta R^2 = 0.0041, p = 0.479 (HC3 Wald)
+  Step 3 (Interaction): Delta R^2 = 0.0042, p = 0.189 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  beta = 104.4649, SE = 147.2515, t = 0.71, p = 0.478
+
+UCLA x Gender Interaction (Model 3):
+  beta = 158.3468, SE = 120.0453, p = 0.187
+
+Gender-Stratified UCLA Effects:
+  Female (n=127): beta = 58.5539, p = 0.775
+  Male (n=81):   beta = 145.7854, p = 0.377
+
+Diagnostics:
+  VIF max: 2.70
+  Breusch-Pagan p: 0.453
+  Shapiro-Wilk p: < 0.001
+
+
+Outcome: WCST Pre-Error Events (N) (N = 212)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        Delta R^2 = 0.0053, p = 0.779
+  Step 2 (UCLA):        Delta R^2 = 0.0018, p = 0.574 (HC3 Wald)
+  Step 3 (Interaction): Delta R^2 = 0.0059, p = 0.373 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  beta = -0.8874, SE = 1.5777, t = -0.56, p = 0.574
+
+UCLA x Gender Interaction (Model 3):
+  beta = 2.4046, SE = 2.6921, p = 0.372
+
+Gender-Stratified UCLA Effects:
+  Female (n=130): beta = -1.5256, p = 0.443
+  Male (n=82):   beta = -0.3297, p = 0.911
+
+Diagnostics:
+  VIF max: 2.68
+  Breusch-Pagan p: 0.397
+  Shapiro-Wilk p: < 0.001
+
+
+Outcome: WCST Block PE Slope (N = 212)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        Delta R^2 = 0.0057, p = 0.746
+  Step 2 (UCLA):        Delta R^2 = 0.0387, p = 0.028 (HC3 Wald)
+  Step 3 (Interaction): Delta R^2 = 0.0168, p = 0.069 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  beta = -0.0075, SE = 0.0034, t = -2.22, p = 0.027
+
+UCLA x Gender Interaction (Model 3):
+  beta = -0.0074, SE = 0.0041, p = 0.068
+
+Gender-Stratified UCLA Effects:
+  Female (n=130): beta = -0.0024, p = 0.536
+  Male (n=82):   beta = -0.0169, p = 0.007
+
+Diagnostics:
+  VIF max: 2.68
+  Breusch-Pagan p: 0.828
+  Shapiro-Wilk p: 0.017
+
+
+Outcome: WCST Block PE Intercept (N = 212)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        Delta R^2 = 0.0274, p = 0.119
+  Step 2 (UCLA):        Delta R^2 = 0.0143, p = 0.082 (HC3 Wald)
+  Step 3 (Interaction): Delta R^2 = 0.0100, p = 0.100 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  beta = 0.0143, SE = 0.0082, t = 1.75, p = 0.080
+
+UCLA x Gender Interaction (Model 3):
+  beta = 0.0180, SE = 0.0109, p = 0.098
+
+Gender-Stratified UCLA Effects:
+  Female (n=130): beta = 0.0030, p = 0.762
+  Male (n=82):   beta = 0.0368, p = 0.008
+
+Diagnostics:
+  VIF max: 2.68
+  Breusch-Pagan p: 0.920
+  Shapiro-Wilk p: < 0.001
+
+
+Outcome: WCST Block PE R-squared (N = 204)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        Delta R^2 = 0.0155, p = 0.367
+  Step 2 (UCLA):        Delta R^2 = 0.0045, p = 0.368 (HC3 Wald)
+  Step 3 (Interaction): Delta R^2 = 0.0057, p = 0.297 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  beta = -0.0339, SE = 0.0376, t = -0.90, p = 0.367
+
+UCLA x Gender Interaction (Model 3):
+  beta = -0.0588, SE = 0.0562, p = 0.296
+
+Gender-Stratified UCLA Effects:
+  Female (n=126): beta = -0.0333, p = 0.448
+  Male (n=78):   beta = -0.0238, p = 0.756
+
+Diagnostics:
+  VIF max: 2.54
+  Breusch-Pagan p: 0.879
+  Shapiro-Wilk p: < 0.001
+
+
+Outcome: WCST Block PE Initial (N = 212)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        Delta R^2 = 0.0230, p = 0.179
+  Step 2 (UCLA):        Delta R^2 = 0.0264, p = 0.024 (HC3 Wald)
+  Step 3 (Interaction): Delta R^2 = 0.0047, p = 0.301 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  beta = 0.0134, SE = 0.0059, t = 2.28, p = 0.023
+
+UCLA x Gender Interaction (Model 3):
+  beta = 0.0086, SE = 0.0083, p = 0.300
+
+Gender-Stratified UCLA Effects:
+  Female (n=130): beta = 0.0079, p = 0.311
+  Male (n=82):   beta = 0.0244, p = 0.011
+
+Diagnostics:
+  VIF max: 2.68
+  Breusch-Pagan p: 0.551
+  Shapiro-Wilk p: < 0.001
+
+
+Outcome: WCST Block PE Final (N = 212)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        Delta R^2 = 0.0116, p = 0.489
+  Step 2 (UCLA):        Delta R^2 = 0.0006, p = 0.758 (HC3 Wald)
+  Step 3 (Interaction): Delta R^2 = 0.0061, p = 0.229 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  beta = -0.0028, SE = 0.0091, t = -0.31, p = 0.757
+
+UCLA x Gender Interaction (Model 3):
+  beta = -0.0135, SE = 0.0112, p = 0.227
+
+Gender-Stratified UCLA Effects:
+  Female (n=130): beta = 0.0048, p = 0.689
+  Male (n=82):   beta = -0.0153, p = 0.249
+
+Diagnostics:
+  VIF max: 2.68
+  Breusch-Pagan p: 0.865
+  Shapiro-Wilk p: < 0.001
+
+
+Outcome: WCST Block PE Change (N = 212)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        Delta R^2 = 0.0013, p = 0.966
+  Step 2 (UCLA):        Delta R^2 = 0.0148, p = 0.144 (HC3 Wald)
+  Step 3 (Interaction): Delta R^2 = 0.0120, p = 0.091 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  beta = -0.0162, SE = 0.0111, t = -1.47, p = 0.142
+
+UCLA x Gender Interaction (Model 3):
+  beta = -0.0221, SE = 0.0130, p = 0.089
+
+Gender-Stratified UCLA Effects:
+  Female (n=130): beta = -0.0031, p = 0.832
+  Male (n=82):   beta = -0.0397, p = 0.014
+
+Diagnostics:
+  VIF max: 2.68
+  Breusch-Pagan p: 0.742
+  Shapiro-Wilk p: < 0.001
+
+
+Outcome: WCST Block PE Blocks (N = 212)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        Delta R^2 = 0.0020, p = 0.936
+  Step 2 (UCLA):        Delta R^2 = 0.0040, p = 0.393 (HC3 Wald)
+  Step 3 (Interaction): Delta R^2 = 0.0014, p = 0.633 (HC3 Wald)
+
+UCLA Main Effect (Model 2):
+  beta = -0.0856, SE = 0.0999, t = -0.86, p = 0.392
+
+UCLA x Gender Interaction (Model 3):
+  beta = 0.0756, SE = 0.1584, p = 0.633
+
+Gender-Stratified UCLA Effects:
+  Female (n=130): beta = -0.0672, p = 0.586
+  Male (n=82):   beta = -0.1797, p = 0.348
+
+Diagnostics:
+  VIF max: 2.68
+  Breusch-Pagan p: 0.822
   Shapiro-Wilk p: < 0.001
 
 ======================================================================

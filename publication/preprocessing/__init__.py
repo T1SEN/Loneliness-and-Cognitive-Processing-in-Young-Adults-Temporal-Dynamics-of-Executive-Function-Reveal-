@@ -67,6 +67,8 @@ from .prp import (
     load_or_compute_prp_mechanism_features,
     compute_prp_bottleneck_features,
     load_or_compute_prp_bottleneck_mechanism_features,
+    compute_prp_bottleneck_shape_features,
+    load_or_compute_prp_bottleneck_shape_features,
     build_prp_dataset,
     get_prp_complete_participants,
 )
@@ -171,6 +173,8 @@ __all__ = [
     "load_or_compute_prp_mechanism_features",
     "compute_prp_bottleneck_features",
     "load_or_compute_prp_bottleneck_mechanism_features",
+    "compute_prp_bottleneck_shape_features",
+    "load_or_compute_prp_bottleneck_shape_features",
     "build_prp_dataset",
     "get_prp_complete_participants",
     "load_stroop_trials",

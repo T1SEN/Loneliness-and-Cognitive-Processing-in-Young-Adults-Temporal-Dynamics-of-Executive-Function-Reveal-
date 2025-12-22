@@ -671,3 +671,84 @@ def compute_error_awareness_metrics(
         "pes_adaptive": adaptive,
         "pes_maladaptive": maladaptive,
     }
+
+
+def compute_pre_error_slope_metrics(
+    rt_series: pd.Series,
+    correct_series: pd.Series,
+    window: int = 3,
+    min_errors: int = 3,
+) -> dict[str, float]:
+    df = pd.DataFrame({
+        "rt": pd.to_numeric(rt_series, errors="coerce"),
+        "correct": _coerce_bool_series(correct_series),
+    }).dropna(subset=["rt", "correct"])
+    if df.empty or len(df) <= window:
+        return {
+            "pre_error_slope_mean": np.nan,
+            "pre_error_slope_std": np.nan,
+            "pre_error_n": np.nan,
+        }
+
+    errors = ~df["correct"].astype(bool).to_numpy()
+    rts = df["rt"].to_numpy()
+    error_idx = np.where(errors)[0]
+    slopes: list[float] = []
+    positions = np.arange(-window, 0, 1)
+
+    for idx in error_idx:
+        if idx < window:
+            continue
+        pre_rts = rts[idx - window:idx]
+        if len(pre_rts) < window or np.any(~np.isfinite(pre_rts)):
+            continue
+        try:
+            slope = np.polyfit(positions, pre_rts, 1)[0]
+            slopes.append(float(slope))
+        except Exception:
+            continue
+
+    if len(slopes) < min_errors:
+        return {
+            "pre_error_slope_mean": np.nan,
+            "pre_error_slope_std": np.nan,
+            "pre_error_n": float(len(slopes)),
+        }
+
+    return {
+        "pre_error_slope_mean": float(np.mean(slopes)),
+        "pre_error_slope_std": float(np.std(slopes, ddof=1)) if len(slopes) > 1 else 0.0,
+        "pre_error_n": float(len(slopes)),
+    }
+
+
+def compute_speed_accuracy_metrics(
+    rt_series: pd.Series,
+    correct_series: pd.Series,
+    min_n: int = 10,
+) -> dict[str, float]:
+    df = pd.DataFrame({
+        "rt": pd.to_numeric(rt_series, errors="coerce"),
+        "correct": _coerce_bool_series(correct_series),
+    }).dropna(subset=["rt", "correct"])
+    df = df[df["rt"] > 0]
+    if len(df) < min_n:
+        return {
+            "mean_rt": np.nan,
+            "accuracy": np.nan,
+            "error_rate": np.nan,
+            "ies": np.nan,
+            "n_trials": float(len(df)),
+        }
+
+    mean_rt = float(df["rt"].mean())
+    accuracy = float(df["correct"].astype(bool).mean())
+    error_rate = float(1.0 - accuracy)
+    ies = float(mean_rt / accuracy) if accuracy > 0 else np.nan
+    return {
+        "mean_rt": mean_rt,
+        "accuracy": accuracy,
+        "error_rate": error_rate,
+        "ies": ies,
+        "n_trials": float(len(df)),
+    }

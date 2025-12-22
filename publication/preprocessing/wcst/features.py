@@ -26,6 +26,8 @@ from ..core import (
     compute_fatigue_slopes,
     compute_tau_quartile_metrics,
     compute_error_awareness_metrics,
+    compute_pre_error_slope_metrics,
+    compute_speed_accuracy_metrics,
 )
 from ..standardization import safe_zscore
 from .loaders import load_wcst_trials
@@ -33,6 +35,8 @@ from .hmm_mechanism import load_or_compute_wcst_hmm_mechanism_features
 from .rl_mechanism import load_or_compute_wcst_rl_mechanism_features
 from .wsls_mechanism import load_or_compute_wcst_wsls_mechanism_features
 from .bayesianrl_mechanism import load_or_compute_wcst_bayesianrl_mechanism_features
+
+WCST_BLOCK_SIZE = 20
 
 
 def _run_lengths(mask: np.ndarray) -> List[int]:
@@ -368,6 +372,37 @@ def derive_wcst_features(
 
             failure_to_maintain_set = float(ftm)
 
+        block_pe_slope = np.nan
+        block_pe_intercept = np.nan
+        block_pe_r2 = np.nan
+        block_pe_initial = np.nan
+        block_pe_final = np.nan
+        block_pe_change = np.nan
+        block_pe_blocks = np.nan
+        if "isPE" in grp_sorted.columns:
+            pe_flags = grp_sorted["isPE"].astype(bool).to_numpy()
+            n_blocks = len(pe_flags) // WCST_BLOCK_SIZE
+            if n_blocks >= 1:
+                block_rates = []
+                for b in range(n_blocks):
+                    start = b * WCST_BLOCK_SIZE
+                    end = start + WCST_BLOCK_SIZE
+                    block_rates.append(float(np.mean(pe_flags[start:end])))
+                block_pe_blocks = float(n_blocks)
+                block_pe_initial = block_rates[0]
+                block_pe_final = block_rates[-1]
+                block_pe_change = block_pe_final - block_pe_initial
+                if n_blocks >= 2:
+                    x = np.arange(1, n_blocks + 1, dtype=float)
+                    y = np.array(block_rates, dtype=float)
+                    slope, intercept = np.polyfit(x, y, 1)
+                    block_pe_slope = float(slope)
+                    block_pe_intercept = float(intercept)
+                    preds = slope * x + intercept
+                    ss_res = float(np.sum((y - preds) ** 2))
+                    ss_tot = float(np.sum((y - np.mean(y)) ** 2))
+                    block_pe_r2 = 1.0 - ss_res / ss_tot if ss_tot > 0 else np.nan
+
         seq_rt = rt_series
         seq_correct = grp_sorted["correct"] if "correct" in grp_sorted.columns else pd.Series(dtype=object)
         fatigue_metrics = compute_fatigue_slopes(seq_rt, seq_correct)
@@ -378,6 +413,8 @@ def derive_wcst_features(
         volatility_metrics = compute_volatility_metrics(seq_rt)
         iiv_metrics = compute_iiv_parameters(seq_rt)
         awareness_metrics = compute_error_awareness_metrics(seq_rt, seq_correct)
+        speed_metrics = compute_speed_accuracy_metrics(seq_rt, seq_correct)
+        pre_error_metrics = compute_pre_error_slope_metrics(seq_rt, seq_correct)
 
         records.append({
             "participant_id": pid,
@@ -388,6 +425,13 @@ def derive_wcst_features(
             "wcst_iqr_rt": iqr_rt,
             "wcst_mad_rt_correct": mad_rt_correct,
             "wcst_iqr_rt_correct": iqr_rt_correct,
+            "wcst_mean_rt_all": speed_metrics["mean_rt"],
+            "wcst_accuracy_all": speed_metrics["accuracy"],
+            "wcst_error_rate_all": speed_metrics["error_rate"],
+            "wcst_ies": speed_metrics["ies"],
+            "wcst_pre_error_slope_mean": pre_error_metrics["pre_error_slope_mean"],
+            "wcst_pre_error_slope_std": pre_error_metrics["pre_error_slope_std"],
+            "wcst_pre_error_n": pre_error_metrics["pre_error_n"],
             "wcst_dfa_alpha_correct": dfa_rt_correct,
             "wcst_lag1_correct": lag1_rt_correct,
             "wcst_slow_run_mean_correct": run_rt_correct["slow_run_mean"],
@@ -418,6 +462,13 @@ def derive_wcst_features(
             "wcst_rt_jump_at_switch": rt_jump_at_switch,
             "wcst_failure_to_maintain_set": failure_to_maintain_set,
             "wcst_trials_to_rule_reacquisition": trials_to_reacq,
+            "wcst_block_pe_slope": block_pe_slope,
+            "wcst_block_pe_intercept": block_pe_intercept,
+            "wcst_block_pe_r2": block_pe_r2,
+            "wcst_block_pe_initial": block_pe_initial,
+            "wcst_block_pe_final": block_pe_final,
+            "wcst_block_pe_change": block_pe_change,
+            "wcst_block_pe_blocks": block_pe_blocks,
             "wcst_delta_plot_slope_correct": delta_plot_slope,
             "wcst_rt_fatigue_slope": fatigue_metrics["rt_fatigue_slope"],
             "wcst_cv_fatigue_slope": fatigue_metrics["cv_fatigue_slope"],

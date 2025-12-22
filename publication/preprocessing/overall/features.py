@@ -4,24 +4,70 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
+from ..constants import get_results_dir
 from ..prp.features import derive_prp_features
 from ..stroop.features import derive_stroop_features
 from ..wcst.features import derive_wcst_features
 from ..standardization import safe_zscore
+from .loaders import load_overall_summary
+
+
+def _compute_cross_task_consistency(summary: pd.DataFrame) -> pd.DataFrame:
+    required = ["pe_rate", "stroop_interference", "prp_bottleneck"]
+    if summary.empty or not all(col in summary.columns for col in required):
+        return pd.DataFrame()
+
+    records = []
+    for _, row in summary.iterrows():
+        values = [row[col] for col in required if pd.notna(row[col])]
+        n_tasks = len(values)
+        if n_tasks < 2:
+            records.append({
+                "participant_id": row["participant_id"],
+                "cross_task_cv": np.nan,
+                "cross_task_range": np.nan,
+                "cross_task_mean": np.nan,
+                "cross_task_sd": np.nan,
+                "cross_task_n_tasks": float(n_tasks),
+            })
+            continue
+
+        mean_val = float(np.mean(values))
+        sd_val = float(np.std(values))
+        cv_val = float(sd_val / abs(mean_val)) if mean_val != 0 else np.nan
+        range_val = float(max(values) - min(values))
+
+        records.append({
+            "participant_id": row["participant_id"],
+            "cross_task_cv": cv_val,
+            "cross_task_range": range_val,
+            "cross_task_mean": mean_val,
+            "cross_task_sd": sd_val,
+            "cross_task_n_tasks": float(n_tasks),
+        })
+
+    return pd.DataFrame(records)
 
 
 def derive_overall_features(data_dir: Path | None = None) -> pd.DataFrame:
     """
     Merge trial-derived features from PRP, Stroop, and WCST.
     """
+    if data_dir is None:
+        data_dir = get_results_dir("overall")
     prp_features = derive_prp_features(data_dir=data_dir)
     stroop_features = derive_stroop_features(data_dir=data_dir)
     wcst_features = derive_wcst_features(data_dir=data_dir)
 
     merged = prp_features.merge(stroop_features, on="participant_id", how="inner")
     merged = merged.merge(wcst_features, on="participant_id", how="inner")
+    summary = load_overall_summary(data_dir)
+    cross_task = _compute_cross_task_consistency(summary)
+    if not cross_task.empty:
+        merged = merged.merge(cross_task, on="participant_id", how="left")
 
     if not merged.empty:
         cv_cols = ["stroop_cv_fatigue_slope", "wcst_cv_fatigue_slope"]
