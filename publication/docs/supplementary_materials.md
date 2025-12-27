@@ -1,0 +1,574 @@
+# Supplementary Materials
+
+## S1. Technical Specifications
+
+### S1.1 Development Environment
+
+| Component | Specification |
+|-----------|--------------|
+| **Framework** | Flutter 3.x (Dart programming language) |
+| **Backend** | Google Firebase (Firestore database, Authentication) |
+| **Deployment** | Firebase Hosting (web application) |
+| **Browser Compatibility** | Chrome, Firefox, Edge, Safari (desktop versions only) |
+
+### S1.2 Timing Precision
+
+Response times were recorded using `html.window.performance.now()`, which provides high-resolution timestamps with sub-millisecond precision. This method returns a DOMHighResTimeStamp representing the time elapsed since the page navigation started, measured in milliseconds with microsecond precision where available. Studies have demonstrated that this timing method achieves precision comparable to laboratory software when running on modern browsers (Bridges et al., 2020; Anwyl-Irvine et al., 2021).
+
+**Timing Variables Recorded:**
+| Variable | Description |
+|----------|-------------|
+| `stim_onset_ms` | Absolute timestamp of stimulus appearance |
+| `resp_time_ms` | Absolute timestamp of response registration |
+| `rt_ms` | Computed reaction time (resp_time_ms − stim_onset_ms) |
+
+### S1.3 Randomization Implementation
+
+Pseudo-random number generation used Dart's `Random` class seeded with participant ID hash codes:
+
+```dart
+Random randomForShuffle = Random(participantId.hashCode);
+trialList.shuffle(randomForShuffle);
+```
+
+This implementation ensures:
+- (a) Reproducible randomization per participant
+- (b) Different sequences across participants
+- (c) Deterministic counterbalancing assignment
+
+---
+
+## S2. Detailed Stimulus Parameters
+
+### S2.1 Stroop Task Stimuli
+
+**Color Words (Korean):**
+
+| Korean | Romanization | English | RGB Value |
+|--------|-------------|---------|-----------|
+| 빨강 | ppalgang | Red | Colors.red |
+| 초록 | chorok | Green | Colors.green |
+| 파랑 | parang | Blue | Colors.blue |
+| 노랑 | norang | Yellow | Colors.yellow |
+
+**Neutral Words (Korean):**
+
+| Korean | Romanization | English | Semantic Category |
+|--------|-------------|---------|-------------------|
+| 기차 | gicha | Train | Transportation |
+| 학교 | hakgyo | School | Place |
+| 가방 | gabang | Bag | Object |
+
+**Display Parameters:**
+
+| Parameter | Value |
+|-----------|-------|
+| Fixation cross | "+" symbol, 48 pt font |
+| Fixation duration | 500 ms |
+| Inter-stimulus interval | 100 ms (blank screen) |
+| Stimulus font size | 48 pt |
+| Response buttons | 4 buttons, Korean color labels |
+| Button counterbalancing | Standard or reversed (50/50 split) |
+
+**Trial Distribution:**
+
+| Condition | Combinations | Repetitions | Total Trials |
+|-----------|-------------|-------------|--------------|
+| Congruent | 4 (word = color) | 9 | 36 |
+| Incongruent | 12 (4 words × 3 mismatched colors) | 3 | 36 |
+| Neutral | 12 (3 words × 4 colors) | 3 | 36 |
+| **Total** | | | **108** |
+
+**Practice Trial Distribution:**
+
+| Condition | Trials |
+|-----------|--------|
+| Congruent | 3 |
+| Incongruent | 7 |
+| **Total** | **10** |
+
+### S2.2 WCST Stimuli
+
+**Card Attribute Dimensions:**
+
+| Dimension | Levels | Values |
+|-----------|--------|--------|
+| Color | 4 | Yellow, Black, Blue, Red |
+| Shape | 4 | Circle, Rectangle, Star, Triangle |
+| Number | 4 | 1, 2, 3, 4 |
+
+**Total unique cards:** 4 × 4 × 4 = 64 combinations
+
+**Reference Cards (Fixed, Left to Right):**
+
+| Position | Description | Image File |
+|----------|-------------|------------|
+| 1 | One yellow circle | 1yellowcircle.svg |
+| 2 | Two black rectangles | 2blackrectangle.svg |
+| 3 | Three blue stars | 3bluestar.svg |
+| 4 | Four red triangles | 4redtriangle.svg |
+
+**Visual Specifications:**
+
+| Element | Dimension |
+|---------|-----------|
+| Reference cards | 120 × 120 pixels |
+| Reference card margin | 10 pixels |
+| Stimulus card | 200 × 200 pixels |
+| Card image format | SVG |
+| Feedback font | 32 pt, bold |
+| Feedback duration | 1000 ms |
+
+**Sorting Rule Sequence:**
+1. Color
+2. Shape
+3. Number
+4. Color (repeat)
+5. Shape (repeat)
+6. Number (repeat)
+
+**Category Completion Criterion:** 10 consecutive correct responses
+
+### S2.3 PRP Task Stimuli
+
+**Task 1 (T1) - Parity Judgment:**
+
+| Category | Digits |
+|----------|--------|
+| Odd | 1, 3, 5, 7, 9 |
+| Even | 2, 4, 6, 8 |
+| Display | 48 pt bold, centered |
+
+**Task 2 (T2) - Color Identification:**
+
+| Attribute | Value |
+|-----------|-------|
+| Stimulus size | 80 × 80 pixels |
+| Colors | Red (Colors.red), Blue (Colors.blue) |
+| Position | Centered, below T1 digit |
+
+**SOA Levels:**
+
+| SOA (ms) | Classification | Expected PRP Effect |
+|----------|---------------|---------------------|
+| 50 | Ultra-short | Maximum interference |
+| 150 | Short | Strong interference |
+| 300 | Medium-short | Moderate interference |
+| 600 | Medium-long | Minimal interference |
+| 1200 | Long | No interference (baseline) |
+
+**Response Key Mappings (Counterbalanced):**
+
+| Condition | T1: Odd | T1: Even | T2: Red | T2: Blue |
+|-----------|---------|----------|---------|----------|
+| 1 | A | D | ← | → |
+| 2 | D | A | ← | → |
+| 3 | A | D | → | ← |
+| 4 | D | A | → | ← |
+
+**Trial Structure:**
+
+| Phase | Timing |
+|-------|--------|
+| Fixation | 500 ms |
+| T1 onset | 0 ms (relative to fixation offset) |
+| T2 onset | SOA ms after T1 onset |
+| Response window (each task) | 3000 ms from respective onset |
+| Inter-trial interval | 500 ms |
+
+**Rest Break Schedule:**
+
+| After Trial | Break Duration |
+|-------------|----------------|
+| 30 | 10 seconds |
+| 60 | 10 seconds |
+| 90 | 10 seconds |
+
+---
+
+## S3. Exclusion Criteria Details
+
+### S3.1 Trial-Level Exclusions
+
+| Task | Criterion | Threshold | Rationale |
+|------|-----------|-----------|-----------|
+| All | Timeout | Task-specific deadline | No response indicates disengagement |
+| All | Missing data | Any null value | Technical failure |
+| Stroop | Anticipatory RT | < 200 ms | Premature/random response |
+| PRP (T1) | Anticipatory RT | < 200 ms | Premature/random response |
+| PRP (T2) | Anticipatory RT | < 200 ms | Premature/random response |
+| WCST | Anticipatory RT | < 100 ms | Random clicking |
+| Stroop | Max RT | > 3000 ms | Coded as timeout |
+| PRP | Max RT | > 3000 ms (per task) | Coded as timeout |
+| WCST | Max RT | No limit | Self-paced task |
+
+### S3.2 Participant-Level Exclusions
+
+**Stroop Task:**
+
+| Criterion | Threshold | Exclusion Rationale |
+|-----------|-----------|---------------------|
+| Overall accuracy | < 70% | Poor task comprehension or engagement |
+| Valid trials | < 50 | Insufficient data for reliable estimation |
+
+**PRP Task:**
+
+| Criterion | Threshold | Exclusion Rationale |
+|-----------|-----------|---------------------|
+| Completed trials | < 120 | Did not finish the PRP task |
+| Joint accuracy (T1 and T2 both correct; timeouts counted as incorrect) | < 50% | Low engagement with dual-task demands |
+
+**WCST:**
+
+| Criterion | Threshold | Exclusion Rationale |
+|-----------|-----------|---------------------|
+| Valid trials | < 80 | Insufficient data for performance indices |
+| Median RT | < 300 ms | Random/impulsive responding |
+| Single card selection ratio | > 85% | Fixed response strategy (not adapting to feedback) |
+
+---
+
+## S4. Derived Variable Computations
+
+### S4.1 Stroop Task Variables
+
+**Stroop Interference Effect (Primary DV):**
+```
+Stroop_Effect = mean(RT | cond=incongruent, correct=True)
+              - mean(RT | cond=congruent, correct=True)
+```
+
+**Stroop Facilitation Effect:**
+```
+Stroop_Facilitation = mean(RT | cond=neutral, correct=True)
+                    - mean(RT | cond=congruent, correct=True)
+```
+
+**Condition-Specific Accuracy:**
+```
+Accuracy_cond = (n_correct | cond) / (n_trials | cond) × 100
+```
+
+**Condition-Specific Mean RT:**
+```
+MeanRT_cond = mean(RT | cond, correct=True, RT > 200ms)
+```
+
+### S4.2 PRP Task Variables
+
+**PRP Effect (Primary DV):**
+```
+PRP_Effect = mean(RT2 | SOA=50ms, T1_correct=True, T2_correct=True)
+           - mean(RT2 | SOA=1200ms, T1_correct=True, T2_correct=True)
+```
+
+**Central Bottleneck Slope:**
+```
+RT2 = β₀ + β₁ × log(SOA) + ε
+Central_Bottleneck_Slope = β₁
+```
+
+**SOA-Specific T2 RT:**
+```
+RT2_SOA_X = mean(RT2 | SOA=X, T1_correct=True, T2_correct=True)
+```
+Where X ∈ {50, 150, 300, 600, 1200}
+
+**T1 Mean RT:**
+```
+MRT_T1 = mean(RT1 | T1_correct=True)
+```
+
+**Task Accuracy:**
+```
+Acc_T1 = n(T1_correct) / n(valid_trials) × 100
+Acc_T2 = n(T2_correct) / n(valid_trials) × 100
+```
+
+### S4.3 WCST Variables
+
+**Categories Completed:**
+```
+n_categories = count(distinct completed sorting rules)
+Range: 0-6
+```
+
+**Total Errors:**
+```
+Total_Errors = n(correct=False)
+```
+
+**Perseverative Errors:**
+```
+PE = Σ(is_error=True AND matches_previous_rule=True AND unambiguous=True)
+
+Conditions for perseverative error:
+1. Previous rule exists AND differs from current rule
+2. Chosen card matches stimulus on previous rule dimension
+3. Exactly one reference card matches on previous dimension
+
+PE_rate = PE / Total_Errors × 100
+```
+
+**Non-Perseverative Errors:**
+```
+NPE = Total_Errors - PE
+NPE_rate = NPE / Total_Errors × 100
+```
+
+**Perseverative Responses:**
+```
+PR = Σ(matches_previous_rule=True AND unambiguous=True)
+PR_rate = PR / n_trials × 100
+```
+
+**Conceptual Level Responses:**
+```
+CLR = count(correct responses in runs of ≥3 consecutive correct)
+CLR_rate = CLR / n_trials × 100
+```
+
+**Failure to Maintain Set:**
+```
+FMS = count(error episodes following ≥5 consecutive correct responses)
+```
+
+**Trials to First Category:**
+```
+Trials_First_Cat = trial_index when first category is completed
+```
+
+**Learning Efficiency:**
+```
+Learning_Efficiency = mean(trials_per_category | first 3 categories)
+                    - mean(trials_per_category | last 3 categories)
+```
+
+---
+
+## S5. Data Storage Schema
+
+### S5.1 Firebase Document Structure
+
+**Participant Document** (`/participants/{participantId}`):
+```json
+{
+  "participantId": "string",
+  "studentId": "string",
+  "gender": "남자" | "여자",
+  "age": number,
+  "createdAt": "ISO8601 timestamp"
+}
+```
+
+**Survey Document** (`/participants/{id}/surveys/{surveyName}`):
+```json
+{
+  "surveyName": "ucla" | "dass",
+  "responses": [number, ...],
+  "score": number (UCLA only),
+  "scores": {
+    "D": number,
+    "A": number,
+    "S": number
+  } (DASS only),
+  "start_time": "ISO8601",
+  "end_time": "ISO8601",
+  "duration_seconds": number
+}
+```
+
+**Cognitive Test Document** (`/participants/{id}/cognitive_tests/{taskName}`):
+```json
+{
+  "task": "stroop" | "wcst" | "prp",
+  "trials": [/* array of trial objects */],
+  "summary": {/* task-specific summary statistics */},
+  "config": {
+    "version": "1.0.0",
+    "reverse_button": boolean (Stroop),
+    "reverse_t1_keys": boolean (PRP),
+    "reverse_t2_keys": boolean (PRP)
+  },
+  "session_id": "string",
+  "start_time": "ISO8601",
+  "end_time": "ISO8601",
+  "duration_seconds": number
+}
+```
+
+### S5.2 Trial-Level Data Fields
+
+**Stroop Trial Object:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| participant_id | string | Participant identifier |
+| task | string | "stroop" |
+| trial_index | integer | 0-107 (main trials) |
+| block_index | integer | null (single block) |
+| stim_onset_ms | float | Stimulus onset timestamp |
+| resp_time_ms | float | Response timestamp |
+| rt_ms | float | Reaction time (resp - onset) |
+| correct | boolean | Response accuracy |
+| timeout | boolean | No response within deadline |
+| cond | string | "congruent" / "incongruent" / "neutral" |
+| text | string | Stimulus word (Korean) |
+| letterColor | string | Ink color key |
+| userColor | string | Response color / "noResp" |
+
+**WCST Trial Object:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| participant_id | string | Participant identifier |
+| task | string | "wcst" |
+| trial_index | integer | 0-127 |
+| block_index | integer | 0 or 1 (64 cards each) |
+| stim_onset_ms | float | Stimulus onset timestamp |
+| resp_time_ms | float | Response timestamp |
+| rt_ms | float | Reaction time |
+| correct | boolean | Response accuracy |
+| timeout | boolean | Always false (no timeout) |
+| cond | string | Current rule: "color" / "shape" / "number" |
+| cardNumber | integer | Stimulus count (1-4) |
+| cardColor | string | Stimulus color |
+| cardShape | string | Stimulus shape |
+| targetCardPath | string | SVG file path |
+| chosenCard | string | Selected reference card |
+| ruleAtThatTime | string | Active sorting rule |
+| isPR | boolean | Perseverative response |
+| isPE | boolean | Perseverative error |
+| isNPE | boolean | Non-perseverative error |
+
+**PRP Trial Object:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| participant_id | string | Participant identifier |
+| task | string | "prp" |
+| trial_index | integer | 0-119 |
+| soa_nominal_ms | integer | Configured SOA (50-1200) |
+| soa_measured_ms | float | Actual measured SOA |
+| t1_stim | integer | T1 digit (1-9) |
+| t1_correctResp | string | "O" or "E" |
+| t1_resp | string | Actual T1 response |
+| t1_correct | boolean | T1 accuracy |
+| t1_onset_ms | float | T1 onset timestamp |
+| t1_resp_ms | float | T1 response timestamp |
+| t1_rt_ms | float | T1 reaction time |
+| t1_timeout | boolean | T1 timeout flag |
+| t2_stim | string | "red" or "blue" |
+| t2_correctResp | string | "R" or "B" |
+| t2_resp | string | Actual T2 response |
+| t2_correct | boolean | T2 accuracy |
+| t2_onset_ms | float | T2 onset timestamp |
+| t2_resp_ms | float | T2 response timestamp |
+| t2_rt_ms | float | T2 reaction time |
+| t2_timeout | boolean | T2 timeout flag |
+| response_order | string | "T1→T2" / "T2→T1" / "T1_only" / "T2_only" / "none" |
+
+---
+
+## S6. Session Flow and Task Order
+
+### S6.1 Complete Session Structure
+
+```
+1. Informed Consent
+   ↓
+2. Demographics (age, gender, education)
+   ↓
+3. UCLA Loneliness Scale (20 items)
+   - Fixed item order
+   - All items required before submission
+   - Duration: ~5-10 minutes
+   ↓
+4. DASS-21 (21 items)
+   - Fixed item order
+   - All items required before submission
+   - Duration: ~5-10 minutes
+   ↓
+5. Cognitive Task Introduction
+   - Task descriptions
+   - General instructions
+   - Readiness confirmation
+   ↓
+6. Cognitive Tasks (Partially Counterbalanced)
+
+   Position 1: Stroop OR PRP (randomized)
+   ↓
+   [2-minute rest interval with countdown]
+   ↓
+   Position 2: PRP OR Stroop (whichever not in Position 1)
+   ↓
+   [2-minute rest interval with countdown]
+   ↓
+   Position 3: WCST (always last)
+   ↓
+7. Completion Screen
+   - Debriefing information
+   - Course credit confirmation
+```
+
+### S6.2 Task Order Randomization Logic
+
+```dart
+List<String> _generateRandomTestOrder() {
+  List<String> shuffleableTests = ['/stroop', '/prp'];
+  shuffleableTests.shuffle();  // Random order
+  return [...shuffleableTests, '/wcst'];  // WCST always last
+}
+```
+
+**Rationale for WCST Fixed Position:**
+1. Longest task (10-15 min) - minimizes fatigue effects on earlier tasks
+2. Requires sustained cognitive flexibility - most vulnerable to fatigue
+3. Eliminates task-order confounds in set-shifting analyses
+
+### S6.3 Rest Interval Specifications
+
+| Parameter | Value |
+|-----------|-------|
+| Duration | 120 seconds (2 minutes) |
+| Display | Countdown timer, coffee cup icon |
+| Message | "잠시 휴식을 취하세요. 스트레칭이나 심호흡을 하시면 좋습니다." |
+| Termination | Automatic (no user action required) |
+| Timing | After tasks 1 and 2; not before task 1 or after task 3 |
+
+---
+
+## S7. Quality Control Procedures
+
+### S7.1 Data Validation During Collection
+
+| Check | Implementation | Action |
+|-------|----------------|--------|
+| Survey completion | All items required | Cannot submit until all answered |
+| Duplicate submission | Firebase document check | Auto-advance if exists |
+| Response timing | performance.now() | Log all timestamps |
+| Trial data integrity | Real-time validation | Flag missing values |
+
+### S7.2 Post-Hoc Quality Checks
+
+| Check | Criterion | Flag/Exclude |
+|-------|-----------|--------------|
+| RT distribution | Inspect for bimodality | Flag for review |
+| Accuracy floor | < 50% (chance level) | Exclude |
+| Response patterns | Repeated same response | Flag for review |
+| SOA timing accuracy | |Measured - Nominal| > 50ms | Flag trials |
+| Session duration | Outside expected range | Flag for review |
+
+---
+
+## References
+
+Anwyl-Irvine, A. L., Dalmaijer, E. S., Hodges, N., & Evershed, J. K. (2021). Realistic precision and accuracy of online experiment platforms, web browsers, and devices. *Behavior Research Methods*, 53(4), 1407-1425.
+
+Bridges, D., Pitiot, A., MacAskill, M. R., & Peirce, J. W. (2020). The timing mega-study: Comparing a range of experiment generators, both lab-based and online. *PeerJ*, 8, e9414.
+
+Heaton, R. K., Chelune, G. J., Talley, J. L., Kay, G. G., & Curtiss, G. (1993). *Wisconsin Card Sorting Test manual: Revised and expanded*. Psychological Assessment Resources.
+
+Lovibond, P. F., & Lovibond, S. H. (1995). The structure of negative emotional states: Comparison of the Depression Anxiety Stress Scales (DASS) with the Beck Depression and Anxiety Inventories. *Behaviour Research and Therapy*, 33(3), 335-343.
+
+Russell, D. W. (1996). UCLA Loneliness Scale (Version 3): Reliability, validity, and factor structure. *Journal of Personality Assessment*, 66(1), 20-40.

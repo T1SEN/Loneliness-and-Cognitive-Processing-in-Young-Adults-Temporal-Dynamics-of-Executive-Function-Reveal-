@@ -8,7 +8,7 @@ from typing import List, Dict
 import numpy as np
 import pandas as pd
 
-from ..constants import STROOP_RT_MIN
+from ..constants import STROOP_RT_MIN, STROOP_RT_MAX
 from ..core import (
     coefficient_of_variation,
     median_absolute_deviation,
@@ -146,6 +146,14 @@ def derive_stroop_features(
     if "timeout" in stroop_acc.columns:
         stroop_acc = stroop_acc[stroop_acc["timeout"] == False]
 
+    rt_max_val = STROOP_RT_MAX if rt_max is None else rt_max
+
+    def _rt_valid(series: pd.Series) -> pd.Series:
+        valid = series.notna() & (series >= rt_min)
+        if rt_max_val is not None:
+            valid &= series <= rt_max_val
+        return valid
+
     records: List[Dict] = []
     acc_groups = {pid: grp for pid, grp in stroop_acc.groupby("participant_id")}
 
@@ -156,8 +164,9 @@ def derive_stroop_features(
 
         if "correct" in grp.columns:
             grp["prev_correct"] = grp["correct"].shift(1)
-            post_error = grp[grp["prev_correct"] == False]
-            post_correct = grp[grp["prev_correct"] == True]
+            rt_valid = _rt_valid(grp["rt_ms"])
+            post_error = grp[rt_valid & (grp["prev_correct"] == False)]
+            post_correct = grp[rt_valid & (grp["prev_correct"] == True)]
             post_error_mean = post_error["rt_ms"].mean() if len(post_error) > 0 else np.nan
             post_correct_mean = post_correct["rt_ms"].mean() if len(post_correct) > 0 else np.nan
             pes = (
@@ -303,6 +312,7 @@ def derive_stroop_features(
                 seq_rt_all["condition_norm"].isin(["congruent", "incongruent"])
                 & seq_rt_all["prev_cond"].isin(["congruent", "incongruent"])
             ]
+            seq_rt_all_pe = seq_rt_all[_rt_valid(seq_rt_all["rt_ms"])]
 
             seq_rt = seq_rt_all.copy()
             if "prev_correct" in seq_rt.columns:
@@ -382,7 +392,7 @@ def derive_stroop_features(
                 post_conflict_slowing = prev_incong_rt - prev_cong_rt
 
             def _post_error_rt_diff(prev_flag: bool) -> float:
-                subset = seq_rt_all[seq_rt_all["prev_correct"] == prev_flag]
+                subset = seq_rt_all_pe[seq_rt_all_pe["prev_correct"] == prev_flag]
                 rt_incong = subset[subset["condition_norm"] == "incongruent"]["rt_ms"].mean()
                 rt_cong = subset[subset["condition_norm"] == "congruent"]["rt_ms"].mean()
                 if pd.notna(rt_incong) and pd.notna(rt_cong):
@@ -426,7 +436,12 @@ def derive_stroop_features(
                     for i in range(len(seq_full) - lag):
                         if seq_full.loc[i, "correct"] == False:
                             rt_val = seq_full.loc[i + lag, "rt_ms"]
-                            if pd.notna(rt_val) and seq_full.loc[i + lag, "correct"] == True:
+                            if (
+                                pd.notna(rt_val)
+                                and seq_full.loc[i + lag, "correct"] == True
+                                and rt_val >= rt_min
+                                and (rt_max_val is None or rt_val <= rt_max_val)
+                            ):
                                 lag_rts.append(rt_val)
                     lag_means.append(np.mean(lag_rts) if lag_rts else np.nan)
                 if all(pd.notna(v) for v in lag_means):

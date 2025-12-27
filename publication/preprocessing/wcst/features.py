@@ -9,7 +9,7 @@ from typing import List, Dict
 import numpy as np
 import pandas as pd
 
-from ..constants import get_results_dir
+from ..constants import get_results_dir, WCST_RT_MIN, WCST_RT_MAX
 from ..core import (
     coefficient_of_variation,
     ensure_participant_id,
@@ -139,6 +139,7 @@ def _load_wcst_summary_metrics(data_dir: Path | None) -> pd.DataFrame:
 def derive_wcst_features(
     data_dir: None | str | Path = None,
     filter_rt: bool = False,
+    rt_max: float | None = None,
 ) -> pd.DataFrame:
     if filter_rt:
         wcst, _ = load_wcst_trials(data_dir=data_dir, clean=True, filter_rt=True, apply_trial_filters=False)
@@ -167,6 +168,8 @@ def derive_wcst_features(
         if cand in wcst.columns:
             rule_col = cand
             break
+
+    rt_max_val = WCST_RT_MAX if rt_max is None else rt_max
 
     records: List[Dict] = []
     for pid, grp in wcst.groupby("participant_id"):
@@ -204,9 +207,21 @@ def derive_wcst_features(
             post_correct_rts = []
             for i in range(len(grp) - 1):
                 if correct[i] == False:
-                    post_pe_rts.append(rt_vals[i + 1])
+                    rt_next = rt_vals[i + 1]
+                    if (
+                        np.isfinite(rt_next)
+                        and rt_next >= WCST_RT_MIN
+                        and (rt_max_val is None or rt_next <= rt_max_val)
+                    ):
+                        post_pe_rts.append(rt_next)
                 elif correct[i] == True:
-                    post_correct_rts.append(rt_vals[i + 1])
+                    rt_next = rt_vals[i + 1]
+                    if (
+                        np.isfinite(rt_next)
+                        and rt_next >= WCST_RT_MIN
+                        and (rt_max_val is None or rt_next <= rt_max_val)
+                    ):
+                        post_correct_rts.append(rt_next)
             if post_pe_rts and post_correct_rts:
                 pes = np.mean(post_pe_rts) - np.mean(post_correct_rts)
 

@@ -106,6 +106,28 @@ def interquartile_range(series: pd.Series, min_n: int = 3) -> float:
     return float(q75 - q25)
 
 
+def skewness(series: pd.Series, min_n: int = 3) -> float:
+    """Compute standardized third moment (skewness)."""
+    values = pd.to_numeric(series, errors="coerce").dropna().to_numpy()
+    if len(values) < min_n:
+        return np.nan
+    sd = float(np.std(values, ddof=1))
+    if sd == 0:
+        return np.nan
+    return float(stats.skew(values, bias=False))
+
+
+def mean_squared_successive_differences(series: pd.Series, min_n: int = 10) -> float:
+    """Compute MSSD = mean((x_{t+1} - x_t)^2)."""
+    values = pd.to_numeric(series, errors="coerce").dropna().to_numpy()
+    if len(values) < min_n:
+        return np.nan
+    diffs = np.diff(values)
+    if len(diffs) == 0:
+        return np.nan
+    return float(np.mean(diffs ** 2))
+
+
 def run_lengths(mask: np.ndarray | pd.Series) -> list[int]:
     values = np.asarray(mask, dtype=bool)
     lengths: list[int] = []

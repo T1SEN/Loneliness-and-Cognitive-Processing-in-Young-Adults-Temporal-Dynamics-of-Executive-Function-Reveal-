@@ -14,19 +14,23 @@ from .filters import (
     get_wcst_valid_participants,
 )
 from .features import derive_wcst_features
-from .hmm_mechanism import (
+from .traditional.features import derive_wcst_traditional_features
+from .dynamic.dispersion.features import derive_wcst_dispersion_features
+from .dynamic.drift.features import derive_wcst_drift_features
+from .dynamic.recovery.features import derive_wcst_recovery_features
+from .mechanism.hmm import (
     compute_wcst_hmm_features,
     load_or_compute_wcst_hmm_mechanism_features,
 )
-from .rl_mechanism import (
+from .mechanism.rl import (
     compute_wcst_rl_features,
     load_or_compute_wcst_rl_mechanism_features,
 )
-from .wsls_mechanism import (
+from .mechanism.wsls import (
     compute_wcst_wsls_features,
     load_or_compute_wcst_wsls_mechanism_features,
 )
-from .bayesianrl_mechanism import (
+from .mechanism.bayesianrl import (
     compute_wcst_bayesianrl_features,
     load_or_compute_wcst_bayesianrl_mechanism_features,
 )
@@ -82,6 +86,10 @@ __all__ = [
     "compute_wcst_qc_stats",
     "get_wcst_valid_participants",
     "derive_wcst_features",
+    "derive_wcst_traditional_features",
+    "derive_wcst_dispersion_features",
+    "derive_wcst_drift_features",
+    "derive_wcst_recovery_features",
     "compute_wcst_hmm_features",
     "load_or_compute_wcst_hmm_mechanism_features",
     "compute_wcst_rl_features",

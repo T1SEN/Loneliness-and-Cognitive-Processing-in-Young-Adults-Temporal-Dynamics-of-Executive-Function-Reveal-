@@ -230,23 +230,23 @@ Outcome: Stroop Post-Correct RT (ms) (N = 219)
 --------------------------------------------------
 
 Model Comparison:
-  Step 1 (DASS):        Delta R^2 = 0.0146, p = 0.353
-  Step 2 (UCLA):        Delta R^2 = 0.0020, p = 0.522 (HC3 Wald)
+  Step 1 (DASS):        Delta R^2 = 0.0145, p = 0.357
+  Step 2 (UCLA):        Delta R^2 = 0.0020, p = 0.518 (HC3 Wald)
   Step 3 (Interaction): Delta R^2 = 0.0015, p = 0.579 (HC3 Wald)
 
 UCLA Main Effect (Model 2):
-  beta = 11.2994, SE = 17.6031, t = 0.64, p = 0.521
+  beta = 11.4036, SE = 17.5944, t = 0.65, p = 0.517
 
 UCLA x Gender Interaction (Model 3):
-  beta = 14.7681, SE = 26.5962, p = 0.579
+  beta = 14.7903, SE = 26.5999, p = 0.578
 
 Gender-Stratified UCLA Effects:
   Female (n=135): beta = 7.1285, p = 0.738
-  Male (n=84):   beta = 11.3981, p = 0.727
+  Male (n=84):   beta = 11.7177, p = 0.719
 
 Diagnostics:
   VIF max: 2.64
-  Breusch-Pagan p: 0.942
+  Breusch-Pagan p: 0.947
   Shapiro-Wilk p: < 0.001
 
 

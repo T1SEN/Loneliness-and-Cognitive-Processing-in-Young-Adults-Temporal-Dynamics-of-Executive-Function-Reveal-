@@ -10,7 +10,7 @@ import pandas as pd
 
 from ..constants import PRP_RT_MIN, STROOP_RT_MIN, RAW_DIR, COMPLETE_OVERALL_DIR, WCST_RT_MIN
 from ..surveys import get_survey_valid_participants, SurveyQCCriteria
-from ..prp.filters import get_prp_valid_participants, PRPQCCriteria
+from ..prp.participant_filters import get_prp_valid_participants, PRPQCCriteria
 from ..stroop.filters import get_stroop_valid_participants, StroopQCCriteria
 from ..wcst.filters import clean_wcst_trials, get_wcst_valid_participants, WCSTQCCriteria
 

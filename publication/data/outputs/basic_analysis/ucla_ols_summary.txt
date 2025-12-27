@@ -1,0 +1,642 @@
+[STROOP]
+??(OLS p<.05)
+??	b	?R2_UCLA	p_ols	p_hc3	n
+Stroop Incongruent RT Slope	0.474948	0.0250322	0.0191107	0.0157116	219
+Stroop Fast Run Mean (incongruent, correct)	-0.101912	0.0236367	0.0241146	0.016502	219
+Stroop LBA A (incongruent)	0.0642883	0.0668397	0.00779664	0.00832138	108
+Stroop LBA b (incongruent)	0.0934717	0.0482087	0.0236867	0.0266643	108
+Stroop LBA v_correct (neutral)	-0.907337	0.100341	0.0307501	0.0204905	47
+Stroop LBA v_incorrect (neutral)	-0.363826	0.13567	0.00801267	0.00153082	47
+Stroop CV Fatigue Slope (Q4-Q1)	0.0177584	0.0220894	0.0285858	0.0419014	219
+Stroop Recovery Accuracy Lag4	0.0218946	0.0838186	0.0394833	0.129678	45
+???(OLS p>=.05)
+- Stroop Interference Effect
+- Stroop Mean RT (Incongruent)
+- Stroop Mean RT (Congruent)
+- Stroop Mean RT (Neutral)
+- Stroop Accuracy (Incongruent)
+- Stroop Accuracy (Congruent)
+- Stroop Accuracy (Neutral)
+- Stroop Post-Error Slowing (ms)
+- Stroop Post-Error RT (ms)
+- Stroop Post-Correct RT (ms)
+- Stroop RT Coefficient of Variation (All)
+- Stroop RT CV (Incongruent)
+- Stroop RT CV (Congruent)
+- Stroop Valid Trial Count
+- Stroop Ex-Gaussian mu (Congruent)
+- Stroop Ex-Gaussian sigma (Congruent)
+- Stroop Ex-Gaussian tau (Congruent)
+- Stroop Ex-Gaussian mu (Incongruent)
+- Stroop Ex-Gaussian sigma (Incongruent)
+- Stroop Ex-Gaussian tau (Incongruent)
+- Stroop Ex-Gaussian mu (Neutral)
+- Stroop Ex-Gaussian sigma (Neutral)
+- Stroop Ex-Gaussian tau (Neutral)
+- Stroop Ex-Gaussian mu (Interference)
+- Stroop Ex-Gaussian sigma (Interference)
+- Stroop Ex-Gaussian tau (Interference)
+- Stroop Slow-State Probability (Baseline)
+- Stroop Slow-State Prob (Post-Error)
+- Stroop Slow-State Prob Delta (Post-Error)
+- Stroop Slow-State Prob (Stable)
+- Stroop Slow-State Prob Delta (Stable)
+- Stroop RT Interference
+- Stroop Accuracy Interference
+- Stroop RT Facilitation
+- Stroop Accuracy Facilitation
+- Stroop RT Incongruent minus Neutral
+- Stroop RT Neutral minus Congruent
+- Stroop RT Interference (Correct-only)
+- Stroop RT Facilitation (Correct-only)
+- Stroop RT Incongruent minus Neutral (Correct-only)
+- Stroop RT Neutral minus Congruent (Correct-only)
+- Stroop CSE RT (Gratton)
+- Stroop CSE Accuracy (Gratton)
+- Stroop Post-Conflict Slowing
+- Stroop Post-Conflict Accuracy
+- Stroop Post-Error Accuracy
+- Stroop Error Run Length Mean
+- Stroop Error Run Length Max
+- Stroop Error Recovery RT Slope
+- Stroop DFA Alpha (correct)
+- Stroop Lag-1 Autocorr (correct)
+- Stroop Slow Run Mean (correct)
+- Stroop Slow Run Max (correct)
+- Stroop Fast Run Mean (correct)
+- Stroop Fast Run Max (correct)
+- Stroop DFA Alpha (incongruent, correct)
+- Stroop Lag-1 Autocorr (incongruent, correct)
+- Stroop Slow Run Mean (incongruent, correct)
+- Stroop Slow Run Max (incongruent, correct)
+- Stroop Fast Run Max (incongruent, correct)
+- Stroop Ex-Gaussian mu (Interference, correct)
+- Stroop Ex-Gaussian sigma (Interference, correct)
+- Stroop Ex-Gaussian tau (Interference, correct)
+- Stroop Delta Plot Slope (correct)
+- Stroop EZ-DDM v (congruent)
+- Stroop EZ-DDM a (congruent)
+- Stroop EZ-DDM t0 (congruent)
+- Stroop EZ-DDM sv (congruent)
+- Stroop EZ-DDM sz (congruent)
+- Stroop EZ-DDM st0 (congruent)
+- Stroop EZ-DDM v (incongruent)
+- Stroop EZ-DDM a (incongruent)
+- Stroop EZ-DDM t0 (incongruent)
+- Stroop EZ-DDM sv (incongruent)
+- Stroop EZ-DDM sz (incongruent)
+- Stroop EZ-DDM st0 (incongruent)
+- Stroop EZ-DDM v (neutral)
+- Stroop EZ-DDM a (neutral)
+- Stroop EZ-DDM t0 (neutral)
+- Stroop EZ-DDM sv (neutral)
+- Stroop EZ-DDM sz (neutral)
+- Stroop EZ-DDM st0 (neutral)
+- Stroop EZ-DDM v Interference
+- Stroop EZ-DDM a Interference
+- Stroop EZ-DDM t0 Interference
+- Stroop Ex-Gaussian mu (congruent, correct)
+- Stroop Ex-Gaussian sigma (congruent, correct)
+- Stroop Ex-Gaussian tau (congruent, correct)
+- Stroop Ex-Gaussian mu (incongruent, correct)
+- Stroop Ex-Gaussian sigma (incongruent, correct)
+- Stroop Ex-Gaussian tau (incongruent, correct)
+- Stroop Ex-Gaussian mu (neutral, correct)
+- Stroop Ex-Gaussian sigma (neutral, correct)
+- Stroop Ex-Gaussian tau (neutral, correct)
+- Stroop Lognormal mu (congruent, correct)
+- Stroop Lognormal sigma (congruent, correct)
+- Stroop Lognormal shift (congruent, correct)
+- Stroop Lognormal mu (incongruent, correct)
+- Stroop Lognormal sigma (incongruent, correct)
+- Stroop Lognormal shift (incongruent, correct)
+- Stroop Lognormal mu (neutral, correct)
+- Stroop Lognormal sigma (neutral, correct)
+- Stroop Lognormal shift (neutral, correct)
+- Stroop Mixture Slow Prop (congruent, correct)
+- Stroop Mixture Slow Prop (incongruent, correct)
+- Stroop Mixture Slow Prop (neutral, correct)
+- Stroop Vincentile Interference p10 (correct)
+- Stroop Vincentile Interference p30 (correct)
+- Stroop Vincentile Interference p50 (correct)
+- Stroop Vincentile Interference p70 (correct)
+- Stroop Vincentile Interference p90 (correct)
+- Stroop LBA v_correct (congruent)
+- Stroop LBA v_incorrect (congruent)
+- Stroop LBA A (congruent)
+- Stroop LBA b (congruent)
+- Stroop LBA t0 (congruent)
+- Stroop LBA negloglik (congruent)
+- Stroop LBA aic (congruent)
+- Stroop LBA bic (congruent)
+- Stroop LBA v_correct (incongruent)
+- Stroop LBA v_incorrect (incongruent)
+- Stroop LBA t0 (incongruent)
+- Stroop LBA negloglik (incongruent)
+- Stroop LBA aic (incongruent)
+- Stroop LBA bic (incongruent)
+- Stroop LBA A (neutral)
+- Stroop LBA b (neutral)
+- Stroop LBA t0 (neutral)
+- Stroop LBA negloglik (neutral)
+- Stroop LBA aic (neutral)
+- Stroop LBA bic (neutral)
+- Stroop RT Fatigue Slope (Q4-Q1)
+- Stroop Accuracy Fatigue Slope (Q4-Q1)
+- Stroop Tau Q1
+- Stroop Tau Q2
+- Stroop Tau Q3
+- Stroop Tau Q4
+- Stroop Tau Slope (Q4-Q1)
+- Stroop Error Cascade Count
+- Stroop Error Cascade Rate
+- Stroop Error Cascade Mean Length
+- Stroop Error Cascade Max Length
+- Stroop Error Cascade Trials
+- Stroop Error Cascade Proportion
+- Stroop Recovery RT Slope
+- Stroop Recovery Accuracy Slope
+- Stroop Momentum Mean Streak
+- Stroop Momentum Max Streak
+- Stroop Volatility RMSSD
+- Stroop Volatility (Detrended SD)
+- Stroop IIV Intercept
+- Stroop IIV Slope
+- Stroop IIV Residual SD
+- Stroop IIV Raw CV
+- Stroop IIV R-squared
+- Stroop Post-Error CV Reduction
+- Stroop Post-Error Accuracy Diff
+- Stroop Post-Error Recovery Rate
+- Stroop Adaptive PES Flag
+- Stroop Maladaptive PES Flag
+- Stroop Error Awareness Index
+- Stroop Recovery RT Lag1
+- Stroop Recovery RT Lag2
+- Stroop Recovery RT Lag3
+- Stroop Recovery RT Lag4
+- Stroop Recovery RT Lag5
+- Stroop Recovery Accuracy Lag1
+- Stroop Recovery Accuracy Lag2
+- Stroop Recovery Accuracy Lag3
+- Stroop Recovery Accuracy Lag5
+- Stroop Mean RT (All)
+- Stroop Accuracy (All)
+- Stroop Error Rate (All)
+- Stroop Inverse Efficiency Score
+- Stroop Pre-Error RT Slope (Mean)
+- Stroop Pre-Error RT Slope (SD)
+- Stroop Pre-Error Events (N)
+
+[PRP]
+??(OLS p<.05)
+??	b	?R2_UCLA	p_ols	p_hc3	n
+PRP Ex-Gaussian sigma (Short SOA)	30.0447	0.0350396	0.00585348	0.0245637	206
+PRP CB Model R-squared	0.0382156	0.0267241	0.0173564	0.0279596	209
+PRP T1 Cost (Short - Long)	50.8525	0.0233744	0.027787	0.0182527	209
+PRP Adaptive PES Flag	0.15305	0.0526331	0.027138	0.0293387	95
+PRP T2 Accuracy (All)	-0.00439599	0.0195596	0.0455467	0.081691	209
+PRP T2 Error Rate (All)	0.00439599	0.0195596	0.0455467	0.081691	209
+PRP Ex-Gaussian sigma (short, correct)	22.9646	0.019959	0.0383494	0.0642236	206
+PRP Ex-Gaussian sigma (SOA 150, correct)	33.6494	0.0305032	0.0163715	0.0225347	190
+PRP Ex-Gaussian sigma (SOA 600, correct)	-22.085	0.0251002	0.0283743	0.0130559	194
+PRP Vincentile Bottleneck p70 (correct)	45.0148	0.0288438	0.015606	0.0152327	194
+???(OLS p>=.05)
+- PRP Delay Effect
+- PRP T2 Mean RT (Short SOA)
+- PRP T2 Mean RT (Long SOA)
+- PRP T2 RT SD (Short SOA)
+- PRP T2 RT SD (Long SOA)
+- PRP T2 Coefficient of Variation (All)
+- PRP T2 CV (Short SOA)
+- PRP T2 CV (Long SOA)
+- PRP Error Cascade Rate
+- PRP Cascade Inflation
+- PRP Post-Error Slowing (ms)
+- PRP Valid T2 Trial Count
+- PRP Ex-Gaussian mu (Short SOA)
+- PRP Ex-Gaussian tau (Short SOA)
+- PRP Ex-Gaussian mu (Long SOA)
+- PRP Ex-Gaussian sigma (Long SOA)
+- PRP Ex-Gaussian tau (Long SOA)
+- PRP Ex-Gaussian mu (Overall)
+- PRP Ex-Gaussian sigma (Overall)
+- PRP Ex-Gaussian tau (Overall)
+- PRP Ex-Gaussian mu (Bottleneck)
+- PRP Ex-Gaussian sigma (Bottleneck)
+- PRP Ex-Gaussian tau (Bottleneck)
+- PRP CB Base RT (ms)
+- PRP CB Bottleneck Duration (ms)
+- PRP CB Slope (short SOA)
+- PRP Slow-State Probability (Baseline)
+- PRP Slow-State Prob (Post-Error)
+- PRP Slow-State Prob Delta (Post-Error)
+- PRP Slow-State Prob (Stable)
+- PRP Slow-State Prob Delta (Stable)
+- PRP RT1-RT2 Coupling
+- PRP T2 RT (T1 Error)
+- PRP T2 RT (T1 Correct)
+- PRP T2 Interference (T1 Error - Correct)
+- PRP Order Violation Rate
+- PRP T1-only Rate
+- PRP T2-only Rate
+- PRP T2 While T1 Pending Rate
+- PRP IRI Mean
+- PRP IRI Median
+- PRP IRI p10
+- PRP IRI p25
+- PRP T1 Error Run Mean
+- PRP T1 Error Run Max
+- PRP T2 Error Run Mean
+- PRP T2 Error Run Max
+- PRP Cascade Run Mean
+- PRP Cascade Run Max
+- PRP DFA Alpha (Short SOA, correct)
+- PRP DFA Alpha (Long SOA, correct)
+- PRP Lag-1 Autocorr (Short SOA, correct)
+- PRP Lag-1 Autocorr (Long SOA, correct)
+- PRP Slow Run Mean (Short SOA, correct)
+- PRP Slow Run Max (Short SOA, correct)
+- PRP Fast Run Mean (Short SOA, correct)
+- PRP Fast Run Max (Short SOA, correct)
+- PRP Slow Run Mean (Long SOA, correct)
+- PRP Slow Run Max (Long SOA, correct)
+- PRP Fast Run Mean (Long SOA, correct)
+- PRP Fast Run Max (Long SOA, correct)
+- PRP Ex-Gaussian mu (Bottleneck, correct)
+- PRP Ex-Gaussian sigma (Bottleneck, correct)
+- PRP Ex-Gaussian tau (Bottleneck, correct)
+- PRP Ex-Gaussian tau Ratio (Short/Long)
+- PRP Ex-Gaussian tau Ratio (Short/Long, correct)
+- PRP Bottleneck AUC
+- PRP Bottleneck Slope (Short Range)
+- PRP Bottleneck Slope (Long Range)
+- PRP RT2 Asymptote (Long SOA)
+- PRP Bottleneck Curvature
+- PRP CB AIC
+- PRP CB BIC
+- PRP CS Base RT
+- PRP CS Amplitude
+- PRP CS Tau
+- PRP CS R-squared
+- PRP CS RMSE
+- PRP CS AIC
+- PRP CS BIC
+- PRP Mix CB Weight
+- PRP Mix R-squared
+- PRP Mix RMSE
+- PRP Mix AIC
+- PRP Mix BIC
+- PRP RT Fatigue Slope (Q4-Q1)
+- PRP CV Fatigue Slope (Q4-Q1)
+- PRP Accuracy Fatigue Slope (Q4-Q1)
+- PRP Error Cascade Count
+- PRP Error Cascade Rate
+- PRP Error Cascade Mean Length
+- PRP Error Cascade Max Length
+- PRP Error Cascade Trials
+- PRP Error Cascade Proportion
+- PRP Recovery RT Slope
+- PRP Recovery Accuracy Slope
+- PRP Momentum Slope
+- PRP Momentum Mean Streak
+- PRP Momentum Max Streak
+- PRP Volatility RMSSD
+- PRP Volatility (Detrended SD)
+- PRP IIV Intercept
+- PRP IIV Slope
+- PRP IIV Residual SD
+- PRP IIV Raw CV
+- PRP IIV R-squared
+- PRP Post-Error CV Reduction
+- PRP Post-Error Accuracy
+- PRP Post-Error Accuracy Diff
+- PRP Post-Error Recovery Rate
+- PRP Maladaptive PES Flag
+- PRP Error Awareness Index
+- PRP T2 Mean RT (All)
+- PRP T2 Inverse Efficiency Score
+- PRP Pre-Error RT Slope (Mean)
+- PRP Pre-Error RT Slope (SD)
+- PRP Pre-Error Events (N)
+- PRP Recovery RT Lag1
+- PRP Recovery RT Lag2
+- PRP Recovery RT Lag3
+- PRP Recovery RT Lag4
+- PRP Recovery RT Lag5
+- PRP Recovery Accuracy Lag1
+- PRP Recovery Accuracy Lag2
+- PRP Recovery Accuracy Lag3
+- PRP Recovery Accuracy Lag4
+- PRP Recovery Accuracy Lag5
+- PRP T2 Mean RT (SOA 50)
+- PRP T2 Mean RT (SOA 150)
+- PRP T2 Mean RT (SOA 300)
+- PRP T2 Mean RT (SOA 600)
+- PRP T2 Mean RT (SOA 1200)
+- PRP T2 Median RT (SOA 50)
+- PRP T2 Median RT (SOA 150)
+- PRP T2 Median RT (SOA 300)
+- PRP T2 Median RT (SOA 600)
+- PRP T2 Median RT (SOA 1200)
+- PRP T2 RT SD (SOA 50)
+- PRP T2 RT SD (SOA 150)
+- PRP T2 RT SD (SOA 300)
+- PRP T2 RT SD (SOA 600)
+- PRP T2 RT SD (SOA 1200)
+- PRP T1 Mean RT (SOA 50)
+- PRP T1 Mean RT (SOA 150)
+- PRP T1 Mean RT (SOA 300)
+- PRP T1 Mean RT (SOA 600)
+- PRP T1 Mean RT (SOA 1200)
+- PRP T1 Median RT (SOA 50)
+- PRP T1 Median RT (SOA 150)
+- PRP T1 Median RT (SOA 300)
+- PRP T1 Median RT (SOA 600)
+- PRP T1 Median RT (SOA 1200)
+- PRP T1 RT SD (SOA 50)
+- PRP T1 RT SD (SOA 150)
+- PRP T1 RT SD (SOA 300)
+- PRP T1 RT SD (SOA 600)
+- PRP T1 RT SD (SOA 1200)
+- PRP T1 Accuracy (SOA 50)
+- PRP T1 Accuracy (SOA 150)
+- PRP T1 Accuracy (SOA 300)
+- PRP T1 Accuracy (SOA 600)
+- PRP T1 Accuracy (SOA 1200)
+- PRP RT1-RT2 Coupling (SOA 50)
+- PRP RT1-RT2 Coupling (SOA 150)
+- PRP RT1-RT2 Coupling (SOA 300)
+- PRP RT1-RT2 Coupling (SOA 600)
+- PRP RT1-RT2 Coupling (SOA 1200)
+- PRP Ex-Gaussian mu (short, correct)
+- PRP Ex-Gaussian tau (short, correct)
+- PRP Ex-Gaussian mu (long, correct)
+- PRP Ex-Gaussian sigma (long, correct)
+- PRP Ex-Gaussian tau (long, correct)
+- PRP Ex-Gaussian mu (overall, correct)
+- PRP Ex-Gaussian sigma (overall, correct)
+- PRP Ex-Gaussian tau (overall, correct)
+- PRP Ex-Gaussian mu (SOA 50)
+- PRP Ex-Gaussian sigma (SOA 50)
+- PRP Ex-Gaussian tau (SOA 50)
+- PRP Ex-Gaussian mu (SOA 150)
+- PRP Ex-Gaussian sigma (SOA 150)
+- PRP Ex-Gaussian tau (SOA 150)
+- PRP Ex-Gaussian mu (SOA 300)
+- PRP Ex-Gaussian sigma (SOA 300)
+- PRP Ex-Gaussian tau (SOA 300)
+- PRP Ex-Gaussian mu (SOA 600)
+- PRP Ex-Gaussian sigma (SOA 600)
+- PRP Ex-Gaussian tau (SOA 600)
+- PRP Ex-Gaussian mu (SOA 1200)
+- PRP Ex-Gaussian sigma (SOA 1200)
+- PRP Ex-Gaussian tau (SOA 1200)
+- PRP Ex-Gaussian mu (SOA 50, correct)
+- PRP Ex-Gaussian sigma (SOA 50, correct)
+- PRP Ex-Gaussian tau (SOA 50, correct)
+- PRP Ex-Gaussian mu (SOA 150, correct)
+- PRP Ex-Gaussian tau (SOA 150, correct)
+- PRP Ex-Gaussian mu (SOA 300, correct)
+- PRP Ex-Gaussian sigma (SOA 300, correct)
+- PRP Ex-Gaussian tau (SOA 300, correct)
+- PRP Ex-Gaussian mu (SOA 600, correct)
+- PRP Ex-Gaussian tau (SOA 600, correct)
+- PRP Ex-Gaussian mu (SOA 1200, correct)
+- PRP Ex-Gaussian sigma (SOA 1200, correct)
+- PRP Ex-Gaussian tau (SOA 1200, correct)
+- PRP Delta Plot Slope (Bottleneck, correct)
+- PRP Vincentile Bottleneck p10 (correct)
+- PRP Vincentile Bottleneck p30 (correct)
+- PRP Vincentile Bottleneck p50 (correct)
+- PRP Vincentile Bottleneck p90 (correct)
+- PRP Shape Linear Slope
+- PRP Shape Linear Intercept
+- PRP Shape Linear R-squared
+- PRP Shape Exp Amplitude
+- PRP Shape Exp Decay Rate
+- PRP Shape Exp Asymptote
+- PRP Shape Exp R-squared
+- PRP Shape Recovery Half-life
+- PRP Shape Bottleneck (Short-Long)
+- PRP Shape Exp Better Fit
+- PRP Shape SOA Count
+
+[WCST]
+??(OLS p<.05)
+??	b	?R2_UCLA	p_ols	p_hc3	n
+WCST Mean Reaction Time (ms)	125.502	0.0201098	0.0362554	0.0928495	212
+WCST Post-Error Slowing (ms)	163.818	0.025627	0.0212152	0.0438427	211
+WCST HMM P(Lapse->Focus)	-0.0774182	0.0398626	0.00341149	0.00321656	212
+WCST HMM P(Lapse->Lapse)	0.0774182	0.0398626	0.00341149	0.00321656	212
+WCST RL beta	-0.239706	0.0244259	0.0211485	0.0962503	212
+WCST HMM Long Lapse Episode Rate	0.036658	0.020934	0.0371488	0.0740275	212
+WCST Slow-State Prob (Post-Error)	0.0603665	0.0217199	0.032697	0.0429836	211
+WCST Slow-State Prob Delta (Post-Error)	0.0419361	0.0193379	0.0447385	0.0447471	211
+WCST Slow-State Prob (Shift k0)	0.0373383	0.0211984	0.0333093	0.0268614	210
+WCST HMM2D Focus Dwell Mean	1.33643	0.03319	0.00838604	0.0272972	212
+WCST RL alpha0	0.0823568	0.0209434	0.0357497	0.0440136	212
+WCST WSLS P(shift|lose, stable)	0.0665014	0.0321327	0.0422156	0.0404252	132
+WCST IIV Intercept	184.525	0.0211567	0.034225	0.0580147	212
+WCST Recovery RT Lag1	227.464	0.0226836	0.0289989	0.0584303	210
+WCST Recovery RT Lag2	218.918	0.0315591	0.00890084	0.0441386	210
+WCST Switch Cost Error k2	0.0471838	0.0248609	0.0211653	0.0293902	209
+WCST Delta Plot Slope (correct)	178.684	0.0222498	0.030426	0.0780185	212
+WCST RT Vincentile p90 (correct)	196.231	0.0224675	0.0282444	0.0745767	212
+WCST Mean RT (All)	125.502	0.0201098	0.0362554	0.0928495	212
+WCST Pre-Error RT Slope (Mean)	51.8904	0.0208802	0.036195	0.0840401	208
+WCST Block PE Slope	-0.0075952	0.0398411	0.00325244	0.0253441	212
+WCST Block PE Initial	0.0134234	0.0263607	0.0169128	0.0235272	212
+???(OLS p>=.05)
+- WCST Perseverative Error Rate
+- WCST Accuracy (%)
+- WCST Reaction Time SD
+- WCST Perseverative Error Count
+- WCST Post-Switch Error Rate
+- WCST Reaction Time Coefficient of Variation
+- WCST Valid Trial Count
+- WCST HMM Lapse Occupancy (%)
+- WCST HMM P(Focus->Lapse)
+- WCST HMM P(Focus->Focus)
+- WCST HMM Lapse RT Mean
+- WCST HMM Focus RT Mean
+- WCST HMM RT Difference
+- WCST HMM State Changes
+- WCST RL alpha
+- WCST RL alpha (pos)
+- WCST RL alpha (neg)
+- WCST RL alpha asymmetry
+- WCST RL beta (asym)
+- WCST WSLS P(stay|win)
+- WCST WSLS P(shift|lose)
+- WCST Bayesian RL hazard
+- WCST Bayesian RL noise
+- WCST Bayesian RL beta
+- WCST Total Errors
+- WCST Error Rate
+- WCST Perseverative Errors (trial-derived)
+- WCST Perseverative Error Rate (trial-derived)
+- WCST Non-Perseverative Errors
+- WCST Perseverative Responses (trial-derived)
+- WCST Perseverative Response Percent (trial-derived)
+- WCST PR Ratio among Errors
+- WCST NPE Ratio among Errors
+- WCST PE Run Length Mean
+- WCST PE Run Length Max
+- WCST PR Run Length Mean
+- WCST PR Run Length Max
+- WCST PE Cluster Rate
+- WCST Trials to First Category
+- WCST Categories Completed
+- WCST Trials per Category Mean
+- WCST Trials per Category SD
+- WCST Delta Trials (First3-Last3)
+- WCST Learning Slope (Trials)
+- WCST RT Slope within Category
+- WCST Accuracy Slope within Category
+- WCST RT Jump at Switch
+- WCST DFA Alpha (correct)
+- WCST Lag-1 Autocorr (correct)
+- WCST Slow Run Mean (correct)
+- WCST Slow Run Max (correct)
+- WCST Fast Run Mean (correct)
+- WCST Fast Run Max (correct)
+- WCST Failure to Maintain Set
+- WCST Trials to Rule Reacquisition
+- WCST CLR Count
+- WCST CLR Percent
+- WCST Learning-to-Learn Heaton CLR Delta
+- WCST Learning Efficiency Delta Trials
+- WCST Trials to First Conceptual Response
+- WCST Trials to First Conceptual Response (0)
+- WCST Delta CLR Percent (First3-Last3)
+- WCST Learning Slope CLR Percent
+- WCST HMM Lapse Dwell Mean
+- WCST HMM Focus Dwell Mean
+- WCST HMM Lapse RT SD
+- WCST HMM Focus RT SD
+- WCST HMM State Entropy
+- WCST Slow-State Probability (Baseline)
+- WCST Slow-State Prob (Stable)
+- WCST Slow-State Prob Delta (Stable)
+- WCST Slow-State Prob (Shift k1)
+- WCST Slow-State Prob (Shift k2)
+- WCST Slow-State Prob (Shift k3)
+- WCST Slow-State Prob (Shift k4)
+- WCST Slow-State Prob (Shift k5)
+- WCST Slow-State Prob Delta (Shift k0)
+- WCST Slow-State Prob Delta (Shift k1)
+- WCST Slow-State Prob Delta (Shift k2)
+- WCST Slow-State Prob Delta (Shift k3)
+- WCST Slow-State Prob Delta (Shift k4)
+- WCST Slow-State Prob Delta (Shift k5)
+- WCST HMM2D Lapse Occupancy
+- WCST HMM2D P(Focus->Lapse)
+- WCST HMM2D P(Lapse->Focus)
+- WCST HMM2D P(Lapse->Lapse)
+- WCST HMM2D P(Focus->Focus)
+- WCST HMM2D Lapse Dwell Mean
+- WCST HMM2D State Entropy
+- WCST RL Neg LogLik
+- WCST RL AIC
+- WCST RL BIC
+- WCST RL Asym Neg LogLik
+- WCST RL Asym AIC
+- WCST RL Asym BIC
+- WCST RL Sticky alpha
+- WCST RL Sticky beta
+- WCST RL Stickiness
+- WCST RL Lapse
+- WCST RL Sticky Neg LogLik
+- WCST RL Sticky AIC
+- WCST RL Sticky BIC
+- WCST RL alpha Decay
+- WCST RL beta (Decay)
+- WCST RL Decay Neg LogLik
+- WCST RL Decay AIC
+- WCST RL Decay BIC
+- WCST WSLS P(shift|win)
+- WCST WSLS P(stay|lose)
+- WCST WSLS P(stay|win, switch)
+- WCST WSLS P(shift|lose, switch)
+- WCST WSLS P(stay|win, stable)
+- WCST WSLS P(stay|win, colour)
+- WCST WSLS P(shift|lose, colour)
+- WCST WSLS P(stay|win, shape)
+- WCST WSLS P(shift|lose, shape)
+- WCST WSLS P(stay|win, number)
+- WCST WSLS P(shift|lose, number)
+- WCST BRL Posterior Entropy Mean
+- WCST BRL Entropy Drop Mean
+- WCST BRL P(rule max) Mean
+- WCST BRL Change Point Prob Mean
+- WCST BRL Surprise Mean
+- WCST RT Fatigue Slope (Q4-Q1)
+- WCST CV Fatigue Slope (Q4-Q1)
+- WCST Accuracy Fatigue Slope (Q4-Q1)
+- WCST Tau Q1
+- WCST Tau Q2
+- WCST Tau Q3
+- WCST Tau Q4
+- WCST Tau Slope (Q4-Q1)
+- WCST Error Cascade Count
+- WCST Error Cascade Rate
+- WCST Error Cascade Mean Length
+- WCST Error Cascade Max Length
+- WCST Error Cascade Trials
+- WCST Error Cascade Proportion
+- WCST Recovery RT Slope
+- WCST Recovery Accuracy Slope
+- WCST Momentum Slope
+- WCST Momentum Mean Streak
+- WCST Momentum Max Streak
+- WCST Volatility RMSSD
+- WCST Volatility (Detrended SD)
+- WCST IIV Slope
+- WCST IIV Residual SD
+- WCST IIV Raw CV
+- WCST IIV R-squared
+- WCST Post-Error CV Reduction
+- WCST Post-Error Accuracy
+- WCST Post-Error Accuracy Diff
+- WCST Post-Error Recovery Rate
+- WCST Adaptive PES Flag
+- WCST Maladaptive PES Flag
+- WCST Error Awareness Index
+- WCST Recovery RT Lag3
+- WCST Recovery RT Lag4
+- WCST Recovery RT Lag5
+- WCST Recovery Accuracy Lag1
+- WCST Recovery Accuracy Lag2
+- WCST Recovery Accuracy Lag3
+- WCST Recovery Accuracy Lag4
+- WCST Recovery Accuracy Lag5
+- WCST Trials per Category 1
+- WCST Trials per Category 2
+- WCST Trials per Category 3
+- WCST Trials per Category 4
+- WCST Trials per Category 5
+- WCST Trials per Category 6
+- WCST Switch Cost Error k1
+- WCST Switch Cost Error k3
+- WCST Switch Cost Error k4
+- WCST Switch Cost Error k5
+- WCST Switch Cost RT k1
+- WCST Switch Cost RT k2
+- WCST Switch Cost RT k3
+- WCST Switch Cost RT k4
+- WCST Switch Cost RT k5
+- WCST RT Vincentile p10 (correct)
+- WCST RT Vincentile p30 (correct)
+- WCST RT Vincentile p50 (correct)
+- WCST RT Vincentile p70 (correct)
+- WCST Accuracy (All)
+- WCST Error Rate (All)
+- WCST Inverse Efficiency Score
+- WCST Pre-Error RT Slope (SD)
+- WCST Pre-Error Events (N)
+- WCST Block PE Intercept
+- WCST Block PE R-squared
+- WCST Block PE Final
+- WCST Block PE Change
+- WCST Block PE Blocks

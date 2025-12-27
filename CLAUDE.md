@@ -9,7 +9,7 @@ Research data analysis pipeline for a psychology study examining the relationshi
 **Three main components:**
 1. **Data Collection**: Flutter mobile app for cognitive tasks (`lib/`)
 2. **Data Export**: Firebase → CSV extraction (`export_alldata.py`)
-3. **Statistical Analysis**: Suite-based analysis pipeline (`analysis/`)
+3. **Statistical Analysis**: Publication analysis package (`publication/`)
 
 ## Data Flow
 
@@ -22,7 +22,6 @@ Firebase (Firestore) → export_alldata.py → publication/data/raw/
                        ├── publication/data/complete_prp/     (N ~ 195)
                        └── publication/data/complete_wcst/    (N ~ 190)
                                               ↓
-                       python -m analysis → results/gold_standard/ & results/analysis_outputs/
                        python -m publication.* → results/publication/
 ```
 
@@ -34,7 +33,7 @@ Firebase (Firestore) → export_alldata.py → publication/data/raw/
 | `complete_prp/` | PRP + 설문 완료자 (N ~ 195) |
 | `complete_wcst/` | WCST + 설문 완료자 (N ~ 190) |
 | `complete_overall/` | 모든 과제 완료자 통합 (N ~ 180) |
-| `outputs/` | Generated outputs (master_dataset.csv, analysis results) |
+| `outputs/` | Generated outputs (master_dataset.csv, publication results) |
 
 **Data file structure (same across raw/complete_*):**
 | File | Contents |
@@ -53,18 +52,6 @@ Note: 각 task별 complete_* 디렉토리는 해당 task의 trial 파일만 포�
 ```bash
 # Activate venv (Windows)
 .\venv\Scripts\activate
-
-# Run unified CLI
-python -m analysis --list                     # List available suites
-python -m analysis --suite gold_standard      # Run Gold Standard confirmatory
-python -m analysis --suite exploratory.wcst   # Run WCST exploratory suite
-python -m analysis --all                      # Run all suites
-
-# Run individual suite modules
-python -m analysis.gold_standard.pipeline
-python -m analysis.exploratory.prp_suite
-python -m analysis.mediation.mediation_suite
-python -m analysis.validation.validation_suite
 
 # Publication Package
 python -m publication.basic_analysis.descriptive_statistics      # Descriptive statistics
@@ -86,68 +73,20 @@ python -m publication.gender_analysis --list                     # List gender a
 python -m publication.gender_analysis --all                      # Run all gender analyses
 python -m publication.gender_analysis -a male_vulnerability      # Run specific analysis
 
-# Machine learning
-python -m analysis.ml.nested_cv --task classification --features demo_dass
-
 # Export data from Firebase (requires serviceAccountKey.json)
 PYTHONIOENCODING=utf-8 .\venv\Scripts\python.exe export_alldata.py
 
 # Preprocessing: Build task-specific datasets
-python -m publication.preprocessing --build stroop   # Stroop 완료자 데이터셋
-python -m publication.preprocessing --build prp      # PRP 완료자 데이터셋
-python -m publication.preprocessing --build wcst     # WCST 완료자 데이터셋
-python -m publication.preprocessing --build overall  # 모든 과제 완료자 통합 데이터셋
-python -m publication.preprocessing --build all      # 모든 task 데이터셋 빌드
-python -m publication.preprocessing --list           # 데이터셋 현황 조회
+python -m publication.preprocessing --build stroop   # Stroop complete dataset
+python -m publication.preprocessing --build prp      # PRP complete dataset
+python -m publication.preprocessing --build wcst     # WCST complete dataset
+python -m publication.preprocessing --build overall  # All tasks complete dataset
+python -m publication.preprocessing --build all      # Build all task datasets
+python -m publication.preprocessing --list           # Dataset status
+python -m publication.preprocessing --features stroop --feature-set traditional
+python -m publication.preprocessing --features all --feature-set dispersion
 ```
 
-## Analysis Architecture
-
-```
-analysis/
-├── __main__.py             # Unified CLI entry point
-├── run.py                  # Suite runner
-├── preprocessing/          # Data loading and cleaning
-│   ├── loaders.py          # load_master_dataset, load_*_scores
-│   ├── trial_loaders.py    # load_prp_trials, load_stroop_trials, load_wcst_trials
-│   ├── standardization.py  # safe_zscore, standardize_predictors, prepare_gender_variable
-│   ├── features.py         # derive_all_features, derive_*_features
-│   └── constants.py        # RT thresholds, SOA constants
-├── statistics/             # Statistical utilities
-│   ├── exgaussian.py       # Ex-Gaussian RT fitting
-│   └── post_error.py       # Post-error slowing computation
-├── visualization/          # Plotting utilities
-│   ├── plotting.py         # set_publication_style, forest plots
-│   └── publication.py      # APA formatting, effect sizes
-├── utils/                  # Modeling only
-│   └── modeling.py         # DASS_CONTROL_FORMULA, fit_dass_controlled_model
-├── gold_standard/          # Confirmatory analyses (DASS-controlled)
-│   ├── pipeline.py
-│   └── analyses.yml        # Analysis configuration
-├── exploratory/            # Hypothesis generation
-│   ├── prp_suite.py
-│   ├── stroop_suite.py
-│   ├── wcst_suite.py
-│   └── cross_task/         # Cross-task analyses (split into modules)
-│       ├── consistency.py
-│       ├── age_gender.py
-│       ├── nonlinear.py
-│       └── residual_temporal.py
-├── mediation/              # DASS as mediator (not covariate)
-├── validation/             # CV, robustness, Type M/S error
-├── synthesis/              # Integration and summary
-├── advanced/               # Mechanistic, latent, clustering (enhanced)
-│   ├── mechanistic_suite.py    # Ex-Gaussian, fatigue, autocorrelation (FDR-corrected)
-│   ├── sequential_dynamics_suite.py  # Adaptive recovery, error cascade
-│   ├── clustering_suite.py     # MANOVA validation, GMM profiles
-│   ├── latent_suite.py         # Network analysis (GraphicalLASSO, NCT)
-│   ├── ddm_suite.py            # Drift-diffusion modeling
-│   ├── intervention_subgroups_suite.py  # High-risk subgroup identification
-│   ├── male_vulnerability_suite.py      # Gender-specific effects
-│   └── ...                     # ~45 suites total; see run.py SUITE_REGISTRY
-├── ml/                     # Machine learning pipelines
-└── archive/                # Legacy scripts (DEPRECATED - see README.md)
-```
 
 ## Publication Package Structure
 
@@ -155,48 +94,77 @@ Publication analysis package layout (task-specific preprocessing).
 
 ```
 publication/
-|-- data/
-|   |-- raw/
-|   |-- complete_prp/
-|   |-- complete_stroop/
-|   |-- complete_wcst/
-|   |-- outputs/
-|   `-- export_alldata.py
-|-- preprocessing/
-|   |-- __init__.py
-|   |-- __main__.py
-|   |-- cli.py
-|   |-- constants.py
-|   |-- core.py
-|   |-- surveys.py
-|   |-- datasets.py
-|   |-- standardization.py
-|   |-- prp/
-|   |   |-- __init__.py
-|   |   |-- loaders.py
-|   |   |-- filters.py
-|   |   |-- features.py
-|   |   `-- dataset.py
-|   |-- stroop/
-|   |   |-- __init__.py
-|   |   |-- loaders.py
-|   |   |-- filters.py
-|   |   |-- features.py
-|   |   `-- dataset.py
-|   |-- wcst/
-|   |   |-- __init__.py
-|   |   |-- loaders.py
-|   |   |-- filters.py
-|   |   |-- features.py
-|   |   `-- dataset.py
-|   `-- overall/
-|       |-- __init__.py
-|       `-- dataset.py
-|-- basic_analysis/
-|-- advanced_analysis/
-|-- path_analysis/
-|-- validity_reliability/
-`-- gender_analysis/
+  data/
+    raw/
+    complete_prp/
+    complete_stroop/
+    complete_wcst/
+    complete_overall/
+    outputs/
+    export_alldata.py
+  preprocessing/
+    __init__.py
+    __main__.py
+    cli.py
+    constants.py
+    core.py
+    surveys.py
+    datasets.py
+    standardization.py
+    prp/
+      __init__.py
+      _shared.py
+      trial_level_loaders.py
+      participant_filters.py
+      trial_level_dataset.py
+      features.py
+      traditional/
+      dynamic/
+        dispersion/
+        drift/
+        recovery/
+      mechanism/
+    stroop/
+      __init__.py
+      _shared.py
+      loaders.py
+      filters.py
+      dataset.py
+      features.py
+      traditional/
+      dynamic/
+        dispersion/
+        drift/
+        recovery/
+      mechanism/
+    wcst/
+      __init__.py
+      _shared.py
+      loaders.py
+      filters.py
+      dataset.py
+      features.py
+      traditional/
+      dynamic/
+        dispersion/
+        drift/
+        recovery/
+      mechanism/
+    overall/
+      __init__.py
+      dataset.py
+      features.py
+      traditional/
+      dynamic/
+        dispersion/
+        drift/
+        recovery/
+      mechanism/
+  basic_analysis/
+  advanced_analysis/
+  path_analysis/
+  validity_reliability/
+  gender_analysis/
 ```
 
 **Output directory:** `results/publication/{basic_analysis,advanced_analysis,validity_reliability,gender_analysis}/`
@@ -225,59 +193,14 @@ UCLA loneliness and DASS (depression/anxiety/stress) correlate r ~ 0.5-0.7. With
 
 ### Required Formula Template
 ```python
-from analysis.utils.modeling import DASS_CONTROL_FORMULA
-
 # Standard formula:
-smf.ols("{outcome} ~ z_ucla * C(gender_male) + z_dass_dep + z_dass_anx + z_dass_str + z_age", data=df)
+formula = "{outcome} ~ z_ucla * C(gender_male) + z_dass_dep + z_dass_anx + z_dass_str + z_age"
+smf.ols(formula, data=df)
 ```
 
 **Exception:** Mediation analyses where DASS is the mediator (not a covariate).
 
-## Shared Utility Modules
-
-### `analysis/preprocessing/` - Data Loading & Cleaning
-```python
-from analysis.preprocessing import (
-    # Data loaders
-    load_master_dataset,      # Cached unified dataset (master_dataset.parquet)
-    load_participants, load_ucla_scores, load_dass_scores,
-    ensure_participant_id,    # Normalize participant ID column
-    normalize_gender_value,   # Map Korean/English gender to 'male'/'female'
-    # Trial loaders
-    load_prp_trials, load_stroop_trials, load_wcst_trials,
-    # Standardization
-    safe_zscore, standardize_predictors, prepare_gender_variable,
-    apply_fdr_correction, find_interaction_term,
-    # Constants
-    RESULTS_DIR, ANALYSIS_OUTPUT_DIR,
-    DEFAULT_RT_MIN, PRP_RT_MAX, STROOP_RT_MAX,
-)
-```
-
-### `analysis/utils/modeling.py` - Regression Templates
-```python
-from analysis.utils.modeling import (
-    DASS_CONTROL_FORMULA,        # "{outcome} ~ z_ucla * C(gender_male) + z_dass_dep + z_dass_anx + z_dass_str + z_age"
-    fit_dass_controlled_model,   # Fit OLS with HC3 robust SE
-    verify_dass_control,         # Verify formula has required terms
-)
-```
-
-### `analysis/statistics/` - Statistical Utilities
-```python
-from analysis.statistics import (
-    fit_exgaussian, fit_exgaussian_by_condition,  # Ex-Gaussian RT fitting
-    compute_pes, compute_all_task_pes,            # Post-error slowing
-)
-```
-
-### `analysis/visualization/` - Plotting
-```python
-from analysis.visualization import (
-    set_publication_style, create_forest_plot,    # Plotting
-    bootstrap_ci, cohens_d, format_pvalue,        # Publication helpers
-)
-```
+## Publication Utility Modules
 
 ### RT Filtering & QC Constants
 ```python
@@ -381,42 +304,6 @@ def _parse_wcst_extra(extra_str):
 ### 기록 예시
 | 2025-01-16 | WCST PE regression | pe_rate | UCLA × Gender | β=0.15 | p=0.025 | η²=0.04 |
 
-## Advanced Suite Statistical Enhancements
-
-The `analysis/advanced/` suites have been enhanced with rigorous statistical methods:
-
-### 1. FDR Correction (Benjamini-Hochberg)
-- **`mechanistic_suite.py`**: 9 tests (3 tasks × 3 ex-Gaussian parameters)
-- **`sequential_dynamics_suite.py`**: Adaptive recovery outcomes
-- **`clustering_suite.py`**: Post-hoc ANOVAs
-
-### 2. Network Analysis (`latent_suite.py`)
-```python
-# GraphicalLASSO for regularized partial correlations
-from sklearn.covariance import GraphicalLassoCV
-
-# Network Comparison Test (NCT) for gender differences
-# - 1000 permutations for global strength/edge differences
-# - Bootstrap edge stability (500 iterations)
-```
-
-### 3. Exponential Recovery Fitting (`sequential_dynamics_suite.py`)
-```python
-# RT(t) = baseline + delta * exp(-t/tau)
-# tau: recovery time constant (higher = slower recovery)
-# Bootstrap SE for tau (200 iterations)
-```
-
-### 4. MANOVA Assumption Checks (`clustering_suite.py`)
-- Shapiro-Wilk normality per DV per cluster
-- Levene's test for homogeneity
-- Box's M approximation for covariance homogeneity
-- Bootstrap cluster stability (ARI)
-
-### 5. Bayesian Analysis
-- 4 chains × 2000 draws (improved from 2 × 1000)
-- ROPE interval: [-0.1, 0.1] for practical equivalence
-
 ## Key Findings (N=185 Quality-Controlled)
 
 - **UCLA Main Effects After DASS Control**: 3 variables significant
@@ -446,4 +333,3 @@ Data flows to Firebase Firestore, then exported via `export_alldata.py`.
 - **Platform**: Windows (path separators, encoding)
 - **Firebase credentials**: `serviceAccountKey.json` required but not committed
 - **Trial filtering**: Always filter `timeout == False` and `rt_ms > DEFAULT_RT_MIN`
-- **Archive**: Legacy scripts in `analysis/archive/legacy_advanced/` are DEPRECATED - see `analysis/archive/legacy_advanced/README.md` for migration mapping to production suites

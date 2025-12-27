@@ -21,7 +21,8 @@ from publication.preprocessing import load_master_dataset
 # PATHS (constants.py에서 중앙 관리)
 # =============================================================================
 
-from publication.preprocessing.constants import ANALYSIS_OUTPUT_DIR, VALID_TASKS
+from publication.preprocessing.constants import ANALYSIS_OUTPUT_DIR, VALID_TASKS, get_results_dir
+from publication.preprocessing.core import ensure_participant_id
 
 # =============================================================================
 # VARIABLE DEFINITIONS
@@ -356,6 +357,7 @@ PRP_EXTRA_OUTCOMES = [
     ('prp_t2_rt_t1_error', 'PRP T2 RT (T1 Error)'),
     ('prp_t2_rt_t1_correct', 'PRP T2 RT (T1 Correct)'),
     ('prp_t2_interference_t1_error', 'PRP T2 Interference (T1 Error - Correct)'),
+    ('prp_t2_rt_slope', 'PRP T2 RT Slope'),
     ('prp_order_violation_rate', 'PRP Order Violation Rate'),
     ('prp_t1_only_rate', 'PRP T1-only Rate'),
     ('prp_t2_only_rate', 'PRP T2-only Rate'),
@@ -550,6 +552,7 @@ WCST_EXTRA_OUTCOMES = [
     ('wcst_rt_slope_within_category', 'WCST RT Slope within Category'),
     ('wcst_acc_slope_within_category', 'WCST Accuracy Slope within Category'),
     ('wcst_rt_jump_at_switch', 'WCST RT Jump at Switch'),
+    ('wcst_post_switch_recovery_slope', 'WCST Post-Switch Recovery RT Slope'),
     ('wcst_dfa_alpha_correct', 'WCST DFA Alpha (correct)'),
     ('wcst_lag1_correct', 'WCST Lag-1 Autocorr (correct)'),
     ('wcst_slow_run_mean_correct', 'WCST Slow Run Mean (correct)'),
@@ -848,13 +851,37 @@ STANDARDIZED_PREDICTORS = [
 # DATA LOADING
 # =============================================================================
 
+def _merge_extra_features(df: pd.DataFrame, extra_path: Path) -> pd.DataFrame:
+    if not extra_path.exists():
+        return df
+    extra_df = pd.read_csv(extra_path, encoding="utf-8-sig")
+    if extra_df.empty:
+        return df
+    extra_df = ensure_participant_id(extra_df)
+    overlap = [c for c in extra_df.columns if c != "participant_id" and c in df.columns]
+    if overlap:
+        df = df.drop(columns=overlap)
+    return df.merge(extra_df, on="participant_id", how="left")
+
+
 def get_analysis_data(task: str) -> pd.DataFrame:
     """
     Load master dataset with Tier-1 metrics pre-computed.
     """
     if task not in VALID_TASKS:
         raise ValueError(f"Unknown task: {task}. Valid tasks: {sorted(VALID_TASKS)}")
-    return load_master_dataset(task=task)
+    df = load_master_dataset(task=task)
+    if task == "prp":
+        df = _merge_extra_features(
+            df,
+            get_results_dir("prp") / "5_prp_dynamic_drift_features.csv",
+        )
+    elif task == "wcst":
+        df = _merge_extra_features(
+            df,
+            get_results_dir("wcst") / "5_wcst_dynamic_recovery_features.csv",
+        )
+    return df
 
 
 def get_tier1_outcomes(task: str) -> list[tuple[str, str]]:

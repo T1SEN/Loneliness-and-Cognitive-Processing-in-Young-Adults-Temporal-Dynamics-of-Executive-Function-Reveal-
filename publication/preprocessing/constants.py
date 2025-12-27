@@ -59,7 +59,8 @@ PRP_ACC_THRESHOLD = 0.70      # participant-level accuracy cutoff
 PRP_LONG_SOA_MIN = DEFAULT_SOA_LONG  # ms; long SOA definition for QC (aligned with DEFAULT_SOA_LONG)
 
 # WCST filtering constants
-WCST_RT_MIN = 100             # ms; anticipatory response cutoff
+WCST_RT_MIN = 200             # ms; anticipatory response cutoff
+WCST_RT_MAX = 10000           # ms; upper bound for post-error RT filtering
 WCST_VALID_CONDS = {"colour", "shape", "number"}
 WCST_VALID_CARDS = {
     "one_yellow_circle",

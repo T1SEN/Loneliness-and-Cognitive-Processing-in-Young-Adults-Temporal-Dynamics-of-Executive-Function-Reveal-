@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from ..prp.loaders import load_prp_summary
+from ..prp.trial_level_loaders import load_prp_summary
 from ..stroop.loaders import load_stroop_summary
 from ..wcst.loaders import load_wcst_summary
 

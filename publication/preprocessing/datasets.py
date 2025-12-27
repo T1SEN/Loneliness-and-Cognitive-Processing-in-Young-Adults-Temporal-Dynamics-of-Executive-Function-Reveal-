@@ -12,13 +12,13 @@ import pandas as pd
 from .constants import STANDARDIZE_COLS, VALID_TASKS, get_results_dir, RAW_DIR
 from .core import ensure_participant_id, normalize_gender_series
 from .surveys import load_participants, load_ucla_scores, load_dass_scores, load_survey_items
-from .prp.dataset import build_prp_dataset, get_prp_complete_participants
+from .prp.trial_level_dataset import build_prp_dataset, get_prp_complete_participants
 from .stroop.dataset import build_stroop_dataset, get_stroop_complete_participants
 from .wcst.dataset import build_wcst_dataset, get_wcst_complete_participants
 from .prp.features import derive_prp_features
 from .stroop.features import derive_stroop_features
 from .wcst.features import derive_wcst_features
-from .prp.loaders import load_prp_summary
+from .prp.trial_level_loaders import load_prp_summary
 from .stroop.loaders import load_stroop_summary
 from .wcst.loaders import load_wcst_summary
 from .overall.loaders import load_overall_summary

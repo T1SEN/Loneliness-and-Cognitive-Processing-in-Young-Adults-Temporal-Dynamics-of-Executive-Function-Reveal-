@@ -8,7 +8,7 @@ from typing import List, Dict
 import numpy as np
 import pandas as pd
 
-from ..constants import PRP_RT_MIN, DEFAULT_SOA_LONG, DEFAULT_SOA_SHORT
+from ..constants import PRP_RT_MIN, PRP_RT_MAX, DEFAULT_SOA_LONG, DEFAULT_SOA_SHORT
 from ..core import (
     coefficient_of_variation,
     median_absolute_deviation,
@@ -27,11 +27,12 @@ from ..core import (
     compute_speed_accuracy_metrics,
 )
 from ..standardization import safe_zscore
-from .loaders import load_prp_trials
+from .trial_level_loaders import load_prp_trials
 from .exgaussian_mechanism import load_or_compute_prp_mechanism_features
 from .hmm_event_features import load_or_compute_prp_hmm_event_features
 from .bottleneck_mechanism import load_or_compute_prp_bottleneck_mechanism_features
 from .bottleneck_shape import load_or_compute_prp_bottleneck_shape_features
+from ._shared import _apply_timeout_as_incorrect
 
 
 def _run_lengths(mask: pd.Series) -> List[int]:
@@ -48,6 +49,14 @@ def _run_lengths(mask: pd.Series) -> List[int]:
     return lengths
 
 
+def _filter_structurally_valid(df: pd.DataFrame) -> pd.DataFrame:
+    if "order_norm" in df.columns:
+        df = df[df["order_norm"] == "t1_t2"]
+    if "t2_pressed_while_t1_pending" in df.columns:
+        df = df[df["t2_pressed_while_t1_pending"] == False]
+    return df
+
+
 def derive_prp_features(
     rt_min: float = PRP_RT_MIN,
     rt_max: float | None = None,
@@ -58,6 +67,8 @@ def derive_prp_features(
         rt_min=rt_min,
         rt_max=rt_max,
         apply_trial_filters=True,
+        require_t1_correct=True,
+        require_t2_correct_for_rt=True,
     )
     prp_raw, _ = load_prp_trials(
         data_dir=data_dir,
@@ -92,6 +103,12 @@ def derive_prp_features(
             False: False, "False": False, 0: False,
         })
 
+    prp_raw = _apply_timeout_as_incorrect(prp_raw)
+
+    prp_acc = _filter_structurally_valid(prp_raw)
+    if not prp.empty and "participant_id" in prp_acc.columns:
+        prp_acc = prp_acc[prp_acc["participant_id"].isin(prp["participant_id"].unique())]
+
     soa_levels = sorted(prp["soa_ms"].dropna().unique())
     order_col = None
     for cand in ("trial_index", "trialIndex", "trial"):
@@ -99,10 +116,20 @@ def derive_prp_features(
             order_col = cand
             break
 
+    rt_max_val = PRP_RT_MAX if rt_max is None else rt_max
+
+    def _rt_valid(series: pd.Series) -> pd.Series:
+        valid = series.notna() & (series >= rt_min)
+        if rt_max_val is not None:
+            valid &= series <= rt_max_val
+        return valid
+
     records: List[Dict] = []
     raw_groups = {pid: grp for pid, grp in prp_raw.groupby("participant_id")}
+    acc_groups = {pid: grp for pid, grp in prp_acc.groupby("participant_id")} if not prp_acc.empty else {}
 
     for pid, group in prp.groupby("participant_id"):
+        acc_group = acc_groups.get(pid, pd.DataFrame())
         raw_grp = raw_groups.get(pid, pd.DataFrame())
         grp_sorted = group.sort_values(order_col) if order_col and order_col in group.columns else group.sort_index()
         overall_cv = coefficient_of_variation(group["t2_rt_ms"].dropna())
@@ -146,8 +173,8 @@ def derive_prp_features(
         iqr_short_correct = interquartile_range(short_soa_correct["t2_rt_ms"].dropna())
         iqr_long_correct = interquartile_range(long_soa_correct["t2_rt_ms"].dropna())
 
-        if "t1_correct" in group.columns and "t2_correct" in group.columns:
-            valid = group[(group["t1_correct"].notna()) & (group["t2_correct"].notna())]
+        if not acc_group.empty and "t1_correct" in acc_group.columns and "t2_correct" in acc_group.columns:
+            valid = acc_group[(acc_group["t1_correct"].notna()) & (acc_group["t2_correct"].notna())]
             t1_errors = valid[~valid["t1_correct"]]
             n_t1_errors = len(t1_errors)
 
@@ -168,11 +195,17 @@ def derive_prp_features(
             cascade_rate = np.nan
             cascade_inflation = np.nan
 
-        grp_sorted = group.sort_values("trial_index" if "trial_index" in group.columns else "trial")
-        if "t2_correct" in grp_sorted.columns:
-            grp_sorted["prev_t2_error"] = (~grp_sorted["t2_correct"]).shift(1).fillna(False)
-            post_error = grp_sorted[grp_sorted["prev_t2_error"] == True]["t2_rt_ms"]
-            post_correct = grp_sorted[grp_sorted["prev_t2_error"] == False]["t2_rt_ms"]
+        if "trial_index" in acc_group.columns:
+            grp_sorted_acc = acc_group.sort_values("trial_index")
+        elif "trial" in acc_group.columns:
+            grp_sorted_acc = acc_group.sort_values("trial")
+        else:
+            grp_sorted_acc = acc_group.sort_index()
+        if "t2_correct" in grp_sorted_acc.columns:
+            grp_sorted_acc["prev_t2_error"] = (~grp_sorted_acc["t2_correct"]).shift(1).fillna(False)
+            rt_valid = _rt_valid(grp_sorted_acc["t2_rt_ms"])
+            post_error = grp_sorted_acc[rt_valid & (grp_sorted_acc["prev_t2_error"] == True)]["t2_rt_ms"]
+            post_correct = grp_sorted_acc[rt_valid & (grp_sorted_acc["prev_t2_error"] == False)]["t2_rt_ms"]
             pes = (
                 post_error.mean() - post_correct.mean()
                 if len(post_error) > 0 and len(post_correct) > 0
@@ -189,6 +222,7 @@ def derive_prp_features(
         iri_median = np.nan
         iri_p10 = np.nan
         iri_p25 = np.nan
+        iri_grouping_rate_100 = np.nan
 
         if not raw_grp.empty:
             if "order_norm" in raw_grp.columns:
@@ -206,13 +240,19 @@ def derive_prp_features(
             for timeout_col in ("t1_timeout", "t2_timeout"):
                 if timeout_col in iri_df.columns:
                     iri_df = iri_df[iri_df[timeout_col] == False]
+            if "order_norm" in iri_df.columns:
+                iri_df = iri_df[iri_df["order_norm"] == "t1_t2"]
+            if "t2_pressed_while_t1_pending" in iri_df.columns:
+                iri_df = iri_df[iri_df["t2_pressed_while_t1_pending"] == False]
             if "iri_ms" in iri_df.columns:
                 iri_vals = pd.to_numeric(iri_df["iri_ms"], errors="coerce").dropna()
                 if len(iri_vals) > 0:
+                    iri_vals = iri_vals[iri_vals >= 0]
                     iri_mean = float(iri_vals.mean())
                     iri_median = float(iri_vals.median())
                     iri_p10 = float(iri_vals.quantile(0.1))
                     iri_p25 = float(iri_vals.quantile(0.25))
+                    iri_grouping_rate_100 = float((iri_vals < 100).mean())
 
         t1_cost = np.nan
         if "t1_rt_ms" in group.columns:
@@ -227,19 +267,28 @@ def derive_prp_features(
             if len(pair) >= 3:
                 rt1_rt2_coupling = float(np.corrcoef(pair["t1_rt_ms"], pair["t2_rt_ms"])[0, 1])
 
+        t2_acc_short = np.nan
+        t2_acc_long = np.nan
+        t2_acc_cost = np.nan
+        if not acc_group.empty and "t2_correct" in acc_group.columns:
+            t2_acc_short = acc_group[acc_group["soa_ms"] <= DEFAULT_SOA_SHORT]["t2_correct"].mean()
+            t2_acc_long = acc_group[acc_group["soa_ms"] >= DEFAULT_SOA_LONG]["t2_correct"].mean()
+            if pd.notna(t2_acc_short) and pd.notna(t2_acc_long):
+                t2_acc_cost = t2_acc_long - t2_acc_short
+
         t2_rt_t1_error = np.nan
         t2_rt_t1_correct = np.nan
         t2_interference_t1_error = np.nan
-        if "t1_correct" in group.columns:
-            t2_rt_t1_error = group[~group["t1_correct"]]["t2_rt_ms"].mean()
-            t2_rt_t1_correct = group[group["t1_correct"]]["t2_rt_ms"].mean()
+        if "t1_correct" in acc_group.columns:
+            t2_rt_t1_error = acc_group[~acc_group["t1_correct"]]["t2_rt_ms"].mean()
+            t2_rt_t1_correct = acc_group[acc_group["t1_correct"]]["t2_rt_ms"].mean()
             if pd.notna(t2_rt_t1_error) and pd.notna(t2_rt_t1_correct):
                 t2_interference_t1_error = t2_rt_t1_error - t2_rt_t1_correct
 
-        t1_error_runs = _run_lengths(~group["t1_correct"]) if "t1_correct" in group.columns else []
-        t2_error_runs = _run_lengths(~group["t2_correct"]) if "t2_correct" in group.columns else []
-        cascade_runs = _run_lengths((~group["t1_correct"]) & (~group["t2_correct"])) if (
-            "t1_correct" in group.columns and "t2_correct" in group.columns
+        t1_error_runs = _run_lengths(~acc_group["t1_correct"]) if "t1_correct" in acc_group.columns else []
+        t2_error_runs = _run_lengths(~acc_group["t2_correct"]) if "t2_correct" in acc_group.columns else []
+        cascade_runs = _run_lengths((~acc_group["t1_correct"]) & (~acc_group["t2_correct"])) if (
+            "t1_correct" in acc_group.columns and "t2_correct" in acc_group.columns
         ) else []
 
         vincentile_quantiles = [0.1, 0.3, 0.5, 0.7, 0.9]
@@ -259,15 +308,34 @@ def derive_prp_features(
 
         seq_rt = grp_sorted["t2_rt_ms"] if "t2_rt_ms" in grp_sorted.columns else pd.Series(dtype=float)
         seq_correct = grp_sorted["t2_correct"] if "t2_correct" in grp_sorted.columns else pd.Series(dtype=object)
-        fatigue_metrics = compute_fatigue_slopes(seq_rt, seq_correct)
-        cascade_metrics = compute_error_cascade_metrics(seq_correct)
-        recovery_metrics = compute_post_error_recovery_metrics(seq_rt, seq_correct, max_lag=5)
-        momentum_metrics = compute_momentum_metrics(seq_rt, seq_correct)
+        seq_rt_acc = (
+            grp_sorted_acc["t2_rt_ms"]
+            if "t2_rt_ms" in grp_sorted_acc.columns
+            else pd.Series(dtype=float)
+        )
+        seq_correct_acc = (
+            grp_sorted_acc["t2_correct"]
+            if "t2_correct" in grp_sorted_acc.columns
+            else pd.Series(dtype=object)
+        )
+        fatigue_metrics = compute_fatigue_slopes(seq_rt_acc, seq_correct_acc)
+        cascade_metrics = compute_error_cascade_metrics(seq_correct_acc)
+        recovery_metrics = compute_post_error_recovery_metrics(seq_rt_acc, seq_correct_acc, max_lag=5)
+        momentum_metrics = compute_momentum_metrics(seq_rt_acc, seq_correct_acc)
         volatility_metrics = compute_volatility_metrics(seq_rt)
         iiv_metrics = compute_iiv_parameters(seq_rt)
-        awareness_metrics = compute_error_awareness_metrics(seq_rt, seq_correct)
+        awareness_metrics = compute_error_awareness_metrics(seq_rt_acc, seq_correct_acc)
         speed_metrics = compute_speed_accuracy_metrics(seq_rt, seq_correct)
-        pre_error_metrics = compute_pre_error_slope_metrics(seq_rt, seq_correct)
+        pre_error_metrics = compute_pre_error_slope_metrics(seq_rt_acc, seq_correct_acc)
+
+        accuracy_all = np.nan
+        error_rate_all = np.nan
+        ies = np.nan
+        if "t2_correct" in acc_group.columns and not acc_group.empty:
+            accuracy_all = float(acc_group["t2_correct"].mean())
+            error_rate_all = float(1.0 - accuracy_all)
+            if pd.notna(speed_metrics["mean_rt"]) and accuracy_all > 0:
+                ies = float(speed_metrics["mean_rt"] / accuracy_all)
 
         record = {
             "participant_id": pid,
@@ -281,9 +349,9 @@ def derive_prp_features(
             "prp_t2_iqr_short": iqr_short,
             "prp_t2_iqr_long": iqr_long,
             "prp_t2_mean_rt_all": speed_metrics["mean_rt"],
-            "prp_t2_accuracy_all": speed_metrics["accuracy"],
-            "prp_t2_error_rate_all": speed_metrics["error_rate"],
-            "prp_t2_ies": speed_metrics["ies"],
+            "prp_t2_accuracy_all": accuracy_all,
+            "prp_t2_error_rate_all": error_rate_all,
+            "prp_t2_ies": ies,
             "prp_pre_error_slope_mean": pre_error_metrics["pre_error_slope_mean"],
             "prp_pre_error_slope_std": pre_error_metrics["pre_error_slope_std"],
             "prp_pre_error_n": pre_error_metrics["pre_error_n"],
@@ -369,6 +437,7 @@ def derive_prp_features(
             "prp_iri_median": iri_median,
             "prp_iri_p10": iri_p10,
             "prp_iri_p25": iri_p25,
+            "prp_iri_grouping_rate_100": iri_grouping_rate_100,
             "prp_t1_error_run_mean": float(np.mean(t1_error_runs)) if t1_error_runs else 0.0,
             "prp_t1_error_run_max": float(np.max(t1_error_runs)) if t1_error_runs else 0.0,
             "prp_t2_error_run_mean": float(np.mean(t2_error_runs)) if t2_error_runs else 0.0,
@@ -377,6 +446,9 @@ def derive_prp_features(
             "prp_cascade_run_max": float(np.max(cascade_runs)) if cascade_runs else 0.0,
             "prp_t2_trials": len(group),
             "prp_delta_plot_slope_bottleneck_correct": delta_plot_slope,
+            "prp_t2_acc_short": t2_acc_short,
+            "prp_t2_acc_long": t2_acc_long,
+            "prp_t2_acc_cost": t2_acc_cost,
         }
         record.update(vincentile_diffs)
         records.append(record)
@@ -385,18 +457,46 @@ def derive_prp_features(
             record = records[-1]
             for soa_val in soa_levels:
                 label = int(round(float(soa_val)))
-                subset = group[group["soa_ms"] == soa_val]
-                record[f"prp_t2_rt_mean_soa_{label}"] = subset["t2_rt_ms"].mean()
-                record[f"prp_t2_rt_median_soa_{label}"] = subset["t2_rt_ms"].median()
-                record[f"prp_t2_rt_sd_soa_{label}"] = subset["t2_rt_ms"].std()
-                if "t1_rt_ms" in subset.columns:
-                    record[f"prp_t1_rt_mean_soa_{label}"] = subset["t1_rt_ms"].mean()
-                    record[f"prp_t1_rt_median_soa_{label}"] = subset["t1_rt_ms"].median()
-                    record[f"prp_t1_rt_sd_soa_{label}"] = subset["t1_rt_ms"].std()
-                if "t1_correct" in subset.columns:
-                    record[f"prp_t1_acc_soa_{label}"] = subset["t1_correct"].mean()
-                if "t1_rt_ms" in subset.columns:
-                    pair = subset[["t1_rt_ms", "t2_rt_ms"]].dropna()
+                subset_rt = group[group["soa_ms"] == soa_val]
+                record[f"prp_t2_rt_mean_soa_{label}"] = subset_rt["t2_rt_ms"].mean()
+                record[f"prp_t2_rt_median_soa_{label}"] = subset_rt["t2_rt_ms"].median()
+                record[f"prp_t2_rt_sd_soa_{label}"] = subset_rt["t2_rt_ms"].std()
+                if "t1_rt_ms" in subset_rt.columns:
+                    record[f"prp_t1_rt_mean_soa_{label}"] = subset_rt["t1_rt_ms"].mean()
+                    record[f"prp_t1_rt_median_soa_{label}"] = subset_rt["t1_rt_ms"].median()
+                    record[f"prp_t1_rt_sd_soa_{label}"] = subset_rt["t1_rt_ms"].std()
+                if not acc_group.empty:
+                    subset_acc = acc_group[acc_group["soa_ms"] == soa_val]
+                    if "t1_correct" in subset_acc.columns:
+                        record[f"prp_t1_acc_soa_{label}"] = subset_acc["t1_correct"].mean()
+                    if "t2_correct" in subset_acc.columns:
+                        record[f"prp_t2_acc_soa_{label}"] = subset_acc["t2_correct"].mean()
+                    if "t1_correct" in subset_acc.columns and "t2_correct" in subset_acc.columns:
+                        record[f"prp_both_correct_soa_{label}"] = (
+                            subset_acc["t1_correct"] & subset_acc["t2_correct"]
+                        ).mean()
+                if not raw_grp.empty:
+                    subset_raw = raw_grp[raw_grp["soa_ms"] == soa_val]
+                    timeout_mask = None
+                    if "t1_timeout" in subset_raw.columns:
+                        timeout_mask = subset_raw["t1_timeout"].copy()
+                    if "t2_timeout" in subset_raw.columns:
+                        timeout_mask = (
+                            timeout_mask | subset_raw["t2_timeout"]
+                            if timeout_mask is not None
+                            else subset_raw["t2_timeout"]
+                        )
+                    if timeout_mask is not None and len(subset_raw) > 0:
+                        record[f"prp_timeout_rate_soa_{label}"] = float(timeout_mask.mean())
+                    if "order_norm" in subset_raw.columns:
+                        order_vals = subset_raw["order_norm"].dropna()
+                        record[f"prp_order_error_soa_{label}"] = (
+                            float((order_vals == "t2_t1").mean())
+                            if len(order_vals) > 0
+                            else np.nan
+                        )
+                if "t1_rt_ms" in subset_rt.columns:
+                    pair = subset_rt[["t1_rt_ms", "t2_rt_ms"]].dropna()
                     if len(pair) >= 3:
                         record[f"prp_rt1_rt2_coupling_soa_{label}"] = float(
                             np.corrcoef(pair["t1_rt_ms"], pair["t2_rt_ms"])[0, 1]
