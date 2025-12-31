@@ -11,6 +11,7 @@ import pandas as pd
 from ..constants import (
     RAW_DIR,
     WCST_RT_MIN,
+    WCST_RT_MAX,
     WCST_VALID_CONDS,
     WCST_VALID_CARDS,
     WCST_MIN_TRIALS,
@@ -87,11 +88,15 @@ def clean_wcst_trials(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, int]]:
 def filter_wcst_rt_trials(
     df: pd.DataFrame,
     rt_min: float = WCST_RT_MIN,
+    rt_max: float | None = WCST_RT_MAX,
 ) -> pd.DataFrame:
     df = df.copy()
     df["rt_ms"] = pd.to_numeric(df["rt_ms"], errors="coerce")
     df = df[df["rt_ms"].notna()]
-    df = df[df["rt_ms"] > rt_min]
+    if rt_max is None:
+        df = df[df["rt_ms"] >= rt_min]
+    else:
+        df = df[df["rt_ms"].between(rt_min, rt_max)]
     return df
 
 

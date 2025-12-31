@@ -27,7 +27,6 @@ from ..core import (
     compute_tau_quartile_metrics,
     compute_error_awareness_metrics,
     compute_pre_error_slope_metrics,
-    compute_speed_accuracy_metrics,
 )
 from ..standardization import safe_zscore
 from .loaders import load_wcst_trials
@@ -176,12 +175,21 @@ def derive_wcst_features(
         grp = grp.reset_index(drop=True)
         grp_sorted = grp.sort_values(trial_col) if trial_col else grp
         rt_series = pd.to_numeric(grp_sorted[rt_col], errors="coerce")
-        mad_rt = median_absolute_deviation(rt_series)
-        iqr_rt = interquartile_range(rt_series)
-        if "correct" in grp_sorted.columns:
-            rt_correct = rt_series[grp_sorted["correct"] == True]
+        if "is_rt_valid" in grp_sorted.columns:
+            rt_valid_mask = grp_sorted["is_rt_valid"].astype(bool) & rt_series.notna()
         else:
-            rt_correct = rt_series
+            rt_valid_mask = rt_series.notna()
+            if rt_max_val is None:
+                rt_valid_mask &= rt_series >= WCST_RT_MIN
+            else:
+                rt_valid_mask &= rt_series.between(WCST_RT_MIN, rt_max_val)
+        rt_series_valid = rt_series.where(rt_valid_mask)
+        mad_rt = median_absolute_deviation(rt_series_valid)
+        iqr_rt = interquartile_range(rt_series_valid)
+        if "correct" in grp_sorted.columns:
+            rt_correct = rt_series_valid[grp_sorted["correct"] == True]
+        else:
+            rt_correct = rt_series_valid
         mad_rt_correct = median_absolute_deviation(rt_correct)
         iqr_rt_correct = interquartile_range(rt_correct)
         dfa_rt_correct = dfa_alpha(rt_correct)
@@ -199,13 +207,13 @@ def derive_wcst_features(
                 vincentile_vals[f"wcst_rt_vincentile_p{label}_correct"] = float(val)
             delta_plot_slope = float(q_vals[-1] - q_vals[0])
 
+        rt_vals = rt_series_valid.to_numpy()
         pes = np.nan
-        if "correct" in grp.columns:
-            rt_vals = grp[rt_col].values
-            correct = grp["correct"].values
+        if "correct" in grp_sorted.columns:
+            correct = grp_sorted["correct"].values
             post_pe_rts = []
             post_correct_rts = []
-            for i in range(len(grp) - 1):
+            for i in range(len(grp_sorted) - 1):
                 if correct[i] == False:
                     rt_next = rt_vals[i + 1]
                     if (
@@ -249,6 +257,8 @@ def derive_wcst_features(
         errors = ~correct
         total_errors = int(errors.sum()) if total_trials else 0
         error_rate = (total_errors / total_trials) if total_trials else np.nan
+        accuracy_all = float(np.mean(correct)) if total_trials else np.nan
+        error_rate_all = float(1.0 - accuracy_all) if total_trials else np.nan
 
         is_pe = grp["isPE"].astype(bool).values if "isPE" in grp.columns else np.zeros(total_trials, dtype=bool)
         is_pr = grp["isPR"].astype(bool).values if "isPR" in grp.columns else np.zeros(total_trials, dtype=bool)
@@ -295,7 +305,6 @@ def derive_wcst_features(
             rt_jump_vals = []
             rt_slope_vals = []
             acc_slope_vals = []
-            rt_vals = pd.to_numeric(grp[rt_col], errors="coerce").values.astype(float)
 
             for start, end in zip(segment_starts, segment_ends):
                 seg_len = end - start
@@ -318,14 +327,19 @@ def derive_wcst_features(
                 pre_rt = rt_vals[pre_start:idx]
                 post_rt = rt_vals[idx: min(idx + 3, len(rt_vals))]
                 if len(pre_rt) and len(post_rt):
-                    rt_jump_vals.append(float(np.nanmean(post_rt) - np.nanmean(pre_rt)))
+                    pre_mean = np.nanmean(pre_rt)
+                    post_mean = np.nanmean(post_rt)
+                    if np.isfinite(pre_mean) and np.isfinite(post_mean):
+                        rt_jump_vals.append(float(post_mean - pre_mean))
 
                 for k in range(1, 6):
                     if idx + k < len(rt_vals):
                         err_val = 1 - int(correct[idx + k])
                         switch_cost_err[k].append(err_val)
-                        if len(pre_rt):
-                            switch_cost_rt[k].append(float(rt_vals[idx + k] - np.nanmean(pre_rt)))
+                        if len(pre_rt) and np.isfinite(rt_vals[idx + k]):
+                            pre_mean = np.nanmean(pre_rt)
+                            if np.isfinite(pre_mean):
+                                switch_cost_rt[k].append(float(rt_vals[idx + k] - pre_mean))
 
             for k in range(1, 6):
                 switch_cost_err[k] = float(np.mean(switch_cost_err[k])) if switch_cost_err[k] else np.nan
@@ -418,7 +432,7 @@ def derive_wcst_features(
                     ss_tot = float(np.sum((y - np.mean(y)) ** 2))
                     block_pe_r2 = 1.0 - ss_res / ss_tot if ss_tot > 0 else np.nan
 
-        seq_rt = rt_series
+        seq_rt = rt_series_valid
         seq_correct = grp_sorted["correct"] if "correct" in grp_sorted.columns else pd.Series(dtype=object)
         fatigue_metrics = compute_fatigue_slopes(seq_rt, seq_correct)
         tau_metrics = compute_tau_quartile_metrics(seq_rt, seq_correct)
@@ -428,22 +442,28 @@ def derive_wcst_features(
         volatility_metrics = compute_volatility_metrics(seq_rt)
         iiv_metrics = compute_iiv_parameters(seq_rt)
         awareness_metrics = compute_error_awareness_metrics(seq_rt, seq_correct)
-        speed_metrics = compute_speed_accuracy_metrics(seq_rt, seq_correct)
         pre_error_metrics = compute_pre_error_slope_metrics(seq_rt, seq_correct)
+        rt_valid_values = rt_series_valid.dropna()
+        mean_rt_all = float(rt_valid_values.mean()) if len(rt_valid_values) >= 10 else np.nan
+        ies = (
+            float(mean_rt_all / accuracy_all)
+            if pd.notna(mean_rt_all) and pd.notna(accuracy_all) and accuracy_all > 0
+            else np.nan
+        )
 
         records.append({
             "participant_id": pid,
             "wcst_pes": pes,
             "wcst_post_switch_error_rate": post_switch_error_rate,
-            "wcst_cv_rt": coefficient_of_variation(grp[rt_col].dropna()),
+            "wcst_cv_rt": coefficient_of_variation(rt_valid_values),
             "wcst_mad_rt": mad_rt,
             "wcst_iqr_rt": iqr_rt,
             "wcst_mad_rt_correct": mad_rt_correct,
             "wcst_iqr_rt_correct": iqr_rt_correct,
-            "wcst_mean_rt_all": speed_metrics["mean_rt"],
-            "wcst_accuracy_all": speed_metrics["accuracy"],
-            "wcst_error_rate_all": speed_metrics["error_rate"],
-            "wcst_ies": speed_metrics["ies"],
+            "wcst_mean_rt_all": mean_rt_all,
+            "wcst_accuracy_all": accuracy_all,
+            "wcst_error_rate_all": error_rate_all,
+            "wcst_ies": ies,
             "wcst_pre_error_slope_mean": pre_error_metrics["pre_error_slope_mean"],
             "wcst_pre_error_slope_std": pre_error_metrics["pre_error_slope_std"],
             "wcst_pre_error_n": pre_error_metrics["pre_error_n"],

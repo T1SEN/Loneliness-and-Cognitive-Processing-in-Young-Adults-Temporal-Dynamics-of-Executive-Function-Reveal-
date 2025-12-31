@@ -8,7 +8,7 @@ from typing import Dict, Optional, Set
 
 import pandas as pd
 
-from ..constants import RAW_DIR, WCST_RT_MIN, get_results_dir
+from ..constants import RAW_DIR, WCST_RT_MIN, WCST_RT_MAX, get_results_dir
 from ..surveys import get_survey_valid_participants, SurveyQCCriteria
 from .filters import clean_wcst_trials, get_wcst_valid_participants, WCSTQCCriteria
 
@@ -96,6 +96,7 @@ def build_wcst_dataset(
             df_filtered["rt_ms"] = pd.to_numeric(df_filtered["rt_ms"], errors="coerce")
             df_filtered = df_filtered[df_filtered["rt_ms"].notna()]
             df_filtered = df_filtered[df_filtered["rt_ms"] >= WCST_RT_MIN]
+            df_filtered["is_rt_valid"] = df_filtered["rt_ms"].between(WCST_RT_MIN, WCST_RT_MAX)
         results[filename] = df_filtered
 
         if save:

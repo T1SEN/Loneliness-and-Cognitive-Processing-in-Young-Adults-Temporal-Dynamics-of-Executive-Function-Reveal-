@@ -10,6 +10,7 @@ import pandas as pd
 
 from ..._shared import _load_wcst_summary_metrics, prepare_wcst_trials
 from ....core import dfa_alpha, lag1_autocorrelation
+from ....constants import WCST_RT_MIN, WCST_RT_MAX
 
 
 def derive_wcst_drift_features(
@@ -51,6 +52,11 @@ def derive_wcst_drift_features(
                 trial_order = pd.Series(np.arange(len(grp)), index=grp.index, dtype=float)
 
             rt_vals = pd.to_numeric(grp[rt_col], errors="coerce")
+            if "is_rt_valid" in grp.columns:
+                rt_vals = rt_vals.where(grp["is_rt_valid"].astype(bool))
+            else:
+                rt_vals = rt_vals.where(rt_vals.between(WCST_RT_MIN, WCST_RT_MAX))
+
             rt_lag1 = lag1_autocorrelation(rt_vals)
             rt_dfa = dfa_alpha(rt_vals)
             valid = trial_order.notna() & rt_vals.notna()
@@ -66,7 +72,12 @@ def derive_wcst_drift_features(
 
             rt_slope_vals = []
             acc_slope_vals = []
-            rt_vals = pd.to_numeric(grp[rt_col], errors="coerce").values.astype(float) if rt_col else np.array([])
+            rt_vals = pd.to_numeric(grp[rt_col], errors="coerce")
+            if "is_rt_valid" in grp.columns:
+                rt_vals = rt_vals.where(grp["is_rt_valid"].astype(bool))
+            else:
+                rt_vals = rt_vals.where(rt_vals.between(WCST_RT_MIN, WCST_RT_MAX))
+            rt_vals = rt_vals.values.astype(float) if rt_col else np.array([])
 
             for start, end in zip(segment_starts, segment_ends):
                 seg_len = end - start

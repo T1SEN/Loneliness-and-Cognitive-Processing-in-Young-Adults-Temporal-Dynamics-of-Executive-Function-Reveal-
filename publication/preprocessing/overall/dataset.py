@@ -8,7 +8,7 @@ from typing import Dict, Optional, Set
 
 import pandas as pd
 
-from ..constants import PRP_RT_MIN, STROOP_RT_MIN, STROOP_RT_MAX, RAW_DIR, COMPLETE_OVERALL_DIR, WCST_RT_MIN
+from ..constants import PRP_RT_MIN, STROOP_RT_MIN, STROOP_RT_MAX, RAW_DIR, COMPLETE_OVERALL_DIR, WCST_RT_MIN, WCST_RT_MAX
 from ..surveys import get_survey_valid_participants, SurveyQCCriteria
 from ..prp.participant_filters import get_prp_valid_participants, PRPQCCriteria
 from ..stroop.filters import get_stroop_valid_participants, StroopQCCriteria
@@ -155,6 +155,7 @@ def build_overall_dataset(
             df_filtered["rt_ms"] = pd.to_numeric(df_filtered["rt_ms"], errors="coerce")
             df_filtered = df_filtered[df_filtered["rt_ms"].notna()]
             df_filtered = df_filtered[df_filtered["rt_ms"] >= WCST_RT_MIN]
+            df_filtered["is_rt_valid"] = df_filtered["rt_ms"].between(WCST_RT_MIN, WCST_RT_MAX)
         if filename == "4c_stroop_trials.csv":
             rt_col = "rt_ms" if "rt_ms" in df_filtered.columns else "rt" if "rt" in df_filtered.columns else None
             if rt_col is None:

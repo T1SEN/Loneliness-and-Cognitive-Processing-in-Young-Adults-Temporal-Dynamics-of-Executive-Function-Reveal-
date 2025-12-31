@@ -126,7 +126,12 @@ def derive_wcst_recovery_features(
             if has_correct
             else np.zeros(total_trials, dtype=bool)
         )
-        rt_vals = pd.to_numeric(grp[rt_col], errors="coerce").values.astype(float)
+        rt_vals = pd.to_numeric(grp[rt_col], errors="coerce")
+        if "is_rt_valid" in grp.columns:
+            rt_vals = rt_vals.where(grp["is_rt_valid"].astype(bool))
+        else:
+            rt_vals = rt_vals.where(_rt_valid(rt_vals))
+        rt_vals = rt_vals.values.astype(float)
 
         pes = np.nan
         post_error_accuracy_drop = np.nan
@@ -251,14 +256,19 @@ def derive_wcst_recovery_features(
                 pre_rt = rt_vals[pre_start:idx]
                 post_rt = rt_vals[idx: min(idx + 3, len(rt_vals))]
                 if len(pre_rt) and len(post_rt):
-                    rt_jump_vals.append(float(np.nanmean(post_rt) - np.nanmean(pre_rt)))
+                    pre_mean = np.nanmean(pre_rt)
+                    post_mean = np.nanmean(post_rt)
+                    if np.isfinite(pre_mean) and np.isfinite(post_mean):
+                        rt_jump_vals.append(float(post_mean - pre_mean))
 
                 for k in range(1, 6):
                     if idx + k < len(rt_vals):
                         err_val = 1 - int(correct[idx + k])
                         switch_cost_err[k].append(err_val)
-                        if len(pre_rt):
-                            switch_cost_rt[k].append(float(rt_vals[idx + k] - np.nanmean(pre_rt)))
+                        if len(pre_rt) and np.isfinite(rt_vals[idx + k]):
+                            pre_mean = np.nanmean(pre_rt)
+                            if np.isfinite(pre_mean):
+                                switch_cost_rt[k].append(float(rt_vals[idx + k] - pre_mean))
 
             for k in range(1, 6):
                 switch_cost_err[k] = float(np.mean(switch_cost_err[k])) if switch_cost_err[k] else np.nan

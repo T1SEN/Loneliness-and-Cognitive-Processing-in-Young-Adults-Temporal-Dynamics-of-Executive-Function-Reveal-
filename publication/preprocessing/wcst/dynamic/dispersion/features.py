@@ -14,6 +14,7 @@ from ....core import (
     mean_squared_successive_differences,
     skewness,
 )
+from ....constants import WCST_RT_MIN, WCST_RT_MAX
 from ..._shared import prepare_wcst_trials
 
 
@@ -35,8 +36,18 @@ def derive_wcst_dispersion_features(
     trial_col = prepared.get("trial_col")
     for pid, grp in wcst.groupby("participant_id"):
         rt_all = pd.to_numeric(grp[rt_col], errors="coerce")
+        if "is_rt_valid" in grp.columns:
+            rt_all = rt_all.where(grp["is_rt_valid"].astype(bool))
+        else:
+            rt_all = rt_all.where(rt_all.between(WCST_RT_MIN, WCST_RT_MAX))
+
         if trial_col and trial_col in grp.columns:
-            rt_ordered = pd.to_numeric(grp.sort_values(trial_col)[rt_col], errors="coerce")
+            grp_sorted = grp.sort_values(trial_col)
+            rt_ordered = pd.to_numeric(grp_sorted[rt_col], errors="coerce")
+            if "is_rt_valid" in grp_sorted.columns:
+                rt_ordered = rt_ordered.where(grp_sorted["is_rt_valid"].astype(bool))
+            else:
+                rt_ordered = rt_ordered.where(rt_ordered.between(WCST_RT_MIN, WCST_RT_MAX))
         else:
             rt_ordered = rt_all
         records.append({

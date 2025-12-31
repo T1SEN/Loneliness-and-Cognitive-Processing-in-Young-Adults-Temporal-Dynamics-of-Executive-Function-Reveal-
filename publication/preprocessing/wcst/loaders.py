@@ -8,7 +8,7 @@ from typing import Dict, Any, Tuple
 
 import pandas as pd
 
-from ..constants import WCST_RT_MIN, get_results_dir
+from ..constants import WCST_RT_MIN, WCST_RT_MAX, get_results_dir
 from .filters import clean_wcst_trials, filter_wcst_rt_trials
 from ..core import ensure_participant_id
 
@@ -55,6 +55,9 @@ def load_wcst_trials(
         df["rt_ms"] = pd.to_numeric(df["rt_ms"], errors="coerce")
         df = df[df["rt_ms"].notna()]
         df = df[df["rt_ms"] >= WCST_RT_MIN]
+        df["is_rt_valid"] = df["rt_ms"].between(WCST_RT_MIN, WCST_RT_MAX)
+        if filter_rt:
+            df = df[df["is_rt_valid"]]
         summary["rows_after"] = len(df)
     else:
         if clean:
@@ -64,9 +67,12 @@ def load_wcst_trials(
 
         if filter_rt:
             before_rt = len(df)
-            df = filter_wcst_rt_trials(df)
+            df = filter_wcst_rt_trials(df, rt_min=WCST_RT_MIN, rt_max=WCST_RT_MAX)
             summary["rt_filtered"] = before_rt - len(df)
             summary["rows_after"] = len(df)
+        if "rt_ms" in df.columns:
+            df["rt_ms"] = pd.to_numeric(df["rt_ms"], errors="coerce")
+            df["is_rt_valid"] = df["rt_ms"].between(WCST_RT_MIN, WCST_RT_MAX)
 
     if "correct" in df.columns:
         df["correct"] = _coerce_bool_series(df["correct"])
@@ -108,6 +114,7 @@ def load_wcst_summary(data_dir: Path) -> pd.DataFrame:
     wcst_trials["rt_ms"] = pd.to_numeric(wcst_trials["rt_ms"], errors="coerce")
     wcst_trials = wcst_trials[wcst_trials["rt_ms"].notna()]
     wcst_trials = wcst_trials[wcst_trials["rt_ms"] >= WCST_RT_MIN]
+    wcst_trials["is_rt_valid"] = wcst_trials["rt_ms"].between(WCST_RT_MIN, WCST_RT_MAX)
 
     wcst_trials["correct"] = _coerce_bool_series(wcst_trials["correct"])
     wcst_summary = wcst_trials.groupby("participant_id").agg(
@@ -115,7 +122,8 @@ def load_wcst_summary(data_dir: Path) -> pd.DataFrame:
         total_trials=("is_pe", "count"),
         wcst_accuracy=("correct", lambda x: (x.sum() / len(x)) * 100),
     ).reset_index()
-    rt_summary = wcst_trials.groupby("participant_id").agg(
+    rt_trials = wcst_trials[wcst_trials["is_rt_valid"] == True]
+    rt_summary = rt_trials.groupby("participant_id").agg(
         wcst_mean_rt=("rt_ms", "mean"),
         wcst_sd_rt=("rt_ms", "std"),
     ).reset_index()
