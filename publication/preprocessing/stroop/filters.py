@@ -15,9 +15,7 @@ from ..core import ensure_participant_id
 @dataclass
 class StroopQCCriteria:
     n_trials: int = 108
-    max_timeout_rate: float = 0.15
-    min_accuracy: float = 0.80
-    min_valid_per_condition: int = 20
+    min_accuracy: float = 0.70
     rt_min: float = STROOP_RT_MIN
     rt_max: float = STROOP_RT_MAX
 
@@ -149,11 +147,7 @@ def get_stroop_valid_participants(
 
     mask = (
         (qc["n_trials"] == criteria.n_trials)
-        & (qc["timeout_rate"] <= criteria.max_timeout_rate)
         & (qc["accuracy_total"] >= criteria.min_accuracy)
-        & (qc["valid_cong_n"] >= criteria.min_valid_per_condition)
-        & (qc["valid_incong_n"] >= criteria.min_valid_per_condition)
-        & (qc["valid_neutral_n"] >= criteria.min_valid_per_condition)
     )
     valid_ids = set(qc.loc[mask, "participant_id"].unique())
 

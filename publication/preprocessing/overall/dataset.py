@@ -8,7 +8,7 @@ from typing import Dict, Optional, Set
 
 import pandas as pd
 
-from ..constants import PRP_RT_MIN, STROOP_RT_MIN, RAW_DIR, COMPLETE_OVERALL_DIR, WCST_RT_MIN
+from ..constants import PRP_RT_MIN, STROOP_RT_MIN, STROOP_RT_MAX, RAW_DIR, COMPLETE_OVERALL_DIR, WCST_RT_MIN
 from ..surveys import get_survey_valid_participants, SurveyQCCriteria
 from ..prp.participant_filters import get_prp_valid_participants, PRPQCCriteria
 from ..stroop.filters import get_stroop_valid_participants, StroopQCCriteria
@@ -170,9 +170,23 @@ def build_overall_dataset(
                     )
                     timeout = timeout.fillna(False)
                 df_filtered["timeout"] = timeout.astype(bool)
-                df_filtered = df_filtered[df_filtered["timeout"] == False]
-            df_filtered = df_filtered[df_filtered[rt_col].notna()]
-            df_filtered = df_filtered[df_filtered[rt_col] >= STROOP_RT_MIN]
+            else:
+                df_filtered["timeout"] = False
+
+            if "correct" in df_filtered.columns:
+                correct = df_filtered["correct"]
+                if correct.dtype != bool:
+                    correct = correct.astype(str).str.strip().str.lower().map(
+                        {"true": True, "1": True, "false": False, "0": False}
+                    )
+                    correct = correct.fillna(False)
+                df_filtered["correct"] = correct.astype(bool)
+            else:
+                df_filtered["correct"] = False
+
+            df_filtered["correct"] = df_filtered["correct"] & (~df_filtered["timeout"])
+            df_filtered["is_timeout"] = df_filtered["timeout"]
+            df_filtered["is_rt_valid"] = df_filtered[rt_col].between(STROOP_RT_MIN, STROOP_RT_MAX)
         results[filename] = df_filtered
 
         if save:

@@ -8,7 +8,7 @@ from typing import Dict, List
 import numpy as np
 import pandas as pd
 
-from ..constants import STROOP_RT_MIN
+from ..constants import STROOP_RT_MIN, STROOP_RT_MAX
 from .loaders import load_stroop_trials
 
 
@@ -83,6 +83,8 @@ def prepare_stroop_trials(
     rt_max: float | None = None,
     data_dir: None | str | Path = None,
 ) -> Dict[str, object]:
+    if rt_max is None:
+        rt_max = STROOP_RT_MAX
     stroop, _ = load_stroop_trials(
         data_dir=data_dir,
         rt_min=rt_min,
@@ -122,7 +124,9 @@ def prepare_stroop_trials(
 
     stroop_acc = stroop_raw.copy()
     if "timeout" in stroop_acc.columns:
-        stroop_acc = stroop_acc[stroop_acc["timeout"] == False]
+        stroop_acc["timeout"] = stroop_acc["timeout"].astype(bool)
+        if "correct" in stroop_acc.columns:
+            stroop_acc["correct"] = stroop_acc["correct"] & (~stroop_acc["timeout"])
 
     return {
         "stroop": stroop,

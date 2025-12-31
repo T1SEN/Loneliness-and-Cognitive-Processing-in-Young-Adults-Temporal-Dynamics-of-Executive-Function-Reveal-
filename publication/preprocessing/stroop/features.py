@@ -105,16 +105,17 @@ def derive_stroop_features(
     rt_max: float | None = None,
     data_dir: None | str | Path = None,
 ) -> pd.DataFrame:
+    rt_max_val = STROOP_RT_MAX if rt_max is None else rt_max
     stroop, _ = load_stroop_trials(
         data_dir=data_dir,
         rt_min=rt_min,
-        rt_max=rt_max,
+        rt_max=rt_max_val,
         apply_trial_filters=True,
     )
     stroop_raw, _ = load_stroop_trials(
         data_dir=data_dir,
         rt_min=rt_min,
-        rt_max=rt_max,
+        rt_max=rt_max_val,
         apply_trial_filters=False,
     )
 
@@ -143,10 +144,8 @@ def derive_stroop_features(
         stroop_raw["condition_norm"] = stroop_raw[cond_col].apply(_normalize_condition)
 
     stroop_acc = stroop_raw.copy()
-    if "timeout" in stroop_acc.columns:
-        stroop_acc = stroop_acc[stroop_acc["timeout"] == False]
-
-    rt_max_val = STROOP_RT_MAX if rt_max is None else rt_max
+    if "timeout" in stroop_acc.columns and "correct" in stroop_acc.columns:
+        stroop_acc["correct"] = stroop_acc["correct"] & (~stroop_acc["timeout"])
 
     def _rt_valid(series: pd.Series) -> pd.Series:
         valid = series.notna() & (series >= rt_min)
@@ -461,15 +460,33 @@ def derive_stroop_features(
         speed_metrics = compute_speed_accuracy_metrics(seq_rt, seq_correct)
         pre_error_metrics = compute_pre_error_slope_metrics(seq_rt, seq_correct)
 
+        accuracy_all = np.nan
+        error_rate_all = np.nan
+        timeout_rate = np.nan
+        error_rate_non_timeout = np.nan
+        if not acc_grp.empty and "correct" in acc_grp.columns:
+            accuracy_all = float(acc_grp["correct"].mean())
+            timeout_col = "is_timeout" if "is_timeout" in acc_grp.columns else ("timeout" if "timeout" in acc_grp.columns else None)
+            if timeout_col is not None:
+                timeout_rate = float(acc_grp[timeout_col].mean())
+                error_rate_non_timeout = float(((~acc_grp[timeout_col]) & (~acc_grp["correct"])).mean())
+            error_rate_all = float(1.0 - accuracy_all)
+
+        ies = np.nan
+        if pd.notna(speed_metrics["mean_rt"]) and pd.notna(accuracy_all) and accuracy_all > 0:
+            ies = float(speed_metrics["mean_rt"] / accuracy_all)
+
         records.append({
             "participant_id": pid,
             "stroop_post_error_slowing": pes,
             "stroop_post_error_rt": post_error_mean,
             "stroop_post_correct_rt": post_correct_mean,
             "stroop_mean_rt_all": speed_metrics["mean_rt"],
-            "stroop_accuracy_all": speed_metrics["accuracy"],
-            "stroop_error_rate_all": speed_metrics["error_rate"],
-            "stroop_ies": speed_metrics["ies"],
+            "stroop_accuracy_all": accuracy_all,
+            "stroop_error_rate_all": error_rate_all,
+            "stroop_timeout_rate": timeout_rate,
+            "stroop_error_rate_non_timeout": error_rate_non_timeout,
+            "stroop_ies": ies,
             "stroop_pre_error_slope_mean": pre_error_metrics["pre_error_slope_mean"],
             "stroop_pre_error_slope_std": pre_error_metrics["pre_error_slope_std"],
             "stroop_pre_error_n": pre_error_metrics["pre_error_n"],
