@@ -1,4 +1,4 @@
-# Methods Section (Detailed)
+﻿# Methods Section (Detailed)
 
 ## 2.4 Measures
 
@@ -74,21 +74,21 @@ The entire session lasted approximately 40–60 minutes: surveys (10–15 minute
 
 ## 2.7 Data Preprocessing and Quality Control
 
-**Trial-level exclusions**. Across all tasks, trials were excluded for: (a) timeout—no response within the task-specific deadline; and (b) missing data—technical failures preventing response recording. For Stroop and PRP tasks, anticipatory responses (RT < 200 ms) were additionally excluded, as such rapid responses likely reflect premature key presses rather than genuine stimulus processing. For WCST, the anticipatory threshold was set lower (RT < 100 ms) given the self-paced response format. For PRP specifically, measured SOA was computed from actual T1 and T2 onset timestamps and compared against nominal SOA; trials with SOA measurement error exceeding ±50 ms were flagged for inspection. Upper RT limits were applied at the task level (3000 ms for Stroop and PRP, no limit for WCST) as responses beyond these limits were coded as timeouts.
+**Trial-level filtering and flags**. Trial-level datasets retain all recorded trials and append quality flags rather than dropping rows. For Stroop and PRP, timeouts are preserved and marked, and RT validity is defined as 200–3000 ms. For WCST, trials are cleaned for required fields and valid condition/card values, with RT < 200 ms removed; an RT-valid flag marks 200–10,000 ms for RT-based analyses. In analysis loaders, RT-focused indices exclude timeouts (Stroop/PRP) and require valid RTs; accuracy/error indices treat timeouts as incorrect while retaining those trials.
 
 **Participant-level exclusions**. Task-specific inclusion criteria were applied to ensure data quality:
 
-*Stroop task*: Participants were retained if they achieved: (a) overall accuracy ≥ 70% across all 108 main trials, indicating task comprehension; and (b) at least 50 valid (non-excluded) trials, ensuring sufficient data for reliable RT estimation. Accuracy was computed separately for each condition to identify potential color perception difficulties or response key confusion.
+*Stroop task*: Participants were retained if they completed all 108 main trials and overall accuracy was ≥ 70% (timeouts counted as incorrect).
 
-*PRP task*: Participants were retained if they completed all 120 main trials and their joint accuracy (T1 and T2 both correct) was >= 50% across PRP trials (timeouts counted as incorrect). Participants showing systematic response order reversals (T2 before T1 on >30% of trials) were flagged for inspection, as this may indicate task misunderstanding or strategic reordering.
+*PRP task*: Participants were retained if they completed all 120 main trials and their joint accuracy was ≥ 70%, defined as the proportion of trials that were structurally valid (T1→T2 order with no simultaneous response), non-timeout, and correct for both T1 and T2.
 
-*WCST*: Participants were retained if they achieved: (a) at least 80 valid trials (≥62.5% of 128 total), ensuring sufficient data for performance indices; (b) median RT ≥ 300 ms, as faster median RTs suggest random clicking rather than deliberate card matching; and (c) proportion of trials selecting any single reference card ≤ 85%, to exclude participants using fixed response strategies rather than adapting to feedback.
+*WCST*: Participants were retained if they had at least 60 valid trials after cleaning and did not select any single reference card on more than 85% of trials.
 
-**Derived performance measures**. For Stroop, the primary dependent variable was the Stroop interference effect, computed as mean RT(incongruent correct trials) − mean RT(congruent correct trials). Secondary measures included condition-specific accuracy rates and mean RTs.
+**Derived performance measures**. For Stroop, RT indices were computed on non-timeout trials with valid RTs (200–3000 ms); correct-only variants were computed separately. Accuracy metrics used all trials with timeouts coded as incorrect.
 
-For PRP, the primary dependent variable was the PRP effect magnitude, operationalized as the difference in mean T2 RT between short SOA (50 ms) and long SOA (1200 ms) conditions: PRP effect = mean RT2(SOA=50) − mean RT2(SOA=1200). This index captures the degree of response slowing attributable to central processing bottleneck at short SOAs. The slope of T2 RT across log-transformed SOA was computed as an alternative continuous measure.
+For PRP, RT indices were computed on structurally valid trials with no timeouts, valid RTs (200–3000 ms), and correct responses on both tasks. Accuracy and error rates were computed on structurally valid trials with timeouts coded as incorrect. The primary PRP effect was defined as the difference in mean T2 RT between short SOA (50 ms) and long SOA (1200 ms) conditions, with log-SOA slopes computed as continuous alternatives.
 
-For WCST, primary dependent variables included: (a) number of categories completed (0–6); (b) total errors; (c) perseverative errors (count and percentage of total errors); (d) non-perseverative errors; (e) conceptual level responses (runs of 3+ consecutive correct responses); and (f) trials to first category completion. Failure to maintain set was computed as the number of times an error occurred after achieving 5+ consecutive correct responses.
+For WCST, primary dependent variables included: (a) number of categories completed (0–6); (b) total errors; (c) perseverative errors (count and percentage of total errors); (d) non-perseverative errors; (e) conceptual level responses (runs of 3+ consecutive correct responses); and (f) trials to first category completion. Failure to maintain set was computed as the number of times an error occurred after achieving 5+ consecutive correct responses. RT-based indices applied the 10,000 ms upper bound via the RT-valid flag.
 
 ## 2.8 Statistical Analyses
 

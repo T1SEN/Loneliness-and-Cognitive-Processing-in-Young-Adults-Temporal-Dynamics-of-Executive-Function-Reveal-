@@ -11,6 +11,7 @@ import pandas as pd
 
 from ..constants import (
     RAW_DIR,
+    PRP_ACC_THRESHOLD,
     PRP_LONG_SOA_MIN,
 )
 from ..core import ensure_participant_id
@@ -18,7 +19,7 @@ from ..core import ensure_participant_id
 
 @dataclass
 class PRPQCCriteria:
-    min_both_correct_rate: float = 0.50
+    min_both_correct_rate: float = PRP_ACC_THRESHOLD
     n_trials_required: int = 120
     long_soa_min: float = PRP_LONG_SOA_MIN
 

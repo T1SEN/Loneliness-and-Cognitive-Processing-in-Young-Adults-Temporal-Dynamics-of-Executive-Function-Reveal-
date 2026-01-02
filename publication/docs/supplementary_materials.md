@@ -1,4 +1,4 @@
-# Supplementary Materials
+﻿# Supplementary Materials
 
 ## S1. Technical Specifications
 
@@ -190,17 +190,17 @@ This implementation ensures:
 
 ### S3.1 Trial-Level Exclusions
 
+Trial-level datasets retain all trials and add quality flags; exclusions below are applied in analysis loaders (WCST cleaning removes invalid records before analysis).
+
 | Task | Criterion | Threshold | Rationale |
 |------|-----------|-----------|-----------|
-| All | Timeout | Task-specific deadline | No response indicates disengagement |
-| All | Missing data | Any null value | Technical failure |
-| Stroop | Anticipatory RT | < 200 ms | Premature/random response |
-| PRP (T1) | Anticipatory RT | < 200 ms | Premature/random response |
-| PRP (T2) | Anticipatory RT | < 200 ms | Premature/random response |
-| WCST | Anticipatory RT | < 100 ms | Random clicking |
-| Stroop | Max RT | > 3000 ms | Coded as timeout |
-| PRP | Max RT | > 3000 ms (per task) | Coded as timeout |
-| WCST | Max RT | No limit | Self-paced task |
+| All | Timeout | Flagged; excluded for RT analyses | No response indicates disengagement |
+| All | Missing RT | Flagged; excluded for RT analyses | Technical failure |
+| Stroop | RT validity | 200–3000 ms | Remove anticipations/late responses |
+| PRP | RT validity (T1/T2) | 200–3000 ms | Remove anticipations/late responses |
+| PRP | Structural validity | T1→T2 order & no T2 while T1 pending | Enforce task order |
+| WCST | RT minimum | ≥ 200 ms | Remove anticipations |
+| WCST | RT validity (RT indices) | 200–10,000 ms | Exclude extreme lapses for RT metrics |
 
 ### S3.2 Participant-Level Exclusions
 
@@ -208,22 +208,21 @@ This implementation ensures:
 
 | Criterion | Threshold | Exclusion Rationale |
 |-----------|-----------|---------------------|
-| Overall accuracy | < 70% | Poor task comprehension or engagement |
-| Valid trials | < 50 | Insufficient data for reliable estimation |
+| Completed trials | < 108 | Did not finish the Stroop task |
+| Overall accuracy (timeout = incorrect) | < 70% | Poor task comprehension or engagement |
 
 **PRP Task:**
 
 | Criterion | Threshold | Exclusion Rationale |
 |-----------|-----------|---------------------|
 | Completed trials | < 120 | Did not finish the PRP task |
-| Joint accuracy (T1 and T2 both correct; timeouts counted as incorrect) | < 50% | Low engagement with dual-task demands |
+| Joint accuracy (structurally valid, non-timeout, T1 & T2 correct) | < 70% | Low engagement with dual-task demands |
 
 **WCST:**
 
 | Criterion | Threshold | Exclusion Rationale |
 |-----------|-----------|---------------------|
-| Valid trials | < 80 | Insufficient data for performance indices |
-| Median RT | < 300 ms | Random/impulsive responding |
+| Valid trials | < 60 | Insufficient data for performance indices |
 | Single card selection ratio | > 85% | Fixed response strategy (not adapting to feedback) |
 
 ---
@@ -234,32 +233,40 @@ This implementation ensures:
 
 **Stroop Interference Effect (Primary DV):**
 ```
-Stroop_Effect = mean(RT | cond=incongruent, correct=True)
-              - mean(RT | cond=congruent, correct=True)
+Stroop_Effect = mean(RT | cond=incongruent, timeout=False, 200<=RT<=3000)
+              - mean(RT | cond=congruent, timeout=False, 200<=RT<=3000)
+Stroop_Effect_Correct = mean(RT | cond=incongruent, correct=True, timeout=False, 200<=RT<=3000)
+                      - mean(RT | cond=congruent, correct=True, timeout=False, 200<=RT<=3000)
 ```
 
 **Stroop Facilitation Effect:**
 ```
-Stroop_Facilitation = mean(RT | cond=neutral, correct=True)
-                    - mean(RT | cond=congruent, correct=True)
+Stroop_Facilitation = mean(RT | cond=neutral, timeout=False, 200<=RT<=3000)
+                    - mean(RT | cond=congruent, timeout=False, 200<=RT<=3000)
+Stroop_Facilitation_Correct = mean(RT | cond=neutral, correct=True, timeout=False, 200<=RT<=3000)
+                           - mean(RT | cond=congruent, correct=True, timeout=False, 200<=RT<=3000)
 ```
 
 **Condition-Specific Accuracy:**
 ```
-Accuracy_cond = (n_correct | cond) / (n_trials | cond) × 100
+correct = correct & ~timeout
+Accuracy_cond = mean(correct | cond) × 100
 ```
 
 **Condition-Specific Mean RT:**
 ```
-MeanRT_cond = mean(RT | cond, correct=True, RT > 200ms)
+MeanRT_cond = mean(RT | cond, timeout=False, 200<=RT<=3000)
+MeanRT_cond_Correct = mean(RT | cond, correct=True, timeout=False, 200<=RT<=3000)
 ```
 
 ### S4.2 PRP Task Variables
 
 **PRP Effect (Primary DV):**
 ```
-PRP_Effect = mean(RT2 | SOA=50ms, T1_correct=True, T2_correct=True)
-           - mean(RT2 | SOA=1200ms, T1_correct=True, T2_correct=True)
+PRP_Effect = mean(RT2 | SOA=50ms, timeout=False, order=T1→T2, no_pending=True,
+                  T1_correct=True, T2_correct=True, 200<=RT2<=3000)
+           - mean(RT2 | SOA=1200ms, timeout=False, order=T1→T2, no_pending=True,
+                  T1_correct=True, T2_correct=True, 200<=RT2<=3000)
 ```
 
 **Central Bottleneck Slope:**
@@ -270,22 +277,27 @@ Central_Bottleneck_Slope = β₁
 
 **SOA-Specific T2 RT:**
 ```
-RT2_SOA_X = mean(RT2 | SOA=X, T1_correct=True, T2_correct=True)
+RT2_SOA_X = mean(RT2 | SOA=X, timeout=False, order=T1→T2, no_pending=True,
+                 T1_correct=True, T2_correct=True, 200<=RT2<=3000)
 ```
 Where X ∈ {50, 150, 300, 600, 1200}
 
 **T1 Mean RT:**
 ```
-MRT_T1 = mean(RT1 | T1_correct=True)
+MRT_T1 = mean(RT1 | timeout=False, order=T1→T2, no_pending=True,
+              T1_correct=True, T2_correct=True, 200<=RT1<=3000)
 ```
 
 **Task Accuracy:**
 ```
-Acc_T1 = n(T1_correct) / n(valid_trials) × 100
-Acc_T2 = n(T2_correct) / n(valid_trials) × 100
+Acc_T1 = mean(T1_correct | structurally_valid=True; timeouts coded as incorrect) × 100
+Acc_T2 = mean(T2_correct | structurally_valid=True; timeouts coded as incorrect) × 100
+Acc_Both = mean(T1_correct & T2_correct | structurally_valid=True; timeouts coded as incorrect) × 100
 ```
 
 ### S4.3 WCST Variables
+
+All WCST indices are computed on cleaned trials (valid fields/conditions/cards, RT >= 200 ms). RT-based summaries optionally apply the 10,000 ms upper bound via the RT-valid flag.
 
 **Categories Completed:**
 ```
@@ -551,12 +563,14 @@ List<String> _generateRandomTestOrder() {
 
 ### S7.2 Post-Hoc Quality Checks
 
+These checks were used for descriptive inspection only and were not enforced as automatic exclusions in the preprocessing pipeline.
+
 | Check | Criterion | Flag/Exclude |
 |-------|-----------|--------------|
 | RT distribution | Inspect for bimodality | Flag for review |
-| Accuracy floor | < 50% (chance level) | Exclude |
+| Accuracy floor | < 50% (chance level) | Flag for review |
 | Response patterns | Repeated same response | Flag for review |
-| SOA timing accuracy | |Measured - Nominal| > 50ms | Flag trials |
+| SOA timing accuracy | |Measured - Nominal| > 50ms | Flag for review |
 | Session duration | Outside expected range | Flag for review |
 
 ---
