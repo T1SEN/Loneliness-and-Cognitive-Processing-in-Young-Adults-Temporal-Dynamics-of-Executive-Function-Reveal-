@@ -48,7 +48,6 @@ from .stroop import (
 from .stroop.mechanism import (
     load_or_compute_stroop_mechanism_features,
     load_or_compute_stroop_hmm_event_features,
-    load_or_compute_stroop_lba_mechanism_features,
 )
 from .stroop.dataset import build_stroop_dataset
 from .wcst import (
@@ -102,7 +101,6 @@ def _derive_stroop_mechanism_features(data_dir):
     for part in (
         load_or_compute_stroop_mechanism_features,
         load_or_compute_stroop_hmm_event_features,
-        load_or_compute_stroop_lba_mechanism_features,
     ):
         df = part(data_dir=data_dir)
         features_df = _merge_feature_frames(features_df, df)

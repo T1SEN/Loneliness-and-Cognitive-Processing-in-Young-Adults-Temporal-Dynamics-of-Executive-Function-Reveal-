@@ -32,8 +32,6 @@ for task in ['stroop', 'prp', 'wcst']:
         col_lower = col.lower()
         if 'exg' in col_lower or 'ex_gauss' in col_lower:
             cat = 'Ex-Gaussian'
-        elif 'lba' in col_lower:
-            cat = 'LBA'
         elif 'hmm' in col_lower:
             cat = 'HMM'
         elif 'rl_' in col_lower or 'wsls' in col_lower or 'bayes' in col_lower:
@@ -72,7 +70,7 @@ print('\n' + '=' * 80)
 print('상세 결과 (카테고리별)')
 print('=' * 80)
 
-for cat in ['Traditional', 'Temporal Dynamics', 'Ex-Gaussian', 'Bottleneck/CB', 'LBA', 'HMM', 'RL/WSLS/Bayes']:
+for cat in ['Traditional', 'Temporal Dynamics', 'Ex-Gaussian', 'Bottleneck/CB', 'HMM', 'RL/WSLS/Bayes']:
     subset = df[df['category'] == cat]
     if len(subset) == 0:
         continue

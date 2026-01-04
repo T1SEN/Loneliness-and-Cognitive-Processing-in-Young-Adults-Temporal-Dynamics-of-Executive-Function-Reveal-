@@ -203,10 +203,6 @@ TIER1_OUTCOMES = [
     ('prp_cb_r_squared', 'PRP CB Model R-squared'),
     ('prp_cb_slope', 'PRP CB Slope (short SOA)'),
 
-    # Stroop LBA model parameters (interference indices)
-    ('stroop_lba_v_correct_interference', 'Stroop LBA v_correct Interference'),
-    ('stroop_lba_b_interference', 'Stroop LBA b (Threshold) Interference'),
-    ('stroop_lba_t0_interference', 'Stroop LBA t0 Interference'),
 ]
 
 # -----------------------------------------------------------------------------
@@ -286,13 +282,6 @@ STROOP_EXTRA_OUTCOMES += [
 STROOP_EXTRA_OUTCOMES += [
     (f"stroop_vincentile_interference_p{p}_correct", f"Stroop Vincentile Interference p{p} (correct)")
     for p in STROOP_VINCENTILES
-]
-
-STROOP_LBA_PARAMS = ["v_correct", "v_incorrect", "A", "b", "t0", "negloglik", "aic", "bic"]
-STROOP_EXTRA_OUTCOMES += [
-    (f"stroop_lba_{cond}_{param}", f"Stroop LBA {param} ({cond})")
-    for cond in STROOP_CONDITIONS
-    for param in STROOP_LBA_PARAMS
 ]
 
 STROOP_EXTRA_OUTCOMES += [
@@ -834,9 +823,6 @@ TIER1_OUTCOMES_BY_TASK = {
         ('stroop_exg_mu_interference', 'Stroop Ex-Gaussian mu (Interference)'),
         ('stroop_exg_sigma_interference', 'Stroop Ex-Gaussian sigma (Interference)'),
         ('stroop_exg_tau_interference', 'Stroop Ex-Gaussian tau (Interference)'),
-        ('stroop_lba_v_correct_interference', 'Stroop LBA v_correct Interference'),
-        ('stroop_lba_b_interference', 'Stroop LBA b (Threshold) Interference'),
-        ('stroop_lba_t0_interference', 'Stroop LBA t0 Interference'),
     ] + STROOP_EXTRA_OUTCOMES,
 }
 

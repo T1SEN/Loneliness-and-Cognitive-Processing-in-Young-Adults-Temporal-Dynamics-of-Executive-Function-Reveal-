@@ -3,10 +3,6 @@
 ??	b	?R2_UCLA	p_ols	p_hc3	n
 Stroop Incongruent RT Slope	0.474948	0.0250322	0.0191107	0.0157116	219
 Stroop Fast Run Mean (incongruent, correct)	-0.101912	0.0236367	0.0241146	0.016502	219
-Stroop LBA A (incongruent)	0.0642883	0.0668397	0.00779664	0.00832138	108
-Stroop LBA b (incongruent)	0.0934717	0.0482087	0.0236867	0.0266643	108
-Stroop LBA v_correct (neutral)	-0.907337	0.100341	0.0307501	0.0204905	47
-Stroop LBA v_incorrect (neutral)	-0.363826	0.13567	0.00801267	0.00153082	47
 Stroop CV Fatigue Slope (Q4-Q1)	0.0177584	0.0220894	0.0285858	0.0419014	219
 Stroop Recovery Accuracy Lag4	0.0218946	0.0838186	0.0394833	0.129678	45
 ???(OLS p>=.05)
@@ -121,26 +117,6 @@ Stroop Recovery Accuracy Lag4	0.0218946	0.0838186	0.0394833	0.129678	45
 - Stroop Vincentile Interference p50 (correct)
 - Stroop Vincentile Interference p70 (correct)
 - Stroop Vincentile Interference p90 (correct)
-- Stroop LBA v_correct (congruent)
-- Stroop LBA v_incorrect (congruent)
-- Stroop LBA A (congruent)
-- Stroop LBA b (congruent)
-- Stroop LBA t0 (congruent)
-- Stroop LBA negloglik (congruent)
-- Stroop LBA aic (congruent)
-- Stroop LBA bic (congruent)
-- Stroop LBA v_correct (incongruent)
-- Stroop LBA v_incorrect (incongruent)
-- Stroop LBA t0 (incongruent)
-- Stroop LBA negloglik (incongruent)
-- Stroop LBA aic (incongruent)
-- Stroop LBA bic (incongruent)
-- Stroop LBA A (neutral)
-- Stroop LBA b (neutral)
-- Stroop LBA t0 (neutral)
-- Stroop LBA negloglik (neutral)
-- Stroop LBA aic (neutral)
-- Stroop LBA bic (neutral)
 - Stroop RT Fatigue Slope (Q4-Q1)
 - Stroop Accuracy Fatigue Slope (Q4-Q1)
 - Stroop Tau Q1

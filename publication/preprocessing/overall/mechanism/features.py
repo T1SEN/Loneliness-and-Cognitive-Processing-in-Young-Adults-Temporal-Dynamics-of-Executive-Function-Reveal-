@@ -12,7 +12,6 @@ from ...prp.mechanism.exgaussian import load_or_compute_prp_mechanism_features
 from ...prp.mechanism.hmm_event import load_or_compute_prp_hmm_event_features
 from ...stroop.mechanism.exgaussian import load_or_compute_stroop_mechanism_features
 from ...stroop.mechanism.hmm_event import load_or_compute_stroop_hmm_event_features
-from ...stroop.mechanism.lba import load_or_compute_stroop_lba_mechanism_features
 from ...wcst.mechanism.bayesianrl import load_or_compute_wcst_bayesianrl_mechanism_features
 from ...wcst.mechanism.hmm import load_or_compute_wcst_hmm_mechanism_features
 from ...wcst.mechanism.rl import load_or_compute_wcst_rl_mechanism_features
@@ -44,7 +43,6 @@ def derive_overall_mechanism_features(data_dir: Path | None = None) -> pd.DataFr
         load_or_compute_prp_bottleneck_mechanism_features(data_dir=get_results_dir("prp")),
         load_or_compute_stroop_mechanism_features(data_dir=get_results_dir("stroop")),
         load_or_compute_stroop_hmm_event_features(data_dir=get_results_dir("stroop")),
-        load_or_compute_stroop_lba_mechanism_features(data_dir=get_results_dir("stroop")),
         load_or_compute_wcst_hmm_mechanism_features(data_dir=get_results_dir("wcst")),
         load_or_compute_wcst_rl_mechanism_features(data_dir=get_results_dir("wcst")),
         load_or_compute_wcst_wsls_mechanism_features(data_dir=get_results_dir("wcst")),
