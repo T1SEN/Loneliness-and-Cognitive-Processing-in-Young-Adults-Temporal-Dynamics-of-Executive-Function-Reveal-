@@ -185,6 +185,7 @@ def derive_stroop_features(
         slope = np.nan
         cv_incong = np.nan
         cv_cong = np.nan
+        rt_sd_incong = np.nan
         mad_incong = np.nan
         iqr_incong = np.nan
         mad_cong = np.nan
@@ -203,6 +204,8 @@ def derive_stroop_features(
 
             cv_incong = coefficient_of_variation(incong["rt_ms"].dropna())
             cv_cong = coefficient_of_variation(cong["rt_ms"].dropna())
+            rt_sd_vals = incong["rt_ms"].dropna()
+            rt_sd_incong = float(rt_sd_vals.std(ddof=1)) if len(rt_sd_vals) > 1 else np.nan
             mad_incong = median_absolute_deviation(incong["rt_ms"].dropna())
             iqr_incong = interquartile_range(incong["rt_ms"].dropna())
             mad_cong = median_absolute_deviation(cong["rt_ms"].dropna())
@@ -494,6 +497,7 @@ def derive_stroop_features(
             "stroop_cv_all": coefficient_of_variation(grp["rt_ms"].dropna()),
             "stroop_cv_incong": cv_incong,
             "stroop_cv_cong": cv_cong,
+            "stroop_rt_sd_incong": rt_sd_incong,
             "stroop_mad_all": mad_all,
             "stroop_iqr_all": iqr_all,
             "stroop_mad_incong": mad_incong,

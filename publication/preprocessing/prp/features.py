@@ -331,11 +331,14 @@ def derive_prp_features(
         accuracy_all = np.nan
         error_rate_all = np.nan
         ies = np.nan
+        both_correct_rate = np.nan
         if "t2_correct" in acc_group.columns and not acc_group.empty:
             accuracy_all = float(acc_group["t2_correct"].mean())
             error_rate_all = float(1.0 - accuracy_all)
             if pd.notna(speed_metrics["mean_rt"]) and accuracy_all > 0:
                 ies = float(speed_metrics["mean_rt"] / accuracy_all)
+        if not acc_group.empty and "t1_correct" in acc_group.columns and "t2_correct" in acc_group.columns:
+            both_correct_rate = float((acc_group["t1_correct"] & acc_group["t2_correct"]).mean())
 
         record = {
             "participant_id": pid,
@@ -352,6 +355,7 @@ def derive_prp_features(
             "prp_t2_accuracy_all": accuracy_all,
             "prp_t2_error_rate_all": error_rate_all,
             "prp_t2_ies": ies,
+            "prp_both_correct_rate": both_correct_rate,
             "prp_pre_error_slope_mean": pre_error_metrics["pre_error_slope_mean"],
             "prp_pre_error_slope_std": pre_error_metrics["pre_error_slope_std"],
             "prp_pre_error_n": pre_error_metrics["pre_error_n"],

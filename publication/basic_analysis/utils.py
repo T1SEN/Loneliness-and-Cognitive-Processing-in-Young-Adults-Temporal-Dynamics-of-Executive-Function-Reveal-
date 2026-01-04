@@ -220,6 +220,7 @@ STROOP_EXTRA_OUTCOMES = [
     ('stroop_slow_prob_stable_delta', 'Stroop Slow-State Prob Delta (Stable)'),
     ('stroop_rt_interference', 'Stroop RT Interference'),
     ('stroop_acc_interference', 'Stroop Accuracy Interference'),
+    ('stroop_rt_sd_incong', 'Stroop RT SD (Incongruent)'),
     ('stroop_rt_facilitation', 'Stroop RT Facilitation'),
     ('stroop_acc_facilitation', 'Stroop Accuracy Facilitation'),
     ('stroop_rt_incong_minus_neutral', 'Stroop RT Incongruent minus Neutral'),
@@ -443,6 +444,7 @@ PRP_EXTRA_OUTCOMES += [
 PRP_EXTRA_OUTCOMES += [
     ('prp_t2_mean_rt_all', 'PRP T2 Mean RT (All)'),
     ('prp_t2_accuracy_all', 'PRP T2 Accuracy (All)'),
+    ('prp_both_correct_rate', 'PRP Dual-Task Accuracy (Both Correct)'),
     ('prp_t2_error_rate_all', 'PRP T2 Error Rate (All)'),
     ('prp_t2_ies', 'PRP T2 Inverse Efficiency Score'),
     ('prp_pre_error_slope_mean', 'PRP Pre-Error RT Slope (Mean)'),

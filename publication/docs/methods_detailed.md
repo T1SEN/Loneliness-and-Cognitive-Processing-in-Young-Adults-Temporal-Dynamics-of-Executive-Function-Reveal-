@@ -92,6 +92,8 @@ For WCST, primary dependent variables included: (a) number of categories complet
 
 ## 2.8 Statistical Analyses
 
+Hierarchical multiple regression models were estimated using OLS (non-robust) standard errors. UCLA effects were evaluated via model-based tests, with incremental R^2 assessed by nested model comparisons.
+
 ### 2.8.3 Exploratory Computational Indices (optional)
 
 In addition to the pre-specified temporal dynamics indices, we explored computational model-derived parameters as potential markers of loneliness-related cognitive differences. These included: (a) Ex-Gaussian distribution parameters (mu, sigma, tau) fitted to PRP T2 RT distributions, (b) Hidden Markov Model state transition probabilities from WCST performance, and (c) central bottleneck model fit indices from PRP. Given their exploratory nature, these analyses are reported separately and interpreted cautiously.

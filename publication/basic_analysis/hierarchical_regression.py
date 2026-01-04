@@ -83,11 +83,30 @@ def find_interaction_term(param_names: pd.Index, term1: str, term2: str) -> Opti
     return None
 
 
+def _format_cov_type(cov_type: Optional[str]) -> str:
+    if cov_type is None:
+        return "OLS"
+    cov_clean = str(cov_type).strip()
+    if cov_clean == "":
+        return "OLS"
+    if cov_clean.lower() in {"nonrobust", "ols", "none"}:
+        return "OLS"
+    return cov_clean
+
+
+def _fit_model(formula: str, data: pd.DataFrame, cov_type: Optional[str]) -> Any:
+    model = smf.ols(formula, data=data)
+    cov_clean = _format_cov_type(cov_type)
+    if cov_clean == "OLS":
+        return model.fit()
+    return model.fit(cov_type=cov_type)
+
+
 def run_hierarchical_regression(
     data: pd.DataFrame,
     outcome: str,
     label: str,
-    robust: str = "HC3",
+    cov_type: Optional[str] = "nonrobust",
     min_n: int = 30
 ) -> Optional[dict[str, Any]]:
     """
@@ -101,8 +120,8 @@ def run_hierarchical_regression(
         Outcome variable column name
     label : str
         Human-readable label for the outcome
-    robust : str
-        Robust SE type (default: HC3)
+    cov_type : str or None
+        Covariance type for SEs (default: nonrobust/OLS).
     min_n : int
         Minimum sample size required
 
@@ -119,12 +138,14 @@ def run_hierarchical_regression(
         print(f"  [SKIP] {label}: N={len(df)} < {min_n}")
         return None
 
+    cov_label = _format_cov_type(cov_type)
+
     # Fit models
     models = {}
     for model_name, formula_template in HIERARCHICAL_FORMULAS.items():
         formula = formula_template.format(outcome=outcome)
         try:
-            models[model_name] = smf.ols(formula, data=df).fit(cov_type=robust)
+            models[model_name] = _fit_model(formula, df, cov_type)
         except Exception as e:
             print(f"  [ERROR] {label} {model_name}: {e}")
             return None
@@ -138,14 +159,14 @@ def run_hierarchical_regression(
         print(f"  [ERROR] {label} ANOVA: {e}")
         return None
 
-    # HC3 Wald test for UCLA effect
+    # Wald test for UCLA effect
     try:
         ucla_wald = models['model2'].wald_test('z_ucla_score = 0', use_f=True)
         p_ucla_wald = float(ucla_wald.pvalue)
     except Exception:
         p_ucla_wald = models['model2'].pvalues.get('z_ucla_score', np.nan)
 
-    # HC3 Wald test for interaction
+    # Wald test for interaction
     int_term = find_interaction_term(models['model3'].params.index, 'ucla', 'gender')
     if int_term:
         try:
@@ -161,6 +182,7 @@ def run_hierarchical_regression(
         'outcome': label,
         'outcome_column': outcome,
         'n': len(df),
+        'cov_type': cov_label,
 
         # R^2 values
         'model0_r2': models['model0'].rsquared,
@@ -188,12 +210,12 @@ def run_hierarchical_regression(
         'delta_r2_ucla': models['model2'].rsquared - models['model1'].rsquared,
         'F_ucla': anova_2v1['F'][1] if 'F' in anova_2v1.columns else np.nan,
         'p_ucla_ols': anova_2v1['Pr(>F)'][1],
-        'p_ucla_wald': p_ucla_wald,  # HC3 robust
+        'p_ucla_wald': p_ucla_wald,  # Wald test using specified covariance
 
         'delta_r2_interaction': models['model3'].rsquared - models['model2'].rsquared,
         'F_interaction': anova_3v2['F'][1] if 'F' in anova_3v2.columns else np.nan,
         'p_interaction_ols': anova_3v2['Pr(>F)'][1],
-        'p_interaction_wald': p_interaction_wald,  # HC3 robust
+        'p_interaction_wald': p_interaction_wald,  # Wald test using specified covariance
 
         # UCLA main effect (from Model 2)
         'ucla_beta': models['model2'].params.get('z_ucla_score', np.nan),
@@ -222,7 +244,7 @@ def run_hierarchical_regression(
         if len(subset) >= 15:
             formula = f"{outcome} ~ z_ucla_score + z_dass_depression + z_dass_anxiety + z_dass_stress + z_age"
             try:
-                m = smf.ols(formula, data=subset).fit(cov_type=robust)
+                m = _fit_model(formula, subset, cov_type)
                 results[f'{gender_label}_n'] = len(subset)
                 results[f'{gender_label}_ucla_beta'] = m.params.get('z_ucla_score', np.nan)
                 results[f'{gender_label}_ucla_se'] = m.bse.get('z_ucla_score', np.nan)
@@ -276,7 +298,11 @@ def run_hierarchical_regression(
     return results
 
 
-def generate_summary_report(results_df: pd.DataFrame, output_path: str) -> None:
+def generate_summary_report(
+    results_df: pd.DataFrame,
+    output_path: str,
+    cov_label: str
+) -> None:
     """
     Generate human-readable summary report.
 
@@ -309,8 +335,16 @@ def generate_summary_report(results_df: pd.DataFrame, output_path: str) -> None:
         lines.append("")
         lines.append("Model Comparison:")
         lines.append(f"  Step 1 (DASS):        Delta R^2 = {row['delta_r2_dass']:.4f}, p = {format_pvalue(row['p_dass'])}")
-        lines.append(f"  Step 2 (UCLA):        Delta R^2 = {row['delta_r2_ucla']:.4f}, p = {format_pvalue(row['p_ucla_wald'])} (HC3 Wald)")
-        lines.append(f"  Step 3 (Interaction): Delta R^2 = {row['delta_r2_interaction']:.4f}, p = {format_pvalue(row['p_interaction_wald'])} (HC3 Wald)")
+        lines.append(
+            "  Step 2 (UCLA):        "
+            f"Delta R^2 = {row['delta_r2_ucla']:.4f}, "
+            f"p = {format_pvalue(row['p_ucla_wald'])} ({cov_label} Wald)"
+        )
+        lines.append(
+            "  Step 3 (Interaction): "
+            f"Delta R^2 = {row['delta_r2_interaction']:.4f}, "
+            f"p = {format_pvalue(row['p_interaction_wald'])} ({cov_label} Wald)"
+        )
 
         # UCLA effect
         lines.append("")
@@ -341,14 +375,18 @@ def generate_summary_report(results_df: pd.DataFrame, output_path: str) -> None:
         lines.append("")
 
     lines.append("=" * 70)
-    lines.append("Note. HC3 robust standard errors used for all tests.")
+    lines.append(f"Note. {cov_label} standard errors used for all tests.")
     lines.append("=" * 70)
 
     with open(output_path, 'w', encoding='utf-8') as f:
         f.write('\n'.join(lines))
 
 
-def run(task: str, verbose: bool = True) -> dict[str, pd.DataFrame]:
+def run(
+    task: str,
+    cov_type: Optional[str] = "nonrobust",
+    verbose: bool = True
+) -> dict[str, pd.DataFrame]:
     """
     Run hierarchical regression analysis for all Tier-1 outcomes.
 
@@ -372,8 +410,10 @@ def run(task: str, verbose: bool = True) -> dict[str, pd.DataFrame]:
     outcomes = filter_vars(df, get_tier1_outcomes(task))
     output_dir = get_output_dir(task)
 
+    cov_label = _format_cov_type(cov_type)
     if verbose:
         print(f"  Total participants: N = {len(df)}")
+        print(f"  Covariance type: {cov_label}")
 
     # Run hierarchical regression for each outcome
     if verbose:
@@ -385,7 +425,12 @@ def run(task: str, verbose: bool = True) -> dict[str, pd.DataFrame]:
         if verbose:
             print(f"\n  Analyzing: {outcome_label}")
 
-        result = run_hierarchical_regression(df, outcome_col, outcome_label)
+        result = run_hierarchical_regression(
+            df,
+            outcome_col,
+            outcome_label,
+            cov_type=cov_type
+        )
         if result:
             all_results.append(result)
 
@@ -410,7 +455,7 @@ def run(task: str, verbose: bool = True) -> dict[str, pd.DataFrame]:
     comparison_df.to_csv(output_dir / "model_comparison.csv", index=False, encoding='utf-8-sig')
 
     # Generate summary report
-    generate_summary_report(results_df, output_dir / "hierarchical_summary.txt")
+    generate_summary_report(results_df, output_dir / "hierarchical_summary.txt", cov_label)
 
     # Print results
     if verbose:
@@ -432,7 +477,7 @@ def run(task: str, verbose: bool = True) -> dict[str, pd.DataFrame]:
                   f"{row['delta_r2_interaction']:>8.4f}{int_sig:<2}")
 
         print("  " + "-" * 65)
-        print("  Note. *p < .05 (HC3 Wald test)")
+        print(f"  Note. *p < .05 ({cov_label} Wald test)")
 
         # Significant effects
         sig_ucla = results_df[results_df['p_ucla_wald'] < 0.05]
@@ -468,12 +513,17 @@ def parse_args() -> argparse.Namespace:
         choices=sorted(VALID_TASKS),
         help="Dataset task to analyze (overall, stroop, prp, wcst).",
     )
+    parser.add_argument(
+        "--cov-type",
+        default="nonrobust",
+        help="Covariance type for SEs (e.g., nonrobust/OLS, HC3).",
+    )
     return parser.parse_args()
 
 
 if __name__ == "__main__":
     args = parse_args()
-    results = run(task=args.task, verbose=True)
+    results = run(task=args.task, cov_type=args.cov_type, verbose=True)
     print("\n" + "=" * 70)
     print("HIERARCHICAL REGRESSION ANALYSIS COMPLETE")
     print("=" * 70)

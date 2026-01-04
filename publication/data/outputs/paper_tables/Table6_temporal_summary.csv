@@ -1,5 +1,5 @@
 ﻿Task,Outcome,N,b,SE,t,p,delta_R2
-STROOP,Stroop Incongruent RT Slope,220,0.443,0.193,2.3,0.023,0.0224
-WCST,WCST RT Slope within Category,212,-12.583,4.915,-2.56,0.011,0.038
-WCST,WCST Switch Cost Error k2,209,0.047,0.022,2.19,0.029,0.0249
-WCST,WCST Post-Error Slowing (ms),211,165.887,81.118,2.05,0.042,0.0262
+STROOP,Stroop Incongruent RT Slope,220,0.443,0.198,2.23,0.027,0.0224
+WCST,WCST RT Slope within Category,212,-12.583,4.409,-2.85,0.005,0.038
+WCST,WCST Post-Error Slowing (ms),211,165.887,70.662,2.35,0.02,0.0262
+WCST,WCST Switch Cost Error k2,209,0.047,0.02,2.32,0.021,0.0249

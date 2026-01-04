@@ -358,6 +358,104 @@ Learning_Efficiency = mean(trials_per_category | first 3 categories)
 
 ---
 
+## S4.4 Primary Conventional and Temporal Dynamics Indices
+
+All indices below use the trial-level exclusions in S3.1. RT-based indices use task-specific RT bounds (Stroop/PRP: 200-3000 ms; WCST: 200-10,000 ms). Accuracy metrics treat timeouts as incorrect where applicable.
+
+### S4.4.1 Conventional Indices (Traditional)
+
+**Stroop RT interference (incongruent - congruent):**
+```
+RT_incong = mean(rt_ms | condition=incongruent, timeout=False, rt_valid=True)
+RT_cong   = mean(rt_ms | condition=congruent, timeout=False, rt_valid=True)
+stroop_rt_interference = RT_incong - RT_cong
+```
+
+**Stroop accuracy interference (incongruent - congruent):**
+```
+ACC_incong = mean(correct | condition=incongruent, timeout=False)
+ACC_cong   = mean(correct | condition=congruent, timeout=False)
+stroop_acc_interference = ACC_incong - ACC_cong
+```
+
+**PRP bottleneck effect (T2 RT short - long SOA):**
+```
+RT2_short = mean(t2_rt_ms | soa_ms <= 150, timeout=False, rt_valid=True,
+                 order=t1_t2, no_pending=True)
+RT2_long  = mean(t2_rt_ms | soa_ms >= 1200, timeout=False, rt_valid=True,
+                 order=t1_t2, no_pending=True)
+prp_bottleneck = RT2_short - RT2_long
+```
+
+**PRP dual-task accuracy (both correct rate):**
+```
+prp_both_correct_rate = mean(t1_correct & t2_correct | structurally_valid=True)
+```
+Structurally valid trials require response order T1->T2 and no T2 while T1 is pending. Timeouts are coded as incorrect.
+
+**WCST categories completed (0-6):**
+```
+wcst_categories_completed = count(rule_segments)
+```
+Rule segments are defined by changes in the active sorting rule; each completed category corresponds to one segment.
+
+**WCST perseverative error rate:**
+```
+wcst_perseverative_error_rate = 100 * sum(isPE) / n_trials
+```
+
+### S4.4.2 Temporal Dynamics Indices
+
+**Time-on-task drift (RT slope):**
+```
+RT_slope = OLS_slope(rt_ms ~ trial_order)
+```
+For Stroop, slopes use incongruent correct trials only. For WCST, slopes are computed within each rule segment and averaged.
+
+**Within-task dispersion (RT SD / Ex-Gaussian sigma):**
+```
+RT_SD_incong = SD(rt_ms | condition=incongruent, rt_valid=True)
+ExG_sigma_short = sigma from Ex-Gaussian fit to T2 RTs (soa_ms <= 150)
+```
+Ex-Gaussian parameters are estimated by maximum-likelihood with a minimum of 20 trials.
+
+**Post-perturbation recovery:**
+
+Stroop post-error slowing:
+```
+PES = mean(rt_ms | prev_correct=False, rt_valid=True)
+    - mean(rt_ms | prev_correct=True, rt_valid=True)
+```
+
+Stroop post-error accuracy drop:
+```
+post_error_acc_diff = mean(correct | prev_correct=False)
+                    - mean(correct | prev_correct=True)
+```
+
+WCST post-switch RT cost (k1):
+```
+switch_cost_rt_k1 = rt_{switch+1} - mean(rt_{switch-3..switch-1})
+```
+Computed per rule switch and averaged across switches.
+
+WCST post-error accuracy:
+```
+wcst_post_error_accuracy = mean(correct_{t+1} | correct_t=False)
+```
+
+WCST post-switch error rate:
+```
+wcst_post_switch_error_rate = 1 - mean(correct | trials in [switch, switch+4])
+```
+
+WCST trials to reacquisition:
+```
+wcst_trials_to_rule_reacquisition = mean(trials until 3 consecutive correct after switch)
+```
+
+---
+
 ## S5. Data Storage Schema
 
 ### S5.1 Firebase Document Structure
