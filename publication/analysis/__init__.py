@@ -11,9 +11,9 @@ Scripts:
     hierarchical_regression.py  - Hierarchical multiple regression (DASS-controlled)
 
 Usage:
-    python -m publication.basic_analysis.descriptive_statistics --task overall
-    python -m publication.basic_analysis.correlation_analysis --task overall
-    python -m publication.basic_analysis.hierarchical_regression --task overall
+    python -m publication.analysis.descriptive_statistics --task overall
+    python -m publication.analysis.correlation_analysis --task overall
+    python -m publication.analysis.hierarchical_regression --task overall
 """
 
 from .utils import (

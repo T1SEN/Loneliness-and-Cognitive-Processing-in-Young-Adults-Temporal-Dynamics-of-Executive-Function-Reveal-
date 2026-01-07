@@ -89,7 +89,7 @@ def _format_cov_note(cov_label: str) -> str:
 
 
 def _load_hierarchical(task: str) -> pd.DataFrame:
-    hr_path = data_dir / "outputs" / "basic_analysis" / task / "hierarchical_results.csv"
+    hr_path = data_dir / "outputs" / "analysis" / task / "hierarchical_results.csv"
     if not hr_path.exists():
         print(f"  Warning: {hr_path} not found")
         return pd.DataFrame()
@@ -238,12 +238,12 @@ def generate_table4():
     print("=" * 60)
 
     r = pd.read_csv(
-        data_dir / "outputs" / "basic_analysis" / "overall" / "correlation_matrix.csv",
+        data_dir / "outputs" / "analysis" / "overall" / "correlation_matrix.csv",
         index_col=0,
         encoding="utf-8-sig",
     )
     p = pd.read_csv(
-        data_dir / "outputs" / "basic_analysis" / "overall" / "correlation_pvalues.csv",
+        data_dir / "outputs" / "analysis" / "overall" / "correlation_pvalues.csv",
         index_col=0,
         encoding="utf-8-sig",
     )
@@ -320,7 +320,7 @@ def generate_table5():
     all_rows = []
 
     for task in ["stroop", "prp", "wcst"]:
-        hr_path = data_dir / "outputs" / "basic_analysis" / task / "hierarchical_results.csv"
+        hr_path = data_dir / "outputs" / "analysis" / task / "hierarchical_results.csv"
         if not hr_path.exists():
             print(f"  Warning: {hr_path} not found")
             continue
@@ -385,7 +385,7 @@ def generate_table6():
     all_rows = []
 
     for task in ["stroop", "prp", "wcst"]:
-        hr_path = data_dir / "outputs" / "basic_analysis" / task / "hierarchical_results.csv"
+        hr_path = data_dir / "outputs" / "analysis" / task / "hierarchical_results.csv"
         if not hr_path.exists():
             continue
 

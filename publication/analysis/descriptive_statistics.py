@@ -11,11 +11,11 @@ Variables:
     - Executive Function: WCST (perseverative error rate), Stroop interference, PRP bottleneck
 
 Output:
-    results/publication/basic_analysis/table1_descriptives.csv
-    results/publication/basic_analysis/table1_descriptives_by_gender.csv
+    results/publication/analysis/table1_descriptives.csv
+    results/publication/analysis/table1_descriptives_by_gender.csv
 
 Usage:
-    python -m publication.basic_analysis.descriptive_statistics --task overall
+    python -m publication.analysis.descriptive_statistics --task overall
 """
 
 from __future__ import annotations
@@ -29,7 +29,7 @@ import pandas as pd
 import numpy as np
 from scipy import stats
 
-from publication.basic_analysis.utils import (
+from publication.analysis.utils import (
     get_analysis_data,
     filter_vars,
     get_output_dir,

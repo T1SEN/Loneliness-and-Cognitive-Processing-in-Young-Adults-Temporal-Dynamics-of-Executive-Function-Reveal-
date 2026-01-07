@@ -15,7 +15,7 @@ print('=' * 80)
 all_sig = []
 
 for task in ['stroop', 'prp', 'wcst']:
-    hr = pd.read_csv(base / 'outputs' / 'basic_analysis' / task / 'hierarchical_results.csv', encoding='utf-8-sig')
+    hr = pd.read_csv(base / 'outputs' / 'analysis' / task / 'hierarchical_results.csv', encoding='utf-8-sig')
 
     # Filter significant results
     sig = hr[hr['p_ucla_wald'] < 0.05].copy()

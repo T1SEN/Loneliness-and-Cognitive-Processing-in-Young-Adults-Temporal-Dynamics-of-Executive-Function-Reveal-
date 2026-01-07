@@ -889,7 +889,7 @@ def filter_vars(
 
 def get_output_dir(task: str) -> Path:
     """Return task-specific output directory for basic analysis."""
-    base_dir = ANALYSIS_OUTPUT_DIR / "basic_analysis"
+    base_dir = ANALYSIS_OUTPUT_DIR / "analysis"
     output_dir = base_dir / task
     output_dir.mkdir(parents=True, exist_ok=True)
     return output_dir

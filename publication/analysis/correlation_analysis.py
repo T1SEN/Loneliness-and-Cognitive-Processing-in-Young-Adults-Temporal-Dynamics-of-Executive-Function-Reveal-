@@ -11,12 +11,12 @@ Variables:
     - Executive Function: WCST (perseverative error rate), Stroop interference, PRP bottleneck
 
 Output:
-    results/publication/basic_analysis/correlation_matrix.csv
-    results/publication/basic_analysis/correlation_pvalues.csv
-    results/publication/basic_analysis/correlation_heatmap.png
+    results/publication/analysis/correlation_matrix.csv
+    results/publication/analysis/correlation_pvalues.csv
+    results/publication/analysis/correlation_heatmap.png
 
 Usage:
-    python -m publication.basic_analysis.correlation_analysis --task overall
+    python -m publication.analysis.correlation_analysis --task overall
 """
 
 from __future__ import annotations
@@ -35,7 +35,7 @@ from scipy import stats
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-from publication.basic_analysis.utils import (
+from publication.analysis.utils import (
     get_analysis_data,
     filter_vars,
     get_output_dir,

@@ -19,12 +19,12 @@ Tier-1 Outcomes (automatically iterated):
       wcst_cv_rt, wcst_trials
 
 Output:
-    results/publication/basic_analysis/hierarchical_results.csv
-    results/publication/basic_analysis/model_comparison.csv
-    results/publication/basic_analysis/hierarchical_summary.txt
+    results/publication/analysis/hierarchical_results.csv
+    results/publication/analysis/model_comparison.csv
+    results/publication/analysis/hierarchical_summary.txt
 
 Usage:
-    python -m publication.basic_analysis.hierarchical_regression --task overall
+    python -m publication.analysis.hierarchical_regression --task overall
 """
 
 from __future__ import annotations
@@ -46,7 +46,7 @@ from statsmodels.stats.outliers_influence import variance_inflation_factor
 from statsmodels.stats.diagnostic import het_breuschpagan
 from typing import Any, Optional
 
-from publication.basic_analysis.utils import (
+from publication.analysis.utils import (
     get_analysis_data,
     filter_vars,
     get_output_dir,

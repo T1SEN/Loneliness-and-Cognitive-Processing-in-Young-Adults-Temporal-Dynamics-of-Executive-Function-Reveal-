@@ -5,7 +5,7 @@ Quantile Regression Analysis
 Runs quantile regression for all Tier-1 outcomes using standardized predictors.
 
 Usage:
-    python -m publication.basic_analysis.quantile_regression --task stroop
+    python -m publication.analysis.quantile_regression --task stroop
 """
 
 from __future__ import annotations
@@ -24,7 +24,7 @@ import numpy as np
 import pandas as pd
 from sklearn.linear_model import QuantileRegressor
 
-from publication.basic_analysis.utils import (
+from publication.analysis.utils import (
     get_analysis_data,
     filter_vars,
     get_output_dir,

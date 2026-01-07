@@ -54,9 +54,9 @@ Note: 각 task별 complete_* 디렉토리는 해당 task의 trial 파일만 포�
 .\venv\Scripts\activate
 
 # Publication Package
-python -m publication.basic_analysis.descriptive_statistics      # Descriptive statistics
-python -m publication.basic_analysis.correlation_analysis        # Correlation analysis
-python -m publication.basic_analysis.hierarchical_regression     # Hierarchical regression (DASS-controlled)
+python -m publication.analysis.descriptive_statistics      # Descriptive statistics
+python -m publication.analysis.correlation_analysis        # Correlation analysis
+python -m publication.analysis.hierarchical_regression     # Hierarchical regression (DASS-controlled)
 
 python -m publication.advanced_analysis.mediation_suite          # UCLA → DASS → EF 매개분석
 python -m publication.advanced_analysis.bayesian_suite           # 베이지안 SEM
@@ -160,14 +160,14 @@ publication/
         drift/
         recovery/
       mechanism/
-  basic_analysis/
+  analysis/
   advanced_analysis/
   path_analysis/
   validity_reliability/
   gender_analysis/
 ```
 
-**Output directory:** `results/publication/{basic_analysis,advanced_analysis,validity_reliability,gender_analysis}/`
+**Output directory:** `results/publication/{analysis,advanced_analysis,validity_reliability,gender_analysis}/`
 
 ### 사용법
 ```python
@@ -290,8 +290,8 @@ def _parse_wcst_extra(extra_str):
 | Gold Standard | `results/gold_standard/` |
 | Exploratory | `results/analysis_outputs/{prp,stroop,wcst,cross_task}_suite/` |
 | Other suites | `results/analysis_outputs/{suite_name}/` |
-| **Publication** | `results/publication/{basic_analysis,advanced_analysis,validity_reliability,gender_analysis}/` |
-| Publication outputs | `publication/data/outputs/{basic_analysis,mechanism_analysis,validity_reliability,network_analysis}/` |
+| **Publication** | `results/publication/{analysis,advanced_analysis,validity_reliability,gender_analysis}/` |
+| Publication outputs | `publication/data/outputs/{analysis,mechanism_analysis,validity_reliability,network_analysis}/` |
 
 ## Results Recording
 
