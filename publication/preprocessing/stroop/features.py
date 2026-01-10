@@ -183,6 +183,7 @@ def derive_stroop_features(
         iqr_all = interquartile_range(rt_all)
 
         slope = np.nan
+        interference_slope = np.nan
         cv_incong = np.nan
         cv_cong = np.nan
         rt_sd_incong = np.nan
@@ -196,11 +197,44 @@ def derive_stroop_features(
 
             if "trial_order" in grp.columns:
                 incong_valid = incong.dropna(subset=["trial_order", "rt_ms"])
+                if "correct" in incong_valid.columns:
+                    incong_valid = incong_valid[incong_valid["correct"] == True]
                 if len(incong_valid) >= 5 and incong_valid["trial_order"].nunique() > 1:
                     x = incong_valid["trial_order"].values
                     y = incong_valid["rt_ms"].values
                     coef = np.polyfit(x, y, 1)
                     slope = coef[0]
+
+            # Interference slope: quartile-based linear regression
+            interference_slope = np.nan
+            if "trial_order" in grp.columns:
+                grp_sorted_int = grp.copy()
+                if "correct" in grp_sorted_int.columns:
+                    grp_sorted_int = grp_sorted_int[grp_sorted_int["correct"] == True]
+                grp_sorted_int = grp_sorted_int[
+                    grp_sorted_int["condition_norm"].isin(["congruent", "incongruent"])
+                ]
+                grp_sorted_int = grp_sorted_int.dropna(subset=["trial_order"])
+                grp_sorted_int = grp_sorted_int.sort_values("trial_order").reset_index(drop=True)
+                n_int = len(grp_sorted_int)
+                if n_int >= 20:
+                    order_rank = grp_sorted_int["trial_order"].rank(method="first")
+                    grp_sorted_int["quartile"] = pd.qcut(order_rank, q=4, labels=[1, 2, 3, 4])
+
+                    def _quartile_interference(q: int) -> float:
+                        q_df = grp_sorted_int[grp_sorted_int["quartile"] == q]
+                        inc_q = q_df[q_df["condition_norm"] == "incongruent"]["rt_ms"]
+                        con_q = q_df[q_df["condition_norm"] == "congruent"]["rt_ms"]
+                        if len(inc_q) >= 3 and len(con_q) >= 3:
+                            return float(inc_q.mean() - con_q.mean())
+                        return np.nan
+
+                    int_vals = [_quartile_interference(q) for q in [1, 2, 3, 4]]
+                    valid_idx = [i for i, v in enumerate(int_vals) if pd.notna(v)]
+                    if len(valid_idx) >= 3:
+                        x_fit = np.array(valid_idx, dtype=float)
+                        y_fit = np.array([int_vals[i] for i in valid_idx], dtype=float)
+                        interference_slope = float(np.polyfit(x_fit, y_fit, 1)[0])
 
             cv_incong = coefficient_of_variation(incong["rt_ms"].dropna())
             cv_cong = coefficient_of_variation(cong["rt_ms"].dropna())
@@ -451,15 +485,22 @@ def derive_stroop_features(
 
         seq_rt = grp_sorted["rt_ms"] if "rt_ms" in grp_sorted.columns else pd.Series(dtype=float)
         seq_correct = grp_sorted["correct"] if "correct" in grp_sorted.columns else pd.Series(dtype=object)
+        if "correct" in grp_sorted.columns:
+            seq_rt_correct = seq_rt[seq_correct == True]
+        else:
+            seq_rt_correct = seq_rt
 
-        fatigue_metrics = compute_fatigue_slopes(seq_rt, seq_correct)
+        fatigue_metrics = compute_fatigue_slopes(seq_rt_correct)
+        if "correct" in grp_sorted.columns:
+            acc_fatigue = compute_fatigue_slopes(seq_rt, seq_correct)["acc_fatigue_slope"]
+            fatigue_metrics["acc_fatigue_slope"] = acc_fatigue
         tau_metrics = compute_tau_quartile_metrics(seq_rt, seq_correct if "correct" in grp_sorted.columns else None)
         cascade_metrics = compute_error_cascade_metrics(seq_correct)
         recovery_metrics = compute_post_error_recovery_metrics(seq_rt, seq_correct, max_lag=5)
         momentum_metrics = compute_momentum_metrics(seq_rt, seq_correct)
         volatility_metrics = compute_volatility_metrics(seq_rt)
         iiv_metrics = compute_iiv_parameters(seq_rt)
-        variability_slopes = compute_temporal_variability_slopes(seq_rt)
+        variability_slopes = compute_temporal_variability_slopes(seq_rt_correct)
         awareness_metrics = compute_error_awareness_metrics(seq_rt, seq_correct)
         speed_metrics = compute_speed_accuracy_metrics(seq_rt, seq_correct)
         pre_error_metrics = compute_pre_error_slope_metrics(seq_rt, seq_correct)
@@ -495,6 +536,7 @@ def derive_stroop_features(
             "stroop_pre_error_slope_std": pre_error_metrics["pre_error_slope_std"],
             "stroop_pre_error_n": pre_error_metrics["pre_error_n"],
             "stroop_incong_slope": slope,
+            "stroop_interference_slope": interference_slope,
             "stroop_cv_all": coefficient_of_variation(grp["rt_ms"].dropna()),
             "stroop_cv_incong": cv_incong,
             "stroop_cv_cong": cv_cong,

@@ -18,6 +18,7 @@ def derive_wcst_drift_features(
     filter_rt: bool = False,
     prepared: Dict[str, object] | None = None,
 ) -> pd.DataFrame:
+    wcst_block_size = 20
     if prepared is None:
         prepared = prepare_wcst_trials(data_dir=data_dir, filter_rt=filter_rt)
 
@@ -43,6 +44,7 @@ def derive_wcst_drift_features(
         delta_trials = np.nan
         learning_slope_trials = np.nan
         category_total_rt_slope = np.nan
+        block_pe_slope = np.nan
 
         rt_lag1 = np.nan
         rt_dfa = np.nan
@@ -123,6 +125,19 @@ def derive_wcst_drift_features(
                 x = np.arange(1, len(trials_per_category) + 1)
                 learning_slope_trials = float(np.polyfit(x, trials_per_category, 1)[0])
 
+        if "isPE" in grp.columns:
+            pe_flags = grp["isPE"].astype(bool).to_numpy()
+            n_blocks = len(pe_flags) // wcst_block_size
+            if n_blocks >= 2:
+                block_rates = []
+                for b in range(n_blocks):
+                    start = b * wcst_block_size
+                    end = start + wcst_block_size
+                    block_rates.append(float(np.mean(pe_flags[start:end])))
+                x = np.arange(1, n_blocks + 1, dtype=float)
+                y = np.array(block_rates, dtype=float)
+                block_pe_slope = float(np.polyfit(x, y, 1)[0])
+
         records.append({
             "participant_id": pid,
             "wcst_rt_slope_overall": rt_slope_overall,
@@ -131,6 +146,7 @@ def derive_wcst_drift_features(
             "wcst_acc_slope_within_category": acc_slope_within,
             "wcst_delta_trials_first3_last3": delta_trials,
             "wcst_learning_slope_trials": learning_slope_trials,
+            "wcst_block_pe_slope": block_pe_slope,
             "wcst_rt_lag1": rt_lag1,
             "wcst_rt_dfa_alpha": rt_dfa,
             "wcst_category_total_rt_slope": category_total_rt_slope,

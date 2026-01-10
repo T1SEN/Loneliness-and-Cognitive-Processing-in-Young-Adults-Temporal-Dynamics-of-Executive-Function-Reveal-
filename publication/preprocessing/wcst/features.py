@@ -463,14 +463,21 @@ def derive_wcst_features(
 
         seq_rt = rt_series_valid
         seq_correct = grp_sorted["correct"] if "correct" in grp_sorted.columns else pd.Series(dtype=object)
-        fatigue_metrics = compute_fatigue_slopes(seq_rt, seq_correct)
+        if "correct" in grp_sorted.columns:
+            seq_rt_correct = seq_rt[grp_sorted["correct"] == True]
+        else:
+            seq_rt_correct = seq_rt
+        fatigue_metrics = compute_fatigue_slopes(seq_rt_correct)
+        if "correct" in grp_sorted.columns:
+            acc_fatigue = compute_fatigue_slopes(seq_rt, seq_correct)["acc_fatigue_slope"]
+            fatigue_metrics["acc_fatigue_slope"] = acc_fatigue
         tau_metrics = compute_tau_quartile_metrics(seq_rt, seq_correct)
         cascade_metrics = compute_error_cascade_metrics(seq_correct)
         recovery_metrics = compute_post_error_recovery_metrics(seq_rt, seq_correct, max_lag=5)
         momentum_metrics = compute_momentum_metrics(seq_rt, seq_correct)
         volatility_metrics = compute_volatility_metrics(seq_rt)
         iiv_metrics = compute_iiv_parameters(seq_rt)
-        variability_slopes = compute_temporal_variability_slopes(seq_rt)
+        variability_slopes = compute_temporal_variability_slopes(seq_rt_correct)
         awareness_metrics = compute_error_awareness_metrics(seq_rt, seq_correct)
         pre_error_metrics = compute_pre_error_slope_metrics(seq_rt, seq_correct)
         rt_valid_values = rt_series_valid.dropna()

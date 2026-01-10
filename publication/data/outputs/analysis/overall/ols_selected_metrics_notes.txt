@@ -1,0 +1,6 @@
+Missing metrics:
+- RT2-SOA Slope (prp_t2_rt_slope)
+
+Notes:
+- PRP T2 accuracy by SOA not found in hierarchical results; only PRP T2 Accuracy (All) is available.
+- WCST error variability metric not found; excluded per instruction.

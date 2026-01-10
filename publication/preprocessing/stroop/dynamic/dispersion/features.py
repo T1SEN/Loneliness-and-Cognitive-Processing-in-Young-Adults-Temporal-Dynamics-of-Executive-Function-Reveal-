@@ -11,6 +11,8 @@ import pandas as pd
 from ....constants import STROOP_RT_MIN
 from ....core import (
     coefficient_of_variation,
+    compute_fatigue_slopes,
+    compute_temporal_variability_slopes,
     interquartile_range,
     mean_squared_successive_differences,
     skewness,
@@ -62,6 +64,21 @@ def derive_stroop_dispersion_features(
             rt_ordered = grp["rt_ms"]
         rt_mssd_all = mean_squared_successive_differences(rt_ordered)
 
+        if "trial_order" in grp.columns:
+            seq = grp.sort_values("trial_order")
+            seq_rt = seq["rt_ms"]
+            seq_correct = seq["correct"] if "correct" in seq.columns else None
+        else:
+            seq_rt = grp["rt_ms"]
+            seq_correct = grp["correct"] if "correct" in grp.columns else None
+
+        if seq_correct is not None:
+            seq_rt_correct = seq_rt[seq_correct == True]
+        else:
+            seq_rt_correct = seq_rt
+        fatigue_metrics = compute_fatigue_slopes(seq_rt_correct)
+        variability_slopes = compute_temporal_variability_slopes(seq_rt_correct)
+
         records.append({
             "participant_id": pid,
             "stroop_cv_all": coefficient_of_variation(grp["rt_ms"].dropna()),
@@ -71,6 +88,11 @@ def derive_stroop_dispersion_features(
             "stroop_rt_iqr_all": rt_iqr_all,
             "stroop_rt_skew_all": rt_skew_all,
             "stroop_rt_mssd_all": rt_mssd_all,
+            "stroop_cv_fatigue_slope": fatigue_metrics["cv_fatigue_slope"],
+            "stroop_cv_fatigue_slope_rolling": fatigue_metrics["cv_fatigue_slope_rolling"],
+            "stroop_rt_sd_block_slope": variability_slopes["sd_slope"],
+            "stroop_rt_p90_block_slope": variability_slopes["p90_slope"],
+            "stroop_residual_sd_block_slope": variability_slopes["residual_sd_slope"],
         })
 
     features_df = pd.DataFrame(records)

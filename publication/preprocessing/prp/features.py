@@ -33,7 +33,7 @@ from .exgaussian_mechanism import load_or_compute_prp_mechanism_features
 from .hmm_event_features import load_or_compute_prp_hmm_event_features
 from .bottleneck_mechanism import load_or_compute_prp_bottleneck_mechanism_features
 from .bottleneck_shape import load_or_compute_prp_bottleneck_shape_features
-from ._shared import _apply_timeout_as_incorrect
+from ._shared import _apply_timeout_as_incorrect, compute_bottleneck_slope_block_change
 
 
 def _run_lengths(mask: pd.Series) -> List[int]:
@@ -63,6 +63,7 @@ def derive_prp_features(
     rt_max: float | None = None,
     data_dir: Path | None = None,
 ) -> pd.DataFrame:
+    prp_block_size = 30
     prp, _ = load_prp_trials(
         data_dir=data_dir,
         rt_min=rt_min,
@@ -173,6 +174,14 @@ def derive_prp_features(
         iqr_all_correct = interquartile_range(group_correct["t2_rt_ms"].dropna())
         iqr_short_correct = interquartile_range(short_soa_correct["t2_rt_ms"].dropna())
         iqr_long_correct = interquartile_range(long_soa_correct["t2_rt_ms"].dropna())
+
+        bottleneck_slope_block_change = compute_bottleneck_slope_block_change(
+            grp_sorted,
+            rt_col="t2_rt_ms",
+            soa_col="soa_ms",
+            trial_col=order_col,
+            block_size=prp_block_size,
+        )
 
         if not acc_group.empty and "t1_correct" in acc_group.columns and "t2_correct" in acc_group.columns:
             valid = acc_group[(acc_group["t1_correct"].notna()) & (acc_group["t2_correct"].notna())]
@@ -319,13 +328,20 @@ def derive_prp_features(
             if "t2_correct" in grp_sorted_acc.columns
             else pd.Series(dtype=object)
         )
-        fatigue_metrics = compute_fatigue_slopes(seq_rt_acc, seq_correct_acc)
+        if "t2_correct" in grp_sorted_acc.columns:
+            seq_rt_correct = seq_rt_acc[seq_correct_acc == True]
+        else:
+            seq_rt_correct = seq_rt_acc
+        fatigue_metrics = compute_fatigue_slopes(seq_rt_correct)
+        if "t2_correct" in grp_sorted_acc.columns:
+            acc_fatigue = compute_fatigue_slopes(seq_rt_acc, seq_correct_acc)["acc_fatigue_slope"]
+            fatigue_metrics["acc_fatigue_slope"] = acc_fatigue
         cascade_metrics = compute_error_cascade_metrics(seq_correct_acc)
         recovery_metrics = compute_post_error_recovery_metrics(seq_rt_acc, seq_correct_acc, max_lag=5)
         momentum_metrics = compute_momentum_metrics(seq_rt_acc, seq_correct_acc)
         volatility_metrics = compute_volatility_metrics(seq_rt)
         iiv_metrics = compute_iiv_parameters(seq_rt)
-        variability_slopes = compute_temporal_variability_slopes(seq_rt_acc)
+        variability_slopes = compute_temporal_variability_slopes(seq_rt_correct)
         awareness_metrics = compute_error_awareness_metrics(seq_rt_acc, seq_correct_acc)
         speed_metrics = compute_speed_accuracy_metrics(seq_rt, seq_correct)
         pre_error_metrics = compute_pre_error_slope_metrics(seq_rt_acc, seq_correct_acc)
@@ -382,6 +398,7 @@ def derive_prp_features(
             "prp_cascade_rate": cascade_rate,
             "prp_cascade_inflation": cascade_inflation,
             "prp_pes": pes,
+            "prp_bottleneck_slope_block_change": bottleneck_slope_block_change,
             "prp_rt_fatigue_slope": fatigue_metrics["rt_fatigue_slope"],
             "prp_cv_fatigue_slope": fatigue_metrics["cv_fatigue_slope"],
             "prp_cv_fatigue_slope_rolling": fatigue_metrics["cv_fatigue_slope_rolling"],

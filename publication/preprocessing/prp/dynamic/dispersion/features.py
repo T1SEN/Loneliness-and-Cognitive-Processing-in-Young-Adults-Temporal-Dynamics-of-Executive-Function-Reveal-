@@ -11,6 +11,7 @@ import pandas as pd
 from ....constants import DEFAULT_SOA_LONG, DEFAULT_SOA_SHORT, PRP_RT_MIN
 from ....core import (
     coefficient_of_variation,
+    compute_temporal_variability_slopes,
     interquartile_range,
     mean_squared_successive_differences,
     skewness,
@@ -50,6 +51,7 @@ def derive_prp_dispersion_features(
             rt_ordered = group.sort_values(order_col)["t2_rt_ms"]
         else:
             rt_ordered = group["t2_rt_ms"]
+        variability_slopes = compute_temporal_variability_slopes(rt_ordered)
 
         records.append({
             "participant_id": pid,
@@ -60,6 +62,9 @@ def derive_prp_dispersion_features(
             "prp_t2_rt_iqr_all": interquartile_range(rt_all),
             "prp_t2_rt_skew_all": skewness(rt_all),
             "prp_t2_rt_mssd_all": mean_squared_successive_differences(rt_ordered),
+            "prp_t2_rt_sd_block_slope": variability_slopes["sd_slope"],
+            "prp_t2_rt_p90_block_slope": variability_slopes["p90_slope"],
+            "prp_t2_residual_sd_block_slope": variability_slopes["residual_sd_slope"],
         })
 
         if soa_levels:

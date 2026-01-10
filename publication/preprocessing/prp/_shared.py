@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Dict, List
 
+import numpy as np
 import pandas as pd
 
 from ..constants import PRP_RT_MIN
@@ -33,6 +34,69 @@ def _apply_timeout_as_incorrect(df: pd.DataFrame) -> pd.DataFrame:
     if "t2_timeout" in df.columns and "t2_correct" in df.columns:
         df.loc[df["t2_timeout"] == True, "t2_correct"] = False
     return df
+
+
+def compute_bottleneck_slope_block_change(
+    grp: pd.DataFrame,
+    rt_col: str,
+    soa_col: str,
+    trial_col: str | None,
+    block_size: int = 30,
+    min_trials_per_soa: int = 2,
+    min_soa_levels: int = 3,
+    min_blocks: int = 3,
+) -> float:
+    if grp.empty or rt_col not in grp.columns or soa_col not in grp.columns:
+        return np.nan
+
+    if trial_col and trial_col in grp.columns:
+        trial_order = pd.to_numeric(grp[trial_col], errors="coerce")
+        if trial_order.notna().any():
+            base_order = trial_order - trial_order.min()
+        else:
+            base_order = pd.Series(np.arange(len(grp)), index=grp.index, dtype=float)
+    else:
+        base_order = pd.Series(np.arange(len(grp)), index=grp.index, dtype=float)
+
+    df = grp.copy()
+    df["_trial_order"] = base_order
+    df = df[df["_trial_order"].notna()]
+    if df.empty:
+        return np.nan
+
+    df["_block"] = (df["_trial_order"] // block_size).astype(int)
+    block_slopes = []
+    block_ids = []
+
+    for block_id, block_df in df.groupby("_block"):
+        agg = (
+            block_df.groupby(soa_col)[rt_col]
+            .agg(rt_mean="mean", n="count")
+            .reset_index()
+        )
+        agg = agg[agg["n"] >= int(min_trials_per_soa)]
+        if len(agg) < min_soa_levels:
+            continue
+        if agg[soa_col].nunique() < 2:
+            continue
+        slope = np.polyfit(
+            agg[soa_col].to_numpy(dtype=float),
+            agg["rt_mean"].to_numpy(dtype=float),
+            1,
+        )[0]
+        if np.isfinite(slope):
+            block_ids.append(block_id)
+            block_slopes.append(slope)
+
+    if len(block_slopes) < min_blocks:
+        return np.nan
+
+    order = np.argsort(block_ids)
+    x = np.array([block_ids[i] for i in order], dtype=float) + 1.0
+    y = np.array([block_slopes[i] for i in order], dtype=float)
+    if len(np.unique(x)) < 2:
+        return np.nan
+    return float(np.polyfit(x, y, 1)[0])
 
 
 def prepare_prp_trials(

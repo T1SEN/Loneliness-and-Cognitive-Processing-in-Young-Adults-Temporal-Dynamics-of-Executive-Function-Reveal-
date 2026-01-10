@@ -10,7 +10,7 @@ import numpy as np
 
 from ....constants import PRP_RT_MIN, DEFAULT_SOA_SHORT, DEFAULT_SOA_LONG
 from ....core import dfa_alpha, lag1_autocorrelation
-from ..._shared import prepare_prp_trials
+from ..._shared import prepare_prp_trials, compute_bottleneck_slope_block_change
 
 
 def derive_prp_drift_features(
@@ -33,6 +33,7 @@ def derive_prp_drift_features(
             trial_col = cand
             break
 
+    prp_block_size = 30
     records: List[Dict] = []
     for pid, group in prp.groupby("participant_id"):
         grp = group.copy()
@@ -69,11 +70,20 @@ def derive_prp_drift_features(
                 y = rt_vals.loc[long_mask].values
                 slope_long = float(np.polyfit(x, y, 1)[0])
 
+        bottleneck_slope_block_change = compute_bottleneck_slope_block_change(
+            grp,
+            rt_col=rt_col,
+            soa_col=soa_col,
+            trial_col=trial_col,
+            block_size=prp_block_size,
+        )
+
         records.append({
             "participant_id": pid,
             "prp_t2_rt_slope": slope,
             "prp_t2_rt_slope_short": slope_short,
             "prp_t2_rt_slope_long": slope_long,
+            "prp_bottleneck_slope_block_change": bottleneck_slope_block_change,
             "prp_t2_rt_lag1": rt_lag1,
             "prp_t2_rt_dfa_alpha": rt_dfa,
         })
