@@ -26,6 +26,7 @@ from ..core import (
     compute_error_awareness_metrics,
     compute_pre_error_slope_metrics,
     compute_speed_accuracy_metrics,
+    compute_temporal_variability_slopes,
 )
 from ..standardization import safe_zscore
 from .loaders import load_stroop_trials
@@ -458,6 +459,7 @@ def derive_stroop_features(
         momentum_metrics = compute_momentum_metrics(seq_rt, seq_correct)
         volatility_metrics = compute_volatility_metrics(seq_rt)
         iiv_metrics = compute_iiv_parameters(seq_rt)
+        variability_slopes = compute_temporal_variability_slopes(seq_rt)
         awareness_metrics = compute_error_awareness_metrics(seq_rt, seq_correct)
         speed_metrics = compute_speed_accuracy_metrics(seq_rt, seq_correct)
         pre_error_metrics = compute_pre_error_slope_metrics(seq_rt, seq_correct)
@@ -543,6 +545,7 @@ def derive_stroop_features(
             "stroop_error_recovery_rt": error_recovery_rt,
             "stroop_rt_fatigue_slope": fatigue_metrics["rt_fatigue_slope"],
             "stroop_cv_fatigue_slope": fatigue_metrics["cv_fatigue_slope"],
+            "stroop_cv_fatigue_slope_rolling": fatigue_metrics["cv_fatigue_slope_rolling"],
             "stroop_acc_fatigue_slope": fatigue_metrics["acc_fatigue_slope"],
             "stroop_tau_q1": tau_metrics["tau_q1"],
             "stroop_tau_q2": tau_metrics["tau_q2"],
@@ -585,6 +588,9 @@ def derive_stroop_features(
             "stroop_raw_cv": iiv_metrics["iiv_raw_cv"],
             "stroop_iiv_trials": iiv_metrics["iiv_n_trials"],
             "stroop_iiv_r_squared": iiv_metrics["iiv_r_squared"],
+            "stroop_rt_sd_block_slope": variability_slopes["sd_slope"],
+            "stroop_rt_p90_block_slope": variability_slopes["p90_slope"],
+            "stroop_residual_sd_block_slope": variability_slopes["residual_sd_slope"],
             "stroop_post_error_cv": awareness_metrics["post_error_cv"],
             "stroop_post_correct_cv": awareness_metrics["post_correct_cv"],
             "stroop_post_error_cv_reduction": awareness_metrics["post_error_cv_reduction"],

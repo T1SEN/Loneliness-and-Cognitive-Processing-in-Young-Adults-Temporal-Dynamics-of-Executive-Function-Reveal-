@@ -8,7 +8,7 @@ from typing import Dict, List
 import pandas as pd
 import numpy as np
 
-from ....constants import PRP_RT_MIN
+from ....constants import PRP_RT_MIN, DEFAULT_SOA_SHORT, DEFAULT_SOA_LONG
 from ....core import dfa_alpha, lag1_autocorrelation
 from ..._shared import prepare_prp_trials
 
@@ -49,14 +49,31 @@ def derive_prp_drift_features(
         rt_dfa = dfa_alpha(rt_vals)
         valid = grp["trial_order"].notna() & rt_vals.notna()
         slope = np.nan
+        slope_short = np.nan
+        slope_long = np.nan
         if valid.sum() >= 5 and grp.loc[valid, "trial_order"].nunique() > 1:
             x = grp.loc[valid, "trial_order"].values
             y = rt_vals.loc[valid].values
             slope = float(np.polyfit(x, y, 1)[0])
 
+        soa_col = "soa_ms" if "soa_ms" in grp.columns else "soa"
+        if soa_col in grp.columns:
+            short_mask = valid & (grp[soa_col] <= DEFAULT_SOA_SHORT)
+            long_mask = valid & (grp[soa_col] >= DEFAULT_SOA_LONG)
+            if short_mask.sum() >= 5 and grp.loc[short_mask, "trial_order"].nunique() > 1:
+                x = grp.loc[short_mask, "trial_order"].values
+                y = rt_vals.loc[short_mask].values
+                slope_short = float(np.polyfit(x, y, 1)[0])
+            if long_mask.sum() >= 5 and grp.loc[long_mask, "trial_order"].nunique() > 1:
+                x = grp.loc[long_mask, "trial_order"].values
+                y = rt_vals.loc[long_mask].values
+                slope_long = float(np.polyfit(x, y, 1)[0])
+
         records.append({
             "participant_id": pid,
             "prp_t2_rt_slope": slope,
+            "prp_t2_rt_slope_short": slope_short,
+            "prp_t2_rt_slope_long": slope_long,
             "prp_t2_rt_lag1": rt_lag1,
             "prp_t2_rt_dfa_alpha": rt_dfa,
         })

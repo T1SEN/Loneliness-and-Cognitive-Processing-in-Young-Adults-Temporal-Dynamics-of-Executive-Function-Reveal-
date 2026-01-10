@@ -17,6 +17,7 @@ import pandas as pd
 import statsmodels.formula.api as smf
 from scipy import stats
 from statsmodels.stats.diagnostic import het_breuschpagan
+from statsmodels.stats.outliers_influence import variance_inflation_factor
 
 try:
     from semopy import Model as SemopyModel
@@ -333,6 +334,42 @@ def _sobel_test(a: float, sa: float, b: float, sb: float) -> Dict[str, float]:
     return {'z': z_val, 'p': p_val}
 
 
+def _compute_vif_table(model) -> pd.DataFrame:
+    exog = getattr(model.model, "exog", None)
+    exog_names = list(getattr(model.model, "exog_names", []))
+    if exog is None or len(exog_names) == 0:
+        return pd.DataFrame(columns=["term", "vif"])
+
+    X = pd.DataFrame(exog, columns=exog_names)
+    drop_cols = [c for c in X.columns if c.lower() in {"intercept", "const"}]
+    if drop_cols:
+        X = X.drop(columns=drop_cols, errors="ignore")
+
+    variances = X.var(axis=0)
+    keep_cols = variances[variances > 1e-12].index.tolist()
+    X = X[keep_cols]
+    if X.shape[1] < 2:
+        return pd.DataFrame(columns=["term", "vif"])
+
+    vifs = []
+    for i, col in enumerate(X.columns):
+        try:
+            vif_val = variance_inflation_factor(X.values, i)
+        except Exception:
+            vif_val = np.nan
+        vifs.append({"term": col, "vif": float(vif_val)})
+    return pd.DataFrame(vifs)
+
+
+def _summarize_vif(vif_df: pd.DataFrame) -> Dict[str, float]:
+    if vif_df.empty or "vif" not in vif_df.columns:
+        return {"vif_max": np.nan, "vif_mean": np.nan}
+    return {
+        "vif_max": float(vif_df["vif"].max()),
+        "vif_mean": float(vif_df["vif"].mean()),
+    }
+
+
 def _bootstrap_indirect_effects(
     df: pd.DataFrame,
     stage1_formula: str,
@@ -441,6 +478,13 @@ def fit_all_path_models(
 
             stage1_df = _summarize_model(stage1_model, stage1_label)
             stage2_df = _summarize_model(stage2_model, stage2_label)
+
+            vif_stage1 = _compute_vif_table(stage1_model)
+            vif_stage2 = _compute_vif_table(stage2_model)
+            if not vif_stage1.empty:
+                vif_stage1.to_csv(spec_dir / "vif_stage1.csv", index=False, encoding='utf-8-sig')
+            if not vif_stage2.empty:
+                vif_stage2.to_csv(spec_dir / "vif_stage2.csv", index=False, encoding='utf-8-sig')
 
             effects = []
             for path_info in spec['paths']:
@@ -558,6 +602,14 @@ def fit_all_path_models(
                     shapiro_p = np.nan
                 diagnostics[f'{label}_bp_p'] = bp_p
                 diagnostics[f'{label}_shapiro_p'] = shapiro_p
+            stage1_vif_summary = _summarize_vif(vif_stage1)
+            stage2_vif_summary = _summarize_vif(vif_stage2)
+            diagnostics.update({
+                'stage1_vif_max': stage1_vif_summary['vif_max'],
+                'stage1_vif_mean': stage1_vif_summary['vif_mean'],
+                'stage2_vif_max': stage2_vif_summary['vif_max'],
+                'stage2_vif_mean': stage2_vif_summary['vif_mean'],
+            })
 
             if verbose:
                 print(f"\n[{spec['description'].format(dass_label=dass_label, ef_label=ef_label)}]")

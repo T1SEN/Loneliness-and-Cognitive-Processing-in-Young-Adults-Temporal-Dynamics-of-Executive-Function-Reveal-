@@ -37,10 +37,12 @@ def derive_wcst_drift_features(
 
         trials_per_category = []
         rt_slope_overall = np.nan
+        rt_slope_correct = np.nan
         rt_slope_within = np.nan
         acc_slope_within = np.nan
         delta_trials = np.nan
         learning_slope_trials = np.nan
+        category_total_rt_slope = np.nan
 
         rt_lag1 = np.nan
         rt_dfa = np.nan
@@ -62,6 +64,12 @@ def derive_wcst_drift_features(
             valid = trial_order.notna() & rt_vals.notna()
             if valid.sum() >= 5 and trial_order[valid].nunique() > 1:
                 rt_slope_overall = float(np.polyfit(trial_order[valid].values, rt_vals[valid].values, 1)[0])
+            if "correct" in grp.columns:
+                valid_correct = valid & grp["correct"].astype(bool)
+                if valid_correct.sum() >= 5 and trial_order[valid_correct].nunique() > 1:
+                    rt_slope_correct = float(
+                        np.polyfit(trial_order[valid_correct].values, rt_vals[valid_correct].values, 1)[0]
+                    )
 
         if rule_col:
             rules = grp[rule_col].astype(str).str.lower().values
@@ -78,6 +86,7 @@ def derive_wcst_drift_features(
             else:
                 rt_vals = rt_vals.where(rt_vals.between(WCST_RT_MIN, WCST_RT_MAX))
             rt_vals = rt_vals.values.astype(float) if rt_col else np.array([])
+            category_total_rts = []
 
             for start, end in zip(segment_starts, segment_ends):
                 seg_len = end - start
@@ -89,11 +98,22 @@ def derive_wcst_drift_features(
                     if rt_mask.sum() >= 3:
                         rt_slope_vals.append(float(np.polyfit(x[rt_mask], seg_rt[rt_mask], 1)[0]))
                     acc_slope_vals.append(float(np.polyfit(x, seg_acc, 1)[0]))
+                seg_rt = rt_vals[start:end]
+                if np.isfinite(seg_rt).sum() >= 3:
+                    category_total_rts.append(float(np.nansum(seg_rt)))
+                else:
+                    category_total_rts.append(np.nan)
 
             if rt_slope_vals:
                 rt_slope_within = float(np.mean(rt_slope_vals))
             if acc_slope_vals:
                 acc_slope_within = float(np.mean(acc_slope_vals))
+            if len(category_total_rts) >= 2:
+                y = np.array(category_total_rts, dtype=float)
+                valid_totals = np.isfinite(y)
+                if valid_totals.sum() >= 2:
+                    x = np.arange(1, len(y) + 1, dtype=float)[valid_totals]
+                    category_total_rt_slope = float(np.polyfit(x, y[valid_totals], 1)[0])
 
             if len(trials_per_category) >= 6:
                 first = np.mean(trials_per_category[:3])
@@ -106,12 +126,14 @@ def derive_wcst_drift_features(
         records.append({
             "participant_id": pid,
             "wcst_rt_slope_overall": rt_slope_overall,
+            "wcst_rt_slope_correct": rt_slope_correct,
             "wcst_rt_slope_within_category": rt_slope_within,
             "wcst_acc_slope_within_category": acc_slope_within,
             "wcst_delta_trials_first3_last3": delta_trials,
             "wcst_learning_slope_trials": learning_slope_trials,
             "wcst_rt_lag1": rt_lag1,
             "wcst_rt_dfa_alpha": rt_dfa,
+            "wcst_category_total_rt_slope": category_total_rt_slope,
         })
 
     features_df = pd.DataFrame(records)

@@ -25,6 +25,7 @@ from ..core import (
     compute_error_awareness_metrics,
     compute_pre_error_slope_metrics,
     compute_speed_accuracy_metrics,
+    compute_temporal_variability_slopes,
 )
 from ..standardization import safe_zscore
 from .trial_level_loaders import load_prp_trials
@@ -324,6 +325,7 @@ def derive_prp_features(
         momentum_metrics = compute_momentum_metrics(seq_rt_acc, seq_correct_acc)
         volatility_metrics = compute_volatility_metrics(seq_rt)
         iiv_metrics = compute_iiv_parameters(seq_rt)
+        variability_slopes = compute_temporal_variability_slopes(seq_rt_acc)
         awareness_metrics = compute_error_awareness_metrics(seq_rt_acc, seq_correct_acc)
         speed_metrics = compute_speed_accuracy_metrics(seq_rt, seq_correct)
         pre_error_metrics = compute_pre_error_slope_metrics(seq_rt_acc, seq_correct_acc)
@@ -382,6 +384,7 @@ def derive_prp_features(
             "prp_pes": pes,
             "prp_rt_fatigue_slope": fatigue_metrics["rt_fatigue_slope"],
             "prp_cv_fatigue_slope": fatigue_metrics["cv_fatigue_slope"],
+            "prp_cv_fatigue_slope_rolling": fatigue_metrics["cv_fatigue_slope_rolling"],
             "prp_acc_fatigue_slope": fatigue_metrics["acc_fatigue_slope"],
             "prp_error_cascade_count": cascade_metrics["error_cascade_count"],
             "prp_error_cascade_rate": cascade_metrics["error_cascade_rate"],
@@ -419,6 +422,9 @@ def derive_prp_features(
             "prp_raw_cv": iiv_metrics["iiv_raw_cv"],
             "prp_iiv_trials": iiv_metrics["iiv_n_trials"],
             "prp_iiv_r_squared": iiv_metrics["iiv_r_squared"],
+            "prp_t2_rt_sd_block_slope": variability_slopes["sd_slope"],
+            "prp_t2_rt_p90_block_slope": variability_slopes["p90_slope"],
+            "prp_t2_residual_sd_block_slope": variability_slopes["residual_sd_slope"],
             "prp_post_error_cv": awareness_metrics["post_error_cv"],
             "prp_post_correct_cv": awareness_metrics["post_correct_cv"],
             "prp_post_error_cv_reduction": awareness_metrics["post_error_cv_reduction"],

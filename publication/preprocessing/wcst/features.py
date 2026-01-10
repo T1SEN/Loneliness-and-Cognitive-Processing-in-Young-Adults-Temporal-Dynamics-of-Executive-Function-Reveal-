@@ -27,6 +27,7 @@ from ..core import (
     compute_tau_quartile_metrics,
     compute_error_awareness_metrics,
     compute_pre_error_slope_metrics,
+    compute_temporal_variability_slopes,
 )
 from ..standardization import safe_zscore
 from .loaders import load_wcst_trials
@@ -159,8 +160,8 @@ def derive_wcst_features(
             trial_col = cand
             break
 
-    if trial_col:
-        wcst = wcst.sort_values(["participant_id", trial_col])
+        if trial_col:
+            wcst = wcst.sort_values(["participant_id", trial_col])
 
     rule_col = None
     for cand in ("ruleAtThatTime", "rule_at_that_time", "rule_at_time", "rule"):
@@ -184,6 +185,21 @@ def derive_wcst_features(
             else:
                 rt_valid_mask &= rt_series.between(WCST_RT_MIN, rt_max_val)
         rt_series_valid = rt_series.where(rt_valid_mask)
+        if trial_col:
+            trial_order = pd.to_numeric(grp_sorted[trial_col], errors="coerce")
+        else:
+            trial_order = pd.Series(np.arange(len(grp_sorted)), index=grp_sorted.index, dtype=float)
+        valid_order = trial_order.notna() & rt_series_valid.notna()
+        rt_slope_overall = np.nan
+        rt_slope_correct = np.nan
+        if valid_order.sum() >= 5 and trial_order[valid_order].nunique() > 1:
+            rt_slope_overall = float(np.polyfit(trial_order[valid_order].values, rt_series_valid[valid_order].values, 1)[0])
+        if "correct" in grp_sorted.columns:
+            valid_correct = valid_order & grp_sorted["correct"].astype(bool)
+            if valid_correct.sum() >= 5 and trial_order[valid_correct].nunique() > 1:
+                rt_slope_correct = float(
+                    np.polyfit(trial_order[valid_correct].values, rt_series_valid[valid_correct].values, 1)[0]
+                )
         mad_rt = median_absolute_deviation(rt_series_valid)
         iqr_rt = interquartile_range(rt_series_valid)
         if "correct" in grp_sorted.columns:
@@ -288,6 +304,7 @@ def derive_wcst_features(
         rt_slope_within = np.nan
         acc_slope_within = np.nan
         rt_jump_at_switch = np.nan
+        category_total_rt_slope = np.nan
         switch_cost_rt = {k: [] for k in range(1, 6)}
         switch_cost_err = {k: [] for k in range(1, 6)}
         trials_to_reacq = np.nan
@@ -305,6 +322,7 @@ def derive_wcst_features(
             rt_jump_vals = []
             rt_slope_vals = []
             acc_slope_vals = []
+            category_total_rts = []
 
             for start, end in zip(segment_starts, segment_ends):
                 seg_len = end - start
@@ -316,11 +334,22 @@ def derive_wcst_features(
                     if rt_mask.sum() >= 3:
                         rt_slope_vals.append(float(np.polyfit(x[rt_mask], seg_rt[rt_mask], 1)[0]))
                     acc_slope_vals.append(float(np.polyfit(x, seg_acc, 1)[0]))
+                seg_rt = rt_vals[start:end]
+                if np.isfinite(seg_rt).sum() >= 3:
+                    category_total_rts.append(float(np.nansum(seg_rt)))
+                else:
+                    category_total_rts.append(np.nan)
 
             if rt_slope_vals:
                 rt_slope_within = float(np.mean(rt_slope_vals))
             if acc_slope_vals:
                 acc_slope_within = float(np.mean(acc_slope_vals))
+            if len(category_total_rts) >= 2:
+                y = np.array(category_total_rts, dtype=float)
+                valid_totals = np.isfinite(y)
+                if valid_totals.sum() >= 2:
+                    x = np.arange(1, len(y) + 1, dtype=float)[valid_totals]
+                    category_total_rt_slope = float(np.polyfit(x, y[valid_totals], 1)[0])
 
             for idx in change_indices:
                 pre_start = max(0, idx - 3)
@@ -441,6 +470,7 @@ def derive_wcst_features(
         momentum_metrics = compute_momentum_metrics(seq_rt, seq_correct)
         volatility_metrics = compute_volatility_metrics(seq_rt)
         iiv_metrics = compute_iiv_parameters(seq_rt)
+        variability_slopes = compute_temporal_variability_slopes(seq_rt)
         awareness_metrics = compute_error_awareness_metrics(seq_rt, seq_correct)
         pre_error_metrics = compute_pre_error_slope_metrics(seq_rt, seq_correct)
         rt_valid_values = rt_series_valid.dropna()
@@ -492,8 +522,11 @@ def derive_wcst_features(
             "wcst_categories_completed": categories_completed,
             "wcst_trials_per_category_mean": float(np.mean(trials_per_category)) if trials_per_category else np.nan,
             "wcst_trials_per_category_sd": float(np.std(trials_per_category)) if trials_per_category else np.nan,
+            "wcst_rt_slope_overall": rt_slope_overall,
+            "wcst_rt_slope_correct": rt_slope_correct,
             "wcst_rt_slope_within_category": rt_slope_within,
             "wcst_acc_slope_within_category": acc_slope_within,
+            "wcst_category_total_rt_slope": category_total_rt_slope,
             "wcst_rt_jump_at_switch": rt_jump_at_switch,
             "wcst_failure_to_maintain_set": failure_to_maintain_set,
             "wcst_trials_to_rule_reacquisition": trials_to_reacq,
@@ -507,6 +540,7 @@ def derive_wcst_features(
             "wcst_delta_plot_slope_correct": delta_plot_slope,
             "wcst_rt_fatigue_slope": fatigue_metrics["rt_fatigue_slope"],
             "wcst_cv_fatigue_slope": fatigue_metrics["cv_fatigue_slope"],
+            "wcst_cv_fatigue_slope_rolling": fatigue_metrics["cv_fatigue_slope_rolling"],
             "wcst_acc_fatigue_slope": fatigue_metrics["acc_fatigue_slope"],
             "wcst_tau_q1": tau_metrics["tau_q1"],
             "wcst_tau_q2": tau_metrics["tau_q2"],
@@ -549,6 +583,9 @@ def derive_wcst_features(
             "wcst_raw_cv": iiv_metrics["iiv_raw_cv"],
             "wcst_iiv_trials": iiv_metrics["iiv_n_trials"],
             "wcst_iiv_r_squared": iiv_metrics["iiv_r_squared"],
+            "wcst_rt_sd_block_slope": variability_slopes["sd_slope"],
+            "wcst_rt_p90_block_slope": variability_slopes["p90_slope"],
+            "wcst_residual_sd_block_slope": variability_slopes["residual_sd_slope"],
             "wcst_post_error_cv": awareness_metrics["post_error_cv"],
             "wcst_post_correct_cv": awareness_metrics["post_correct_cv"],
             "wcst_post_error_cv_reduction": awareness_metrics["post_error_cv_reduction"],

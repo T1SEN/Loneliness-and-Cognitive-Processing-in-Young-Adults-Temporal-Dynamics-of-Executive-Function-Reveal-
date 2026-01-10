@@ -76,10 +76,12 @@ WCST_MAX_SINGLE_CHOICE = 0.85 # max ratio for single card choice
 STANDARDIZE_COLS = ['ucla_score', 'dass_depression', 'dass_anxiety', 'dass_stress', 'age']
 
 # Gender normalization tokens
-MALE_TOKENS_EXACT = {"m", "male", "man", "men", "boy", "boys"}
-FEMALE_TOKENS_EXACT = {"f", "female", "woman", "women", "girl", "girls"}
-MALE_TOKENS_CONTAINS = {"남성", "남자", "소년", "남학생"}
-FEMALE_TOKENS_CONTAINS = {"여성", "여자", "소녀", "여학생"}
+# Gender normalization tokens
+MALE_TOKENS_EXACT = {"m", "male", "man", "men", "boy", "boys", "\uB0A8", "\uB0A8\uC131", "\uB0A8\uC790"}
+FEMALE_TOKENS_EXACT = {"f", "female", "woman", "women", "girl", "girls", "\uC5EC", "\uC5EC\uC131", "\uC5EC\uC790"}
+MALE_TOKENS_CONTAINS = {"\uB0A8\uC131", "\uB0A8\uC790"}
+FEMALE_TOKENS_CONTAINS = {"\uC5EC\uC131", "\uC5EC\uC790"}
+
 
 # Participant ID aliases
 PARTICIPANT_ID_ALIASES = {"participant_id", "participantId", "participantid"}

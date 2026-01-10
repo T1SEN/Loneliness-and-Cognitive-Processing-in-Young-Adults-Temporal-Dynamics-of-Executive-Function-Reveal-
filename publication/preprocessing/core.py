@@ -57,10 +57,8 @@ def _normalize_gender_string(value: object) -> str:
     cleaned = value.strip().lower()
     if not cleaned:
         return ""
-    cleaned = re.sub(r"[^a-zㄱ-ㆎ가-힣]", "", cleaned)
+    cleaned = re.sub(r"[^a-z\uac00-\ud7a3]", "", cleaned)
     return cleaned
-
-
 def normalize_gender_value(value: object) -> Optional[str]:
     """
     Normalize arbitrary gender text (Korean/English) to 'male'/'female'.
@@ -581,12 +579,101 @@ def compute_tau_quartile_metrics(
     }
 
 
+def _compute_cv_slope_rolling(
+    values: np.ndarray,
+    target_windows: int = 5,
+    min_window: int = 5,
+    min_windows: int = 3,
+) -> float:
+    n = len(values)
+    if n < min_window * min_windows:
+        return np.nan
+    window = max(min_window, int(np.floor(n / max(target_windows, 1))))
+    if window < min_window:
+        window = min_window
+    step = window
+    cvs: list[float] = []
+    for start in range(0, n - window + 1, step):
+        chunk = values[start:start + window]
+        if len(chunk) < min_window:
+            continue
+        mean_val = float(np.mean(chunk))
+        if mean_val <= 0:
+            continue
+        cv_val = float(np.std(chunk, ddof=1) / mean_val) if len(chunk) > 1 else np.nan
+        if np.isfinite(cv_val):
+            cvs.append(cv_val)
+    if len(cvs) < min_windows:
+        return np.nan
+    slope = np.polyfit(np.arange(len(cvs), dtype=float), np.array(cvs, dtype=float), 1)[0]
+    return float(slope)
+
+
+def compute_temporal_variability_slopes(
+    rt_series: pd.Series,
+    n_blocks: int = 4,
+    min_block_n: int = 5,
+    min_blocks: int = 3,
+) -> dict[str, float]:
+    values = pd.to_numeric(rt_series, errors="coerce").dropna().to_numpy()
+    if len(values) < n_blocks * min_block_n:
+        return {
+            "sd_slope": np.nan,
+            "p90_slope": np.nan,
+            "residual_sd_slope": np.nan,
+        }
+
+    edges = np.linspace(0, len(values), n_blocks + 1, dtype=int)
+    sd_blocks: list[float] = []
+    p90_blocks: list[float] = []
+    resid_blocks: list[float] = []
+
+    for idx in range(n_blocks):
+        start, end = edges[idx], edges[idx + 1]
+        block = values[start:end]
+        if len(block) < min_block_n:
+            sd_blocks.append(np.nan)
+            p90_blocks.append(np.nan)
+            resid_blocks.append(np.nan)
+            continue
+        sd_blocks.append(float(np.std(block, ddof=1)) if len(block) > 1 else np.nan)
+        p90_blocks.append(float(np.quantile(block, 0.9)))
+        if len(block) >= 3:
+            x = np.arange(len(block), dtype=float)
+            try:
+                slope, intercept = np.polyfit(x, block, 1)
+                resid = block - (slope * x + intercept)
+                resid_sd = float(np.std(resid, ddof=1)) if len(resid) > 1 else np.nan
+            except Exception:
+                resid_sd = np.nan
+        else:
+            resid_sd = np.nan
+        resid_blocks.append(resid_sd)
+
+    def _block_slope(block_vals: list[float]) -> float:
+        valid = [(i + 1, val) for i, val in enumerate(block_vals) if np.isfinite(val)]
+        if len(valid) < min_blocks:
+            return np.nan
+        x = np.array([v[0] for v in valid], dtype=float)
+        y = np.array([v[1] for v in valid], dtype=float)
+        return float(np.polyfit(x, y, 1)[0])
+
+    return {
+        "sd_slope": _block_slope(sd_blocks),
+        "p90_slope": _block_slope(p90_blocks),
+        "residual_sd_slope": _block_slope(resid_blocks),
+    }
+
+
 def compute_fatigue_slopes(
     rt_series: pd.Series,
     correct_series: pd.Series | None = None,
     n_quartiles: int = 4,
     min_n: int = 20,
     min_per_quartile: int = 5,
+    cv_target_windows: int = 5,
+    cv_min_window: int = 5,
+    cv_min_windows: int = 3,
 ) -> dict[str, float]:
     df = pd.DataFrame({"rt": pd.to_numeric(rt_series, errors="coerce")})
     if correct_series is not None:
@@ -596,6 +683,7 @@ def compute_fatigue_slopes(
         return {
             "rt_fatigue_slope": np.nan,
             "cv_fatigue_slope": np.nan,
+            "cv_fatigue_slope_rolling": np.nan,
             "acc_fatigue_slope": np.nan,
         }
     df = df.reset_index(drop=True)
@@ -615,9 +703,16 @@ def compute_fatigue_slopes(
 
     q1 = _quartile_metrics(1)
     q4 = _quartile_metrics(n_quartiles)
+    cv_fatigue_slope_rolling = _compute_cv_slope_rolling(
+        df["rt"].to_numpy(),
+        target_windows=cv_target_windows,
+        min_window=cv_min_window,
+        min_windows=cv_min_windows,
+    )
     return {
         "rt_fatigue_slope": float(q4["mean_rt"] - q1["mean_rt"]) if pd.notna(q4["mean_rt"]) and pd.notna(q1["mean_rt"]) else np.nan,
         "cv_fatigue_slope": float(q4["cv_rt"] - q1["cv_rt"]) if pd.notna(q4["cv_rt"]) and pd.notna(q1["cv_rt"]) else np.nan,
+        "cv_fatigue_slope_rolling": cv_fatigue_slope_rolling,
         "acc_fatigue_slope": float(q4["acc"] - q1["acc"]) if pd.notna(q4["acc"]) and pd.notna(q1["acc"]) else np.nan,
     }
 
