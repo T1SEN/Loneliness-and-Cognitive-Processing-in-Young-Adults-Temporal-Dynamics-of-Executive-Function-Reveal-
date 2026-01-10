@@ -249,32 +249,27 @@ def derive_wcst_features(
         post_correct_rt = np.nan
         if "correct" in grp_sorted.columns:
             correct = grp_sorted["correct"].values
-            post_pe_rts = []
+            post_error_rts = []
             post_correct_rts = []
             for i in range(len(grp_sorted) - 1):
+                rt_next = rt_vals[i + 1]
+                if (
+                    not np.isfinite(rt_next)
+                    or rt_next < WCST_RT_MIN
+                    or (rt_max_val is not None and rt_next > rt_max_val)
+                ):
+                    continue
                 if correct[i] == False:
-                    rt_next = rt_vals[i + 1]
-                    if (
-                        np.isfinite(rt_next)
-                        and rt_next >= WCST_RT_MIN
-                        and (rt_max_val is None or rt_next <= rt_max_val)
-                    ):
-                        post_pe_rts.append(rt_next)
+                    post_error_rts.append(rt_next)
                 elif correct[i] == True:
-                    rt_next = rt_vals[i + 1]
-                    if (
-                        np.isfinite(rt_next)
-                        and rt_next >= WCST_RT_MIN
-                        and (rt_max_val is None or rt_next <= rt_max_val)
-                    ):
-                        post_correct_rts.append(rt_next)
-            if post_pe_rts and post_correct_rts:
-                post_error_rt = float(np.mean(post_pe_rts))
+                    post_correct_rts.append(rt_next)
+            if post_error_rts and post_correct_rts:
+                post_error_rt = float(np.mean(post_error_rts))
                 post_correct_rt = float(np.mean(post_correct_rts))
                 pes = post_error_rt - post_correct_rt
             else:
-                if post_pe_rts:
-                    post_error_rt = float(np.mean(post_pe_rts))
+                if post_error_rts:
+                    post_error_rt = float(np.mean(post_error_rts))
                 if post_correct_rts:
                     post_correct_rt = float(np.mean(post_correct_rts))
 
@@ -349,6 +344,29 @@ def derive_wcst_features(
             else np.nan
         )
 
+        post_pe_rt = np.nan
+        post_npe_rt = np.nan
+        post_pe_slowing = np.nan
+        if total_trials > 1:
+            post_pe_rts = []
+            post_npe_rts = []
+            for i in range(total_trials - 1):
+                rt_next = rt_vals[i + 1]
+                if (
+                    not np.isfinite(rt_next)
+                    or rt_next < WCST_RT_MIN
+                    or (rt_max_val is not None and rt_next > rt_max_val)
+                ):
+                    continue
+                if is_pe[i]:
+                    post_pe_rts.append(rt_next)
+                if has_is_npe and is_npe[i]:
+                    post_npe_rts.append(rt_next)
+            post_pe_rt = _mean_if(np.array(post_pe_rts, dtype=float), 5)
+            post_npe_rt = _mean_if(np.array(post_npe_rts, dtype=float), 5) if has_is_npe else np.nan
+            if pd.notna(post_pe_rt) and pd.notna(post_correct_rt):
+                post_pe_slowing = float(post_pe_rt - post_correct_rt)
+
         pe_count = int(is_pe.sum())
         pr_count = int(is_pr.sum())
         npe_count = int(is_npe.sum()) if has_is_npe else max(total_errors - pe_count, 0)
@@ -372,6 +390,9 @@ def derive_wcst_features(
         rt_slope_within = np.nan
         acc_slope_within = np.nan
         rt_jump_at_switch = np.nan
+        switch_rt_mean = np.nan
+        repeat_rt_mean = np.nan
+        switch_cost_rt_mean = np.nan
         category_total_rt_slope = np.nan
         category_mean_rt = np.nan
         category_accuracy_slope = np.nan
@@ -393,6 +414,21 @@ def derive_wcst_features(
             categories_completed = float(len(trials_per_category)) if trials_per_category else np.nan
             if trials_per_category:
                 trials_to_first_category = float(trials_per_category[0])
+
+            switch_rts = []
+            repeat_rts = []
+            for i in range(1, len(rules)):
+                rt_val = rt_vals[i]
+                if not np.isfinite(rt_val):
+                    continue
+                if rules[i] != rules[i - 1]:
+                    switch_rts.append(rt_val)
+                else:
+                    repeat_rts.append(rt_val)
+            switch_rt_mean = _mean_if(np.array(switch_rts, dtype=float), 3)
+            repeat_rt_mean = _mean_if(np.array(repeat_rts, dtype=float), 5)
+            if pd.notna(switch_rt_mean) and pd.notna(repeat_rt_mean):
+                switch_cost_rt_mean = float(switch_rt_mean - repeat_rt_mean)
 
             rt_jump_vals = []
             rt_slope_vals = []
@@ -635,6 +671,11 @@ def derive_wcst_features(
         records.append({
             "participant_id": pid,
             "wcst_pes": pes,
+            "wcst_post_error_rt": post_error_rt,
+            "wcst_post_correct_rt": post_correct_rt,
+            "wcst_post_pe_rt": post_pe_rt,
+            "wcst_post_npe_rt": post_npe_rt,
+            "wcst_post_pe_slowing": post_pe_slowing,
             "wcst_post_switch_error_rate": post_switch_error_rate,
             "wcst_cv_rt": coefficient_of_variation(rt_valid_values),
             "wcst_mad_rt": mad_rt,
@@ -662,6 +703,9 @@ def derive_wcst_features(
             "wcst_nonperseverative_errors": npe_count,
             "wcst_perseverative_responses": pr_count,
             "wcst_perseverative_response_percent": pr_percent,
+            "wcst_pe_rt_mean": rt_mean_pe,
+            "wcst_npe_rt_mean": rt_mean_npe,
+            "wcst_pe_minus_npe_rt_mean": rt_pe_minus_npe_mean,
             "wcst_error_pr_ratio": error_pr_ratio,
             "wcst_error_npe_ratio": error_npe_ratio,
             "wcst_pe_run_length_mean": pe_run_mean,
@@ -687,6 +731,9 @@ def derive_wcst_features(
             "wcst_post_shift_pe_rate_slope_k3": post_shift_pe_rate_slope_k3,
             "wcst_post_shift_pe_rate_slope_k5": post_shift_pe_rate_slope_k5,
             "wcst_rt_jump_at_switch": rt_jump_at_switch,
+            "wcst_switch_rt": switch_rt_mean,
+            "wcst_repeat_rt": repeat_rt_mean,
+            "wcst_switch_cost_rt": switch_cost_rt_mean,
             "wcst_failure_to_maintain_set": failure_to_maintain_set,
             "wcst_trials_to_rule_reacquisition": trials_to_reacq,
             "wcst_block_pe_slope": block_pe_slope,
