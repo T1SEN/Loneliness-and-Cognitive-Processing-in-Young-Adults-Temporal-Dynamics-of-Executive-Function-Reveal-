@@ -10,7 +10,11 @@ import numpy as np
 
 from ....constants import PRP_RT_MIN, DEFAULT_SOA_SHORT, DEFAULT_SOA_LONG
 from ....core import dfa_alpha, lag1_autocorrelation
-from ..._shared import prepare_prp_trials, compute_bottleneck_slope_block_change
+from ..._shared import (
+    prepare_prp_trials,
+    compute_bottleneck_effect_slope_block_change,
+    compute_bottleneck_slope_block_change,
+)
 
 
 def derive_prp_drift_features(
@@ -77,6 +81,15 @@ def derive_prp_drift_features(
             trial_col=trial_col,
             block_size=prp_block_size,
         )
+        bottleneck_effect_slope_block_change = compute_bottleneck_effect_slope_block_change(
+            grp,
+            rt_col=rt_col,
+            soa_col=soa_col,
+            trial_col=trial_col,
+            short_soa_max=DEFAULT_SOA_SHORT,
+            long_soa_min=DEFAULT_SOA_LONG,
+            block_size=prp_block_size,
+        )
 
         records.append({
             "participant_id": pid,
@@ -84,6 +97,7 @@ def derive_prp_drift_features(
             "prp_t2_rt_slope_short": slope_short,
             "prp_t2_rt_slope_long": slope_long,
             "prp_bottleneck_slope_block_change": bottleneck_slope_block_change,
+            "prp_bottleneck_effect_slope_block_change": bottleneck_effect_slope_block_change,
             "prp_t2_rt_lag1": rt_lag1,
             "prp_t2_rt_dfa_alpha": rt_dfa,
         })

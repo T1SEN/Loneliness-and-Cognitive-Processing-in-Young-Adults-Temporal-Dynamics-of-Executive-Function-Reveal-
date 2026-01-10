@@ -171,6 +171,15 @@ def derive_wcst_features(
 
     rt_max_val = WCST_RT_MAX if rt_max is None else rt_max
 
+    def _mean_if(values: np.ndarray, min_n: int) -> float:
+        return float(np.mean(values)) if len(values) >= min_n else np.nan
+
+    def _median_if(values: np.ndarray, min_n: int) -> float:
+        return float(np.median(values)) if len(values) >= min_n else np.nan
+
+    def _sd_if(values: np.ndarray, min_n: int) -> float:
+        return float(np.std(values, ddof=1)) if len(values) >= min_n else np.nan
+
     records: List[Dict] = []
     for pid, grp in wcst.groupby("participant_id"):
         grp = grp.reset_index(drop=True)
@@ -192,6 +201,7 @@ def derive_wcst_features(
         valid_order = trial_order.notna() & rt_series_valid.notna()
         rt_slope_overall = np.nan
         rt_slope_correct = np.nan
+        residual_abs_slope_correct = np.nan
         if valid_order.sum() >= 5 and trial_order[valid_order].nunique() > 1:
             rt_slope_overall = float(np.polyfit(trial_order[valid_order].values, rt_series_valid[valid_order].values, 1)[0])
         if "correct" in grp_sorted.columns:
@@ -200,6 +210,16 @@ def derive_wcst_features(
                 rt_slope_correct = float(
                     np.polyfit(trial_order[valid_correct].values, rt_series_valid[valid_correct].values, 1)[0]
                 )
+                x = trial_order[valid_correct].to_numpy(dtype=float)
+                y = rt_series_valid[valid_correct].to_numpy(dtype=float)
+                try:
+                    slope, intercept = np.polyfit(x, y, 1)
+                    resid = y - (slope * x + intercept)
+                    abs_resid = np.abs(resid)
+                    if np.isfinite(abs_resid).sum() >= 3:
+                        residual_abs_slope_correct = float(np.polyfit(x, abs_resid, 1)[0])
+                except Exception:
+                    residual_abs_slope_correct = np.nan
         mad_rt = median_absolute_deviation(rt_series_valid)
         iqr_rt = interquartile_range(rt_series_valid)
         if "correct" in grp_sorted.columns:
@@ -225,6 +245,8 @@ def derive_wcst_features(
 
         rt_vals = rt_series_valid.to_numpy()
         pes = np.nan
+        post_error_rt = np.nan
+        post_correct_rt = np.nan
         if "correct" in grp_sorted.columns:
             correct = grp_sorted["correct"].values
             post_pe_rts = []
@@ -247,7 +269,14 @@ def derive_wcst_features(
                     ):
                         post_correct_rts.append(rt_next)
             if post_pe_rts and post_correct_rts:
-                pes = np.mean(post_pe_rts) - np.mean(post_correct_rts)
+                post_error_rt = float(np.mean(post_pe_rts))
+                post_correct_rt = float(np.mean(post_correct_rts))
+                pes = post_error_rt - post_correct_rt
+            else:
+                if post_pe_rts:
+                    post_error_rt = float(np.mean(post_pe_rts))
+                if post_correct_rts:
+                    post_correct_rt = float(np.mean(post_correct_rts))
 
         post_switch_error_rate = np.nan
         if rule_col and "correct" in grp.columns:
@@ -281,6 +310,45 @@ def derive_wcst_features(
         is_npe = grp["isNPE"].astype(bool).values if "isNPE" in grp.columns else np.zeros(total_trials, dtype=bool)
         has_is_npe = "isNPE" in grp.columns
 
+        rt_all_vals = rt_vals[np.isfinite(rt_vals)]
+        rt_correct_vals = rt_vals[np.isfinite(rt_vals) & correct]
+        rt_error_vals = rt_vals[np.isfinite(rt_vals) & errors]
+        rt_pe_vals = rt_vals[np.isfinite(rt_vals) & is_pe]
+        rt_npe_vals = rt_vals[np.isfinite(rt_vals) & is_npe] if has_is_npe else np.array([], dtype=float)
+
+        rt_median_all = _median_if(rt_all_vals, 10)
+        rt_mean_correct = _mean_if(rt_correct_vals, 10)
+        rt_median_correct = _median_if(rt_correct_vals, 10)
+        rt_mean_error = _mean_if(rt_error_vals, 5)
+        rt_median_error = _median_if(rt_error_vals, 5)
+        rt_sd_all = _sd_if(rt_all_vals, 10)
+        rt_sd_correct = _sd_if(rt_correct_vals, 10)
+        rt_sd_error = _sd_if(rt_error_vals, 5)
+        rt_mean_pe = _mean_if(rt_pe_vals, 5)
+        rt_median_pe = _median_if(rt_pe_vals, 5)
+        rt_mean_npe = _mean_if(rt_npe_vals, 5) if has_is_npe else np.nan
+        rt_median_npe = _median_if(rt_npe_vals, 5) if has_is_npe else np.nan
+        rt_error_minus_correct_mean = (
+            float(rt_mean_error - rt_mean_correct)
+            if pd.notna(rt_mean_error) and pd.notna(rt_mean_correct)
+            else np.nan
+        )
+        rt_error_minus_correct_median = (
+            float(rt_median_error - rt_median_correct)
+            if pd.notna(rt_median_error) and pd.notna(rt_median_correct)
+            else np.nan
+        )
+        rt_pe_minus_npe_mean = (
+            float(rt_mean_pe - rt_mean_npe)
+            if pd.notna(rt_mean_pe) and pd.notna(rt_mean_npe)
+            else np.nan
+        )
+        rt_pe_minus_npe_median = (
+            float(rt_median_pe - rt_median_npe)
+            if pd.notna(rt_median_pe) and pd.notna(rt_median_npe)
+            else np.nan
+        )
+
         pe_count = int(is_pe.sum())
         pr_count = int(is_pr.sum())
         npe_count = int(is_npe.sum()) if has_is_npe else max(total_errors - pe_count, 0)
@@ -305,6 +373,13 @@ def derive_wcst_features(
         acc_slope_within = np.nan
         rt_jump_at_switch = np.nan
         category_total_rt_slope = np.nan
+        category_mean_rt = np.nan
+        category_accuracy_slope = np.nan
+        category_pe_slope = np.nan
+        category_pe_delta_first3_last3 = np.nan
+        post_shift_pe_count_slope = np.nan
+        post_shift_pe_rate_slope_k3 = np.nan
+        post_shift_pe_rate_slope_k5 = np.nan
         switch_cost_rt = {k: [] for k in range(1, 6)}
         switch_cost_err = {k: [] for k in range(1, 6)}
         trials_to_reacq = np.nan
@@ -323,6 +398,12 @@ def derive_wcst_features(
             rt_slope_vals = []
             acc_slope_vals = []
             category_total_rts = []
+            category_mean_rts = []
+            category_acc_rates = []
+            category_pe_rates = []
+            category_pe_counts = []
+            post_shift_pe_rates_k3 = []
+            post_shift_pe_rates_k5 = []
 
             for start, end in zip(segment_starts, segment_ends):
                 seg_len = end - start
@@ -334,7 +415,19 @@ def derive_wcst_features(
                     if rt_mask.sum() >= 3:
                         rt_slope_vals.append(float(np.polyfit(x[rt_mask], seg_rt[rt_mask], 1)[0]))
                     acc_slope_vals.append(float(np.polyfit(x, seg_acc, 1)[0]))
+                seg_pe = is_pe[start:end]
+                if len(seg_pe):
+                    category_pe_rates.append(float(np.mean(seg_pe)))
+                    category_pe_counts.append(float(np.sum(seg_pe)))
+                if len(seg_acc):
+                    category_acc_rates.append(float(np.mean(seg_acc)))
                 seg_rt = rt_vals[start:end]
+                seg_correct = correct[start:end]
+                seg_rt_correct = seg_rt[seg_correct]
+                if np.isfinite(seg_rt_correct).sum() >= 1:
+                    category_mean_rts.append(float(np.nanmean(seg_rt_correct)))
+                else:
+                    category_mean_rts.append(np.nan)
                 if np.isfinite(seg_rt).sum() >= 3:
                     category_total_rts.append(float(np.nansum(seg_rt)))
                 else:
@@ -344,6 +437,36 @@ def derive_wcst_features(
                 rt_slope_within = float(np.mean(rt_slope_vals))
             if acc_slope_vals:
                 acc_slope_within = float(np.mean(acc_slope_vals))
+            if category_mean_rts:
+                mean_vals = np.array(category_mean_rts, dtype=float)
+                if np.isfinite(mean_vals).sum() >= 1:
+                    category_mean_rt = float(np.nanmean(mean_vals))
+            if len(category_acc_rates) >= 3:
+                x = np.arange(1, len(category_acc_rates) + 1, dtype=float)
+                category_accuracy_slope = float(np.polyfit(x, np.array(category_acc_rates, dtype=float), 1)[0])
+            if len(category_pe_rates) >= 3:
+                x = np.arange(1, len(category_pe_rates) + 1, dtype=float)
+                category_pe_slope = float(np.polyfit(x, np.array(category_pe_rates, dtype=float), 1)[0])
+            if len(category_pe_rates) >= 6:
+                first = np.mean(category_pe_rates[:3])
+                last = np.mean(category_pe_rates[-3:])
+                category_pe_delta_first3_last3 = float(first - last)
+            if len(category_pe_counts) >= 3:
+                x = np.arange(1, len(category_pe_counts) + 1, dtype=float)
+                post_shift_pe_count_slope = float(np.polyfit(x, np.array(category_pe_counts, dtype=float), 1)[0])
+            for idx in change_indices:
+                window_k3 = is_pe[idx:min(idx + 3, len(is_pe))]
+                if len(window_k3) >= 3:
+                    post_shift_pe_rates_k3.append(float(np.mean(window_k3)))
+                window_k5 = is_pe[idx:min(idx + 5, len(is_pe))]
+                if len(window_k5) >= 5:
+                    post_shift_pe_rates_k5.append(float(np.mean(window_k5)))
+            if len(post_shift_pe_rates_k3) >= 3:
+                x = np.arange(1, len(post_shift_pe_rates_k3) + 1, dtype=float)
+                post_shift_pe_rate_slope_k3 = float(np.polyfit(x, np.array(post_shift_pe_rates_k3, dtype=float), 1)[0])
+            if len(post_shift_pe_rates_k5) >= 3:
+                x = np.arange(1, len(post_shift_pe_rates_k5) + 1, dtype=float)
+                post_shift_pe_rate_slope_k5 = float(np.polyfit(x, np.array(post_shift_pe_rates_k5, dtype=float), 1)[0])
             if len(category_total_rts) >= 2:
                 y = np.array(category_total_rts, dtype=float)
                 valid_totals = np.isfinite(y)
@@ -437,8 +560,29 @@ def derive_wcst_features(
         block_pe_final = np.nan
         block_pe_change = np.nan
         block_pe_blocks = np.nan
+        pe_rate_slope_half = np.nan
+        pe_rate_slope_quartile = np.nan
         if "isPE" in grp_sorted.columns:
             pe_flags = grp_sorted["isPE"].astype(bool).to_numpy()
+
+            def _pe_rate_slope_by_segments(n_segments: int, min_segment_n: int = 5) -> float:
+                if len(pe_flags) < n_segments * min_segment_n:
+                    return np.nan
+                edges = np.linspace(0, len(pe_flags), n_segments + 1, dtype=int)
+                rates: list[float] = []
+                for idx in range(n_segments):
+                    start, end = edges[idx], edges[idx + 1]
+                    segment = pe_flags[start:end]
+                    if len(segment) < min_segment_n:
+                        return np.nan
+                    rates.append(float(np.mean(segment)))
+                if len(rates) < 2:
+                    return np.nan
+                x = np.arange(1, len(rates) + 1, dtype=float)
+                return float(np.polyfit(x, np.array(rates, dtype=float), 1)[0])
+
+            pe_rate_slope_half = _pe_rate_slope_by_segments(2)
+            pe_rate_slope_quartile = _pe_rate_slope_by_segments(4)
             n_blocks = len(pe_flags) // WCST_BLOCK_SIZE
             if n_blocks >= 1:
                 block_rates = []
@@ -531,9 +675,17 @@ def derive_wcst_features(
             "wcst_trials_per_category_sd": float(np.std(trials_per_category)) if trials_per_category else np.nan,
             "wcst_rt_slope_overall": rt_slope_overall,
             "wcst_rt_slope_correct": rt_slope_correct,
+            "wcst_residual_abs_slope_correct": residual_abs_slope_correct,
             "wcst_rt_slope_within_category": rt_slope_within,
+            "wcst_mean_rt_within_category": category_mean_rt,
+            "wcst_category_accuracy_slope": category_accuracy_slope,
             "wcst_acc_slope_within_category": acc_slope_within,
             "wcst_category_total_rt_slope": category_total_rt_slope,
+            "wcst_category_pe_slope": category_pe_slope,
+            "wcst_category_pe_delta_first3_last3": category_pe_delta_first3_last3,
+            "wcst_post_shift_pe_count_slope": post_shift_pe_count_slope,
+            "wcst_post_shift_pe_rate_slope_k3": post_shift_pe_rate_slope_k3,
+            "wcst_post_shift_pe_rate_slope_k5": post_shift_pe_rate_slope_k5,
             "wcst_rt_jump_at_switch": rt_jump_at_switch,
             "wcst_failure_to_maintain_set": failure_to_maintain_set,
             "wcst_trials_to_rule_reacquisition": trials_to_reacq,
@@ -544,6 +696,8 @@ def derive_wcst_features(
             "wcst_block_pe_final": block_pe_final,
             "wcst_block_pe_change": block_pe_change,
             "wcst_block_pe_blocks": block_pe_blocks,
+            "wcst_pe_rate_slope_half": pe_rate_slope_half,
+            "wcst_pe_rate_slope_quartile": pe_rate_slope_quartile,
             "wcst_delta_plot_slope_correct": delta_plot_slope,
             "wcst_rt_fatigue_slope": fatigue_metrics["rt_fatigue_slope"],
             "wcst_cv_fatigue_slope": fatigue_metrics["cv_fatigue_slope"],

@@ -33,7 +33,11 @@ from .exgaussian_mechanism import load_or_compute_prp_mechanism_features
 from .hmm_event_features import load_or_compute_prp_hmm_event_features
 from .bottleneck_mechanism import load_or_compute_prp_bottleneck_mechanism_features
 from .bottleneck_shape import load_or_compute_prp_bottleneck_shape_features
-from ._shared import _apply_timeout_as_incorrect, compute_bottleneck_slope_block_change
+from ._shared import (
+    _apply_timeout_as_incorrect,
+    compute_bottleneck_effect_slope_block_change,
+    compute_bottleneck_slope_block_change,
+)
 
 
 def _run_lengths(mask: pd.Series) -> List[int]:
@@ -180,6 +184,15 @@ def derive_prp_features(
             rt_col="t2_rt_ms",
             soa_col="soa_ms",
             trial_col=order_col,
+            block_size=prp_block_size,
+        )
+        bottleneck_effect_slope_block_change = compute_bottleneck_effect_slope_block_change(
+            grp_sorted,
+            rt_col="t2_rt_ms",
+            soa_col="soa_ms",
+            trial_col=order_col,
+            short_soa_max=DEFAULT_SOA_SHORT,
+            long_soa_min=DEFAULT_SOA_LONG,
             block_size=prp_block_size,
         )
 
@@ -399,6 +412,7 @@ def derive_prp_features(
             "prp_cascade_inflation": cascade_inflation,
             "prp_pes": pes,
             "prp_bottleneck_slope_block_change": bottleneck_slope_block_change,
+            "prp_bottleneck_effect_slope_block_change": bottleneck_effect_slope_block_change,
             "prp_rt_fatigue_slope": fatigue_metrics["rt_fatigue_slope"],
             "prp_cv_fatigue_slope": fatigue_metrics["cv_fatigue_slope"],
             "prp_cv_fatigue_slope_rolling": fatigue_metrics["cv_fatigue_slope_rolling"],

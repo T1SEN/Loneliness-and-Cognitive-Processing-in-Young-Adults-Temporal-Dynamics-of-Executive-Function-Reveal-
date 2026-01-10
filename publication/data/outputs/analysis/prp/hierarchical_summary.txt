@@ -1834,6 +1834,30 @@ Diagnostics:
   Shapiro-Wilk p: 0.007
 
 
+Outcome: PRP Bottleneck Effect Slope (Blocks) (N = 201)
+--------------------------------------------------
+
+Model Comparison:
+  Step 1 (DASS):        Delta R^2 = 0.0038, p = 0.865
+  Step 2 (UCLA):        Delta R^2 = 0.0017, p = 0.563 (OLS Wald)
+  Step 3 (Interaction): Delta R^2 = 0.0004, p = 0.794 (OLS Wald)
+
+UCLA Main Effect (Model 2):
+  beta = 5.1412, SE = 8.8657, t = 0.58, p = 0.563
+
+UCLA x Gender Interaction (Model 3):
+  beta = -3.4633, SE = 13.2631, p = 0.794
+
+Gender-Stratified UCLA Effects:
+  Female (n=122): beta = 6.9546, p = 0.576
+  Male (n=79):   beta = 3.5241, p = 0.776
+
+Diagnostics:
+  VIF max: 2.60
+  Breusch-Pagan p: 0.410
+  Shapiro-Wilk p: < 0.001
+
+
 Outcome: PRP RT2 Asymptote (Long SOA) (N = 201)
 --------------------------------------------------
 

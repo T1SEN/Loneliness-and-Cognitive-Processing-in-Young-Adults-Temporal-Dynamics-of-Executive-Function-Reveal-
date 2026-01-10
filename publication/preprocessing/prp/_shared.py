@@ -99,6 +99,60 @@ def compute_bottleneck_slope_block_change(
     return float(np.polyfit(x, y, 1)[0])
 
 
+def compute_bottleneck_effect_slope_block_change(
+    grp: pd.DataFrame,
+    rt_col: str,
+    soa_col: str,
+    trial_col: str | None,
+    short_soa_max: float,
+    long_soa_min: float,
+    block_size: int = 30,
+    min_trials_per_bin: int = 2,
+    min_blocks: int = 3,
+) -> float:
+    if grp.empty or rt_col not in grp.columns or soa_col not in grp.columns:
+        return np.nan
+
+    if trial_col and trial_col in grp.columns:
+        trial_order = pd.to_numeric(grp[trial_col], errors="coerce")
+        if trial_order.notna().any():
+            base_order = trial_order - trial_order.min()
+        else:
+            base_order = pd.Series(np.arange(len(grp)), index=grp.index, dtype=float)
+    else:
+        base_order = pd.Series(np.arange(len(grp)), index=grp.index, dtype=float)
+
+    df = grp.copy()
+    df["_trial_order"] = base_order
+    df = df[df["_trial_order"].notna()]
+    if df.empty:
+        return np.nan
+
+    df["_block"] = (df["_trial_order"] // block_size).astype(int)
+    block_effects = []
+    block_ids = []
+
+    for block_id, block_df in df.groupby("_block"):
+        short_vals = block_df[block_df[soa_col] <= short_soa_max][rt_col].dropna()
+        long_vals = block_df[block_df[soa_col] >= long_soa_min][rt_col].dropna()
+        if len(short_vals) < min_trials_per_bin or len(long_vals) < min_trials_per_bin:
+            continue
+        effect = float(short_vals.mean() - long_vals.mean())
+        if np.isfinite(effect):
+            block_ids.append(block_id)
+            block_effects.append(effect)
+
+    if len(block_effects) < min_blocks:
+        return np.nan
+
+    order = np.argsort(block_ids)
+    x = np.array([block_ids[i] for i in order], dtype=float) + 1.0
+    y = np.array([block_effects[i] for i in order], dtype=float)
+    if len(np.unique(x)) < 2:
+        return np.nan
+    return float(np.polyfit(x, y, 1)[0])
+
+
 def prepare_prp_trials(
     rt_min: float = PRP_RT_MIN,
     rt_max: float | None = None,
