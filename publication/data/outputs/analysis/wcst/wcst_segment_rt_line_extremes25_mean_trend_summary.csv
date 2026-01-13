@@ -1,0 +1,15 @@
+﻿segment,loneliness_group,mean_rt,sem_rt,n
+shift_trial,High loneliness (top 25%),1597.2400000051166,98.21462997602406,52
+shift_trial,Low loneliness (bottom 25%),1346.2991509386256,65.85166460965277,53
+post_shift_error,High loneliness (top 25%),2641.6843322501068,179.44438818368835,51
+post_shift_error,Low loneliness (bottom 25%),2228.879703951592,104.24858186575271,52
+exploration,High loneliness (top 25%),2074.324137181345,109.247615829669,52
+exploration,Low loneliness (bottom 25%),1854.9770818235438,86.02438052986042,53
+discovery,High loneliness (top 25%),2453.4221153805247,173.42545257021897,52
+discovery,Low loneliness (bottom 25%),2115.536792444683,109.71145396793186,53
+confirmation,High loneliness (top 25%),1994.8627264241,98.88283133064444,51
+confirmation,Low loneliness (bottom 25%),1724.1366871695263,62.454202924600594,53
+exploitation,High loneliness (top 25%),1430.759982007371,59.29820098381936,51
+exploitation,Low loneliness (bottom 25%),1336.4375164781654,42.20255625648884,53
+pre_switch_w5,High loneliness (top 25%),1344.7059607842314,51.22457302202765,51
+pre_switch_w5,Low loneliness (bottom 25%),1270.2882935892785,38.13083972239233,53

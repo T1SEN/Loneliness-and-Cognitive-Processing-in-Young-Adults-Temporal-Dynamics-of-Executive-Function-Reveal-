@@ -1,0 +1,10 @@
+Overall CV difference (incongruent, top/bottom 25%)
+N low=55, N high=55
+Low mean=0.3170, sd=0.0676
+High mean=0.3186, sd=0.0628
+OLS HC3: cv ~ group_high (1=high) -> beta=0.0016, se=0.0126, t=0.124, p=0.9010
+
+Time-segment CV (4 bins) with cluster-robust SE by participant
+OLS cluster: cv ~ group_high + segment_c + group_high:segment_c
+Segment slope (low) = 0.0020, slope (high) = 0.0176
+Interaction (slope diff): beta=0.0156, se=0.0077, t=2.017, p=0.0437

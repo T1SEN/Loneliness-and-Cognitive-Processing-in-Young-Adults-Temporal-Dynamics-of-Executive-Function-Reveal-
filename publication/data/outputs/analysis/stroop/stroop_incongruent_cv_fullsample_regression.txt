@@ -1,0 +1,9 @@
+Overall CV difference (incongruent, full sample)
+N=220
+UCLA mean=40.523, sd=11.036
+OLS HC3: cv ~ z_ucla -> beta=0.0008, se=0.0049, t=0.172, p=0.8635
+
+Time-segment CV (4 bins) with cluster-robust SE by participant
+OLS cluster: cv ~ z_ucla + segment_c + z_ucla:segment_c
+Segment slope per +1 SD UCLA: delta_slope = 0.0037
+Interaction: beta=0.0037, se=0.0029, t=1.268, p=0.2049
