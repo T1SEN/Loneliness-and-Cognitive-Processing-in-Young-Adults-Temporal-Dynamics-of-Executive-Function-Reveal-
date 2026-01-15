@@ -26,6 +26,26 @@ SEGMENTS = [
     ("confirmation", "Confirm"),
     ("exploitation", "Exploit"),
 ]
+FIRST_SEGMENTS = [
+    ("exploration", "Explore"),
+    ("confirmation", "Confirm"),
+    ("exploitation", "Exploit"),
+]
+
+
+def _segment_plan() -> tuple[list[str], dict[tuple[int, str], int], dict[int, list[tuple[str, str]]]]:
+    labels: list[str] = []
+    order_map: dict[tuple[int, str], int] = {}
+    segments_by_category: dict[int, list[tuple[str, str]]] = {}
+    order = 1
+    for cat in range(1, N_CATEGORIES + 1):
+        segs = FIRST_SEGMENTS if cat == 1 else SEGMENTS
+        segments_by_category[cat] = segs
+        for seg_key, seg_short in segs:
+            order_map[(cat, seg_key)] = order
+            labels.append(f"C{cat}-{seg_short}")
+            order += 1
+    return labels, order_map, segments_by_category
 
 
 def _assign_loneliness_groups(df: pd.DataFrame) -> pd.DataFrame:
@@ -103,6 +123,8 @@ def _build_long_df(
     rt_col: str,
     trial_col: str | None,
     rule_col: str,
+    segments_by_category: dict[int, list[tuple[str, str]]],
+    order_map: dict[tuple[int, str], int],
 ) -> pd.DataFrame:
     records: list[dict[str, object]] = []
     for pid, grp in trials.groupby("participant_id"):
@@ -114,16 +136,14 @@ def _build_long_df(
         correct = grp_sorted["correct"].astype(bool).to_numpy()
         rules = grp_sorted[rule_col].astype(str).str.lower().to_numpy()
         change_indices = [i for i in range(1, len(rules)) if rules[i] != rules[i - 1]]
-        if not change_indices:
-            continue
-
-        for cat_idx, idx in enumerate(change_indices, start=1):
+        segment_starts = [0] + change_indices
+        segment_ends = change_indices + [len(rules)]
+        for cat_idx, (idx, next_idx) in enumerate(zip(segment_starts, segment_ends), start=1):
             if cat_idx > N_CATEGORIES:
                 break
-            next_idx = change_indices[cat_idx] if cat_idx < len(change_indices) else len(rules)
             seg_means = _segment_means_for_cycle(rt_vals, correct, idx, next_idx)
-            for seg_key, seg_short in SEGMENTS:
-                order = (cat_idx - 1) * len(SEGMENTS) + SEGMENTS.index((seg_key, seg_short)) + 1
+            for seg_key, seg_short in segments_by_category[cat_idx]:
+                order = order_map[(cat_idx, seg_key)]
                 records.append({
                     "participant_id": pid,
                     "category_num": cat_idx,
@@ -135,13 +155,10 @@ def _build_long_df(
     return pd.DataFrame(records)
 
 
-def _summary_by_block(df: pd.DataFrame) -> pd.DataFrame:
+def _summary_by_block(df: pd.DataFrame, labels: list[str]) -> pd.DataFrame:
     records: list[dict[str, object]] = []
-    for order in range(1, N_CATEGORIES * len(SEGMENTS) + 1):
+    for order, label in enumerate(labels, start=1):
         block_df = df[df["segment_order"] == order]
-        if block_df.empty:
-            continue
-        label = block_df["segment_label"].iloc[0]
         for group in (LOW_LABEL, HIGH_LABEL):
             vals = block_df.loc[block_df["loneliness_group"] == group, "mean_rt"].dropna()
             n = int(len(vals))
@@ -171,7 +188,6 @@ def main() -> None:
         sys.stdout.reconfigure(encoding="utf-8")
 
     master = get_analysis_data("wcst")
-    master = master[master["wcst_categories_completed"].fillna(0) >= N_CATEGORIES].copy()
     master = master[["participant_id", "ucla_score"]].dropna()
 
     trials_pack = prepare_wcst_trials()
@@ -183,21 +199,17 @@ def main() -> None:
         raise RuntimeError("WCST trials missing required columns.")
 
     wcst = wcst[wcst["participant_id"].isin(master["participant_id"])].copy()
-    long_df = _build_long_df(wcst, rt_col, trial_col, rule_col)
+    labels, order_map, segments_by_category = _segment_plan()
+    long_df = _build_long_df(wcst, rt_col, trial_col, rule_col, segments_by_category, order_map)
     long_df = long_df.merge(master, on="participant_id", how="inner")
     long_df = _assign_loneliness_groups(long_df)
 
-    summary = _summary_by_block(long_df)
+    summary = _summary_by_block(long_df, labels)
     output_dir = get_output_dir("wcst")
     summary_path = output_dir / "wcst_category_segment_rt_line_extremes25_6cat_summary.csv"
     summary.to_csv(summary_path, index=False, encoding="utf-8-sig")
 
-    x = np.arange(1, N_CATEGORIES * len(SEGMENTS) + 1, dtype=float)
-    labels = [
-        f"C{cat}-{seg_short}"
-        for cat in range(1, N_CATEGORIES + 1)
-        for _, seg_short in SEGMENTS
-    ]
+    x = np.arange(1, len(labels) + 1, dtype=float)
 
     group_data = {}
     n_by_group = {}
@@ -238,8 +250,8 @@ def main() -> None:
                 label=f"{group} trend ({slope:.1f} ms/seg)",
             )
 
-    ax.set_title("WCST RT Across 6 Categories x 5 Segments (Top/Bottom 25%)")
-    ax.set_xlabel("Category cycle x segment (30 blocks)")
+    ax.set_title("WCST RT Across Category Segments (C1 starts at Explore, Top/Bottom 25%)")
+    ax.set_xlabel(f"Category cycle x segment ({len(labels)} blocks)")
     ax.set_ylabel("Mean RT (ms)")
     ax.set_xticks(x)
     ax.set_xticklabels(labels, rotation=60, ha="right")
