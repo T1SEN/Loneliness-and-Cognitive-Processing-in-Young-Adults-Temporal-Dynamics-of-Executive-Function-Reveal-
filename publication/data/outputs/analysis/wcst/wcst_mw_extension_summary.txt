@@ -3,19 +3,19 @@ WCST Mind-Wandering Proxies (Non-HMM)
 
 Non-HMM outcomes (HC3 + FDR)
 ----------------------------------------------------------------------
-Total outcomes: 203
+Total outcomes: 287
 FDR<0.05: 0
 Top (by p):
-- WCST Pre-Error RT Slope (Mean) | beta=45.91 | p=0.003792 | q=0.5101
-- WCST RT Slope within Category | beta=-12.58 | p=0.01046 | q=0.5101
-- WCST Tau Slope (Q4-Q1) | beta=-451.5 | p=0.0114 | q=0.5101
-- WCST Post-Error RT (ms) | beta=223.6 | p=0.01656 | q=0.5101
-- WCST Recovery RT Lag1 | beta=211 | p=0.017 | q=0.5101
-- WCST Recovery RT Slope | beta=-39.4 | p=0.01873 | q=0.5101
-- WCST RT Fatigue Slope (Q4-Q1) | beta=-85.49 | p=0.02188 | q=0.5101
-- WCST Block PE Initial | beta=0.01342 | p=0.0225 | q=0.5101
-- WCST Block PE Slope | beta=-0.007595 | p=0.02428 | q=0.5101
-- WCST Switch Cost Error k2 | beta=0.04718 | p=0.02825 | q=0.5101
+- WCST Pre-Error RT Slope (Mean) | beta=45.91 | p=0.003792 | q=0.4904
+- WCST Pre-Switch RT Delta (w5) | beta=-98.37 | p=0.005619 | q=0.4904
+- WCST Pre-Switch RT Delta (w5, correct) | beta=-92.95 | p=0.007327 | q=0.4904
+- WCST RT Slope within Category | beta=-12.58 | p=0.01046 | q=0.4904
+- WCST Tau Slope (Q4-Q1) | beta=-451.5 | p=0.0114 | q=0.4904
+- WCST Confirmation RT Mean | beta=145.9 | p=0.01638 | q=0.4904
+- WCST Post-Error RT (ms) | beta=223.6 | p=0.01656 | q=0.4904
+- WCST Recovery RT Lag1 | beta=211 | p=0.017 | q=0.4904
+- WCST Pre-Switch RT Delta (w4) | beta=-87.06 | p=0.01727 | q=0.4904
+- WCST Recovery RT Slope | beta=-39.4 | p=0.01873 | q=0.4904
 
 Trial-level lapse/run proxies (HC3 + FDR)
 ----------------------------------------------------------------------

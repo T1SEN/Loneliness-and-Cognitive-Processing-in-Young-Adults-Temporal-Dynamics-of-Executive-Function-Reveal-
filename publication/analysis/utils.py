@@ -977,7 +977,34 @@ def _merge_extra_features(df: pd.DataFrame, extra_path: Path) -> pd.DataFrame:
     return df.merge(extra_df, on="participant_id", how="left")
 
 
-def get_analysis_data(task: str) -> pd.DataFrame:
+def _load_qc_ids(task: str) -> set[str]:
+    ids_path = get_results_dir(task) / "filtered_participant_ids.csv"
+    if not ids_path.exists():
+        return set()
+    ids_df = pd.read_csv(ids_path, encoding="utf-8-sig")
+    if ids_df.empty:
+        return set()
+    ids_df = ensure_participant_id(ids_df)
+    if "participant_id" not in ids_df.columns:
+        return set()
+    return set(ids_df["participant_id"].dropna().astype(str))
+
+
+def _apply_qc_filter(df: pd.DataFrame, task: str) -> pd.DataFrame:
+    if "participant_id" not in df.columns:
+        return df
+    qc_ids = _load_qc_ids(task)
+    if not qc_ids:
+        return df
+    before = len(df)
+    filtered = df[df["participant_id"].isin(qc_ids)].copy()
+    after = len(filtered)
+    if before != after:
+        print(f"  QC filter ({task}): {before} -> {after} rows")
+    return filtered
+
+
+def get_analysis_data(task: str, apply_qc: bool = True) -> pd.DataFrame:
     """
     Load master dataset with Tier-1 metrics pre-computed.
     """
@@ -1006,6 +1033,8 @@ def get_analysis_data(task: str) -> pd.DataFrame:
             df,
             get_results_dir("wcst") / "5_wcst_switching_features.csv",
         )
+    if apply_qc:
+        df = _apply_qc_filter(df, task)
     return df
 
 

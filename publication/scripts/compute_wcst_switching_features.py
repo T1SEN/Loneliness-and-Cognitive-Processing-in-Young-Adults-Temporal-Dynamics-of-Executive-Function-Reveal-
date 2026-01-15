@@ -138,7 +138,9 @@ def compute_switching_features() -> pd.DataFrame:
         lucky_streak_lens = []
         exploration_slopes = []
         exploration_error_rates = []
+        confirmation_error_rates = []
         confirmation_rt_means = []
+        confirmation_slopes = []
         post_reacq_rt_cvs = []
         shift_pe_rt_means = []
         shift_pe_counts = []
@@ -161,6 +163,8 @@ def compute_switching_features() -> pd.DataFrame:
         stable_pes_vals = []
         shift_error_count_total = 0
         shift_trial_count_total = 0
+        exploitation_slopes = []
+        exploitation_error_rates = []
 
         total_trials = int(len(correct)) if correct is not None else 0
         total_errors = int(np.sum(~correct)) if correct is not None else 0
@@ -183,8 +187,10 @@ def compute_switching_features() -> pd.DataFrame:
 
             if correct is not None:
                 reacq_idx_local = None
+                reacq_start_local = None
                 for j in range(idx, next_idx - 2):
                     if correct[j] and correct[j + 1] and correct[j + 2]:
+                        reacq_start_local = j
                         reacq_idx_local = j + 2
                         break
 
@@ -214,23 +220,20 @@ def compute_switching_features() -> pd.DataFrame:
                     lucky = int(np.sum(correct[idx:first_error_idx]))
                     lucky_streak_lens.append(float(lucky))
 
-                first_correct_idx = None
-                for j in range(idx, len(correct)):
-                    if correct[j]:
-                        first_correct_idx = j
-                        break
-                if first_correct_idx is not None:
-                    exp_rts = rt_vals[idx:first_correct_idx + 1]
-                    exp_rts = exp_rts[np.isfinite(exp_rts)]
-                    if len(exp_rts) > 0:
-                        exploration_means.append(float(np.mean(exp_rts)))
-                        exploration_sds.append(float(np.std(exp_rts, ddof=1)) if len(exp_rts) > 1 else 0.0)
-                    exp_correct = correct[idx:first_correct_idx + 1]
+                explore_end = reacq_start_local if reacq_start_local is not None else next_idx
+                if explore_end > idx:
+                    segment_rt = rt_vals[idx:explore_end]
+                    segment_valid = segment_rt[np.isfinite(segment_rt)]
+                    if len(segment_valid) > 0:
+                        exploration_means.append(float(np.mean(segment_valid)))
+                        exploration_sds.append(float(np.std(segment_valid, ddof=1)) if len(segment_valid) > 1 else 0.0)
+                    exp_correct = correct[idx:explore_end]
                     if len(exp_correct):
                         exploration_error_rates.append(float(1.0 - np.mean(exp_correct)))
-                    if len(exp_rts) >= 3:
-                        x_vals = np.arange(1, len(exp_rts) + 1)
-                        exploration_slopes.append(float(np.polyfit(x_vals, exp_rts, 1)[0]))
+                    if len(segment_rt) >= 3 and np.isfinite(segment_rt).sum() >= 3:
+                        x_vals = np.arange(1, len(segment_rt) + 1)
+                        mask = np.isfinite(segment_rt)
+                        exploration_slopes.append(float(np.polyfit(x_vals[mask], segment_rt[mask], 1)[0]))
 
                 shift_end_err = reacq_idx_local if reacq_idx_local is not None else next_idx - 1
                 if shift_end_err >= idx:
@@ -331,31 +334,39 @@ def compute_switching_features() -> pd.DataFrame:
                             if stable_pe_rts:
                                 stable_pe_rt_means.append(float(np.mean(stable_pe_rts)))
 
-                reacq_idx = None
-                reacq_start = None
-                for j in range(idx, len(correct) - 2):
-                    if correct[j] and correct[j + 1] and correct[j + 2]:
-                        reacq_start = j
-                        reacq_idx = j + 2
-                        break
+                reacq_idx = reacq_idx_local
+                reacq_start = reacq_start_local
                 if reacq_idx is not None:
                     confirm_rt = rt_vals[reacq_start:reacq_idx + 1]
                     confirm_rt = confirm_rt[np.isfinite(confirm_rt)]
                     if len(confirm_rt) > 0:
                         confirmation_rt_means.append(float(np.mean(confirm_rt)))
+                    confirm_correct = correct[reacq_start:reacq_idx + 1]
+                    if len(confirm_correct):
+                        confirmation_error_rates.append(float(1.0 - np.mean(confirm_correct)))
+                    if len(confirm_rt) >= 3:
+                        x_vals = np.arange(1, len(confirm_rt) + 1)
+                        confirmation_slopes.append(float(np.polyfit(x_vals, confirm_rt, 1)[0]))
 
                     next_idx = change_indices[s_idx + 1] if s_idx + 1 < n_switches else len(rt_vals)
                     start = reacq_idx + 1
                     if start < next_idx:
-                        exp_rt = rt_vals[start:next_idx]
-                        exp_rt = exp_rt[np.isfinite(exp_rt)]
-                        if len(exp_rt) > 0:
-                            exploitation_means.append(float(np.mean(exp_rt)))
-                            exploitation_sds.append(float(np.std(exp_rt, ddof=1)) if len(exp_rt) > 1 else 0.0)
-                            if len(exp_rt) > 1:
-                                mean_rt = float(np.mean(exp_rt))
+                        exp_segment = rt_vals[start:next_idx]
+                        exp_valid = exp_segment[np.isfinite(exp_segment)]
+                        if len(exp_valid) > 0:
+                            exploitation_means.append(float(np.mean(exp_valid)))
+                            exploitation_sds.append(float(np.std(exp_valid, ddof=1)) if len(exp_valid) > 1 else 0.0)
+                            if len(exp_segment) >= 3 and np.isfinite(exp_segment).sum() >= 3:
+                                x_vals = np.arange(1, len(exp_segment) + 1)
+                                mask = np.isfinite(exp_segment)
+                                exploitation_slopes.append(float(np.polyfit(x_vals[mask], exp_segment[mask], 1)[0]))
+                            if len(exp_valid) > 1:
+                                mean_rt = float(np.mean(exp_valid))
                                 if mean_rt > 0:
-                                    post_reacq_rt_cvs.append(float(np.std(exp_rt, ddof=1) / mean_rt))
+                                    post_reacq_rt_cvs.append(float(np.std(exp_valid, ddof=1) / mean_rt))
+                        exp_correct = correct[start:next_idx]
+                        if len(exp_correct):
+                            exploitation_error_rates.append(float(1.0 - np.mean(exp_correct)))
 
         early_idx, late_idx = _split_early_late(n_switches)
         early_rt = [switch_cost_rt[i] for i in early_idx if np.isfinite(switch_cost_rt[i])]
@@ -411,7 +422,11 @@ def compute_switching_features() -> pd.DataFrame:
             "wcst_exploration_rt_slope": _mean_or_nan(exploration_slopes),
             "wcst_exploration_error_rate": _mean_or_nan(exploration_error_rates),
             "wcst_confirmation_rt_mean": _mean_or_nan(confirmation_rt_means),
+            "wcst_confirmation_rt_slope": _mean_or_nan(confirmation_slopes),
+            "wcst_confirmation_error_rate": _mean_or_nan(confirmation_error_rates),
             "wcst_post_reacq_rt_cv": _mean_or_nan(post_reacq_rt_cvs),
+            "wcst_exploitation_rt_slope": _mean_or_nan(exploitation_slopes),
+            "wcst_exploitation_error_rate": _mean_or_nan(exploitation_error_rates),
             "wcst_shift_pe_rt_mean": _mean_or_nan(shift_pe_rt_means),
             "wcst_shift_pe_count_mean": _mean_or_nan(shift_pe_counts),
             "wcst_shift_pe_rate_mean": _mean_or_nan(shift_pe_rates),

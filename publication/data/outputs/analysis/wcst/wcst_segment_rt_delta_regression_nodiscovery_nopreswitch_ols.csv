@@ -1,0 +1,5 @@
+﻿outcome_column,n,ucla_beta,ucla_se,ucla_t,ucla_p,r2,adj_r2,cov_type,outcome,outcome_type,segment
+wcst_rt_delta_shift_trial_to_post_shift_error,206,124.54942355181304,86.97772340502699,1.431969229314348,0.15372142092095184,0.02384096001523084,-0.005590970838581288,nonrobust,WCST RT Delta shift_trial -> post_shift_error,segment_delta,shift_trial_to_post_shift_error
+wcst_rt_delta_post_shift_error_to_exploration,206,-126.14475748532608,75.08011628839203,-1.6801353503607857,0.09450008155092307,0.027256703175690622,-0.0020722404471527067,nonrobust,WCST RT Delta post_shift_error -> exploration,segment_delta,post_shift_error_to_exploration
+wcst_rt_delta_exploration_to_confirmation,206,55.32431433765285,44.123091085941304,1.2538630675238556,0.21136273817587384,0.014080928422912864,-0.015645274740215376,nonrobust,WCST RT Delta exploration -> confirmation,segment_delta,exploration_to_confirmation
+wcst_rt_delta_confirmation_to_exploitation,209,-148.59062626288582,36.066404073319376,-4.119917970220042,5.5271151728516585e-05,0.08633312798577719,0.059194508024958625,nonrobust,WCST RT Delta confirmation -> exploitation,segment_delta,confirmation_to_exploitation
