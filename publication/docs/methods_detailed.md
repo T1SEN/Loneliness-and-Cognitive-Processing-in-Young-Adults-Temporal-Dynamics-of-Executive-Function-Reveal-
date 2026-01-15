@@ -34,22 +34,6 @@ Immediate feedback was displayed for exactly 1000 ms after each response: "정�
 
 Perseverative errors were operationally defined according to three conjunctive criteria: (1) a previous sorting rule must exist and differ from the current rule (i.e., at least one category must have been completed); (2) the selected reference card must match the stimulus card on the previous rule's dimension; and (3) exactly one reference card must match the stimulus on the previous dimension (disambiguation criterion to distinguish true perseveration from coincidental matches). Perseverative responses were defined identically but could occur on either correct or incorrect trials; perseverative errors were perseverative responses that were also incorrect.
 
-**Psychological Refractory Period (PRP) Task**. A dual-task paradigm assessed central bottleneck effects and attentional control capacity. The task required rapid sequential responses to two stimuli (Task 1 and Task 2), with the temporal interval between stimulus onsets (stimulus onset asynchrony; SOA) systematically varied.
-
-Task 1 (T1) required parity judgment of single digits. Stimuli consisted of digits 1–9, displayed centrally at 48-pt bold font. Odd digits (1, 3, 5, 7, 9) required one response; even digits (2, 4, 6, 8) required another. Task 2 (T2) required color identification of a square. Stimuli consisted of an 80 × 80 pixel colored square (red or blue) displayed below the digit. Red squares required one response; blue squares required another.
-
-Responses were collected via keyboard. T1 responses used the 'A' and 'D' keys (left and right positions on QWERTY keyboard). T2 responses used the left and right arrow keys. Key-response mappings were counterbalanced across participants in a 2 × 2 design: (a) T1 mapping reversal (odd=A/even=D vs. odd=D/even=A) and (b) T2 mapping reversal (red=left/blue=right vs. red=right/blue=left), yielding four counterbalancing conditions. Assignment to conditions was determined by hash functions of participant ID, with approximately equal distribution across conditions.
-
-SOA varied across five levels: 50, 150, 300, 600, and 1200 ms. These values span the range from strong dual-task interference (short SOA) to minimal interference (long SOA), allowing characterization of the PRP curve. The main task comprised 120 trials following a fully crossed design: 5 SOA levels × 2 T1 parities × 2 T2 colors × 6 repetitions = 120 trials. This design ensured 24 trials per SOA level with balanced representation of all stimulus combinations. Trial order was fully randomized.
-
-Each trial followed this temporal sequence: (1) fixation cross (60 pt, "+") displayed centrally for 500 ms; (2) T1 stimulus (digit) appeared; (3) after the designated SOA interval, T2 stimulus (colored square) appeared below T1; (4) both stimuli remained visible until responses were collected or timeouts occurred; (5) 500 ms inter-trial interval before the next trial's fixation. Response deadlines were 3000 ms for each task independently, calculated from respective stimulus onsets. If T1 response was not registered within 3000 ms of T1 onset, it was coded as timeout; similarly for T2. The trial terminated only after both responses were registered or both deadlines elapsed.
-
-Mandatory rest breaks of 10 seconds duration were inserted after trials 30, 60, and 90 (at 25%, 50%, and 75% completion). During rest breaks, a countdown timer was displayed with the message "휴식 시간" (Rest time), and the next trial began automatically when the timer reached zero. No participant action was required to resume.
-
-Ten practice trials (2 per SOA level) preceded the main task. Practice trials used the same stimulus and response format as main trials, with explicit feedback provided for both tasks after each trial: "T1 정답/오답/시간초과" and "T2 정답/오답/시간초과" (Correct/Incorrect/Timeout). Feedback was displayed for 1000 ms before automatic advancement to the next trial.
-
-Response times were recorded using high-precision JavaScript timing (`performance.now()`) at stimulus onset and keypress for both tasks. Measured SOA was computed from actual T2 onset minus T1 onset timestamps and compared against nominal SOA to verify timing accuracy. Response order (whether T1 response preceded T2 response or vice versa) was recorded for each trial based on response timestamps.
-
 ## 2.5 Apparatus
 
 The experiment was implemented as a web application using the Flutter framework (version 3.x, Dart programming language) with Google Firebase backend for data storage and participant authentication. The application was accessible exclusively via desktop web browsers; mobile device access was blocked at the interface level to ensure standardized display dimensions, input modalities, and response timing.
@@ -58,45 +42,45 @@ Response times were recorded using the JavaScript Performance API (`performance.
 
 Response counterbalancing was implemented using deterministic hash functions of participant ID strings, ensuring: (a) reproducible randomization—the same participant would receive identical counterbalancing assignment if the experiment were repeated; (b) approximately uniform distribution across counterbalancing conditions; and (c) independence from experimenter intervention or participant characteristics.
 
-Stimulus presentation used Flutter's widget rendering system with SVG graphics for WCST card images and text rendering for Stroop and PRP stimuli. Display refresh synchronization was handled by the browser's rendering pipeline. Response collection used pointer-down events (Stroop, WCST) or keyboard events (PRP) to minimize input latency.
+Stimulus presentation used Flutter's widget rendering system with SVG graphics for WCST card images and text rendering for Stroop stimuli. Display refresh synchronization was handled by the browser's rendering pipeline. Response collection used pointer-down events (Stroop, WCST) to minimize input latency.
 
 ## 2.6 Procedure
 
 All procedures were conducted online via the custom web application. After providing informed consent electronically, participants completed demographic questions (age, gender, education level) before proceeding to self-report measures. Surveys were administered in fixed order: UCLA Loneliness Scale followed by DASS-21. Both surveys implemented completion validation: participants could not proceed until all items received responses, preventing missing data. Duplicate submission was prevented by checking for existing survey documents in the database; participants who had previously completed a survey were automatically advanced to the next section.
 
-After survey completion, participants viewed an instruction page describing all three cognitive tasks, including task-specific instructions, estimated duration, and general guidelines (quiet environment, sustained attention, 2-minute rest intervals between tasks). Participants confirmed readiness via a dialog acknowledging that tasks could not be paused once started.
+After survey completion, participants viewed an instruction page describing both cognitive tasks, including task-specific instructions, estimated duration, and general guidelines (quiet environment, sustained attention, 2-minute rest interval between tasks). Participants confirmed readiness via a dialog acknowledging that tasks could not be paused once started.
 
-Cognitive task order was partially counterbalanced to balance practice effects against task demands. The Stroop and PRP tasks were randomly ordered across positions 1 and 2 (approximately 50% of participants completed Stroop first, 50% completed PRP first). The WCST was fixed in position 3 (final) because: (a) it is the longest task (10–15 minutes), and placing it last minimizes fatigue effects on preceding tasks; (b) it requires sustained cognitive flexibility, which may be disproportionately affected by prior fatigue; and (c) fixed positioning eliminates WCST-position confounds in analyses of set-shifting performance.
+Cognitive task order was fixed: the Stroop task was administered first and the WCST was administered last. WCST was placed last because: (a) it is the longest task (10–15 minutes), and placing it last minimizes fatigue effects on preceding tasks; (b) it requires sustained cognitive flexibility, which may be disproportionately affected by prior fatigue; and (c) fixed positioning eliminates WCST-position confounds in analyses of set-shifting performance.
 
-Mandatory 2-minute (120-second) rest intervals with countdown timers were inserted between consecutive tasks. During rest intervals, participants viewed a rest screen with a coffee cup icon, countdown timer, and suggestion to stretch or take deep breaths ("잠시 휴식을 취하세요. 스트레칭이나 심호흡을 하시면 좋습니다."). Rest periods terminated automatically without participant input, transitioning to the next task. No rest preceded the first task or followed the final task.
+Mandatory 2-minute (120-second) rest intervals with countdown timers were inserted between the Stroop task and the WCST. During rest intervals, participants viewed a rest screen with a coffee cup icon, countdown timer, and suggestion to stretch or take deep breaths ("잠시 휴식을 취하세요. 스트레칭이나 심호흡을 하시면 좋습니다."). Rest periods terminated automatically without participant input, transitioning to the next task. No rest preceded the first task or followed the final task.
 
-The entire session lasted approximately 40–60 minutes: surveys (10–15 minutes), Stroop (5–7 minutes), PRP (8–12 minutes), WCST (10–15 minutes), plus rest intervals (4 minutes total). Upon completion of all tasks, participants viewed a completion screen and received debriefing information. Course credit was granted upon verified completion.
+The entire session lasted approximately 30–40 minutes: surveys (10–15 minutes), Stroop (5–7 minutes), WCST (10–15 minutes), plus the rest interval (2 minutes total). Upon completion of all tasks, participants viewed a completion screen and received debriefing information. Course credit was granted upon verified completion.
 
 ## 2.7 Data Preprocessing and Quality Control
 
-**Trial-level filtering and flags**. Trial-level datasets retain all recorded trials and append quality flags rather than dropping rows. For Stroop and PRP, timeouts are preserved and marked, and RT validity is defined as 200–3000 ms. For WCST, trials are cleaned for required fields and valid condition/card values, with RT < 200 ms removed; an RT-valid flag marks 200–10,000 ms for RT-based analyses. In analysis loaders, RT-focused indices exclude timeouts (Stroop/PRP) and require valid RTs; accuracy/error indices treat timeouts as incorrect while retaining those trials.
+**Trial-level filtering and flags**. Trial-level datasets retain all recorded trials and append quality flags rather than dropping rows. For Stroop, timeouts are preserved and marked, and RT validity is defined as 200–3000 ms. For WCST, trials are cleaned for required fields and valid condition/card values, with RT < 200 ms removed; an RT-valid flag marks 200–10,000 ms for RT-based analyses. In analysis loaders, RT-focused indices exclude timeouts (Stroop) and require valid RTs; accuracy/error indices treat timeouts as incorrect while retaining those trials.
 
 **Participant-level exclusions**. Task-specific inclusion criteria were applied to ensure data quality:
 
 *Stroop task*: Participants were retained if they completed all 108 main trials and overall accuracy was ≥ 70% (timeouts counted as incorrect).
 
-*PRP task*: Participants were retained if they completed all 120 main trials and their joint accuracy was ≥ 70%, defined as the proportion of trials that were structurally valid (T1→T2 order with no simultaneous response), non-timeout, and correct for both T1 and T2.
-
 *WCST*: Participants were retained if they had at least 60 valid trials after cleaning and did not select any single reference card on more than 85% of trials.
 
 **Derived performance measures**. For Stroop, RT indices were computed on non-timeout trials with valid RTs (200–3000 ms); correct-only variants were computed separately. Accuracy metrics used all trials with timeouts coded as incorrect.
-
-For PRP, RT indices were computed on structurally valid trials with no timeouts, valid RTs (200–3000 ms), and correct responses on both tasks. Accuracy and error rates were computed on structurally valid trials with timeouts coded as incorrect. The primary PRP effect was defined as the difference in mean T2 RT between short SOA (50 ms) and long SOA (1200 ms) conditions, with log-SOA slopes computed as continuous alternatives.
 
 For WCST, primary dependent variables included: (a) number of categories completed (0–6); (b) total errors; (c) perseverative errors (count and percentage of total errors); (d) non-perseverative errors; (e) conceptual level responses (runs of 3+ consecutive correct responses); and (f) trials to first category completion. Failure to maintain set was computed as the number of times an error occurred after achieving 5+ consecutive correct responses. RT-based indices applied the 10,000 ms upper bound via the RT-valid flag.
 
 ## 2.8 Statistical Analyses
 
-Hierarchical multiple regression models were estimated using OLS (non-robust) standard errors. UCLA effects were evaluated via model-based tests, with incremental R^2 assessed by nested model comparisons.
+Hierarchical multiple regression models were estimated using OLS (non-robust) standard errors. For each outcome, Step 1 included age and gender, Step 2 added DASS-21 subscales (depression, anxiety, stress), and Step 3 added UCLA loneliness. The incremental contribution of loneliness was quantified as ΔR^2 from the Step 2 → Step 3 comparison.
+
+Primary endpoints were pre-specified as (a) the Stroop interference RT slope (quartile-based interference trend) and (b) WCST post-shift error RT mean. Multiple-testing control was implemented using Benjamini-Hochberg FDR across seven focal outcomes (two primary endpoints plus five conventional/secondary indices). We report unadjusted p-values alongside FDR q-values. Multicollinearity was evaluated using VIF diagnostics.
+
+Sensitivity analyses included: (a) a single-covariate DASS total model, (b) reverse entry order (UCLA before DASS) to assess shared variance, (c) winsorizing RT-based outcomes at 2.5% tails, (d) excluding participants with extreme RT variability (top 2.5% of within-person RT SD), (e) HC3-robust OLS standard errors for primary endpoints, (f) trial-level OLS with participant fixed effects testing segment × UCLA interactions, and (g) segment-count sensitivity for the interference slope (3, 5, 6 segments). Reliability of slope indices was assessed via split-half correlations and bootstrap CI-width distributions (reported in Supplementary).
 
 ### 2.8.3 Exploratory Computational Indices (optional)
 
-In addition to the pre-specified temporal dynamics indices, we explored computational model-derived parameters as potential markers of loneliness-related cognitive differences. These included: (a) Ex-Gaussian distribution parameters (mu, sigma, tau) fitted to PRP T2 RT distributions, (b) Hidden Markov Model state transition probabilities from WCST performance, and (c) central bottleneck model fit indices from PRP. Given their exploratory nature, these analyses are reported separately and interpreted cautiously.
+In addition to the pre-specified temporal dynamics indices, we explored computational model-derived parameters as potential markers of loneliness-related cognitive differences. These included Hidden Markov Model state transition probabilities from WCST performance and distributional parameters from Stroop RTs. Given their exploratory nature, these analyses are reported separately and interpreted cautiously.
 
 ---
 
@@ -104,15 +88,15 @@ In addition to the pre-specified temporal dynamics indices, we explored computat
 
 ### Table 1. Task Parameters Overview
 
-| Parameter | Stroop | WCST | PRP |
-|-----------|--------|------|-----|
-| Total trials | 108 (+ 10 practice) | 128 max | 120 (+ 10 practice) |
-| Response modality | On-screen buttons | On-screen buttons | Keyboard |
-| Response deadline | 3000 ms | None | 3000 ms per task |
-| Counterbalancing | Button order (2 conditions) | None | Key mapping (4 conditions) |
-| Rest breaks | None | None | Every 30 trials (10 s) |
-| Feedback | Practice only | Every trial (1 s) | Practice only |
-| Timing precision | performance.now() | performance.now() | performance.now() |
+| Parameter | Stroop | WCST |
+|-----------|--------|------|
+| Total trials | 108 (+ 10 practice) | 128 max |
+| Response modality | On-screen buttons | On-screen buttons |
+| Response deadline | 3000 ms | None |
+| Counterbalancing | Button order (2 conditions) | None |
+| Rest breaks | None | None |
+| Feedback | Practice only | Every trial (1 s) |
+| Timing precision | performance.now() | performance.now() |
 
 ### Table 2. Trial Timing Sequences
 
@@ -128,15 +112,6 @@ In addition to the pre-specified temporal dynamics indices, we explored computat
 |-------|----------|
 | Stimulus display | Until response (no limit) |
 | Feedback | 1000 ms |
-
-**PRP Task**
-| Phase | Duration |
-|-------|----------|
-| Fixation cross | 500 ms |
-| T1 stimulus | Until response (max 3000 ms) |
-| SOA interval | 50, 150, 300, 600, or 1200 ms |
-| T2 stimulus | Until response (max 3000 ms from T2 onset) |
-| Inter-trial interval | 500 ms |
 
 ### Table 3. Self-Report Measures
 

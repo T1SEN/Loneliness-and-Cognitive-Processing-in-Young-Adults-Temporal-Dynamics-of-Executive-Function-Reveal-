@@ -11,6 +11,8 @@
 | **Deployment** | Firebase Hosting (web application) |
 | **Browser Compatibility** | Chrome, Firefox, Edge, Safari (desktop versions only) |
 
+Browser metadata (user-agent strings) were not stored in the analysis dataset, so stratified comparisons by browser type were not available. Desktop-only access was enforced at the interface level.
+
 ### S1.2 Timing Precision
 
 Response times were recorded using `html.window.performance.now()`, which provides high-resolution timestamps with sub-millisecond precision. This method returns a DOMHighResTimeStamp representing the time elapsed since the page navigation started, measured in milliseconds with microsecond precision where available. Studies have demonstrated that this timing method achieves precision comparable to laboratory software when running on modern browsers (Bridges et al., 2020; Anwyl-Irvine et al., 2021).
@@ -129,61 +131,6 @@ This implementation ensures:
 
 **Category Completion Criterion:** 10 consecutive correct responses
 
-### S2.3 PRP Task Stimuli
-
-**Task 1 (T1) - Parity Judgment:**
-
-| Category | Digits |
-|----------|--------|
-| Odd | 1, 3, 5, 7, 9 |
-| Even | 2, 4, 6, 8 |
-| Display | 48 pt bold, centered |
-
-**Task 2 (T2) - Color Identification:**
-
-| Attribute | Value |
-|-----------|-------|
-| Stimulus size | 80 × 80 pixels |
-| Colors | Red (Colors.red), Blue (Colors.blue) |
-| Position | Centered, below T1 digit |
-
-**SOA Levels:**
-
-| SOA (ms) | Classification | Expected PRP Effect |
-|----------|---------------|---------------------|
-| 50 | Ultra-short | Maximum interference |
-| 150 | Short | Strong interference |
-| 300 | Medium-short | Moderate interference |
-| 600 | Medium-long | Minimal interference |
-| 1200 | Long | No interference (baseline) |
-
-**Response Key Mappings (Counterbalanced):**
-
-| Condition | T1: Odd | T1: Even | T2: Red | T2: Blue |
-|-----------|---------|----------|---------|----------|
-| 1 | A | D | ← | → |
-| 2 | D | A | ← | → |
-| 3 | A | D | → | ← |
-| 4 | D | A | → | ← |
-
-**Trial Structure:**
-
-| Phase | Timing |
-|-------|--------|
-| Fixation | 500 ms |
-| T1 onset | 0 ms (relative to fixation offset) |
-| T2 onset | SOA ms after T1 onset |
-| Response window (each task) | 3000 ms from respective onset |
-| Inter-trial interval | 500 ms |
-
-**Rest Break Schedule:**
-
-| After Trial | Break Duration |
-|-------------|----------------|
-| 30 | 10 seconds |
-| 60 | 10 seconds |
-| 90 | 10 seconds |
-
 ---
 
 ## S3. Exclusion Criteria Details
@@ -197,8 +144,6 @@ Trial-level datasets retain all trials and add quality flags; exclusions below a
 | All | Timeout | Flagged; excluded for RT analyses | No response indicates disengagement |
 | All | Missing RT | Flagged; excluded for RT analyses | Technical failure |
 | Stroop | RT validity | 200–3000 ms | Remove anticipations/late responses |
-| PRP | RT validity (T1/T2) | 200–3000 ms | Remove anticipations/late responses |
-| PRP | Structural validity | T1→T2 order & no T2 while T1 pending | Enforce task order |
 | WCST | RT minimum | ≥ 200 ms | Remove anticipations |
 | WCST | RT validity (RT indices) | 200–10,000 ms | Exclude extreme lapses for RT metrics |
 
@@ -210,13 +155,6 @@ Trial-level datasets retain all trials and add quality flags; exclusions below a
 |-----------|-----------|---------------------|
 | Completed trials | < 108 | Did not finish the Stroop task |
 | Overall accuracy (timeout = incorrect) | < 70% | Poor task comprehension or engagement |
-
-**PRP Task:**
-
-| Criterion | Threshold | Exclusion Rationale |
-|-----------|-----------|---------------------|
-| Completed trials | < 120 | Did not finish the PRP task |
-| Joint accuracy (structurally valid, non-timeout, T1 & T2 correct) | < 70% | Low engagement with dual-task demands |
 
 **WCST:**
 
@@ -259,43 +197,7 @@ MeanRT_cond = mean(RT | cond, timeout=False, 200<=RT<=3000)
 MeanRT_cond_Correct = mean(RT | cond, correct=True, timeout=False, 200<=RT<=3000)
 ```
 
-### S4.2 PRP Task Variables
-
-**PRP Effect (Primary DV):**
-```
-PRP_Effect = mean(RT2 | SOA=50ms, timeout=False, order=T1→T2, no_pending=True,
-                  T1_correct=True, T2_correct=True, 200<=RT2<=3000)
-           - mean(RT2 | SOA=1200ms, timeout=False, order=T1→T2, no_pending=True,
-                  T1_correct=True, T2_correct=True, 200<=RT2<=3000)
-```
-
-**Central Bottleneck Slope:**
-```
-RT2 = β₀ + β₁ × log(SOA) + ε
-Central_Bottleneck_Slope = β₁
-```
-
-**SOA-Specific T2 RT:**
-```
-RT2_SOA_X = mean(RT2 | SOA=X, timeout=False, order=T1→T2, no_pending=True,
-                 T1_correct=True, T2_correct=True, 200<=RT2<=3000)
-```
-Where X ∈ {50, 150, 300, 600, 1200}
-
-**T1 Mean RT:**
-```
-MRT_T1 = mean(RT1 | timeout=False, order=T1→T2, no_pending=True,
-              T1_correct=True, T2_correct=True, 200<=RT1<=3000)
-```
-
-**Task Accuracy:**
-```
-Acc_T1 = mean(T1_correct | structurally_valid=True; timeouts coded as incorrect) × 100
-Acc_T2 = mean(T2_correct | structurally_valid=True; timeouts coded as incorrect) × 100
-Acc_Both = mean(T1_correct & T2_correct | structurally_valid=True; timeouts coded as incorrect) × 100
-```
-
-### S4.3 WCST Variables
+### S4.2 WCST Variables
 
 All WCST indices are computed on cleaned trials (valid fields/conditions/cards, RT >= 200 ms). RT-based summaries optionally apply the 10,000 ms upper bound via the RT-valid flag.
 
@@ -358,11 +260,11 @@ Learning_Efficiency = mean(trials_per_category | first 3 categories)
 
 ---
 
-## S4.4 Primary Conventional and Temporal Dynamics Indices
+## S4.3 Primary Conventional and Temporal Dynamics Indices
 
-All indices below use the trial-level exclusions in S3.1. RT-based indices use task-specific RT bounds (Stroop/PRP: 200-3000 ms; WCST: 200-10,000 ms). Accuracy metrics treat timeouts as incorrect where applicable.
+All indices below use the trial-level exclusions in S3.1. RT-based indices use task-specific RT bounds (Stroop: 200-3000 ms; WCST: 200-10,000 ms). Accuracy metrics treat timeouts as incorrect where applicable.
 
-### S4.4.1 Conventional Indices (Traditional)
+### S4.3.1 Conventional Indices (Traditional)
 
 **Stroop RT interference (incongruent - congruent):**
 ```
@@ -378,21 +280,6 @@ ACC_cong   = mean(correct | condition=congruent, timeout=False)
 stroop_acc_interference = ACC_incong - ACC_cong
 ```
 
-**PRP bottleneck effect (T2 RT short - long SOA):**
-```
-RT2_short = mean(t2_rt_ms | soa_ms <= 150, timeout=False, rt_valid=True,
-                 order=t1_t2, no_pending=True)
-RT2_long  = mean(t2_rt_ms | soa_ms >= 1200, timeout=False, rt_valid=True,
-                 order=t1_t2, no_pending=True)
-prp_bottleneck = RT2_short - RT2_long
-```
-
-**PRP dual-task accuracy (both correct rate):**
-```
-prp_both_correct_rate = mean(t1_correct & t2_correct | structurally_valid=True)
-```
-Structurally valid trials require response order T1->T2 and no T2 while T1 is pending. Timeouts are coded as incorrect.
-
 **WCST categories completed (0-6):**
 ```
 wcst_categories_completed = count(rule_segments)
@@ -404,7 +291,7 @@ Rule segments are defined by changes in the active sorting rule; each completed 
 wcst_perseverative_error_rate = 100 * sum(isPE) / n_trials
 ```
 
-### S4.4.2 Temporal Dynamics Indices
+### S4.3.2 Temporal Dynamics Indices
 
 **Time-on-task drift (RT slope):**
 ```
@@ -412,12 +299,10 @@ RT_slope = OLS_slope(rt_ms ~ trial_order)
 ```
 For Stroop, slopes use incongruent correct trials only. For WCST, slopes are computed within each rule segment and averaged.
 
-**Within-task dispersion (RT SD / Ex-Gaussian sigma):**
+**Within-task dispersion (RT SD):**
 ```
 RT_SD_incong = SD(rt_ms | condition=incongruent, rt_valid=True)
-ExG_sigma_short = sigma from Ex-Gaussian fit to T2 RTs (soa_ms <= 150)
 ```
-Ex-Gaussian parameters are estimated by maximum-likelihood with a minimum of 20 trials.
 
 **Post-perturbation recovery:**
 
@@ -491,14 +376,12 @@ wcst_trials_to_rule_reacquisition = mean(trials until 3 consecutive correct afte
 **Cognitive Test Document** (`/participants/{id}/cognitive_tests/{taskName}`):
 ```json
 {
-  "task": "stroop" | "wcst" | "prp",
+  "task": "stroop" | "wcst",
   "trials": [/* array of trial objects */],
   "summary": {/* task-specific summary statistics */},
   "config": {
     "version": "1.0.0",
-    "reverse_button": boolean (Stroop),
-    "reverse_t1_keys": boolean (PRP),
-    "reverse_t2_keys": boolean (PRP)
+    "reverse_button": boolean (Stroop)
   },
   "session_id": "string",
   "start_time": "ISO8601",
@@ -551,33 +434,6 @@ wcst_trials_to_rule_reacquisition = mean(trials until 3 consecutive correct afte
 | isPE | boolean | Perseverative error |
 | isNPE | boolean | Non-perseverative error |
 
-**PRP Trial Object:**
-
-| Field | Type | Description |
-|-------|------|-------------|
-| participant_id | string | Participant identifier |
-| task | string | "prp" |
-| trial_index | integer | 0-119 |
-| soa_nominal_ms | integer | Configured SOA (50-1200) |
-| soa_measured_ms | float | Actual measured SOA |
-| t1_stim | integer | T1 digit (1-9) |
-| t1_correctResp | string | "O" or "E" |
-| t1_resp | string | Actual T1 response |
-| t1_correct | boolean | T1 accuracy |
-| t1_onset_ms | float | T1 onset timestamp |
-| t1_resp_ms | float | T1 response timestamp |
-| t1_rt_ms | float | T1 reaction time |
-| t1_timeout | boolean | T1 timeout flag |
-| t2_stim | string | "red" or "blue" |
-| t2_correctResp | string | "R" or "B" |
-| t2_resp | string | Actual T2 response |
-| t2_correct | boolean | T2 accuracy |
-| t2_onset_ms | float | T2 onset timestamp |
-| t2_resp_ms | float | T2 response timestamp |
-| t2_rt_ms | float | T2 reaction time |
-| t2_timeout | boolean | T2 timeout flag |
-| response_order | string | "T1→T2" / "T2→T1" / "T1_only" / "T2_only" / "none" |
-
 ---
 
 ## S6. Session Flow and Task Order
@@ -604,17 +460,13 @@ wcst_trials_to_rule_reacquisition = mean(trials until 3 consecutive correct afte
    - General instructions
    - Readiness confirmation
    ↓
-6. Cognitive Tasks (Partially Counterbalanced)
+6. Cognitive Tasks (Fixed Order)
 
-   Position 1: Stroop OR PRP (randomized)
+   Position 1: Stroop
    ↓
    [2-minute rest interval with countdown]
    ↓
-   Position 2: PRP OR Stroop (whichever not in Position 1)
-   ↓
-   [2-minute rest interval with countdown]
-   ↓
-   Position 3: WCST (always last)
+   Position 2: WCST (always last)
    ↓
 7. Completion Screen
    - Debriefing information
@@ -624,10 +476,8 @@ wcst_trials_to_rule_reacquisition = mean(trials until 3 consecutive correct afte
 ### S6.2 Task Order Randomization Logic
 
 ```dart
-List<String> _generateRandomTestOrder() {
-  List<String> shuffleableTests = ['/stroop', '/prp'];
-  shuffleableTests.shuffle();  // Random order
-  return [...shuffleableTests, '/wcst'];  // WCST always last
+List<String> _generateTestOrder() {
+  return ['/stroop', '/wcst'];
 }
 ```
 
@@ -644,7 +494,7 @@ List<String> _generateRandomTestOrder() {
 | Display | Countdown timer, coffee cup icon |
 | Message | "잠시 휴식을 취하세요. 스트레칭이나 심호흡을 하시면 좋습니다." |
 | Termination | Automatic (no user action required) |
-| Timing | After tasks 1 and 2; not before task 1 or after task 3 |
+| Timing | Between Stroop and WCST only |
 
 ---
 
@@ -668,8 +518,86 @@ These checks were used for descriptive inspection only and were not enforced as 
 | RT distribution | Inspect for bimodality | Flag for review |
 | Accuracy floor | < 50% (chance level) | Flag for review |
 | Response patterns | Repeated same response | Flag for review |
-| SOA timing accuracy | |Measured - Nominal| > 50ms | Flag for review |
 | Session duration | Outside expected range | Flag for review |
+
+---
+
+## S8. Additional Analyses for Reviewer Response
+
+### S8.1 Multicollinearity Diagnostics
+
+Variance inflation factors (VIF) were low in both task samples (max = 2.59, mean = 2.11), indicating no problematic multicollinearity among UCLA and DASS covariates.
+
+### S8.2 Primary Outcomes and FDR Control
+
+All models used OLS with DASS subscales, age, and gender as covariates. Benjamini-Hochberg FDR was applied across seven focal outcomes.
+
+| Outcome | n | UCLA beta | p | FDR q | Primary |
+|---------|---:|----------:|---:|------:|:-------:|
+| Stroop RT interference (correct) | 197 | 5.425 | 0.599 | 0.915 | No |
+| Stroop accuracy interference | 197 | -0.001 | 0.784 | 0.915 | No |
+| WCST categories completed | 197 | -0.023 | 0.755 | 0.915 | No |
+| WCST perseverative error rate | 197 | -0.053 | 0.930 | 0.930 | No |
+| Stroop interference RT slope | 197 | 19.033 | 0.0018 | 0.0125 | Yes |
+| Stroop RT SD (incongruent) | 197 | 11.142 | 0.232 | 0.541 | No |
+| WCST post-shift error RT mean | 192 | 202.104 | 0.029 | 0.103 | Yes |
+
+### S8.3 Alternative DASS Specification (Total Score)
+
+Primary endpoints remained significant under a DASS total-score covariate:
+
+| Outcome | n | UCLA beta | p |
+|---------|---:|----------:|---:|
+| Stroop interference RT slope | 197 | 16.435 | 0.0049 |
+| WCST post-shift error RT mean | 192 | 179.931 | 0.042 |
+
+### S8.4 Predictor Entry Order Sensitivity
+
+| Outcome | ΔR² (UCLA after DASS) | p | ΔR² (DASS after UCLA) | p |
+|---------|----------------------:|---:|-----------------------:|---:|
+| Stroop interference RT slope | 0.0482 | 0.0018 | 0.0124 | 0.463 |
+| WCST post-shift error RT mean | 0.0249 | 0.029 | 0.0040 | 0.854 |
+
+### S8.5 Slope Reliability and Bootstrap Stability
+
+Split-half reliability for the Stroop interference slope was low (r = 0.064; Spearman-Brown = 0.120; n = 150). Bootstrap CI widths (100 resamples per participant) showed a broad distribution (n = 220; mean = 237.35, SD = 80.53, median = 220.84, IQR = [174.02, 290.70]).
+
+### S8.6 Segment-Count Sensitivity (Interference Slope)
+
+| Segments | UCLA beta | p |
+|---------:|----------:|---:|
+| 3 | 31.044 | 0.00041 |
+| 4 | 19.033 | 0.0018 |
+| 5 | 16.436 | 0.00082 |
+| 6 | 16.266 | 0.000065 |
+
+### S8.7 Trial-Level OLS Check
+
+A trial-level OLS model with participant fixed effects (segment × UCLA) was not significant (beta = -0.127, SE = 1.743, p = 0.942; n_trials = 20,985; n_participants = 197).
+
+### S8.8 RT Variability QC and Sensitivity
+
+Participant-level RT SD distributions (valid trials only):
+
+| Task | n | RT SD mean | SD | Min | Max | P97.5 |
+|------|---:|-----------:|---:|----:|----:|------:|
+| Stroop (incongruent) | 220 | 311.91 | 94.37 | 131.84 | 641.25 | 520.64 |
+| WCST (all valid) | 212 | 943.88 | 372.92 | 343.70 | 2315.38 | 1858.13 |
+
+Excluding participants above the 97.5th percentile of RT SD:
+
+| Outcome | n | UCLA beta | p |
+|---------|---:|----------:|---:|
+| Stroop interference RT slope | 193 | 17.133 | 0.0038 |
+| WCST post-shift error RT mean | 189 | 138.974 | 0.134 |
+
+### S8.9 Winsorization and Robust SE
+
+Winsorizing RT outcomes at 2.5% tails yielded similar conclusions (Stroop interference slope: beta = 17.055, p = 0.0026; WCST post-shift error RT mean: beta = 182.995, p = 0.0337). HC3-robust SEs preserved the Stroop effect (p = 0.0024) and attenuated the WCST effect (p = 0.066).
+
+### S8.10 WCST Shift Counts
+
+Shift-window counts (n = 212): shift trials mean = 28.51 (SD = 10.95, range = 0–92), post-shift errors mean = 10.82 (SD = 8.42, range = 0–61).
 
 ---
 
