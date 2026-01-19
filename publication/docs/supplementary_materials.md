@@ -573,7 +573,7 @@ Split-half reliability for the Stroop interference slope was low (r = 0.064; Spe
 
 ### S8.7 Trial-Level OLS Check
 
-A trial-level OLS model with participant fixed effects (segment × UCLA) was not significant (beta = -0.127, SE = 1.743, p = 0.942; n_trials = 20,985; n_participants = 197).
+A trial-level OLS model with participant fixed effects (segment x UCLA) was not significant (beta = -0.011, SE = 1.740, p = 0.995; n_trials = 20,985; n_participants = 197). A mixed-effects model with random intercepts and random segment slopes by participant yielded the same null interaction (beta = -0.011, SE = 3.041, p = 0.997; n_trials = 20,985; n_participants = 197). When the model targeted the interference slope directly (congruent/incongruent only; condition coded -0.5/+0.5; log RT; continuous within-participant trial position), the trial_scaled x condition x UCLA interaction was significant. The full random-effects structure (1 + trial_scaled + cond_code) showed a boundary warning in statsmodels but the estimate was similar (beta = 0.0578, SE = 0.0166, p = 0.000508). The simplified structure (1 + trial_scaled) removed the warning and retained significance (beta = 0.0580, SE = 0.0167, p = 0.000522; n_trials = 13,950; n_participants = 197). An lme4 cross-check reproduced the effect for both structures (beta = 0.0578, SE = 0.0166, p = 0.000510; beta = 0.0580, SE = 0.0167, p = 0.000523).
 
 ### S8.8 RT Variability QC and Sensitivity
 
