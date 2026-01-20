@@ -1,4 +1,0 @@
-"n_trials","n_participants","re_formula","optimizer","singular","warning_count","warning_msg","beta","se","t","p","p_method"
-13950,197,"1 + trial_scaled + cond_code","bobyqa",FALSE,0,"",0.0577526590816663,0.01661254458221,3.47644870392175,0.000509694470431715,"lmerTest"
-13950,197,"1 + trial_scaled","bobyqa",FALSE,0,"",0.057983369651625,0.0167129704529413,3.46936349913911,0.000523300940574881,"lmerTest"
-13950,197,"1","bobyqa",FALSE,0,"",0.0578392975785561,0.016838965495261,3.43484863098233,0.000594633392993578,"lmerTest"

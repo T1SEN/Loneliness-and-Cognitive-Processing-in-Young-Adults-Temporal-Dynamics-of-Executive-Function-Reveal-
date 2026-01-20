@@ -1,3 +1,0 @@
-﻿outcome_column,n,ucla_beta,ucla_se,ucla_t,ucla_p,r2,adj_r2,cov_type,outcome,outcome_type
-wcst_overall_rt_mean,197,64.8485666196301,37.578030299908285,1.7257042506506355,0.08602641492650069,0.07645088065188776,0.047286171619842055,nonrobust,WCST Overall RT Mean,overall_mean
-wcst_category_rt_slope,193,-19.89508337174446,10.468223706059245,-1.9005214189517878,0.058911374333824616,0.02930483097497516,-0.0020079164129287452,nonrobust,WCST Category RT Slope (mean RT vs category),category_slope
