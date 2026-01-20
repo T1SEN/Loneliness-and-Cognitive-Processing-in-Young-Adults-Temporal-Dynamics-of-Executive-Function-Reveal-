@@ -102,3 +102,13 @@ Discussion에서 명시적 인정: "Alternative mechanisms—including reduced m
 우선순위항목작업량영향력1VIF 보고 + 대안 모형중높음2FDR 보정 + primary endpoint 지정하높음3구간 수 민감도 분석중높음4β + CI + Robust SE 추가중중5Split-half 신뢰도중중6Mixed model 보조분석상중7기술적 QC 상세화하하
 
 어떤 부분부터 작업을 시작할지, 혹은 특정 분석(예: mixed model, 신뢰도 분석)의 R 코드가 필요하면 말씀해 주세요.
+
+## 코드 정리 메모
+- WCST LMM 스크립트는 제거함.
+- WCST MW 시리즈 스크립트는 `publication/analysis`에서 제거함.
+- WCST 세그먼트/전체 OLS 스크립트의 UCLA 회귀 함수는 `publication/analysis/utils.py`로 이동함.
+- WCST MW 산출물 `publication/data/outputs/analysis/wcst`의 `wcst_mw_*` 파일을 삭제함.
+- WCST OLS 스크립트 재실행 결과를 `publication/data/outputs/analysis/wcst` 및 `publication/data/outputs/analysis/reviewer_response`에 갱신함.
+- PRP QC 실패 요약 파일 `publication/data/outputs/prp_qc_failed_breakdown.csv`을 삭제함.
+- LMM 관련 스크립트를 `publication/lmm`으로 이동함.
+- 루트 `scripts/` 폴더는 비어 있어 삭제함.

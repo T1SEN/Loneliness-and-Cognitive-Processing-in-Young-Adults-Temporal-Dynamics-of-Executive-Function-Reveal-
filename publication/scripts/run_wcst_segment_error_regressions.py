@@ -9,8 +9,7 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))
 
-from publication.analysis.utils import get_analysis_data, get_output_dir
-from publication.analysis.wcst_mw_extensions import run_ucla_regression
+from publication.analysis.utils import get_analysis_data, get_output_dir, run_ucla_regression
 
 
 COV_TYPE = "nonrobust"

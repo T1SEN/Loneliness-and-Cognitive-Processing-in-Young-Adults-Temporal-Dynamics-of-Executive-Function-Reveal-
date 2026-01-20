@@ -12,7 +12,9 @@ if sys.platform.startswith("win") and hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding='utf-8')
 
 from pathlib import Path
+import numpy as np
 import pandas as pd
+import statsmodels.formula.api as smf
 
 # Import from publication preprocessing
 from publication.preprocessing import load_master_dataset
@@ -1114,3 +1116,45 @@ def print_section_header(title: str, width: int = 70) -> None:
     print("\n" + "=" * width)
     print(title)
     print("=" * width)
+
+
+def run_ucla_regression(
+    df: pd.DataFrame,
+    outcome: str,
+    cov_type: str = "HC3",
+    min_n: int = 30,
+) -> dict | None:
+    required = [
+        outcome,
+        "z_ucla_score",
+        "z_dass_depression",
+        "z_dass_anxiety",
+        "z_dass_stress",
+        "z_age",
+        "gender_male",
+    ]
+    cols = [c for c in required if c in df.columns]
+    sub = df[cols].dropna()
+    if len(sub) < min_n:
+        return None
+
+    formula = (
+        f"{outcome} ~ z_ucla_score + z_dass_depression + "
+        "z_dass_anxiety + z_dass_stress + z_age + C(gender_male)"
+    )
+    try:
+        model = smf.ols(formula, data=sub).fit(cov_type=cov_type)
+    except Exception:
+        return None
+
+    return {
+        "outcome_column": outcome,
+        "n": int(len(sub)),
+        "ucla_beta": float(model.params.get("z_ucla_score", np.nan)),
+        "ucla_se": float(model.bse.get("z_ucla_score", np.nan)),
+        "ucla_t": float(model.tvalues.get("z_ucla_score", np.nan)),
+        "ucla_p": float(model.pvalues.get("z_ucla_score", np.nan)),
+        "r2": float(model.rsquared),
+        "adj_r2": float(model.rsquared_adj),
+        "cov_type": cov_type,
+    }

@@ -2,14 +2,21 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## User Preferences
+
+- **Explanations**: Always in Korean (한국어)
+- **Code**: Always in English
+- **Regression**: Use OLS (not HC3), always control for DASS
+- **PRP task**: Analyzed but will NOT be included in the paper
+
 ## Project Overview
 
-Research data analysis pipeline for a psychology study examining the relationship between loneliness (UCLA Loneliness Scale) and executive function (EF) across three cognitive tasks: Stroop (interference control), WCST (set-shifting), and PRP (dual-task coordination).
+Research data analysis pipeline for a psychology study examining loneliness (UCLA Loneliness Scale) and executive function (EF) across three cognitive tasks: Stroop (interference control), WCST (set-shifting), and PRP (dual-task coordination).
 
-**Three main components:**
-1. **Data Collection**: Flutter mobile app for cognitive tasks (`lib/`)
-2. **Data Export**: Firebase → CSV extraction (`export_alldata.py`)
-3. **Statistical Analysis**: Publication analysis package (`publication/`)
+**Components:**
+1. **Data Collection**: Flutter mobile app (`lib/`)
+2. **Data Export**: Firebase → CSV (`export_alldata.py`)
+3. **Statistical Analysis**: Publication package (`publication/`)
 
 ## Data Flow
 
@@ -25,236 +32,141 @@ Firebase (Firestore) → export_alldata.py → publication/data/raw/
                        python -m publication.* → results/publication/
 ```
 
-### Key Data Files (`publication/data/`)
-| Directory | Contents |
-|-----------|----------|
-| `raw/` | Raw exported data (all participants, N=251) |
-| `complete_stroop/` | Stroop + 설문 완료자 (N ~ 200) |
-| `complete_prp/` | PRP + 설문 완료자 (N ~ 195) |
-| `complete_wcst/` | WCST + 설문 완료자 (N ~ 190) |
-| `complete_overall/` | 모든 과제 완료자 통합 (N ~ 180) |
-| `outputs/` | Generated outputs (master_dataset.csv, publication results) |
-
-**Data file structure (same across raw/complete_*):**
-| File | Contents |
-|------|----------|
-| `1_participants_info.csv` | Demographics (age, gender, education) |
-| `2_surveys_results.csv` | UCLA Loneliness & DASS-21 responses |
-| `3_cognitive_tests_summary.csv` | Aggregate task metrics |
-| `4a_prp_trials.csv` | Trial-level PRP data |
-| `4b_wcst_trials.csv` | Trial-level WCST data |
-| `4c_stroop_trials.csv` | Trial-level Stroop data |
-
-Note: 각 task별 complete_* 디렉토리는 해당 task의 trial 파일만 포함합니다.
-
 ## Essential Commands
 
 ```bash
 # Activate venv (Windows)
 .\venv\Scripts\activate
 
-# Publication Package
-python -m publication.analysis.descriptive_statistics      # Descriptive statistics
-python -m publication.analysis.correlation_analysis        # Correlation analysis
-python -m publication.analysis.hierarchical_regression     # Hierarchical regression (DASS-controlled)
+# Preprocessing: Build task-specific datasets
+python -m publication.preprocessing --build stroop
+python -m publication.preprocessing --build wcst
+python -m publication.preprocessing --build all
+python -m publication.preprocessing --list
 
-python -m publication.advanced_analysis.mediation_suite          # UCLA → DASS → EF 매개분석
-python -m publication.advanced_analysis.bayesian_suite           # 베이지안 SEM
+# Core Analyses
+python -m publication.analysis.descriptive_statistics
+python -m publication.analysis.correlation_analysis
+python -m publication.analysis.hierarchical_regression
 
-python -m publication.path_analysis.path_depression --task overall  # Path analysis (Depression)
-python -m publication.path_analysis.path_anxiety --task overall     # Path analysis (Anxiety)
-python -m publication.path_analysis.path_stress --task overall      # Path analysis (Stress)
+# Advanced Analyses
+python -m publication.advanced_analysis.mediation_suite
+python -m publication.path_analysis.path_depression --task overall
 
-python -m publication.validity_reliability.reliability_suite     # Cronbach's alpha, split-half
-python -m publication.validity_reliability.validity_suite        # Factor analysis
-python -m publication.validity_reliability.data_quality_suite    # Response validation
+# Validity & Reliability
+python -m publication.validity_reliability.reliability_suite
+python -m publication.validity_reliability.validity_suite
 
-python -m publication.gender_analysis --list                     # List gender analyses
-python -m publication.gender_analysis --all                      # Run all gender analyses
-python -m publication.gender_analysis -a male_vulnerability      # Run specific analysis
+# Gender Analysis
+python -m publication.gender_analysis --all
+python -m publication.gender_analysis -a male_vulnerability
 
-# Export data from Firebase (requires serviceAccountKey.json)
+# Export data from Firebase
 PYTHONIOENCODING=utf-8 .\venv\Scripts\python.exe export_alldata.py
 
-# Preprocessing: Build task-specific datasets
-python -m publication.preprocessing --build stroop   # Stroop complete dataset
-python -m publication.preprocessing --build prp      # PRP complete dataset
-python -m publication.preprocessing --build wcst     # WCST complete dataset
-python -m publication.preprocessing --build overall  # All tasks complete dataset
-python -m publication.preprocessing --build all      # Build all task datasets
-python -m publication.preprocessing --list           # Dataset status
-python -m publication.preprocessing --features stroop --feature-set traditional
-python -m publication.preprocessing --features all --feature-set dispersion
+# Run specific WCST analysis scripts
+python publication/scripts/run_wcst_segment_regressions.py
+python publication/scripts/run_wcst_segment_error_regressions.py
 ```
 
+## Key Data Files
 
-## Publication Package Structure
+| Directory | Contents |
+|-----------|----------|
+| `publication/data/raw/` | Raw exported data (N=251) |
+| `publication/data/complete_stroop/` | Stroop completers (N ~ 200) |
+| `publication/data/complete_wcst/` | WCST completers (N ~ 190) |
+| `publication/data/complete_overall/` | All tasks complete (N ~ 180) |
+| `publication/data/outputs/` | Generated results |
 
-Publication analysis package layout (task-specific preprocessing).
+**CSV files in each directory:**
+- `1_participants_info.csv` - Demographics
+- `2_surveys_results.csv` - UCLA & DASS-21
+- `3_cognitive_tests_summary.csv` - Aggregate metrics
+- `4b_wcst_trials.csv` / `4c_stroop_trials.csv` - Trial-level data
+
+## Package Architecture
 
 ```
 publication/
-  data/
-    raw/
-    complete_prp/
-    complete_stroop/
-    complete_wcst/
-    complete_overall/
-    outputs/
-    export_alldata.py
-  preprocessing/
-    __init__.py
-    __main__.py
-    cli.py
-    constants.py
-    core.py
-    surveys.py
-    datasets.py
-    standardization.py
-    prp/
-      __init__.py
-      _shared.py
-      trial_level_loaders.py
-      participant_filters.py
-      trial_level_dataset.py
-      features.py
-      traditional/
-      dynamic/
-        dispersion/
-        drift/
-        recovery/
-      mechanism/
-    stroop/
-      __init__.py
-      _shared.py
-      loaders.py
-      filters.py
-      dataset.py
-      features.py
-      traditional/
-      dynamic/
-        dispersion/
-        drift/
-        recovery/
-      mechanism/
-    wcst/
-      __init__.py
-      _shared.py
-      loaders.py
-      filters.py
-      dataset.py
-      features.py
-      traditional/
-      dynamic/
-        dispersion/
-        drift/
-        recovery/
-      mechanism/
-    overall/
-      __init__.py
-      dataset.py
-      features.py
-      traditional/
-      dynamic/
-        dispersion/
-        drift/
-        recovery/
-      mechanism/
-  analysis/
-  advanced_analysis/
-  path_analysis/
-  validity_reliability/
-  gender_analysis/
-```
-
-**Output directory:** `results/publication/{analysis,advanced_analysis,validity_reliability,gender_analysis}/`
-
-### 사용법
-```python
-from publication.gender_analysis import (
-    load_gender_data,                  # 성별 변수 준비된 마스터 데이터
-    run_gender_stratified_regression,  # 성별별 회귀분석
-    run_all_gender_interactions,       # UCLA × Gender 상호작용 검정
-    fisher_z_test,                     # 성별 간 상관 비교
-)
-
-from publication.advanced_analysis import (
-    bootstrap_mediation,               # Bootstrap 매개분석
-    sobel_test,                        # Sobel 검정
-    fit_path_model_semopy,             # SEM 경로모형
-)
+├── preprocessing/          # Data loading & feature extraction
+│   ├── __init__.py        # Main exports (load_master_dataset, etc.)
+│   ├── constants.py       # RT thresholds, QC criteria
+│   ├── prp/, stroop/, wcst/, overall/  # Task-specific modules
+│   └── standardization.py # z-scoring utilities
+├── analysis/              # Core statistical analyses
+│   ├── utils.py           # Shared: get_analysis_data(), run_ucla_regression()
+│   ├── hierarchical_regression.py
+│   └── correlation_analysis.py
+├── scripts/               # Ad-hoc analysis scripts (WCST segment, etc.)
+├── lmm/                   # Linear mixed model scripts (moved here)
+├── advanced_analysis/     # Mediation, Bayesian
+├── path_analysis/         # SEM path models
+├── validity_reliability/  # Cronbach's alpha, factor analysis
+└── gender_analysis/       # Gender stratified analyses
 ```
 
 ## ⚠️ CRITICAL: DASS-21 Covariate Control
 
 **ALL confirmatory analyses testing UCLA effects MUST control for DASS-21 subscales.**
 
-UCLA loneliness and DASS (depression/anxiety/stress) correlate r ~ 0.5-0.7. Without DASS control, "loneliness effects" confound with general emotional distress. Master analysis showed ALL UCLA main effects disappear when DASS is controlled; only UCLA × Gender interactions survive.
+UCLA and DASS correlate r ~ 0.5-0.7. Without control, "loneliness effects" confound with general distress.
 
-### Required Formula Template
+### Standard Regression Formula
 ```python
-# Standard formula:
-formula = "{outcome} ~ z_ucla * C(gender_male) + z_dass_dep + z_dass_anx + z_dass_str + z_age"
-smf.ols(formula, data=df)
+from publication.analysis.utils import get_analysis_data, run_ucla_regression
+
+df = get_analysis_data("wcst")  # or "stroop", "overall"
+
+# run_ucla_regression uses this formula internally:
+# {outcome} ~ z_ucla_score + z_dass_depression + z_dass_anxiety + z_dass_stress + z_age + C(gender_male)
+
+result = run_ucla_regression(df, "wcst_pes", cov_type="nonrobust")  # Use OLS, not HC3
 ```
 
-**Exception:** Mediation analyses where DASS is the mediator (not a covariate).
+### Manual OLS with DASS Control
+```python
+import statsmodels.formula.api as smf
 
-## Publication Utility Modules
+formula = f"{outcome} ~ z_ucla_score + z_dass_depression + z_dass_anxiety + z_dass_stress + z_age + C(gender_male)"
+model = smf.ols(formula, data=df).fit(cov_type="nonrobust")  # OLS, not HC3
+```
 
-### RT Filtering & QC Constants
+## Data Loading API
+
 ```python
 from publication.preprocessing import (
-    # RT Filtering
-    DEFAULT_RT_MIN,       # 100 ms; drop anticipations
-    PRP_RT_MAX,           # 3000 ms; PRP task timeout
-    STROOP_RT_MAX,        # 3000 ms; Stroop task timeout
-    WCST_RT_MIN,          # 100 ms; WCST anticipation cutoff
-    # PRP SOA Binning
-    DEFAULT_SOA_SHORT,    # 150 ms; short bin upper bound
-    DEFAULT_SOA_LONG,     # 1200 ms; long bin lower bound
-    # WCST QC Thresholds
-    WCST_MIN_TRIALS,      # 60; minimum trials
-    WCST_MIN_MEDIAN_RT,   # 300 ms; random clicking threshold
-    WCST_MAX_SINGLE_CHOICE,  # 0.85; max single card choice ratio
-    # QC Criteria Classes
-    PRPQCCriteria, StroopQCCriteria, WCSTQCCriteria, SurveyQCCriteria,
+    load_master_dataset,      # Main entry point
+    load_wcst_trials,         # Trial-level data
+    load_stroop_trials,
+    get_results_dir,          # Output paths
+    VALID_TASKS,              # {'stroop', 'prp', 'wcst', 'overall'}
+)
+
+# Load task-specific master dataset
+df_wcst = load_master_dataset(task='wcst')     # N ~ 190
+df_stroop = load_master_dataset(task='stroop') # N ~ 200
+df_overall = load_master_dataset(task='overall') # N ~ 180
+
+# For analysis scripts, use utils wrapper:
+from publication.analysis.utils import get_analysis_data
+df = get_analysis_data("wcst")  # Includes extra features + QC filter
+```
+
+## RT Filtering Constants
+
+```python
+from publication.preprocessing import (
+    DEFAULT_RT_MIN,           # 100 ms (drop anticipations)
+    WCST_RT_MIN,              # 100 ms
+    STROOP_RT_MAX,            # 3000 ms
+    WCST_MIN_TRIALS,          # 60 minimum trials
+    WCST_MIN_MEDIAN_RT,       # 300 ms (random clicking threshold)
+    WCST_MAX_SINGLE_CHOICE,   # 0.85 max single card ratio
 )
 ```
 
-### `publication/preprocessing/` - Publication Data Loading
-```python
-from publication.preprocessing import (
-    # Task-specific datasets (recommended)
-    load_master_dataset,  # task='stroop', 'prp', 'wcst', 'overall'
-    # Task builders
-    build_prp_dataset, build_stroop_dataset, build_wcst_dataset,
-    build_overall_dataset, build_all_datasets,
-    # Trial loaders
-    load_prp_trials, load_stroop_trials, load_wcst_trials,
-    # Trial-derived features
-    derive_prp_features, derive_stroop_features, derive_wcst_features,
-    derive_overall_features,
-    # Mechanism features (Ex-Gaussian, HMM, RL)
-    compute_prp_exgaussian_features, compute_stroop_exgaussian_features,
-    compute_wcst_hmm_features, compute_wcst_rl_features,
-    load_or_compute_prp_mechanism_features,
-    load_or_compute_stroop_mechanism_features,
-    load_or_compute_wcst_mechanism_features,
-    # Path utilities
-    get_results_dir,
-    RAW_DIR, DATA_DIR, VALID_TASKS,
-)
-
-# Task-specific dataset usage:
-df_stroop = load_master_dataset(task='stroop')   # N ~ 200
-df_prp = load_master_dataset(task='prp')         # N ~ 195
-df_wcst = load_master_dataset(task='wcst')       # N ~ 190
-df_overall = load_master_dataset(task='overall') # N ~ 180 (all tasks complete)
-```
-Note: Each task has its own complete dataset. Each complete_* contains only its task trial file. The `overall` dataset requires all three tasks completed.
-
-## Implementation Details
+## Implementation Notes
 
 ### Unicode Handling (Windows)
 ```python
@@ -262,10 +174,9 @@ import sys
 if sys.platform.startswith("win") and hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding='utf-8')
 ```
-Save CSVs with `encoding='utf-8-sig'` for Excel compatibility. Korean text is present in comments/prints.
+Save CSVs with `encoding='utf-8-sig'` for Excel compatibility.
 
 ### WCST Extra Field Parsing
-The `wcst_trials.csv` `extra` column contains stringified dicts:
 ```python
 import ast
 def _parse_wcst_extra(extra_str):
@@ -274,62 +185,40 @@ def _parse_wcst_extra(extra_str):
     except: return {}
 ```
 
-### Column Naming Inconsistencies
+### Column Naming
 - `participantId` vs `participant_id` - use `ensure_participant_id()` to normalize
-- Survey names may be `surveyName` or `survey`
-
-### PRP SOA Binning
-- **short**: ≤150ms
-- **medium**: 300-600ms
-- **long**: ≥1200ms
+- Survey names: `surveyName` or `survey`
 
 ## Output Locations
 
 | Category | Directory |
 |----------|-----------|
-| Gold Standard | `results/gold_standard/` |
-| Exploratory | `results/analysis_outputs/{prp,stroop,wcst,cross_task}_suite/` |
-| Other suites | `results/analysis_outputs/{suite_name}/` |
-| **Publication** | `results/publication/{analysis,advanced_analysis,validity_reliability,gender_analysis}/` |
-| Publication outputs | `publication/data/outputs/{analysis,mechanism_analysis,validity_reliability,network_analysis}/` |
+| Publication results | `results/publication/` |
+| Analysis outputs | `publication/data/outputs/analysis/{task}/` |
+| Paper tables | `publication/data/outputs/paper_tables/` |
 
 ## Results Recording
 
-분석 스크립트 실행 후 **p < 0.05 유의한 결과**가 나오면 `Results.md` (프로젝트 루트)에 기록한다.
+Record significant results (p < 0.05) in `Results.md`:
 
-### 기록 형식
-| 날짜 | 분석명 | 결과변수 | 효과 | β/r | p-value | 효과크기 |
-|------|--------|----------|------|-----|---------|----------|
+| Date | Analysis | Outcome | Effect | Beta | p-value | Effect size |
+|------|----------|---------|--------|------|---------|-------------|
 
-### 기록 예시
-| 2025-01-16 | WCST PE regression | pe_rate | UCLA × Gender | β=0.15 | p=0.025 | η²=0.04 |
+## Key Findings Summary
 
-## Key Findings (N=185 Quality-Controlled)
-
-- **UCLA Main Effects After DASS Control**: 3 variables significant
-  - PRP Delay Effect (ΔR²=2.38%, p<.05)
-  - WCST Post-Error Slowing (ΔR²=2.53%, p<.05)
-  - Stroop Incongruent RT Slope (ΔR²=3.74%, p<.05)
-- **UCLA × Gender Interactions**: None significant after DASS control
-- **Male-Specific Vulnerability** (gender-stratified analysis):
-  - PRP: UCLA correlates with Ex-Gaussian parameters (mu, sigma) in males only (r=0.26-0.31, p<.03)
-  - WCST HMM: UCLA→Lapse occupancy significant in males only (β=5.36, p=.024; r=0.34, p=.004)
-- **Network Analysis**: 4 edges show significant gender differences (p=.001 via permutation test)
+- **UCLA Main Effects After DASS Control**: Limited (3 variables significant)
+- **Male-Specific Vulnerability**: UCLA correlates with Ex-Gaussian parameters and HMM lapse in males only
+- **WCST Segment Effects**: UCLA predicts RT in confirmation phase
 
 ## Key Libraries
+
 pandas, numpy, scipy, statsmodels, scikit-learn, pymc, arviz, matplotlib, seaborn, firebase-admin
 
-## Flutter Data Collection App (`lib/`)
+## Flutter App (`lib/`)
 
-The Flutter mobile app collects experimental data:
-- **Tasks**: `prp_page.dart`, `stroop_page.dart`, `wcst_page.dart`
-- **Surveys**: `ucla_page.dart` (UCLA Loneliness), `dass_page.dart` (DASS-21)
-- **Flow**: `test_sequencer_page.dart` orchestrates task order
+Data collection app structure:
+- Tasks: `pages/ncft/{wcst,stroop,prp}_page.dart`
+- Surveys: `pages/survey/{ucla,dass}_page.dart`
+- Flow: `pages/intro/test_sequencer_page.dart`
 
-Data flows to Firebase Firestore, then exported via `export_alldata.py`.
-
-## Notes
-
-- **Platform**: Windows (path separators, encoding)
-- **Firebase credentials**: `serviceAccountKey.json` required but not committed
-- **Trial filtering**: Always filter `timeout == False` and `rt_ms > DEFAULT_RT_MIN`
+Data flows to Firebase Firestore, exported via `export_alldata.py`.

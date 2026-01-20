@@ -14,7 +14,10 @@ suppressPackageStartupMessages({
 args <- commandArgs(trailingOnly = FALSE)
 file_arg <- args[grep("--file=", args)]
 script_path <- if (length(file_arg) > 0) sub("^--file=", "", file_arg[1]) else ""
-root <- if (nzchar(script_path)) dirname(dirname(dirname(script_path))) else getwd()
+root <- if (nzchar(script_path)) dirname(dirname(script_path)) else getwd()
+if (!dir.exists(file.path(root, "publication"))) {
+  root <- if (nzchar(script_path)) dirname(dirname(dirname(script_path))) else getwd()
+}
 
 output_dir <- file.path(root, "publication", "data", "outputs", "analysis", "reviewer_response")
 dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)

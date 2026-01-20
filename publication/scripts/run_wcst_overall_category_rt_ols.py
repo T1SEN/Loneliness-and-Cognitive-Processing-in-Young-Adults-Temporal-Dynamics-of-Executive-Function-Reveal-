@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))
 
-from publication.analysis.wcst_mw_extensions import run_ucla_regression
+from publication.analysis.utils import run_ucla_regression
 from publication.preprocessing.constants import get_results_dir
 from publication.preprocessing.core import ensure_participant_id
 from publication.preprocessing.surveys import load_dass_scores, load_participants, load_ucla_scores
