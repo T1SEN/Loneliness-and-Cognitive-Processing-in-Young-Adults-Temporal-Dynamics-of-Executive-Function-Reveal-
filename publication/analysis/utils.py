@@ -23,7 +23,12 @@ from publication.preprocessing import load_master_dataset
 # PATHS (constants.py에서 중앙 관리)
 # =============================================================================
 
-from publication.preprocessing.constants import ANALYSIS_OUTPUT_DIR, VALID_TASKS, get_results_dir
+from publication.preprocessing.constants import (
+    ANALYSIS_OUTPUT_DIR,
+    BASE_DIR,
+    VALID_TASKS,
+    get_results_dir,
+)
 from publication.preprocessing.core import ensure_participant_id
 
 # =============================================================================
@@ -1061,6 +1066,13 @@ def get_output_dir(task: str) -> Path:
     output_dir = base_dir / task
     output_dir.mkdir(parents=True, exist_ok=True)
     return output_dir
+
+
+def get_figures_dir() -> Path:
+    """Return the publication figures directory."""
+    figures_dir = BASE_DIR / "Figures"
+    figures_dir.mkdir(parents=True, exist_ok=True)
+    return figures_dir
 
 
 def prepare_regression_data(df: pd.DataFrame) -> pd.DataFrame:

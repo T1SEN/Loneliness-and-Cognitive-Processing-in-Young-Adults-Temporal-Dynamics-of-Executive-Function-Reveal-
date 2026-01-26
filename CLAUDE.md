@@ -64,9 +64,20 @@ python -m publication.gender_analysis -a male_vulnerability
 # Export data from Firebase
 PYTHONIOENCODING=utf-8 .\venv\Scripts\python.exe export_alldata.py
 
-# Run specific WCST analysis scripts
-python publication/scripts/run_wcst_segment_regressions.py
-python publication/scripts/run_wcst_segment_error_regressions.py
+# Run specific WCST phase analysis scripts
+python publication/Wcst_phase/run_wcst_segment_regressions.py
+python publication/Wcst_phase/run_wcst_segment_error_regressions.py
+python publication/Wcst_phase/run_wcst_segment_delta_regressions.py
+python publication/Wcst_phase/run_wcst_post_shift_error_log_ols.py
+python publication/Wcst_phase/run_wcst_post_error_log_ols.py
+python publication/Wcst_phase/run_wcst_post_error_rt_ols_overall.py
+python publication/Wcst_phase/compute_wcst_switching_features.py
+python publication/Wcst_phase/compute_wcst_pre_switch_features.py
+python publication/Wcst_phase/generate_wcst_segment_rt_trend.py
+python publication/Wcst_phase/generate_wcst_category_segment_rt_trend.py
+python publication/Wcst_phase/generate_wcst_category_cycle_rt_trend.py
+python publication/Wcst_phase/plot_wcst_segment_regression_ols.py
+python publication/Wcst_phase/plot_wcst_segment_regression_ols_timeseries.py
 ```
 
 ## Key Data Files
@@ -98,8 +109,9 @@ publication/
 │   ├── utils.py           # Shared: get_analysis_data(), run_ucla_regression()
 │   ├── hierarchical_regression.py
 │   └── correlation_analysis.py
-├── scripts/               # Ad-hoc analysis scripts (WCST segment, etc.)
-├── lmm/                   # Linear mixed model scripts (moved here)
+├── scripts/               # Ad-hoc analysis scripts
+├── Wcst_phase/            # WCST phase-related scripts & logic
+├── lmm/                   # Linear mixed model scripts
 ├── advanced_analysis/     # Mediation, Bayesian
 ├── path_analysis/         # SEM path models
 ├── validity_reliability/  # Cronbach's alpha, factor analysis

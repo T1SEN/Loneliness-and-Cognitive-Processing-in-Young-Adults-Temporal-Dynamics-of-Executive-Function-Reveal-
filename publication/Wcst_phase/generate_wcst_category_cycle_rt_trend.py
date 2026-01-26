@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import sys
 from pathlib import Path
@@ -7,11 +7,11 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[3]
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))
 
-from publication.analysis.utils import get_analysis_data, get_output_dir
+from publication.analysis.utils import get_analysis_data, get_output_dir, get_figures_dir
 from publication.preprocessing.wcst._shared import prepare_wcst_trials
 
 
@@ -119,6 +119,7 @@ def main() -> None:
 
     summary = _summary_by_category(category_means)
     output_dir = get_output_dir("wcst")
+    figures_dir = get_figures_dir()
     summary_path = output_dir / "wcst_category_cycle_rt_line_extremes25_6cat_summary.csv"
     summary.to_csv(summary_path, index=False, encoding="utf-8-sig")
 
@@ -171,7 +172,7 @@ def main() -> None:
     ax.legend(loc="upper right")
     fig.tight_layout()
 
-    fig_path = output_dir / "wcst_category_cycle_rt_line_extremes25_6cat.png"
+    fig_path = figures_dir / "wcst_category_cycle_rt_line_extremes25_6cat.png"
     fig.savefig(fig_path, dpi=160)
     plt.close(fig)
 
@@ -193,3 +194,5 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+

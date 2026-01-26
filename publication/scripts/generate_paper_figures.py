@@ -13,7 +13,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 
-from publication.analysis.utils import STANDARDIZED_PREDICTORS, get_analysis_data
+from publication.analysis.utils import STANDARDIZED_PREDICTORS, get_analysis_data, get_figures_dir
 from publication.preprocessing.constants import RAW_DIR
 
 if sys.platform.startswith("win") and hasattr(sys.stdout, "reconfigure"):
@@ -22,6 +22,7 @@ if sys.platform.startswith("win") and hasattr(sys.stdout, "reconfigure"):
 # Paths
 repo_root = Path(__file__).resolve().parents[2]
 data_dir = repo_root / "publication" / "data"
+figures_dir = get_figures_dir()
 output_dir = data_dir / "outputs" / "paper_figures"
 table_dir = data_dir / "outputs" / "paper_tables"
 ba_dir = data_dir / "outputs" / "analysis"
@@ -208,11 +209,11 @@ def generate_figure1():
 
     plt.tight_layout()
     plt.savefig(
-        output_dir / "Figure1_participant_flow.png",
+        figures_dir / "Figure1_participant_flow.png",
         dpi=300, bbox_inches="tight", facecolor="white", edgecolor="none",
     )
     plt.close()
-    print(f"Figure 1 saved to {output_dir / 'Figure1_participant_flow.png'}")
+    print(f"Figure 1 saved to {figures_dir / 'Figure1_participant_flow.png'}")
 
 
 def generate_figure2():
@@ -283,11 +284,11 @@ def generate_figure2():
 
     plt.tight_layout()
     plt.savefig(
-        output_dir / "Figure2_ucla_dass_heatmap.png",
+        figures_dir / "Figure2_ucla_dass_heatmap.png",
         dpi=300, bbox_inches="tight", facecolor="white", edgecolor="none",
     )
     plt.close()
-    print(f"Figure 2 saved to {output_dir / 'Figure2_ucla_dass_heatmap.png'}")
+    print(f"Figure 2 saved to {figures_dir / 'Figure2_ucla_dass_heatmap.png'}")
 
 
 def generate_figure3():
@@ -484,7 +485,7 @@ def generate_figure3():
     fig.subplots_adjust(left=0.35, right=0.82)
     plt.tight_layout()
     plt.savefig(
-        output_dir / "Figure3_forest_plot.png",
+        figures_dir / "Figure3_forest_plot.png",
         dpi=300, bbox_inches="tight", facecolor="white", edgecolor="none",
     )
     plt.close()
@@ -511,7 +512,7 @@ def generate_figure3():
     ].copy()
     df_export.to_csv(output_dir / "Figure3_forest_data.csv", index=False, encoding="utf-8-sig")
 
-    print(f"Figure 3 saved to {output_dir / 'Figure3_forest_plot.png'}")
+    print(f"Figure 3 saved to {figures_dir / 'Figure3_forest_plot.png'}")
     print(f"Data table saved to {output_dir / 'Figure3_forest_data.csv'}")
 
     # Summary statistics
@@ -532,4 +533,5 @@ if __name__ == "__main__":
 
     print("\n" + "=" * 60)
     print("All figures generated successfully!")
-    print(f"Output directory: {output_dir}")
+    print(f"Figures directory: {figures_dir}")
+    print(f"Data directory: {output_dir}")

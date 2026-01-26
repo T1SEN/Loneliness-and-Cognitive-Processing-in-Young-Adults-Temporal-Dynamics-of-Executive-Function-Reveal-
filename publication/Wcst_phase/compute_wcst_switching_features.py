@@ -1,4 +1,4 @@
-"""Compute WCST rule-switching features (excluding slow-state profiles)."""
+﻿"""Compute WCST rule-switching features (excluding slow-state profiles)."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ import sys
 import numpy as np
 import pandas as pd
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[3]
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))
 
@@ -529,3 +529,5 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+

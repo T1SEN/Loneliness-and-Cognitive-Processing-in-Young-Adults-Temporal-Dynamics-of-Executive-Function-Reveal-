@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import sys
 from pathlib import Path
@@ -7,11 +7,11 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[3]
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))
 
-from publication.analysis.utils import get_output_dir
+from publication.analysis.utils import get_output_dir, get_figures_dir
 
 
 MEAN_ORDER = [
@@ -76,6 +76,7 @@ def main() -> None:
         sys.stdout.reconfigure(encoding="utf-8")
 
     output_dir = get_output_dir("wcst")
+    figures_dir = get_figures_dir()
     data_path = output_dir / "wcst_segment_rt_regression_nodiscovery_nopreswitch_ols.csv"
     df = pd.read_csv(data_path)
 
@@ -112,7 +113,7 @@ def main() -> None:
     axes[1].legend(handles=handles, loc="lower right")
 
     fig.tight_layout()
-    fig_path = output_dir / "wcst_segment_rt_regression_nodiscovery_nopreswitch_ols.png"
+    fig_path = figures_dir / "wcst_segment_rt_regression_nodiscovery_nopreswitch_ols.png"
     fig.savefig(fig_path, dpi=160)
     plt.close(fig)
 
@@ -121,3 +122,5 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+
