@@ -112,4 +112,5 @@ Discussion에서 명시적 인정: "Alternative mechanisms—including reduced m
 - PRP QC 실패 요약 파일 `publication/data/outputs/prp_qc_failed_breakdown.csv`을 삭제함.
 - LMM 관련 스크립트를 `publication/lmm`으로 이동함.
 - 루트 `scripts/` 폴더는 비어 있어 삭제함.
-- reviewer_response 산출물 파일을 삭제함.
+- Rscript 미설치로 `publication/lmm/run_stroop_trial_lmm_lme4.R`는 미실행.
+- reviewer_response 산출물은 삭제 후 Stroop LMM 결과만 재생성함.
