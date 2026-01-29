@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pandas as pd
 
-ROOT = Path(__file__).resolve().parents[3]
+ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))
 
@@ -59,5 +59,6 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
 
 

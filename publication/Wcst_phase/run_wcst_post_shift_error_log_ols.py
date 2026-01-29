@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 import statsmodels.formula.api as smf
 
-ROOT = Path(__file__).resolve().parents[3]
+ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))
 
@@ -60,6 +60,7 @@ def label_wcst_phases(
     wcst: pd.DataFrame,
     rule_col: str,
     trial_col: str,
+    confirm_len: int = 3,
 ) -> pd.DataFrame:
     df = wcst.sort_values(["participant_id", trial_col]).copy()
     df["category_num"] = np.nan
@@ -85,11 +86,12 @@ def label_wcst_phases(
 
             reacq_start = None
             reacq_idx = None
-            for j in range(start, end - 2):
-                if correct[j] and correct[j + 1] and correct[j + 2]:
-                    reacq_start = j
-                    reacq_idx = j + 2
-                    break
+            if confirm_len >= 1:
+                for j in range(start, end - (confirm_len - 1)):
+                    if np.all(correct[j : j + confirm_len]):
+                        reacq_start = j
+                        reacq_idx = j + confirm_len - 1
+                        break
 
             for i in range(start, end):
                 row_idx = idxs[i]
@@ -203,5 +205,6 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
 
 
