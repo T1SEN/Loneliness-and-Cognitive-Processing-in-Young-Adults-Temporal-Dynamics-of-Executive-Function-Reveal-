@@ -111,10 +111,8 @@ publication/
 │   └── correlation_analysis.py
 ├── scripts/               # Ad-hoc analysis scripts
 ├── Wcst_phase/            # WCST phase-related scripts & logic
-├── lmm/                   # Linear mixed model scripts
+├── stroop_lmm/            # Stroop linear mixed model scripts
 ├── advanced_analysis/     # Mediation, Bayesian
-├── path_analysis/         # SEM path models
-├── validity_reliability/  # Cronbach's alpha, factor analysis
 └── gender_analysis/       # Gender stratified analyses
 ```
 

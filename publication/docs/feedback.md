@@ -1,4 +1,4 @@
-수정 방향 제안
+﻿수정 방향 제안
 Jeong, 리뷰어 코멘트가 상당히 날카롭지만, 핵심 아이디어와 결과 패턴의 일관성은 인정받고 있으니 체계적으로 대응하면 충분히 극복 가능합니다. 각 이슈별로 실행 가능한 수정 전략을 정리해 드릴게요.
 
 1. 다중공선성/과잉통제 문제
@@ -110,7 +110,7 @@ Discussion에서 명시적 인정: "Alternative mechanisms—including reduced m
 - WCST MW 산출물 `publication/data/outputs/analysis/wcst`의 `wcst_mw_*` 파일을 삭제함.
 - WCST OLS 스크립트 재실행 결과를 `publication/data/outputs/analysis/wcst` 및 `publication/data/outputs/analysis/reviewer_response`에 갱신함.
 - PRP QC 실패 요약 파일 `publication/data/outputs/prp_qc_failed_breakdown.csv`을 삭제함.
-- LMM 관련 스크립트를 `publication/lmm`으로 이동함.
+- LMM 관련 스크립트를 `publication/stroop_lmm`으로 이동함.
 - 루트 `scripts/` 폴더는 비어 있어 삭제함.
-- Rscript 미설치로 `publication/lmm/run_stroop_trial_lmm_lme4.R`는 미실행.
+- Rscript 미설치로 `publication/stroop_lmm/run_stroop_trial_lmm_lme4.R`는 미실행.
 - reviewer_response 산출물은 삭제 후 Stroop LMM 결과만 재생성함.

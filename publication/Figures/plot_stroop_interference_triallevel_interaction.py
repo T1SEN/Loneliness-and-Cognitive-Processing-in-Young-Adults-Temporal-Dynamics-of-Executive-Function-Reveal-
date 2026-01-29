@@ -16,7 +16,11 @@ if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))
 
 from publication.analysis.utils import get_figures_dir, get_output_dir
-from publication.lmm.run_stroop_trial_lmm import prepare_interference_trials, load_base_data, add_zscores
+from publication.stroop_lmm.run_stroop_trial_lmm import (
+    prepare_interference_trials,
+    load_base_data,
+    add_zscores,
+)
 
 
 def _fit_mixedlm_with_warnings(
