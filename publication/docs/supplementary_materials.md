@@ -526,7 +526,7 @@ These checks were used for descriptive inspection only and were not enforced as 
 
 ### S8.1 Multicollinearity Diagnostics
 
-Variance inflation factors (VIF) were low in both task samples (max = 2.59, mean = 2.11), indicating no problematic multicollinearity among UCLA and DASS covariates.
+Variance inflation factors (VIF) were low in the overall sample (max = 2.68, mean = 1.94), indicating no problematic multicollinearity among UCLA and DASS covariates.
 
 ### S8.2 Primary Outcomes and FDR Control
 
@@ -534,13 +534,13 @@ All models used OLS with DASS subscales, age, and gender as covariates. Benjamin
 
 | Outcome | n | UCLA beta | p | FDR q | Primary |
 |---------|---:|----------:|---:|------:|:-------:|
-| Stroop RT interference (correct) | 197 | 5.425 | 0.599 | 0.915 | No |
-| Stroop accuracy interference | 197 | -0.001 | 0.784 | 0.915 | No |
-| WCST categories completed | 197 | -0.023 | 0.755 | 0.915 | No |
-| WCST perseverative error rate | 197 | -0.053 | 0.930 | 0.930 | No |
-| Stroop interference RT slope | 197 | 19.033 | 0.0018 | 0.0125 | Yes |
-| Stroop RT SD (incongruent) | 197 | 11.142 | 0.232 | 0.541 | No |
-| WCST post-shift error RT mean | 192 | 202.104 | 0.029 | 0.103 | Yes |
+| Stroop RT interference (correct) | 212 | 4.800 | 0.629 | 0.804 | No |
+| Stroop accuracy interference | 212 | -0.003 | 0.371 | 0.649 | No |
+| WCST categories completed | 212 | 0.026 | 0.804 | 0.804 | No |
+| WCST perseverative error rate | 212 | -0.165 | 0.775 | 0.804 | No |
+| Stroop interference RT slope | 212 | 18.363 | 0.00145 | 0.0102 | Yes |
+| Stroop RT SD (incongruent) | 212 | 12.047 | 0.181 | 0.422 | No |
+| WCST post-shift error RT mean | 206 | 218.618 | 0.0152 | 0.0534 | Yes |
 
 ### S8.3 Alternative DASS Specification (Total Score)
 
@@ -548,28 +548,28 @@ Primary endpoints remained significant under a DASS total-score covariate:
 
 | Outcome | n | UCLA beta | p |
 |---------|---:|----------:|---:|
-| Stroop interference RT slope | 197 | 16.435 | 0.0049 |
-| WCST post-shift error RT mean | 192 | 179.931 | 0.042 |
+| Stroop interference RT slope | 212 | 16.319 | 0.0033 |
+| WCST post-shift error RT mean | 206 | 201.105 | 0.0201 |
 
 ### S8.4 Predictor Entry Order Sensitivity
 
 | Outcome | ΔR² (UCLA after DASS) | p | ΔR² (DASS after UCLA) | p |
 |---------|----------------------:|---:|-----------------------:|---:|
-| Stroop interference RT slope | 0.0482 | 0.0018 | 0.0124 | 0.463 |
-| WCST post-shift error RT mean | 0.0249 | 0.029 | 0.0040 | 0.854 |
+| Stroop interference RT slope | 0.0470 | 0.00145 | 0.0094 | 0.555 |
+| WCST post-shift error RT mean | 0.0288 | 0.0152 | 0.0038 | 0.850 |
 
 ### S8.5 Slope Reliability and Bootstrap Stability
 
-Split-half reliability for the Stroop interference slope was low (r = 0.064; Spearman-Brown = 0.120; n = 150). Bootstrap CI widths (100 resamples per participant) showed a broad distribution (n = 220; mean = 237.35, SD = 80.53, median = 220.84, IQR = [174.02, 290.70]).
+Split-half reliability for the Stroop interference slope was low (r = -0.078; Spearman-Brown = -0.170; n = 154). Bootstrap CI widths (100 resamples per participant) showed a broad distribution (n = 212; mean = 232.73, SD = 76.63, median = 216.11, IQR = [179.28, 279.72]). WCST phase RT split-half reliability (all trials; odd/even within phase) was moderate-to-high: exploration r = 0.508 (SB = 0.674; n = 207), confirmation r = 0.691 (SB = 0.817; n = 212), exploitation r = 0.941 (SB = 0.969; n = 212). The merged pre-exploitation phase (exploration + confirmation) showed r = 0.726 (SB = 0.841; n = 212).
 
 ### S8.6 Segment-Count Sensitivity (Interference Slope)
 
 | Segments | UCLA beta | p |
 |---------:|----------:|---:|
-| 3 | 31.044 | 0.00041 |
-| 4 | 19.033 | 0.0018 |
-| 5 | 16.436 | 0.00082 |
-| 6 | 16.266 | 0.000065 |
+| 3 | 27.429 | 0.00092 |
+| 4 | 18.363 | 0.00145 |
+| 5 | 15.903 | 0.00056 |
+| 6 | 15.623 | 0.000046 |
 
 ### S8.7 Trial-Level OLS Check
 
@@ -577,7 +577,7 @@ A trial-level OLS model with participant fixed effects (segment x UCLA) was not 
 
 WCST phase-based LMMs used trial-level phase labels (exploration/confirmation/exploitation), log RTs, and DASS controls with random intercepts plus a phase_code slope. Post-error was defined as the trial immediately following any error. In the base model, exploration x UCLA was not significant (beta = 0.0183, p = 0.231) and confirmation x UCLA was marginal (beta = 0.0221, p = 0.052). Post-error slowing was robust (beta = 0.295, p < 1e-200) and the post_error x UCLA interaction was negative (beta = -0.0181, p = 0.035). The extended model adding category_num and rule produced similar phase x UCLA effects (confirmation x UCLA beta = 0.0217, p = 0.053) and retained a negative post_error x UCLA interaction (beta = -0.0180, p = 0.033). Category_num showed a strong negative slope (beta = -0.0486, p = 1.0e-115).
 
-Phase-specific LMMs (separate fits within each phase, category_num plus DASS/age/gender covariates) yielded a significant positive UCLA effect in confirmation (beta = 0.0460, p = 0.0278), while exploration (beta = 0.0268, p = 0.281) and exploitation (beta = 0.0101, p = 0.619) were not significant. A category-by-phase-by-UCLA model using linear category_num did not support increasing UCLA effects across categories (category_num x phase x UCLA p's >= 0.279). A categorical category model showed heterogeneous slopes by category without a monotonic increase (exploratory; see outputs). An OLS check restricted to post-error trials (participant-level mean log RT) yielded a marginal UCLA effect (beta = 0.0591, p = 0.0542; n_participants = 196; n_trials = 3,373).
+Phase-specific LMMs (separate fits within each phase, category_num plus DASS/age/gender covariates) yielded a significant positive UCLA effect in confirmation (beta = 0.0460, p = 0.0278), while exploration (beta = 0.0268, p = 0.281) and exploitation (beta = 0.0101, p = 0.619) were not significant. A category-by-phase-by-UCLA model using linear category_num did not support increasing UCLA effects across categories (category_num x phase x UCLA p's >= 0.279). A categorical category model showed heterogeneous slopes by category without a monotonic increase (exploratory; see outputs). An OLS check restricted to post-error trials (participant-level mean log RT) yielded a marginal UCLA effect (beta = 0.0591, p = 0.0542; n_participants = 196; n_trials = 3,373). A merged-phase OLS check (pre-exploitation = exploration + confirmation; all trials; DASS covariates) showed a positive UCLA effect for pre-exploitation (beta = 122.573, p = 0.0101) and for the pre-exploitation minus exploitation contrast (beta = 95.425, p = 0.0130), while exploitation alone was not significant (beta = 27.148, p = 0.4579; n = 212).
 
 Overall mean WCST RT showed a marginal UCLA association (beta = 64.85 ms, p = 0.0860; n = 197). The participant-level slope of category mean RT across categories was marginally negative (beta = -19.90 ms/category, p = 0.0589; n = 193). Trial-level LMM checks did not show UCLA effects for overall mean RT (beta = 0.0199, p = 0.321) or for the category slope interaction (category_num x UCLA beta = 0.00141, p = 0.500; random intercept only). A phase-free trial-slope LMM found no trial_scaled x UCLA interaction (beta = -0.00387, p = 0.856) while showing a strong overall trial effect (trial_scaled beta = -0.3799, p = 4.15e-71). A switch-cost LMM (switch vs repeat) yielded a robust switch main effect (beta = -0.0716, p = 4.38e-07; faster switch trials) but no switch x UCLA interaction (beta = 0.0165, p = 0.253). A correct-trial switch-slope model (trial_scaled x switch x UCLA) showed no three-way interaction (beta = 0.0436, p = 0.685), while trial_scaled x switch was positive (beta = 0.3798, p = 0.000198), indicating switch costs increased over time in correct trials without UCLA moderation. A post-error slope model (trial_scaled x post_error x UCLA) showed no three-way interaction (beta = -0.0148, p = 0.600), while post-error slowing remained strong (post_error beta = 0.4018, p = 5.84e-71). An OLS-equivalent segment LMM (shift_trial/post_shift_error/exploration/confirmation/exploitation) yielded a significant UCLA effect only in confirmation (beta = 0.0463, p = 0.0278), with shift_trial at trend level (beta = 0.0464, p = 0.076) and post_shift_error not significant (beta = 0.0452, p = 0.136).
 
@@ -587,19 +587,19 @@ Participant-level RT SD distributions (valid trials only):
 
 | Task | n | RT SD mean | SD | Min | Max | P97.5 |
 |------|---:|-----------:|---:|----:|----:|------:|
-| Stroop (incongruent) | 220 | 311.91 | 94.37 | 131.84 | 641.25 | 520.64 |
+| Stroop (incongruent) | 212 | 310.49 | 94.56 | 131.84 | 641.25 | 514.39 |
 | WCST (all valid) | 212 | 943.88 | 372.92 | 343.70 | 2315.38 | 1858.13 |
 
 Excluding participants above the 97.5th percentile of RT SD:
 
 | Outcome | n | UCLA beta | p |
 |---------|---:|----------:|---:|
-| Stroop interference RT slope | 193 | 17.133 | 0.0038 |
-| WCST post-shift error RT mean | 189 | 138.974 | 0.134 |
+| Stroop interference RT slope | 201 | 15.355 | 0.0071 |
+| WCST post-shift error RT mean | 197 | 152.930 | 0.0943 |
 
 ### S8.9 Winsorization and Robust SE
 
-Winsorizing RT outcomes at 2.5% tails yielded similar conclusions (Stroop interference slope: beta = 17.055, p = 0.0026; WCST post-shift error RT mean: beta = 182.995, p = 0.0337). HC3-robust SEs preserved the Stroop effect (p = 0.0024) and attenuated the WCST effect (p = 0.066).
+Winsorizing RT outcomes at 2.5% tails yielded similar conclusions (Stroop interference slope: beta = 16.497, p = 0.0021; WCST post-shift error RT mean: beta = 201.413, p = 0.0163).
 
 ### S8.10 WCST Shift Counts
 

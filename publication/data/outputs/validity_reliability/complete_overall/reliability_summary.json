@@ -1,33 +1,33 @@
 {
   "survey_reliability": {
     "UCLA": {
-      "alpha": 0.9377702950406238,
+      "alpha": 0.4346580848574258,
       "n_items": 20
     },
     "DASS_total": {
-      "alpha": 0.9274082268578079,
+      "alpha": 0.9268646917258795,
       "n_items": 21
     },
     "DASS_depression": {
-      "alpha": 0.8808724484202356,
+      "alpha": 0.8805357601370549,
       "n_items": 7
     },
     "DASS_anxiety": {
-      "alpha": 0.7950591114980381,
+      "alpha": 0.7921900816948816,
       "n_items": 7
     },
     "DASS_stress": {
-      "alpha": 0.8395656599932135,
+      "alpha": 0.8395595249527833,
       "n_items": 7
     }
   },
   "cognitive_reliability": {
     "stroop": {
-      "r_sb": 0.5862246468001766,
+      "r_sb": 0.58098831119546,
       "method": "odd_even_split_half"
     },
     "wcst": {
-      "r_sb": 0.7307148346319564,
+      "r_sb": 0.7399952920337866,
       "method": "first_second_half_split"
     }
   },
