@@ -29,10 +29,6 @@
     "wcst": {
       "r_sb": 0.7307148346319564,
       "method": "first_second_half_split"
-    },
-    "prp": {
-      "r_sb": 0.6628580904132411,
-      "method": "odd_even_split_half"
     }
   },
   "interpretation_guide": {

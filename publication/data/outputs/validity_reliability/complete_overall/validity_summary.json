@@ -47,12 +47,6 @@
       "delta_r2": 1.2025108695801201e-05,
       "significant": false
     },
-    "prp_bottleneck": {
-      "beta": 28.561205595564424,
-      "p": 0.05317225006892599,
-      "delta_r2": 0.018418158709376575,
-      "significant": false
-    },
     "stroop_interference": {
       "beta": 8.1355483632938,
       "p": 0.41285258829783267,

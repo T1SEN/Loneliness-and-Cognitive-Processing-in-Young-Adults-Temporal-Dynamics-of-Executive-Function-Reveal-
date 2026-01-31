@@ -8,7 +8,7 @@ core demographic, survey, and executive-function measures.
 Variables:
     - Demographics: age
     - Surveys: UCLA loneliness, DASS-21 subscales
-    - Executive Function: WCST (perseverative error rate), Stroop interference, PRP bottleneck
+    - Executive Function: WCST (perseverative error rate), Stroop interference
 
 Output:
     results/publication/analysis/table1_descriptives.csv
@@ -329,7 +329,7 @@ def parse_args() -> argparse.Namespace:
         "--task",
         required=True,
         choices=sorted(VALID_TASKS),
-        help="Dataset task to analyze (overall, stroop, prp, wcst).",
+        help="Dataset task to analyze (overall, stroop, wcst).",
     )
     return parser.parse_args()
 

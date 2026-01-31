@@ -8,7 +8,7 @@ loneliness, DASS-21 subscales, and executive-function outcomes.
 Variables:
     - UCLA Loneliness
     - DASS-21 subscales (Depression, Anxiety, Stress)
-    - Executive Function: WCST (perseverative error rate), Stroop interference, PRP bottleneck
+    - Executive Function: WCST (perseverative error rate), Stroop interference
 
 Output:
     results/publication/analysis/correlation_matrix.csv
@@ -375,7 +375,7 @@ def parse_args() -> argparse.Namespace:
         "--task",
         required=True,
         choices=sorted(VALID_TASKS),
-        help="Dataset task to analyze (overall, stroop, prp, wcst).",
+        help="Dataset task to analyze (overall, stroop, wcst).",
     )
     return parser.parse_args()
 

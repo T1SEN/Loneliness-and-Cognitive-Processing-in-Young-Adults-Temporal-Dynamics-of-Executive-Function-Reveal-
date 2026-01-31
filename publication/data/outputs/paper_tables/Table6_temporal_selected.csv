@@ -1,7 +1,6 @@
-﻿Task,Axis,DV,Type,b,SE,95% CI,p,delta_R2
+﻿﻿Task,Axis,DV,Type,b,SE,95% CI,p,delta_R2
 STROOP,Time-on-task drift,RT slope (incongruent),RT,0.443,0.198,"[0.054, 0.832]",0.027,0.0224
 STROOP,Within-task dispersion,RT SD (incongruent),RT,11.592,8.834,"[-5.721, 28.906]",0.191,0.0079
-PRP,Within-task dispersion,Ex-Gaussian sigma (short SOA),RT,20.351,10.418,"[-0.069, 40.770]",0.052,0.0182
 WCST,Time-on-task drift,RT slope (within-category),RT,-12.583,4.409,"[-21.226, -3.941]",0.005,0.038
 STROOP,Post-perturbation recovery,Post-error slowing,RT,41.726,40.353,"[-37.366, 120.818]",0.303,0.008
 STROOP,Post-perturbation recovery,Post-error accuracy drop,Acc,0.041,0.021,"[-0.000, 0.083]",0.059,0.0853

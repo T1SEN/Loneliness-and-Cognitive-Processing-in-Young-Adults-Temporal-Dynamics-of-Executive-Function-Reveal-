@@ -1,4 +1,3 @@
-﻿outcome,outcome_variable,n,r2_baseline,r2_with_ucla,delta_r2,ucla_beta,ucla_p,ucla_significant
+﻿﻿outcome,outcome_variable,n,r2_baseline,r2_with_ucla,delta_r2,ucla_beta,ucla_p,ucla_significant
 WCST Perseverative Error,pe_rate,205,0.03397127316828019,0.03398329827697599,1.2025108695801201e-05,0.028847725135869518,0.9603545803716392,False
-PRP Bottleneck Effect,prp_bottleneck,204,0.017747203595162686,0.03616536230453926,0.018418158709376575,28.561205595564424,0.05317225006892599,False
 Stroop Interference,stroop_interference,205,0.010810495493628669,0.014146516211972493,0.003336020718343824,8.1355483632938,0.41285258829783267,False

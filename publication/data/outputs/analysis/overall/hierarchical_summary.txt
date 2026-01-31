@@ -58,7 +58,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.001
 
 
-Outcome: PRP Delay Effect (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -370,7 +369,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP T2 Mean RT (Short SOA) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -394,7 +392,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.004
 
 
-Outcome: PRP T2 Mean RT (Long SOA) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -418,7 +415,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP T2 RT SD (Short SOA) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -442,7 +438,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.248
 
 
-Outcome: PRP T2 RT SD (Long SOA) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -466,7 +461,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP T2 Coefficient of Variation (All) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -490,7 +484,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.119
 
 
-Outcome: PRP T2 CV (Short SOA) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -514,7 +507,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.047
 
 
-Outcome: PRP T2 CV (Long SOA) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -538,7 +530,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP T2 MAD (All) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -562,7 +553,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.201
 
 
-Outcome: PRP T2 MAD (Short SOA) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -586,7 +576,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP T2 MAD (Long SOA) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -610,7 +599,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP T2 IQR (All) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -634,7 +622,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.064
 
 
-Outcome: PRP T2 IQR (Short SOA) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -658,7 +645,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP T2 IQR (Long SOA) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -682,7 +668,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP T2 MAD (All, correct) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -706,7 +691,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.201
 
 
-Outcome: PRP T2 MAD (Short SOA, correct) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -730,7 +714,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP T2 MAD (Long SOA, correct) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -754,7 +737,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP T2 IQR (All, correct) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -778,7 +760,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.064
 
 
-Outcome: PRP T2 IQR (Short SOA, correct) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -802,7 +783,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP T2 IQR (Long SOA, correct) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -826,7 +806,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Error Cascade Rate (N = 140)
 --------------------------------------------------
 
 Model Comparison:
@@ -850,7 +829,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Cascade Inflation (N = 126)
 --------------------------------------------------
 
 Model Comparison:
@@ -874,7 +852,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Post-Error Slowing (ms) (N = 162)
 --------------------------------------------------
 
 Model Comparison:
@@ -898,7 +875,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Valid T2 Trial Count (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -1546,7 +1522,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Ex-Gaussian mu (Short SOA) (N = 196)
 --------------------------------------------------
 
 Model Comparison:
@@ -1570,7 +1545,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Ex-Gaussian sigma (Short SOA) (N = 196)
 --------------------------------------------------
 
 Model Comparison:
@@ -1594,7 +1568,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Ex-Gaussian tau (Short SOA) (N = 196)
 --------------------------------------------------
 
 Model Comparison:
@@ -1618,7 +1591,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.255
 
 
-Outcome: PRP Ex-Gaussian mu (Long SOA) (N = 191)
 --------------------------------------------------
 
 Model Comparison:
@@ -1642,7 +1614,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Ex-Gaussian sigma (Long SOA) (N = 191)
 --------------------------------------------------
 
 Model Comparison:
@@ -1666,7 +1637,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Ex-Gaussian tau (Long SOA) (N = 191)
 --------------------------------------------------
 
 Model Comparison:
@@ -1690,7 +1660,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Ex-Gaussian mu (Overall) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -1714,7 +1683,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Ex-Gaussian sigma (Overall) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -1738,7 +1706,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Ex-Gaussian tau (Overall) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -1762,7 +1729,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.176
 
 
-Outcome: PRP Ex-Gaussian mu (Bottleneck) (N = 190)
 --------------------------------------------------
 
 Model Comparison:
@@ -1786,7 +1752,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Ex-Gaussian sigma (Bottleneck) (N = 190)
 --------------------------------------------------
 
 Model Comparison:
@@ -1810,7 +1775,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.004
 
 
-Outcome: PRP Ex-Gaussian tau (Bottleneck) (N = 190)
 --------------------------------------------------
 
 Model Comparison:
@@ -2602,7 +2566,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.004
 
 
-Outcome: PRP CB Base RT (ms) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -2626,7 +2589,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP CB Bottleneck Duration (ms) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -2650,7 +2612,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.232
 
 
-Outcome: PRP CB Model R-squared (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -2674,7 +2635,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP CB Slope (short SOA) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -5938,7 +5898,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Slow-State Probability (Baseline) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -5962,7 +5921,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Slow-State Prob (Post-Error) (N = 175)
 --------------------------------------------------
 
 Model Comparison:
@@ -5986,7 +5944,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Slow-State Prob Delta (Post-Error) (N = 175)
 --------------------------------------------------
 
 Model Comparison:
@@ -6010,7 +5967,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.845
 
 
-Outcome: PRP Slow-State Prob (Stable) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -6034,7 +5990,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Slow-State Prob Delta (Stable) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -6058,7 +6013,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP T1 Cost (Short - Long) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -6082,7 +6036,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP RT1-RT2 Coupling (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -6106,7 +6059,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP T2 RT (T1 Error) (N = 140)
 --------------------------------------------------
 
 Model Comparison:
@@ -6130,7 +6082,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.874
 
 
-Outcome: PRP T2 RT (T1 Correct) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -6154,7 +6105,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.001
 
 
-Outcome: PRP T2 Interference (T1 Error - Correct) (N = 140)
 --------------------------------------------------
 
 Model Comparison:
@@ -6178,7 +6128,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.510
 
 
-Outcome: PRP Order Violation Rate (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -6202,7 +6151,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP T1-only Rate (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -6226,7 +6174,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP T2-only Rate (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -6250,7 +6197,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP T2 While T1 Pending Rate (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -6274,7 +6220,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP IRI Mean (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -6298,7 +6243,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.012
 
 
-Outcome: PRP IRI Median (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -6322,7 +6266,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.091
 
 
-Outcome: PRP IRI p10 (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -6346,7 +6289,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.021
 
 
-Outcome: PRP IRI p25 (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -6370,7 +6312,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.049
 
 
-Outcome: PRP T1 Error Run Mean (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -6394,7 +6335,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP T1 Error Run Max (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -6418,7 +6358,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP T2 Error Run Mean (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -6442,7 +6381,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP T2 Error Run Max (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -6466,7 +6404,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Cascade Run Mean (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -6490,7 +6427,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Cascade Run Max (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -6514,7 +6450,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP DFA Alpha (Short SOA, correct) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -6538,7 +6473,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.002
 
 
-Outcome: PRP DFA Alpha (Long SOA, correct) (N = 188)
 --------------------------------------------------
 
 Model Comparison:
@@ -6562,7 +6496,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Lag-1 Autocorr (Short SOA, correct) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -6586,7 +6519,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.353
 
 
-Outcome: PRP Lag-1 Autocorr (Long SOA, correct) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -6610,7 +6542,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.010
 
 
-Outcome: PRP Slow Run Mean (Short SOA, correct) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -6634,7 +6565,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Slow Run Max (Short SOA, correct) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -6658,7 +6588,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Fast Run Mean (Short SOA, correct) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -6682,7 +6611,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Fast Run Max (Short SOA, correct) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -6706,7 +6634,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Slow Run Mean (Long SOA, correct) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -6730,7 +6657,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Slow Run Max (Long SOA, correct) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -6754,7 +6680,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Fast Run Mean (Long SOA, correct) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -6778,7 +6703,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Fast Run Max (Long SOA, correct) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -6802,7 +6726,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Ex-Gaussian mu (Bottleneck, correct) (N = 189)
 --------------------------------------------------
 
 Model Comparison:
@@ -6826,7 +6749,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Ex-Gaussian sigma (Bottleneck, correct) (N = 189)
 --------------------------------------------------
 
 Model Comparison:
@@ -6850,7 +6772,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.004
 
 
-Outcome: PRP Ex-Gaussian tau (Bottleneck, correct) (N = 189)
 --------------------------------------------------
 
 Model Comparison:
@@ -6874,7 +6795,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Ex-Gaussian tau Ratio (Short/Long) (N = 190)
 --------------------------------------------------
 
 Model Comparison:
@@ -6898,7 +6818,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Ex-Gaussian tau Ratio (Short/Long, correct) (N = 189)
 --------------------------------------------------
 
 Model Comparison:
@@ -6922,7 +6841,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Bottleneck AUC (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -6946,7 +6864,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Bottleneck Slope (Short Range) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -6970,7 +6887,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.099
 
 
-Outcome: PRP Bottleneck Slope (Long Range) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -6994,7 +6910,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.174
 
 
-Outcome: PRP RT2 Asymptote (Long SOA) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -7018,7 +6933,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Bottleneck Curvature (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -7042,7 +6956,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.002
 
 
-Outcome: PRP CB AIC (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -7066,7 +6979,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP CB BIC (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -7090,7 +7002,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP CS Base RT (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -7114,7 +7025,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP CS Amplitude (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -7138,7 +7048,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.004
 
 
-Outcome: PRP CS Tau (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -7162,7 +7071,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP CS R-squared (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -7186,7 +7094,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP CS RMSE (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -7210,7 +7117,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP CS AIC (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -7234,7 +7140,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.028
 
 
-Outcome: PRP CS BIC (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -7258,7 +7163,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.028
 
 
-Outcome: PRP Mix CB Weight (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -7282,7 +7186,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Mix R-squared (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -7306,7 +7209,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Mix RMSE (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -7330,7 +7232,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Mix AIC (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -7354,7 +7255,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.020
 
 
-Outcome: PRP Mix BIC (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -7378,7 +7278,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.020
 
 
-Outcome: PRP RT Fatigue Slope (Q4-Q1) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -7402,7 +7301,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.018
 
 
-Outcome: PRP CV Fatigue Slope (Q4-Q1) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -7426,7 +7324,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.743
 
 
-Outcome: PRP Accuracy Fatigue Slope (Q4-Q1) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -7450,7 +7347,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Error Cascade Count (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -7474,7 +7370,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Error Cascade Rate (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -7498,7 +7393,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Error Cascade Mean Length (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -7522,7 +7416,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Error Cascade Max Length (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -7546,7 +7439,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Error Cascade Trials (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -7570,7 +7462,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Error Cascade Proportion (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -7594,7 +7485,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Recovery RT Slope (N = 92)
 --------------------------------------------------
 
 Model Comparison:
@@ -7618,7 +7508,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.250
 
 
-Outcome: PRP Recovery Accuracy Slope (N = 92)
 --------------------------------------------------
 
 Model Comparison:
@@ -7642,7 +7531,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Momentum Slope (N = 52)
 --------------------------------------------------
 
 Model Comparison:
@@ -7666,7 +7554,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.911
 
 
-Outcome: PRP Momentum Mean Streak (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -7690,7 +7577,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Momentum Max Streak (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -7714,7 +7600,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Volatility RMSSD (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -7738,7 +7623,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.263
 
 
-Outcome: PRP Volatility (Detrended SD) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -7762,7 +7646,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.117
 
 
-Outcome: PRP IIV Intercept (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -7786,7 +7669,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP IIV Slope (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -7810,7 +7692,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.321
 
 
-Outcome: PRP IIV Residual SD (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -7834,7 +7715,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.117
 
 
-Outcome: PRP IIV Raw CV (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -7858,7 +7738,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.119
 
 
-Outcome: PRP IIV R-squared (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -7882,7 +7761,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Post-Error CV Reduction (N = 88)
 --------------------------------------------------
 
 Model Comparison:
@@ -7906,7 +7784,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.170
 
 
-Outcome: PRP Post-Error Accuracy (N = 88)
 --------------------------------------------------
 
 Model Comparison:
@@ -7930,7 +7807,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Post-Error Accuracy Diff (N = 88)
 --------------------------------------------------
 
 Model Comparison:
@@ -7954,7 +7830,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Post-Error Recovery Rate (N = 88)
 --------------------------------------------------
 
 Model Comparison:
@@ -7978,7 +7853,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Adaptive PES Flag (N = 88)
 --------------------------------------------------
 
 Model Comparison:
@@ -8002,7 +7876,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Maladaptive PES Flag (N = 88)
 --------------------------------------------------
 
 Model Comparison:
@@ -8026,7 +7899,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Error Awareness Index (N = 88)
 --------------------------------------------------
 
 Model Comparison:
@@ -8050,7 +7922,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP T2 Mean RT (All) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -8074,7 +7945,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.001
 
 
-Outcome: PRP T2 Accuracy (All) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -8098,7 +7968,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Dual-Task Accuracy (Both Correct) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -8122,7 +7991,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP T2 Error Rate (All) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -8146,7 +8014,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP T2 Inverse Efficiency Score (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -8170,7 +8037,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Pre-Error RT Slope (Mean) (N = 89)
 --------------------------------------------------
 
 Model Comparison:
@@ -8194,7 +8060,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.013
 
 
-Outcome: PRP Pre-Error RT Slope (SD) (N = 89)
 --------------------------------------------------
 
 Model Comparison:
@@ -8218,7 +8083,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Pre-Error Events (N) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -8242,7 +8106,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Recovery RT Lag1 (N = 92)
 --------------------------------------------------
 
 Model Comparison:
@@ -8266,7 +8129,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.022
 
 
-Outcome: PRP Recovery RT Lag2 (N = 92)
 --------------------------------------------------
 
 Model Comparison:
@@ -8290,7 +8152,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.297
 
 
-Outcome: PRP Recovery RT Lag3 (N = 92)
 --------------------------------------------------
 
 Model Comparison:
@@ -8314,7 +8175,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.119
 
 
-Outcome: PRP Recovery RT Lag4 (N = 92)
 --------------------------------------------------
 
 Model Comparison:
@@ -8338,7 +8198,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.065
 
 
-Outcome: PRP Recovery RT Lag5 (N = 92)
 --------------------------------------------------
 
 Model Comparison:
@@ -8362,7 +8221,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Recovery Accuracy Lag1 (N = 92)
 --------------------------------------------------
 
 Model Comparison:
@@ -8386,7 +8244,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Recovery Accuracy Lag2 (N = 92)
 --------------------------------------------------
 
 Model Comparison:
@@ -8410,7 +8267,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Recovery Accuracy Lag3 (N = 92)
 --------------------------------------------------
 
 Model Comparison:
@@ -8434,7 +8290,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Recovery Accuracy Lag4 (N = 92)
 --------------------------------------------------
 
 Model Comparison:
@@ -8458,7 +8313,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Recovery Accuracy Lag5 (N = 92)
 --------------------------------------------------
 
 Model Comparison:
@@ -8482,7 +8336,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP T2 Mean RT (SOA 50) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -8506,7 +8359,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP T2 Mean RT (SOA 150) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -8530,7 +8382,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.004
 
 
-Outcome: PRP T2 Mean RT (SOA 300) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -8554,7 +8405,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.004
 
 
-Outcome: PRP T2 Mean RT (SOA 600) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -8578,7 +8428,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP T2 Mean RT (SOA 1200) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -8602,7 +8451,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP T2 Median RT (SOA 50) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -8626,7 +8474,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.001
 
 
-Outcome: PRP T2 Median RT (SOA 150) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -8650,7 +8497,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP T2 Median RT (SOA 300) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -8674,7 +8520,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP T2 Median RT (SOA 600) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -8698,7 +8543,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP T2 Median RT (SOA 1200) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -8722,7 +8566,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP T2 RT SD (SOA 50) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -8746,7 +8589,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.373
 
 
-Outcome: PRP T2 RT SD (SOA 150) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -8770,7 +8612,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.085
 
 
-Outcome: PRP T2 RT SD (SOA 300) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -8794,7 +8635,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.100
 
 
-Outcome: PRP T2 RT SD (SOA 600) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -8818,7 +8658,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.087
 
 
-Outcome: PRP T2 RT SD (SOA 1200) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -8842,7 +8681,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP T1 Mean RT (SOA 50) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -8866,7 +8704,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP T1 Mean RT (SOA 150) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -8890,7 +8727,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP T1 Mean RT (SOA 300) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -8914,7 +8750,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP T1 Mean RT (SOA 600) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -8938,7 +8773,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP T1 Mean RT (SOA 1200) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -8962,7 +8796,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP T1 Median RT (SOA 50) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -8986,7 +8819,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP T1 Median RT (SOA 150) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -9010,7 +8842,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP T1 Median RT (SOA 300) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -9034,7 +8865,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP T1 Median RT (SOA 600) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -9058,7 +8888,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP T1 Median RT (SOA 1200) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -9082,7 +8911,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP T1 RT SD (SOA 50) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -9106,7 +8934,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.325
 
 
-Outcome: PRP T1 RT SD (SOA 150) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -9130,7 +8957,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.006
 
 
-Outcome: PRP T1 RT SD (SOA 300) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -9154,7 +8980,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.020
 
 
-Outcome: PRP T1 RT SD (SOA 600) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -9178,7 +9003,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.312
 
 
-Outcome: PRP T1 RT SD (SOA 1200) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -9202,7 +9026,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.006
 
 
-Outcome: PRP T1 Accuracy (SOA 50) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -9226,7 +9049,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP T1 Accuracy (SOA 150) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -9250,7 +9072,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP T1 Accuracy (SOA 300) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -9274,7 +9095,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP T1 Accuracy (SOA 600) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -9298,7 +9118,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP T1 Accuracy (SOA 1200) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -9322,7 +9141,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP RT1-RT2 Coupling (SOA 50) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -9346,7 +9164,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP RT1-RT2 Coupling (SOA 150) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -9370,7 +9187,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP RT1-RT2 Coupling (SOA 300) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -9394,7 +9210,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP RT1-RT2 Coupling (SOA 600) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -9418,7 +9233,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP RT1-RT2 Coupling (SOA 1200) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -9442,7 +9256,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Ex-Gaussian mu (short, correct) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -9466,7 +9279,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Ex-Gaussian sigma (short, correct) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -9490,7 +9302,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Ex-Gaussian tau (short, correct) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -9514,7 +9325,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.303
 
 
-Outcome: PRP Ex-Gaussian mu (long, correct) (N = 189)
 --------------------------------------------------
 
 Model Comparison:
@@ -9538,7 +9348,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Ex-Gaussian sigma (long, correct) (N = 189)
 --------------------------------------------------
 
 Model Comparison:
@@ -9562,7 +9371,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Ex-Gaussian tau (long, correct) (N = 189)
 --------------------------------------------------
 
 Model Comparison:
@@ -9586,7 +9394,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Ex-Gaussian mu (overall, correct) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -9610,7 +9417,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Ex-Gaussian sigma (overall, correct) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -9634,7 +9440,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Ex-Gaussian tau (overall, correct) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -9658,7 +9463,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.479
 
 
-Outcome: PRP Ex-Gaussian mu (SOA 50) (N = 192)
 --------------------------------------------------
 
 Model Comparison:
@@ -9682,7 +9486,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Ex-Gaussian sigma (SOA 50) (N = 192)
 --------------------------------------------------
 
 Model Comparison:
@@ -9706,7 +9509,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Ex-Gaussian tau (SOA 50) (N = 192)
 --------------------------------------------------
 
 Model Comparison:
@@ -9730,7 +9532,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.012
 
 
-Outcome: PRP Ex-Gaussian mu (SOA 150) (N = 190)
 --------------------------------------------------
 
 Model Comparison:
@@ -9754,7 +9555,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Ex-Gaussian sigma (SOA 150) (N = 190)
 --------------------------------------------------
 
 Model Comparison:
@@ -9778,7 +9578,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Ex-Gaussian tau (SOA 150) (N = 190)
 --------------------------------------------------
 
 Model Comparison:
@@ -9802,7 +9601,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.004
 
 
-Outcome: PRP Ex-Gaussian mu (SOA 300) (N = 196)
 --------------------------------------------------
 
 Model Comparison:
@@ -9826,7 +9624,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Ex-Gaussian sigma (SOA 300) (N = 196)
 --------------------------------------------------
 
 Model Comparison:
@@ -9850,7 +9647,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Ex-Gaussian tau (SOA 300) (N = 196)
 --------------------------------------------------
 
 Model Comparison:
@@ -9874,7 +9670,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.315
 
 
-Outcome: PRP Ex-Gaussian mu (SOA 600) (N = 191)
 --------------------------------------------------
 
 Model Comparison:
@@ -9898,7 +9693,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Ex-Gaussian sigma (SOA 600) (N = 191)
 --------------------------------------------------
 
 Model Comparison:
@@ -9922,7 +9716,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Ex-Gaussian tau (SOA 600) (N = 191)
 --------------------------------------------------
 
 Model Comparison:
@@ -9946,7 +9739,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.159
 
 
-Outcome: PRP Ex-Gaussian mu (SOA 1200) (N = 191)
 --------------------------------------------------
 
 Model Comparison:
@@ -9970,7 +9762,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Ex-Gaussian sigma (SOA 1200) (N = 191)
 --------------------------------------------------
 
 Model Comparison:
@@ -9994,7 +9785,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Ex-Gaussian tau (SOA 1200) (N = 191)
 --------------------------------------------------
 
 Model Comparison:
@@ -10018,7 +9808,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Ex-Gaussian mu (SOA 50, correct) (N = 188)
 --------------------------------------------------
 
 Model Comparison:
@@ -10042,7 +9831,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Ex-Gaussian sigma (SOA 50, correct) (N = 188)
 --------------------------------------------------
 
 Model Comparison:
@@ -10066,7 +9854,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Ex-Gaussian tau (SOA 50, correct) (N = 188)
 --------------------------------------------------
 
 Model Comparison:
@@ -10090,7 +9877,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.010
 
 
-Outcome: PRP Ex-Gaussian mu (SOA 150, correct) (N = 186)
 --------------------------------------------------
 
 Model Comparison:
@@ -10114,7 +9900,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Ex-Gaussian sigma (SOA 150, correct) (N = 186)
 --------------------------------------------------
 
 Model Comparison:
@@ -10138,7 +9923,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Ex-Gaussian tau (SOA 150, correct) (N = 186)
 --------------------------------------------------
 
 Model Comparison:
@@ -10162,7 +9946,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.011
 
 
-Outcome: PRP Ex-Gaussian mu (SOA 300, correct) (N = 193)
 --------------------------------------------------
 
 Model Comparison:
@@ -10186,7 +9969,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Ex-Gaussian sigma (SOA 300, correct) (N = 193)
 --------------------------------------------------
 
 Model Comparison:
@@ -10210,7 +9992,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Ex-Gaussian tau (SOA 300, correct) (N = 193)
 --------------------------------------------------
 
 Model Comparison:
@@ -10234,7 +10015,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.337
 
 
-Outcome: PRP Ex-Gaussian mu (SOA 600, correct) (N = 189)
 --------------------------------------------------
 
 Model Comparison:
@@ -10258,7 +10038,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Ex-Gaussian sigma (SOA 600, correct) (N = 189)
 --------------------------------------------------
 
 Model Comparison:
@@ -10282,7 +10061,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Ex-Gaussian tau (SOA 600, correct) (N = 189)
 --------------------------------------------------
 
 Model Comparison:
@@ -10306,7 +10084,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.100
 
 
-Outcome: PRP Ex-Gaussian mu (SOA 1200, correct) (N = 189)
 --------------------------------------------------
 
 Model Comparison:
@@ -10330,7 +10107,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Ex-Gaussian sigma (SOA 1200, correct) (N = 189)
 --------------------------------------------------
 
 Model Comparison:
@@ -10354,7 +10130,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Ex-Gaussian tau (SOA 1200, correct) (N = 189)
 --------------------------------------------------
 
 Model Comparison:
@@ -10378,7 +10153,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Delta Plot Slope (Bottleneck, correct) (N = 188)
 --------------------------------------------------
 
 Model Comparison:
@@ -10402,7 +10176,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.184
 
 
-Outcome: PRP Vincentile Bottleneck p10 (correct) (N = 188)
 --------------------------------------------------
 
 Model Comparison:
@@ -10426,7 +10199,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.123
 
 
-Outcome: PRP Vincentile Bottleneck p30 (correct) (N = 188)
 --------------------------------------------------
 
 Model Comparison:
@@ -10450,7 +10222,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.003
 
 
-Outcome: PRP Vincentile Bottleneck p50 (correct) (N = 188)
 --------------------------------------------------
 
 Model Comparison:
@@ -10474,7 +10245,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.003
 
 
-Outcome: PRP Vincentile Bottleneck p70 (correct) (N = 188)
 --------------------------------------------------
 
 Model Comparison:
@@ -10498,7 +10268,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.171
 
 
-Outcome: PRP Vincentile Bottleneck p90 (correct) (N = 188)
 --------------------------------------------------
 
 Model Comparison:
@@ -10522,7 +10291,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.620
 
 
-Outcome: PRP Shape Linear Slope (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -10546,7 +10314,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.280
 
 
-Outcome: PRP Shape Linear Intercept (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -10570,7 +10337,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.013
 
 
-Outcome: PRP Shape Linear R-squared (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -10594,7 +10360,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Shape Exp Amplitude (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -10618,7 +10383,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Shape Exp Decay Rate (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -10642,7 +10406,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Shape Exp Asymptote (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -10666,7 +10429,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Shape Exp R-squared (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -10690,7 +10452,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Shape Recovery Half-life (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -10714,7 +10475,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Shape Bottleneck (Short-Long) (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -10738,7 +10498,6 @@ Diagnostics:
   Shapiro-Wilk p: 0.206
 
 
-Outcome: PRP Shape Exp Better Fit (N = 197)
 --------------------------------------------------
 
 Model Comparison:
@@ -10762,7 +10521,6 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: PRP Shape SOA Count (N = 197)
 --------------------------------------------------
 
 Model Comparison:

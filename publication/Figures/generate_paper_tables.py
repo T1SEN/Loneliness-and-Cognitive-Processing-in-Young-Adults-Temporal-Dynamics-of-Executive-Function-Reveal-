@@ -13,7 +13,6 @@ from publication.preprocessing.surveys import (
 )
 from publication.preprocessing.constants import RAW_DIR, get_results_dir
 from publication.preprocessing.stroop.loaders import load_stroop_summary
-from publication.preprocessing.prp.trial_level_loaders import load_prp_summary
 from publication.preprocessing.wcst.loaders import load_wcst_summary
 
 if sys.platform.startswith("win") and hasattr(sys.stdout, "reconfigure"):
@@ -172,12 +171,10 @@ def generate_table3():
     rows.append(calc_stats(dass, "dass_stress", "DASS-21 Stress"))
 
     stroop_summary = load_stroop_summary(get_results_dir("stroop"))
-    prp_summary = load_prp_summary(get_results_dir("prp"))
     wcst_summary = load_wcst_summary(get_results_dir("wcst"))
 
     print(
         f"Stroop N: {len(stroop_summary)}, "
-        f"PRP N: {len(prp_summary)}, "
         f"WCST N: {len(wcst_summary)}"
     )
 
@@ -188,7 +185,6 @@ def generate_table3():
             "Stroop Interference Effect (ms)",
         )
     )
-    rows.append(calc_stats(prp_summary, "prp_bottleneck", "PRP Delay Effect (ms)"))
     rows.append(calc_stats(wcst_summary, "pe_rate", "WCST Perseverative Error Rate (%)"))
 
     table3 = pd.DataFrame(rows)
@@ -312,14 +308,13 @@ def generate_table5():
     print("=" * 60)
 
     conventional_extras = {
-        "prp": ["prp_bottleneck", "prp_t2_accuracy_all"],
         "wcst": ["pe_rate"],
         "stroop": [],
     }
 
     all_rows = []
 
-    for task in ["stroop", "prp", "wcst"]:
+    for task in ["stroop", "wcst"]:
         hr_path = data_dir / "outputs" / "analysis" / task / "hierarchical_results.csv"
         if not hr_path.exists():
             print(f"  Warning: {hr_path} not found")
@@ -347,7 +342,7 @@ def generate_table5():
 
     table5 = pd.concat(all_rows, ignore_index=True)
 
-    key_outcomes = ["stroop_rt_interference", "prp_bottleneck", "pe_rate"]
+    key_outcomes = ["stroop_rt_interference", "pe_rate"]
     summary_mask = (table5["p_ucla_wald"] < 0.05) | (
         table5["outcome_column"].isin(key_outcomes)
     )
@@ -384,7 +379,7 @@ def generate_table6():
 
     all_rows = []
 
-    for task in ["stroop", "prp", "wcst"]:
+    for task in ["stroop", "wcst"]:
         hr_path = data_dir / "outputs" / "analysis" / task / "hierarchical_results.csv"
         if not hr_path.exists():
             continue
@@ -439,19 +434,13 @@ def generate_table5_selected():
     print("Generating Table 5 (Selected): Conventional Indices")
     print("=" * 60)
 
-    hr_by_task = {t: _load_hierarchical(t) for t in ["stroop", "prp", "wcst"]}
+    hr_by_task = {t: _load_hierarchical(t) for t in ["stroop", "wcst"]}
     cov_label = _infer_cov_type(hr_by_task)
     cov_note = _format_cov_note(cov_label)
 
     specs = [
         {"task": "STROOP", "outcome_column": "stroop_rt_interference", "dv": "RT interference"},
         {"task": "STROOP", "outcome_column": "stroop_acc_interference", "dv": "Accuracy interference"},
-        {"task": "PRP", "outcome_column": "prp_bottleneck", "dv": "Bottleneck effect"},
-        {
-            "task": "PRP",
-            "outcome_column": "prp_both_correct_rate",
-            "dv": "Dual-task accuracy (both correct rate)",
-        },
         {"task": "WCST", "outcome_column": "wcst_categories_completed", "dv": "Categories completed"},
         {
             "task": "WCST",
@@ -485,7 +474,7 @@ def generate_table6_selected():
     print("Generating Table 6 (Selected): Temporal Dynamics Indices")
     print("=" * 60)
 
-    hr_by_task = {t: _load_hierarchical(t) for t in ["stroop", "prp", "wcst"]}
+    hr_by_task = {t: _load_hierarchical(t) for t in ["stroop", "wcst"]}
     cov_label = _infer_cov_type(hr_by_task)
     cov_note = _format_cov_note(cov_label)
 
@@ -503,13 +492,6 @@ def generate_table6_selected():
             "dv": "RT SD (incongruent)",
             "type": "RT",
             "outcome_column": "stroop_rt_sd_incong",
-        },
-        {
-            "task": "PRP",
-            "axis": "Within-task dispersion",
-            "dv": "Ex-Gaussian sigma (short SOA)",
-            "type": "RT",
-            "outcome_column": "prp_exg_short_sigma",
         },
         {
             "task": "WCST",

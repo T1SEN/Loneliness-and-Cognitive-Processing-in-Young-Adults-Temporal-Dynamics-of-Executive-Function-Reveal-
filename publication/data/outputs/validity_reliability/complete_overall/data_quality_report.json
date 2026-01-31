@@ -195,51 +195,6 @@
       "n_insufficient": 0,
       "pct_insufficient": 0.0,
       "insufficient_participants": []
-    },
-    "prp_rt": {
-      "task": "PRP",
-      "n_total_trials": 23543,
-      "n_timeout": 0.0,
-      "pct_timeout": 0.0,
-      "n_anticipation": 0.0,
-      "pct_anticipation": 0.0,
-      "n_slow": 3.0,
-      "pct_slow": 0.012742641124750457,
-      "n_valid": 23540.0,
-      "pct_valid": 99.98725735887525,
-      "rt_threshold_min": 200,
-      "rt_threshold_max": 3000,
-      "rt_mean": 1032.161775699554,
-      "rt_median": 924.3499999881024,
-      "rt_sd": 503.0791237602242,
-      "rt_min": 200.5999999998603,
-      "rt_max": 2991.899999999907
-    },
-    "prp_accuracy": {
-      "task": "PRP",
-      "n_participants": 205,
-      "accuracy_mean": 0.9753465576159693,
-      "accuracy_sd": 0.022665357527295107,
-      "accuracy_min": 0.875,
-      "accuracy_max": 1.0,
-      "chance_level": 0.5,
-      "n_below_chance": 0,
-      "pct_below_chance": 0.0,
-      "below_chance_participants": []
-    },
-    "prp_trials": {
-      "task": "PRP",
-      "n_participants": 205,
-      "trials_mean": 114.84390243902439,
-      "trials_sd": 13.60885756792835,
-      "trials_min": 1.0,
-      "trials_max": 120.0,
-      "min_required": 20,
-      "n_insufficient": 1,
-      "pct_insufficient": 0.4878048780487805,
-      "insufficient_participants": [
-        "ORuVuFPU5idz3fMoXTGsbwToW2j2"
-      ]
     }
   },
   "sample_attrition": {

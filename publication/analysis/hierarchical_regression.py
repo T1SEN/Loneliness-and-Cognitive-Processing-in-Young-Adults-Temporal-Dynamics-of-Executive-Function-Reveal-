@@ -12,7 +12,7 @@ Model Structure (4 Steps):
     Model 3: outcome ~ age + gender + DASS(3) + UCLA*gender
 
 Tier-1 Outcomes (automatically iterated):
-    - Core EF: pe_rate, stroop_interference, prp_bottleneck
+    - Core EF: pe_rate, stroop_interference
     - WCST summary metrics: wcst_accuracy, wcst_mean_rt, wcst_sd_rt, pe_count,
       perseverativeResponses, perseverativeErrorCount, perseverativeResponsesPercent
     - WCST trial-derived metrics: wcst_pes, wcst_post_switch_error_rate,
@@ -511,7 +511,7 @@ def parse_args() -> argparse.Namespace:
         "--task",
         required=True,
         choices=sorted(VALID_TASKS),
-        help="Dataset task to analyze (overall, stroop, prp, wcst).",
+        help="Dataset task to analyze (overall, stroop, wcst).",
     )
     parser.add_argument(
         "--cov-type",

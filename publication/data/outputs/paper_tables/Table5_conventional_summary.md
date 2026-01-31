@@ -5,7 +5,5 @@ delta_R2 = incremental R^2 for UCLA step. Key outcomes and any significant resul
 
 | Task   | Outcome                       |   N |      b |     SE |     t |     p |   delta_R2 |
 |:-------|:------------------------------|----:|-------:|-------:|------:|------:|-----------:|
-| PRP    | PRP T1 Cost (Short - Long)    | 201 | 46.227 | 22.338 |  2.07 | 0.04  |     0.0213 |
-| PRP    | PRP Delay Effect              | 201 | 18.196 | 14.453 |  1.26 | 0.21  |     0.0073 |
 | STROOP | Stroop RT Interference        | 220 |  6.141 |  9.365 |  0.66 | 0.513 |     0.002  |
 | WCST   | WCST Perseverative Error Rate | 212 | -0.165 |  0.576 | -0.29 | 0.775 |     0.0004 |

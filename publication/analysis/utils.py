@@ -44,7 +44,6 @@ DESCRIPTIVE_VARS = [
     ('dass_stress', 'DASS-21 Stress'),
     ('pe_rate', 'WCST Perseverative Error Rate'),
     ('stroop_interference', 'Stroop Interference Effect'),
-    ('prp_bottleneck', 'PRP Delay Effect'),  # RT2(short SOA) - RT2(long SOA)
 ]
 
 # Variables for correlation matrix
@@ -55,13 +54,11 @@ CORRELATION_VARS = [
     ('dass_stress', 'DASS-Str'),
     ('pe_rate', 'WCST PE'),
     ('stroop_interference', 'Stroop Int'),
-    ('prp_bottleneck', 'PRP Delay'),
 ]
 
 # Shared constants for derived outcome lists
 STROOP_CONDITIONS = ["congruent", "incongruent", "neutral"]
 STROOP_VINCENTILES = [10, 30, 50, 70, 90]
-PRP_SOA_LEVELS = [50, 150, 300, 600, 1200]
 WCST_SWITCH_K = [1, 2, 3, 4, 5]
 WCST_CATEGORY_MAX = 6
 
@@ -70,7 +67,6 @@ TIER1_OUTCOMES = [
     # Core EF outcomes
     ('pe_rate', 'WCST Perseverative Error Rate'),
     ('stroop_interference', 'Stroop Interference Effect'),
-    ('prp_bottleneck', 'PRP Delay Effect'),
 
     # WCST summary metrics
     ('wcst_accuracy', 'WCST Accuracy (%)'),
@@ -89,33 +85,6 @@ TIER1_OUTCOMES = [
     ('wcst_mad_rt_correct', 'WCST RT MAD (correct)'),
     ('wcst_iqr_rt_correct', 'WCST RT IQR (correct)'),
     ('wcst_trials', 'WCST Valid Trial Count'),
-
-    # PRP summary metrics (SOA-specific RT/variability)
-    ('t2_rt_mean_short', 'PRP T2 Mean RT (Short SOA)'),
-    ('t2_rt_mean_long', 'PRP T2 Mean RT (Long SOA)'),
-    ('t2_rt_sd_short', 'PRP T2 RT SD (Short SOA)'),
-    ('t2_rt_sd_long', 'PRP T2 RT SD (Long SOA)'),
-
-    # PRP trial-derived features
-    ('prp_t2_cv_all', 'PRP T2 Coefficient of Variation (All)'),
-    ('prp_t2_cv_short', 'PRP T2 CV (Short SOA)'),
-    ('prp_t2_cv_long', 'PRP T2 CV (Long SOA)'),
-    ('prp_t2_mad_all', 'PRP T2 MAD (All)'),
-    ('prp_t2_mad_short', 'PRP T2 MAD (Short SOA)'),
-    ('prp_t2_mad_long', 'PRP T2 MAD (Long SOA)'),
-    ('prp_t2_iqr_all', 'PRP T2 IQR (All)'),
-    ('prp_t2_iqr_short', 'PRP T2 IQR (Short SOA)'),
-    ('prp_t2_iqr_long', 'PRP T2 IQR (Long SOA)'),
-    ('prp_t2_mad_all_correct', 'PRP T2 MAD (All, correct)'),
-    ('prp_t2_mad_short_correct', 'PRP T2 MAD (Short SOA, correct)'),
-    ('prp_t2_mad_long_correct', 'PRP T2 MAD (Long SOA, correct)'),
-    ('prp_t2_iqr_all_correct', 'PRP T2 IQR (All, correct)'),
-    ('prp_t2_iqr_short_correct', 'PRP T2 IQR (Short SOA, correct)'),
-    ('prp_t2_iqr_long_correct', 'PRP T2 IQR (Long SOA, correct)'),
-    ('prp_cascade_rate', 'PRP Error Cascade Rate'),
-    ('prp_cascade_inflation', 'PRP Cascade Inflation'),
-    ('prp_pes', 'PRP Post-Error Slowing (ms)'),
-    ('prp_t2_trials', 'PRP Valid T2 Trial Count'),
 
     # Stroop summary metrics
     ('rt_mean_incongruent', 'Stroop Mean RT (Incongruent)'),
@@ -147,20 +116,6 @@ TIER1_OUTCOMES = [
     ('stroop_iqr_incong_correct', 'Stroop RT IQR (Incongruent, correct)'),
     ('stroop_iqr_cong_correct', 'Stroop RT IQR (Congruent, correct)'),
     ('stroop_trials', 'Stroop Valid Trial Count'),
-
-    # PRP Ex-Gaussian parameters
-    ('prp_exg_short_mu', 'PRP Ex-Gaussian mu (Short SOA)'),
-    ('prp_exg_short_sigma', 'PRP Ex-Gaussian sigma (Short SOA)'),
-    ('prp_exg_short_tau', 'PRP Ex-Gaussian tau (Short SOA)'),
-    ('prp_exg_long_mu', 'PRP Ex-Gaussian mu (Long SOA)'),
-    ('prp_exg_long_sigma', 'PRP Ex-Gaussian sigma (Long SOA)'),
-    ('prp_exg_long_tau', 'PRP Ex-Gaussian tau (Long SOA)'),
-    ('prp_exg_overall_mu', 'PRP Ex-Gaussian mu (Overall)'),
-    ('prp_exg_overall_sigma', 'PRP Ex-Gaussian sigma (Overall)'),
-    ('prp_exg_overall_tau', 'PRP Ex-Gaussian tau (Overall)'),
-    ('prp_exg_mu_bottleneck', 'PRP Ex-Gaussian mu (Bottleneck)'),
-    ('prp_exg_sigma_bottleneck', 'PRP Ex-Gaussian sigma (Bottleneck)'),
-    ('prp_exg_tau_bottleneck', 'PRP Ex-Gaussian tau (Bottleneck)'),
 
     # Stroop Ex-Gaussian parameters
     ('stroop_exg_congruent_mu', 'Stroop Ex-Gaussian mu (Congruent)'),
@@ -203,12 +158,6 @@ TIER1_OUTCOMES = [
     ('wcst_brl_hazard', 'WCST Bayesian RL hazard'),
     ('wcst_brl_noise', 'WCST Bayesian RL noise'),
     ('wcst_brl_beta', 'WCST Bayesian RL beta'),
-
-    # PRP Central Bottleneck model parameters
-    ('prp_cb_base', 'PRP CB Base RT (ms)'),
-    ('prp_cb_bottleneck', 'PRP CB Bottleneck Duration (ms)'),
-    ('prp_cb_r_squared', 'PRP CB Model R-squared'),
-    ('prp_cb_slope', 'PRP CB Slope (short SOA)'),
 
 ]
 
@@ -346,197 +295,6 @@ STROOP_EXTRA_OUTCOMES += [
     ('stroop_pre_error_slope_mean', 'Stroop Pre-Error RT Slope (Mean)'),
     ('stroop_pre_error_slope_std', 'Stroop Pre-Error RT Slope (SD)'),
     ('stroop_pre_error_n', 'Stroop Pre-Error Events (N)'),
-]
-
-PRP_EXTRA_OUTCOMES = [
-    ('prp_slow_prob_baseline', 'PRP Slow-State Probability (Baseline)'),
-    ('prp_slow_prob_post_error', 'PRP Slow-State Prob (Post-Error)'),
-    ('prp_slow_prob_post_error_delta', 'PRP Slow-State Prob Delta (Post-Error)'),
-    ('prp_slow_prob_stable', 'PRP Slow-State Prob (Stable)'),
-    ('prp_slow_prob_stable_delta', 'PRP Slow-State Prob Delta (Stable)'),
-    ('prp_t1_cost', 'PRP T1 Cost (Short - Long)'),
-    ('prp_rt1_rt2_coupling', 'PRP RT1-RT2 Coupling'),
-    ('prp_t2_rt_t1_error', 'PRP T2 RT (T1 Error)'),
-    ('prp_t2_rt_t1_correct', 'PRP T2 RT (T1 Correct)'),
-    ('prp_t2_interference_t1_error', 'PRP T2 Interference (T1 Error - Correct)'),
-    ('prp_t2_rt_slope', 'PRP T2 RT Slope'),
-    ('prp_t2_rt_slope_short', 'PRP T2 RT Slope (Short SOA)'),
-    ('prp_t2_rt_slope_long', 'PRP T2 RT Slope (Long SOA)'),
-    ('prp_order_violation_rate', 'PRP Order Violation Rate'),
-    ('prp_t1_only_rate', 'PRP T1-only Rate'),
-    ('prp_t2_only_rate', 'PRP T2-only Rate'),
-    ('prp_t2_while_t1_pending_rate', 'PRP T2 While T1 Pending Rate'),
-    ('prp_iri_mean', 'PRP IRI Mean'),
-    ('prp_iri_median', 'PRP IRI Median'),
-    ('prp_iri_p10', 'PRP IRI p10'),
-    ('prp_iri_p25', 'PRP IRI p25'),
-    ('prp_t1_error_run_mean', 'PRP T1 Error Run Mean'),
-    ('prp_t1_error_run_max', 'PRP T1 Error Run Max'),
-    ('prp_t2_error_run_mean', 'PRP T2 Error Run Mean'),
-    ('prp_t2_error_run_max', 'PRP T2 Error Run Max'),
-    ('prp_cascade_run_mean', 'PRP Cascade Run Mean'),
-    ('prp_cascade_run_max', 'PRP Cascade Run Max'),
-    ('prp_dfa_alpha_short_correct', 'PRP DFA Alpha (Short SOA, correct)'),
-    ('prp_dfa_alpha_long_correct', 'PRP DFA Alpha (Long SOA, correct)'),
-    ('prp_lag1_short_correct', 'PRP Lag-1 Autocorr (Short SOA, correct)'),
-    ('prp_lag1_long_correct', 'PRP Lag-1 Autocorr (Long SOA, correct)'),
-    ('prp_slow_run_mean_short_correct', 'PRP Slow Run Mean (Short SOA, correct)'),
-    ('prp_slow_run_max_short_correct', 'PRP Slow Run Max (Short SOA, correct)'),
-    ('prp_fast_run_mean_short_correct', 'PRP Fast Run Mean (Short SOA, correct)'),
-    ('prp_fast_run_max_short_correct', 'PRP Fast Run Max (Short SOA, correct)'),
-    ('prp_slow_run_mean_long_correct', 'PRP Slow Run Mean (Long SOA, correct)'),
-    ('prp_slow_run_max_long_correct', 'PRP Slow Run Max (Long SOA, correct)'),
-    ('prp_fast_run_mean_long_correct', 'PRP Fast Run Mean (Long SOA, correct)'),
-    ('prp_fast_run_max_long_correct', 'PRP Fast Run Max (Long SOA, correct)'),
-    ('prp_exg_correct_mu_bottleneck', 'PRP Ex-Gaussian mu (Bottleneck, correct)'),
-    ('prp_exg_correct_sigma_bottleneck', 'PRP Ex-Gaussian sigma (Bottleneck, correct)'),
-    ('prp_exg_correct_tau_bottleneck', 'PRP Ex-Gaussian tau (Bottleneck, correct)'),
-    ('prp_exg_tau_ratio_short_long', 'PRP Ex-Gaussian tau Ratio (Short/Long)'),
-    ('prp_exg_correct_tau_ratio_short_long', 'PRP Ex-Gaussian tau Ratio (Short/Long, correct)'),
-    ('prp_bottleneck_auc', 'PRP Bottleneck AUC'),
-    ('prp_bottleneck_slope_short', 'PRP Bottleneck Slope (Short Range)'),
-    ('prp_bottleneck_slope_long', 'PRP Bottleneck Slope (Long Range)'),
-    ('prp_bottleneck_slope_block_change', 'PRP Bottleneck Slope Change (Blocks)'),
-    ('prp_bottleneck_effect_slope_block_change', 'PRP Bottleneck Effect Slope (Blocks)'),
-    ('prp_rt2_asymptote_long_soa', 'PRP RT2 Asymptote (Long SOA)'),
-    ('prp_bottleneck_curvature', 'PRP Bottleneck Curvature'),
-    ('prp_cb_aic', 'PRP CB AIC'),
-    ('prp_cb_bic', 'PRP CB BIC'),
-    ('prp_cs_base', 'PRP CS Base RT'),
-    ('prp_cs_amplitude', 'PRP CS Amplitude'),
-    ('prp_cs_tau', 'PRP CS Tau'),
-    ('prp_cs_r_squared', 'PRP CS R-squared'),
-    ('prp_cs_rmse', 'PRP CS RMSE'),
-    ('prp_cs_aic', 'PRP CS AIC'),
-    ('prp_cs_bic', 'PRP CS BIC'),
-    ('prp_mix_cb_weight', 'PRP Mix CB Weight'),
-    ('prp_mix_r_squared', 'PRP Mix R-squared'),
-    ('prp_mix_rmse', 'PRP Mix RMSE'),
-    ('prp_mix_aic', 'PRP Mix AIC'),
-    ('prp_mix_bic', 'PRP Mix BIC'),
-]
-
-PRP_EXTRA_OUTCOMES += [
-    ('prp_rt_fatigue_slope', 'PRP RT Fatigue Slope (Q4-Q1)'),
-    ('prp_cv_fatigue_slope', 'PRP CV Fatigue Slope (Q4-Q1)'),
-    ('prp_cv_fatigue_slope_rolling', 'PRP CV Fatigue Slope (Rolling)'),
-    ('prp_acc_fatigue_slope', 'PRP Accuracy Fatigue Slope (Q4-Q1)'),
-    ('prp_t2_rt_sd_block_slope', 'PRP T2 RT SD Block Slope'),
-    ('prp_t2_rt_p90_block_slope', 'PRP T2 RT p90 Block Slope'),
-    ('prp_t2_residual_sd_block_slope', 'PRP T2 Residual SD Block Slope'),
-    ('prp_error_cascade_count', 'PRP Error Cascade Count'),
-    ('prp_error_cascade_rate', 'PRP Error Cascade Rate'),
-    ('prp_error_cascade_mean_len', 'PRP Error Cascade Mean Length'),
-    ('prp_error_cascade_max_len', 'PRP Error Cascade Max Length'),
-    ('prp_error_cascade_trials', 'PRP Error Cascade Trials'),
-    ('prp_error_cascade_prop', 'PRP Error Cascade Proportion'),
-    ('prp_recovery_rt_slope', 'PRP Recovery RT Slope'),
-    ('prp_recovery_acc_slope', 'PRP Recovery Accuracy Slope'),
-    ('prp_momentum_slope', 'PRP Momentum Slope'),
-    ('prp_momentum_mean_streak', 'PRP Momentum Mean Streak'),
-    ('prp_momentum_max_streak', 'PRP Momentum Max Streak'),
-    ('prp_volatility_rmssd', 'PRP Volatility RMSSD'),
-    ('prp_volatility_adj', 'PRP Volatility (Detrended SD)'),
-    ('prp_intercept', 'PRP IIV Intercept'),
-    ('prp_slope', 'PRP IIV Slope'),
-    ('prp_residual_sd', 'PRP IIV Residual SD'),
-    ('prp_raw_cv', 'PRP IIV Raw CV'),
-    ('prp_iiv_r_squared', 'PRP IIV R-squared'),
-    ('prp_post_error_cv_reduction', 'PRP Post-Error CV Reduction'),
-    ('prp_post_error_accuracy', 'PRP Post-Error Accuracy'),
-    ('prp_post_error_acc_diff', 'PRP Post-Error Accuracy Diff'),
-    ('prp_post_error_recovery_rate', 'PRP Post-Error Recovery Rate'),
-    ('prp_pes_adaptive', 'PRP Adaptive PES Flag'),
-    ('prp_pes_maladaptive', 'PRP Maladaptive PES Flag'),
-    ('prp_error_awareness_index', 'PRP Error Awareness Index'),
-]
-PRP_EXTRA_OUTCOMES += [
-    ('prp_t2_mean_rt_all', 'PRP T2 Mean RT (All)'),
-    ('prp_t2_accuracy_all', 'PRP T2 Accuracy (All)'),
-    ('prp_both_correct_rate', 'PRP Dual-Task Accuracy (Both Correct)'),
-    ('prp_t2_error_rate_all', 'PRP T2 Error Rate (All)'),
-    ('prp_t2_ies', 'PRP T2 Inverse Efficiency Score'),
-    ('prp_pre_error_slope_mean', 'PRP Pre-Error RT Slope (Mean)'),
-    ('prp_pre_error_slope_std', 'PRP Pre-Error RT Slope (SD)'),
-    ('prp_pre_error_n', 'PRP Pre-Error Events (N)'),
-]
-PRP_EXTRA_OUTCOMES += [
-    (f"prp_recovery_rt_lag{k}", f"PRP Recovery RT Lag{k}")
-    for k in range(1, 6)
-]
-PRP_EXTRA_OUTCOMES += [
-    (f"prp_recovery_acc_lag{k}", f"PRP Recovery Accuracy Lag{k}")
-    for k in range(1, 6)
-]
-
-PRP_EXTRA_OUTCOMES += [
-    (f"prp_t2_rt_mean_soa_{soa}", f"PRP T2 Mean RT (SOA {soa})")
-    for soa in PRP_SOA_LEVELS
-]
-PRP_EXTRA_OUTCOMES += [
-    (f"prp_t2_rt_median_soa_{soa}", f"PRP T2 Median RT (SOA {soa})")
-    for soa in PRP_SOA_LEVELS
-]
-PRP_EXTRA_OUTCOMES += [
-    (f"prp_t2_rt_sd_soa_{soa}", f"PRP T2 RT SD (SOA {soa})")
-    for soa in PRP_SOA_LEVELS
-]
-PRP_EXTRA_OUTCOMES += [
-    (f"prp_t1_rt_mean_soa_{soa}", f"PRP T1 Mean RT (SOA {soa})")
-    for soa in PRP_SOA_LEVELS
-]
-PRP_EXTRA_OUTCOMES += [
-    (f"prp_t1_rt_median_soa_{soa}", f"PRP T1 Median RT (SOA {soa})")
-    for soa in PRP_SOA_LEVELS
-]
-PRP_EXTRA_OUTCOMES += [
-    (f"prp_t1_rt_sd_soa_{soa}", f"PRP T1 RT SD (SOA {soa})")
-    for soa in PRP_SOA_LEVELS
-]
-PRP_EXTRA_OUTCOMES += [
-    (f"prp_t1_acc_soa_{soa}", f"PRP T1 Accuracy (SOA {soa})")
-    for soa in PRP_SOA_LEVELS
-]
-PRP_EXTRA_OUTCOMES += [
-    (f"prp_rt1_rt2_coupling_soa_{soa}", f"PRP RT1-RT2 Coupling (SOA {soa})")
-    for soa in PRP_SOA_LEVELS
-]
-
-PRP_EXTRA_OUTCOMES += [
-    (f"prp_exg_correct_{soa}_{param}", f"PRP Ex-Gaussian {param} ({soa}, correct)")
-    for soa in ("short", "long", "overall")
-    for param in ("mu", "sigma", "tau")
-]
-PRP_EXTRA_OUTCOMES += [
-    (f"prp_exg_soa_{soa}_{param}", f"PRP Ex-Gaussian {param} (SOA {soa})")
-    for soa in PRP_SOA_LEVELS
-    for param in ("mu", "sigma", "tau")
-]
-PRP_EXTRA_OUTCOMES += [
-    (f"prp_exg_correct_soa_{soa}_{param}", f"PRP Ex-Gaussian {param} (SOA {soa}, correct)")
-    for soa in PRP_SOA_LEVELS
-    for param in ("mu", "sigma", "tau")
-]
-
-PRP_EXTRA_OUTCOMES += [
-    ('prp_delta_plot_slope_bottleneck_correct', 'PRP Delta Plot Slope (Bottleneck, correct)'),
-]
-PRP_EXTRA_OUTCOMES += [
-    (f"prp_vincentile_bottleneck_p{p}_correct", f"PRP Vincentile Bottleneck p{p} (correct)")
-    for p in STROOP_VINCENTILES
-]
-PRP_EXTRA_OUTCOMES += [
-    ('prp_shape_linear_slope', 'PRP Shape Linear Slope'),
-    ('prp_shape_linear_intercept', 'PRP Shape Linear Intercept'),
-    ('prp_shape_linear_r2', 'PRP Shape Linear R-squared'),
-    ('prp_shape_exp_amplitude', 'PRP Shape Exp Amplitude'),
-    ('prp_shape_exp_decay_rate', 'PRP Shape Exp Decay Rate'),
-    ('prp_shape_exp_asymptote', 'PRP Shape Exp Asymptote'),
-    ('prp_shape_exp_r2', 'PRP Shape Exp R-squared'),
-    ('prp_shape_recovery_half_life', 'PRP Shape Recovery Half-life'),
-    ('prp_shape_bottleneck_traditional', 'PRP Shape Bottleneck (Short-Long)'),
-    ('prp_shape_exp_better_fit', 'PRP Shape Exp Better Fit'),
-    ('prp_shape_n_soa', 'PRP Shape SOA Count'),
 ]
 
 WCST_EXTRA_OUTCOMES = [
@@ -759,7 +517,7 @@ WCST_EXTRA_OUTCOMES += [
       ('wcst_post_shift_pe_rate_slope_k5', 'WCST Post-Shift PE Rate Slope (K5)'),
   ]
 
-TIER1_OUTCOMES += STROOP_EXTRA_OUTCOMES + PRP_EXTRA_OUTCOMES + WCST_EXTRA_OUTCOMES
+TIER1_OUTCOMES += STROOP_EXTRA_OUTCOMES + WCST_EXTRA_OUTCOMES
 TIER1_OUTCOMES += [
     ('sustained_attention_index', 'Sustained Attention Index'),
     ('sustained_attention_cv_slope', 'Sustained Attention CV Slope'),
@@ -896,36 +654,6 @@ TIER1_OUTCOMES_BY_TASK = {
         ('wcst_brl_noise', 'WCST Bayesian RL noise'),
         ('wcst_brl_beta', 'WCST Bayesian RL beta'),
     ] + WCST_EXTRA_OUTCOMES,
-    "prp": [
-        ('prp_bottleneck', 'PRP Delay Effect'),
-        ('t2_rt_mean_short', 'PRP T2 Mean RT (Short SOA)'),
-        ('t2_rt_mean_long', 'PRP T2 Mean RT (Long SOA)'),
-        ('t2_rt_sd_short', 'PRP T2 RT SD (Short SOA)'),
-        ('t2_rt_sd_long', 'PRP T2 RT SD (Long SOA)'),
-        ('prp_t2_cv_all', 'PRP T2 Coefficient of Variation (All)'),
-        ('prp_t2_cv_short', 'PRP T2 CV (Short SOA)'),
-        ('prp_t2_cv_long', 'PRP T2 CV (Long SOA)'),
-        ('prp_cascade_rate', 'PRP Error Cascade Rate'),
-        ('prp_cascade_inflation', 'PRP Cascade Inflation'),
-        ('prp_pes', 'PRP Post-Error Slowing (ms)'),
-        ('prp_t2_trials', 'PRP Valid T2 Trial Count'),
-        ('prp_exg_short_mu', 'PRP Ex-Gaussian mu (Short SOA)'),
-        ('prp_exg_short_sigma', 'PRP Ex-Gaussian sigma (Short SOA)'),
-        ('prp_exg_short_tau', 'PRP Ex-Gaussian tau (Short SOA)'),
-        ('prp_exg_long_mu', 'PRP Ex-Gaussian mu (Long SOA)'),
-        ('prp_exg_long_sigma', 'PRP Ex-Gaussian sigma (Long SOA)'),
-        ('prp_exg_long_tau', 'PRP Ex-Gaussian tau (Long SOA)'),
-        ('prp_exg_overall_mu', 'PRP Ex-Gaussian mu (Overall)'),
-        ('prp_exg_overall_sigma', 'PRP Ex-Gaussian sigma (Overall)'),
-        ('prp_exg_overall_tau', 'PRP Ex-Gaussian tau (Overall)'),
-        ('prp_exg_mu_bottleneck', 'PRP Ex-Gaussian mu (Bottleneck)'),
-        ('prp_exg_sigma_bottleneck', 'PRP Ex-Gaussian sigma (Bottleneck)'),
-        ('prp_exg_tau_bottleneck', 'PRP Ex-Gaussian tau (Bottleneck)'),
-        ('prp_cb_base', 'PRP CB Base RT (ms)'),
-        ('prp_cb_bottleneck', 'PRP CB Bottleneck Duration (ms)'),
-        ('prp_cb_r_squared', 'PRP CB Model R-squared'),
-        ('prp_cb_slope', 'PRP CB Slope (short SOA)'),
-    ] + PRP_EXTRA_OUTCOMES,
     "stroop": [
         ('stroop_interference', 'Stroop Interference Effect'),
         ('rt_mean_incongruent', 'Stroop Mean RT (Incongruent)'),
@@ -1018,12 +746,7 @@ def get_analysis_data(task: str, apply_qc: bool = True) -> pd.DataFrame:
     if task not in VALID_TASKS:
         raise ValueError(f"Unknown task: {task}. Valid tasks: {sorted(VALID_TASKS)}")
     df = load_master_dataset(task=task)
-    if task == "prp":
-        df = _merge_extra_features(
-            df,
-            get_results_dir("prp") / "5_prp_dynamic_drift_features.csv",
-        )
-    elif task == "wcst":
+    if task == "wcst":
         df = _merge_extra_features(
             df,
             get_results_dir("wcst") / "5_wcst_dynamic_recovery_features.csv",

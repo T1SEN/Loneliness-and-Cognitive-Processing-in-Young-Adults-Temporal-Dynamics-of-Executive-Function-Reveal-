@@ -28,10 +28,9 @@ db = firestore.client()
 # 각 리스트는 별도의 CSV 파일이 됩니다.
 participants_data = []          # 1. 참가자 기본 정보
 surveys_results_data = []       # 2. 설문 결과 (UCLA, DASS)
-cognitive_summary_data = []     # 3. 인지 과제 요약 결과 (PRP, WCST, Stroop)
-prp_trial_data = []             # 4. PRP 시행별 데이터
-wcst_trial_data = []            # 5. WCST 시행별 데이터
-stroop_trial_data = []          # 6. Stroop 시행별 데이터
+cognitive_summary_data = []     # 3. 인지 과제 요약 결과 (WCST, Stroop)
+wcst_trial_data = []            # 4. WCST 시행별 데이터
+stroop_trial_data = []          # 5. Stroop 시행별 데이터
 
 print("Firebase 데이터 추출을 시작합니다...")
 
@@ -96,7 +95,7 @@ for participant_doc in participants_stream:
 
         surveys_results_data.append(base_row)
 
-    # 4-3. Cognitive Tests 하위 컬렉션 데이터 추출 (PRP, WCST, Stroop)
+    # 4-3. Cognitive Tests 하위 컬렉션 데이터 추출 (WCST, Stroop)
     tests_ref = db.collection('participants').document(participant_id).collection('cognitive_tests').stream()
     for test_doc in tests_ref:
         test_name = test_doc.id
@@ -130,9 +129,7 @@ for participant_doc in participants_stream:
             trial_row = trial.copy()  # 원본 수정을 피하기 위해 복사
             trial_row['participantId'] = participant_id
             
-            if test_name == 'prp':
-                prp_trial_data.append(trial_row)
-            elif test_name == 'wcst':
+            if test_name == 'wcst':
                 wcst_trial_data.append(trial_row)
             elif test_name == 'stroop':
                 stroop_trial_data.append(trial_row)
@@ -162,7 +159,6 @@ def save_to_csv(data_list, filename):
 save_to_csv(participants_data, '1_participants_info.csv')
 save_to_csv(surveys_results_data, '2_surveys_results.csv')
 save_to_csv(cognitive_summary_data, '3_cognitive_tests_summary.csv')
-save_to_csv(prp_trial_data, '4a_prp_trials.csv')
 save_to_csv(wcst_trial_data, '4b_wcst_trials.csv')
 save_to_csv(stroop_trial_data, '4c_stroop_trials.csv')
 

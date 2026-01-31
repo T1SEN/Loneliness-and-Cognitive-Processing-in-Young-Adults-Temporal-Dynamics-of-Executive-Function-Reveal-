@@ -10,5 +10,4 @@
 | DASS-21 Anxiety                   | 223 |   5.67 |   5.88 |
 | DASS-21 Stress                    | 223 |  10.18 |   7.55 |
 | Stroop Interference Effect (ms)   | 220 | 137.67 |  99.92 |
-| PRP Delay Effect (ms)             | 201 | 595.16 | 153.9  |
 | WCST Perseverative Error Rate (%) | 212 |  10.7  |   6.1  |

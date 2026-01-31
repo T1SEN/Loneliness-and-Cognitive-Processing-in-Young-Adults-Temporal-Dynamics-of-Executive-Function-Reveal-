@@ -25,19 +25,6 @@ from .overall import (
     derive_overall_recovery_features,
     derive_overall_mechanism_features,
 )
-from .prp import (
-    derive_prp_features,
-    derive_prp_traditional_features,
-    derive_prp_dispersion_features,
-    derive_prp_drift_features,
-    derive_prp_recovery_features,
-)
-from .prp.mechanism import (
-    load_or_compute_prp_mechanism_features,
-    load_or_compute_prp_hmm_event_features,
-    load_or_compute_prp_bottleneck_mechanism_features,
-)
-from .prp.trial_level_dataset import build_prp_dataset
 from .stroop import (
     derive_stroop_features,
     derive_stroop_traditional_features,
@@ -82,18 +69,6 @@ def _merge_feature_frames(base: pd.DataFrame, extra: pd.DataFrame) -> pd.DataFra
     if overlap:
         base = base.drop(columns=overlap)
     return base.merge(extra, on="participant_id", how="left")
-
-
-def _derive_prp_mechanism_features(data_dir):
-    features_df = pd.DataFrame()
-    for part in (
-        load_or_compute_prp_mechanism_features,
-        load_or_compute_prp_hmm_event_features,
-        load_or_compute_prp_bottleneck_mechanism_features,
-    ):
-        df = part(data_dir=data_dir)
-        features_df = _merge_feature_frames(features_df, df)
-    return features_df
 
 
 def _derive_stroop_mechanism_features(data_dir):
@@ -148,15 +123,6 @@ def _build_feature_set(task: str, feature_set: str, save: bool, verbose: bool) -
             "recovery": derive_overall_recovery_features,
             "mechanism": derive_overall_mechanism_features,
         }
-    elif task == "prp":
-        builders = {
-            "all": derive_prp_features,
-            "traditional": derive_prp_traditional_features,
-            "dispersion": derive_prp_dispersion_features,
-            "drift": derive_prp_drift_features,
-            "recovery": derive_prp_recovery_features,
-            "mechanism": _derive_prp_mechanism_features,
-        }
     elif task == "stroop":
         builders = {
             "all": derive_stroop_features,
@@ -210,12 +176,12 @@ Examples:
     parser.add_argument(
         "--build",
         choices=list(VALID_TASKS) + ["all"],
-        help="Build task-specific dataset (stroop, prp, wcst, overall) or all datasets",
+        help="Build task-specific dataset (stroop, wcst, overall) or all datasets",
     )
     parser.add_argument(
         "--features",
         choices=list(VALID_TASKS) + ["all"],
-        help="Compute feature sets for a task (stroop, prp, wcst, overall) or all tasks",
+        help="Compute feature sets for a task (stroop, wcst, overall) or all tasks",
     )
     parser.add_argument(
         "--feature-set",
@@ -278,8 +244,6 @@ Examples:
 
         if args.build == "all":
             build_all_datasets(save=save, verbose=verbose)
-        elif args.build == "prp":
-            build_prp_dataset(save=save, verbose=verbose)
         elif args.build == "stroop":
             build_stroop_dataset(save=save, verbose=verbose)
         elif args.build == "wcst":

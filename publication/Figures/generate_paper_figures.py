@@ -39,9 +39,6 @@ plt.rcParams["font.size"] = 10
 CONV_PRIMARY = [
     ("STROOP", "stroop_rt_interference", "Stroop RT Interference"),
     ("STROOP", "stroop_acc_interference", "Stroop Acc Interference"),
-    ("PRP", "prp_bottleneck", "PRP Delay Effect"),
-    ("PRP", "prp_both_correct_rate", "PRP Dual-Task Accuracy"),
-    ("PRP", "prp_t1_cost", "PRP T1 Cost"),
     ("WCST", "wcst_categories_completed", "WCST Categories"),
     ("WCST", "pe_rate", "WCST PE Rate"),
     ("WCST", "wcst_nonperseverative_errors", "WCST NPE"),
@@ -54,8 +51,6 @@ TEMP_PRIMARY = [
     ("STROOP", "stroop_incong_slope", "Stroop RT Slope"),
     ("STROOP", "stroop_cv_fatigue_slope", "Stroop CV Slope"),
     ("STROOP", "stroop_rt_sd_incong", "Stroop RT SD"),
-    ("PRP", "t2_rt_sd_short", "PRP RT SD (Short)"),
-    ("PRP", "prp_pes", "PRP PES"),
     ("WCST", "wcst_rt_slope_within_category", "WCST RT Slope"),
     ("WCST", "wcst_cv_fatigue_slope", "WCST CV Slope"),
     ("WCST", "wcst_volatility_adj", "WCST Detrended SD"),
@@ -95,31 +90,25 @@ def generate_figure1():
     n_survey = len(survey_ids)
 
     stroop_attempted = _load_participant_ids(data_dir / "raw" / "4c_stroop_trials.csv") & survey_ids
-    prp_attempted = _load_participant_ids(data_dir / "raw" / "4a_prp_trials.csv") & survey_ids
     wcst_attempted = _load_participant_ids(data_dir / "raw" / "4b_wcst_trials.csv") & survey_ids
 
     n_stroop_attempted = len(stroop_attempted)
-    n_prp_attempted = len(prp_attempted)
     n_wcst_attempted = len(wcst_attempted)
 
     n_stroop = len(_load_participant_ids(data_dir / "complete_stroop" / "filtered_participant_ids.csv"))
-    n_prp = len(_load_participant_ids(data_dir / "complete_prp" / "filtered_participant_ids.csv"))
     n_wcst = len(_load_participant_ids(data_dir / "complete_wcst" / "filtered_participant_ids.csv"))
     n_all = len(_load_participant_ids(data_dir / "complete_overall" / "filtered_participant_ids.csv"))
 
     print(f"Raw: {n_raw}")
     print(f"Survey Complete: {n_survey}")
     print(f"Stroop attempted: {n_stroop_attempted}, complete: {n_stroop}")
-    print(f"PRP attempted: {n_prp_attempted}, complete: {n_prp}")
     print(f"WCST attempted: {n_wcst_attempted}, complete: {n_wcst}")
-    print(f"All Tasks: {n_all}")
+    print(f"All Tasks (Stroop + WCST): {n_all}")
 
     excluded_survey = n_raw - n_survey
     stroop_not_attempted = max(0, n_survey - n_stroop_attempted)
-    prp_not_attempted = max(0, n_survey - n_prp_attempted)
     wcst_not_attempted = max(0, n_survey - n_wcst_attempted)
     excluded_stroop = max(0, n_stroop_attempted - n_stroop)
-    excluded_prp = max(0, n_prp_attempted - n_prp)
     excluded_wcst = max(0, n_wcst_attempted - n_wcst)
 
     fig, ax = plt.subplots(1, 1, figsize=(10, 12))
@@ -155,38 +144,29 @@ def generate_figure1():
 
     # Task boxes
     ax.text(
-        2, 7.5, f"Stroop Complete\n(QC passed)\nN = {n_stroop}",
+        3, 7.5, f"Stroop Complete\n(QC passed)\nN = {n_stroop}",
         ha="center", va="center", fontsize=10, fontweight="bold", bbox=box_props,
     )
     ax.text(
-        5, 7.5, f"PRP Complete\n(QC passed)\nN = {n_prp}",
-        ha="center", va="center", fontsize=10, fontweight="bold", bbox=box_props,
-    )
-    ax.text(
-        8, 7.5, f"WCST Complete\n(QC passed)\nN = {n_wcst}",
+        7, 7.5, f"WCST Complete\n(QC passed)\nN = {n_wcst}",
         ha="center", va="center", fontsize=10, fontweight="bold", bbox=box_props,
     )
 
     # Task exclusions with QC reasons
     ax.text(
-        2, 5.5,
+        3, 5.5,
         f"Not attempted: {stroop_not_attempted}\nQC excluded: {excluded_stroop} (trials/accuracy)",
         ha="center", va="center", fontsize=8, color="gray"
     )
     ax.text(
-        5, 5.5,
-        f"Not attempted: {prp_not_attempted}\nQC excluded: {excluded_prp} (trials/both-correct)",
-        ha="center", va="center", fontsize=8, color="gray"
-    )
-    ax.text(
-        8, 5.5,
+        7, 5.5,
         f"Not attempted: {wcst_not_attempted}\nQC excluded: {excluded_wcst} (trials/choice ratio)",
         ha="center", va="center", fontsize=8, color="gray"
     )
 
     # Final sample
     ax.text(
-        5, 3.5, f"All Tasks Complete\n(Analysis Sample)\nN = {n_all}",
+        5, 3.5, f"All Tasks Complete\n(Stroop + WCST)\nN = {n_all}",
         ha="center", va="center", fontsize=11, fontweight="bold",
         bbox=dict(boxstyle="round,pad=0.5", facecolor="lightgreen", edgecolor="black", linewidth=2),
     )
@@ -194,12 +174,10 @@ def generate_figure1():
     # Arrows
     arrow_props = dict(arrowstyle="->", color="black", lw=1.5)
     ax.annotate("", xy=(5, 11.5), xytext=(5, 12.2), arrowprops=arrow_props)
-    ax.annotate("", xy=(2, 8.5), xytext=(4, 9.5), arrowprops=arrow_props)
-    ax.annotate("", xy=(5, 8.5), xytext=(5, 9.5), arrowprops=arrow_props)
-    ax.annotate("", xy=(8, 8.5), xytext=(6, 9.5), arrowprops=arrow_props)
-    ax.annotate("", xy=(4, 4.3), xytext=(2, 6.5), arrowprops=arrow_props)
-    ax.annotate("", xy=(5, 4.3), xytext=(5, 6.5), arrowprops=arrow_props)
-    ax.annotate("", xy=(6, 4.3), xytext=(8, 6.5), arrowprops=arrow_props)
+    ax.annotate("", xy=(3, 8.5), xytext=(4, 9.5), arrowprops=arrow_props)
+    ax.annotate("", xy=(7, 8.5), xytext=(6, 9.5), arrowprops=arrow_props)
+    ax.annotate("", xy=(4, 4.3), xytext=(3, 6.5), arrowprops=arrow_props)
+    ax.annotate("", xy=(6, 4.3), xytext=(7, 6.5), arrowprops=arrow_props)
 
     # Caption
     ax.text(
@@ -300,7 +278,6 @@ def generate_figure3():
     # Load hierarchical results from each task
     hr_files = {
         "STROOP": ba_dir / "stroop" / "hierarchical_results.csv",
-        "PRP": ba_dir / "prp" / "hierarchical_results.csv",
         "WCST": ba_dir / "wcst" / "hierarchical_results.csv",
     }
 

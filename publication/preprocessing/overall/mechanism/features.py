@@ -7,9 +7,6 @@ from pathlib import Path
 import pandas as pd
 
 from ...constants import get_results_dir
-from ...prp.mechanism.bottleneck import load_or_compute_prp_bottleneck_mechanism_features
-from ...prp.mechanism.exgaussian import load_or_compute_prp_mechanism_features
-from ...prp.mechanism.hmm_event import load_or_compute_prp_hmm_event_features
 from ...stroop.mechanism.exgaussian import load_or_compute_stroop_mechanism_features
 from ...stroop.mechanism.hmm_event import load_or_compute_stroop_hmm_event_features
 from ...wcst.mechanism.bayesianrl import load_or_compute_wcst_bayesianrl_mechanism_features
@@ -38,9 +35,6 @@ def derive_overall_mechanism_features(data_dir: Path | None = None) -> pd.DataFr
     features_df = pd.DataFrame()
 
     for part in (
-        load_or_compute_prp_mechanism_features(data_dir=get_results_dir("prp")),
-        load_or_compute_prp_hmm_event_features(data_dir=get_results_dir("prp")),
-        load_or_compute_prp_bottleneck_mechanism_features(data_dir=get_results_dir("prp")),
         load_or_compute_stroop_mechanism_features(data_dir=get_results_dir("stroop")),
         load_or_compute_stroop_hmm_event_features(data_dir=get_results_dir("stroop")),
         load_or_compute_wcst_hmm_mechanism_features(data_dir=get_results_dir("wcst")),

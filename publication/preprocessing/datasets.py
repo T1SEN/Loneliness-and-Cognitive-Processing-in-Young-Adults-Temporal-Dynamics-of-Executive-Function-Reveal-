@@ -12,13 +12,10 @@ import pandas as pd
 from .constants import STANDARDIZE_COLS, VALID_TASKS, get_results_dir, RAW_DIR
 from .core import ensure_participant_id, normalize_gender_series
 from .surveys import load_participants, load_ucla_scores, load_dass_scores, load_survey_items
-from .prp.trial_level_dataset import build_prp_dataset, get_prp_complete_participants
-from .stroop.dataset import build_stroop_dataset, get_stroop_complete_participants
-from .wcst.dataset import build_wcst_dataset, get_wcst_complete_participants
-from .prp.features import derive_prp_features
+from .stroop.dataset import build_stroop_dataset
+from .wcst.dataset import build_wcst_dataset
 from .stroop.features import derive_stroop_features
 from .wcst.features import derive_wcst_features
-from .prp.trial_level_loaders import load_prp_summary
 from .stroop.loaders import load_stroop_summary
 from .wcst.loaders import load_wcst_summary
 from .overall.loaders import load_overall_summary
@@ -41,8 +38,6 @@ def load_master_dataset(
         try:
             if task == "overall":
                 trial_features = derive_overall_features(data_dir=data_dir)
-            elif task == "prp":
-                trial_features = derive_prp_features(data_dir=data_dir)
             elif task == "stroop":
                 trial_features = derive_stroop_features(data_dir=data_dir)
             else:
@@ -85,8 +80,6 @@ def load_master_dataset(
 
     if task == "overall":
         summary = load_overall_summary(data_dir)
-    elif task == "prp":
-        summary = load_prp_summary(data_dir)
     elif task == "stroop":
         summary = load_stroop_summary(data_dir)
     else:
@@ -141,9 +134,6 @@ def build_all_datasets(
 ) -> Dict[str, Dict[str, pd.DataFrame]]:
     results = {}
 
-    results["prp"] = build_prp_dataset(data_dir=data_dir, save=save, verbose=verbose)
-    if verbose:
-        print()
     results["stroop"] = build_stroop_dataset(data_dir=data_dir, save=save, verbose=verbose)
     if verbose:
         print()

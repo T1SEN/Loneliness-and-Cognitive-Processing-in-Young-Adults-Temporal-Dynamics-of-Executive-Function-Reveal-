@@ -14,25 +14,23 @@ ANALYSIS_OUTPUT_DIR = DATA_DIR / "outputs"
 
 # Task-specific complete directories
 COMPLETE_STROOP_DIR = DATA_DIR / "complete_stroop"
-COMPLETE_PRP_DIR = DATA_DIR / "complete_prp"
 COMPLETE_WCST_DIR = DATA_DIR / "complete_wcst"
 COMPLETE_OVERALL_DIR = DATA_DIR / "complete_overall"
 
 TASK_DIRS = {
     'stroop': COMPLETE_STROOP_DIR,
-    'prp': COMPLETE_PRP_DIR,
     'wcst': COMPLETE_WCST_DIR,
     'overall': COMPLETE_OVERALL_DIR,
 }
 
-VALID_TASKS = {'stroop', 'prp', 'wcst', 'overall'}
+VALID_TASKS = {'stroop', 'wcst', 'overall'}
 
 
 def get_results_dir(task: str) -> Path:
     """Return the task-specific data directory.
 
     Args:
-        task: 'stroop', 'prp', 'wcst', or 'overall'
+        task: 'stroop', 'wcst', or 'overall'
 
     Returns:
         Path to the task-specific complete directory
@@ -44,19 +42,8 @@ def get_results_dir(task: str) -> Path:
 # RT filtering constants
 DEFAULT_RT_MIN = 100          # ms; drop anticipations
 DEFAULT_RT_MAX = 5000         # ms; general upper bound (WCST etc.)
-PRP_RT_MAX = 3000             # ms; PRP task timeout is 3s
-PRP_RT_MIN = 200              # ms; PRP RT2 lower bound for anticipation
 STROOP_RT_MAX = 3000          # ms; Stroop task timeout is 3s
 STROOP_RT_MIN = 200           # ms; Stroop RT lower bound for trial-level QC
-
-# PRP SOA binning constants
-DEFAULT_SOA_SHORT = 150       # ms; short bin upper bound
-DEFAULT_SOA_LONG = 1200       # ms; long bin lower bound
-
-# PRP QC constants
-PRP_IRI_MIN = 100             # ms; response grouping threshold
-PRP_ACC_THRESHOLD = 0.70      # participant-level accuracy cutoff
-PRP_LONG_SOA_MIN = DEFAULT_SOA_LONG  # ms; long SOA definition for QC (aligned with DEFAULT_SOA_LONG)
 
 # WCST filtering constants
 WCST_RT_MIN = 200             # ms; anticipatory response cutoff
