@@ -1,4 +1,4 @@
-"""Generate Table 3-6 for publication."""
+﻿"""Generate Table 3-6 for publication (core outcomes only)."""
 import sys
 from pathlib import Path
 
@@ -34,27 +34,6 @@ def calc_stats(df, col, var_name):
         "Mean": valid.mean(),
         "SD": valid.std(),
     }
-
-
-def format_regression_table(df):
-    cols = [
-        "task",
-        "outcome",
-        "n",
-        "ucla_beta",
-        "ucla_se",
-        "ucla_t",
-        "p_ucla_wald",
-        "delta_r2_ucla",
-    ]
-    out = df[cols].copy()
-    out.columns = ["Task", "Outcome", "N", "b", "SE", "t", "p", "delta_R2"]
-    out["b"] = out["b"].round(3)
-    out["SE"] = out["SE"].round(3)
-    out["t"] = out["t"].round(2)
-    out["p"] = out["p"].round(3)
-    out["delta_R2"] = out["delta_R2"].round(4)
-    return out
 
 
 def _format_ci(beta: float, se: float) -> str:
@@ -182,10 +161,16 @@ def generate_table3():
         calc_stats(
             stroop_summary,
             "stroop_interference",
-            "Stroop Interference Effect (ms)",
+            "Stroop Interference RT (ms)",
         )
     )
-    rows.append(calc_stats(wcst_summary, "pe_rate", "WCST Perseverative Error Rate (%)"))
+    rows.append(
+        calc_stats(
+            wcst_summary,
+            "wcst_perseverative_error_rate",
+            "WCST Perseverative Error Rate (%)",
+        )
+    )
 
     table3 = pd.DataFrame(rows)
     table3["Mean"] = table3["Mean"].round(2)
@@ -200,29 +185,8 @@ def generate_table3():
         f.write("Cognitive task metrics based on task-specific samples.\n\n")
         f.write(md)
 
-    # Gender distribution
-    gender = participants["gender"].astype(str).str.strip().str.lower()
-    male_n = (gender == "male").sum()
-    female_n = (gender == "female").sum()
-    total_n = len(participants)
-
-    gender_df = pd.DataFrame(
-        {
-            "Variable": ["Gender"],
-            "Male_N": [male_n],
-            "Female_N": [female_n],
-            "Male_Percent": [round(100 * male_n / total_n, 1)],
-            "Female_Percent": [round(100 * female_n / total_n, 1)],
-        }
-    )
-    gender_df.to_csv(output_dir / "Table3_gender.csv", index=False, encoding="utf-8-sig")
-
-    print("\nTable 3 generated:")
+    print(f"\nTable 3: {len(table3)} rows")
     print(table3.to_string(index=False))
-    print(
-        f"\nGender: Male {male_n} ({100*male_n/total_n:.1f}%), "
-        f"Female {female_n} ({100*female_n/total_n:.1f}%)"
-    )
 
     return table3
 
@@ -243,9 +207,6 @@ def generate_table4():
         index_col=0,
         encoding="utf-8-sig",
     )
-
-    print(f"Correlation matrix shape: {r.shape}")
-    print(f"Variables: {list(r.columns)}")
 
     out = r.copy().astype(str)
     for i in range(len(r)):
@@ -281,153 +242,6 @@ def generate_table4():
     return out
 
 
-def get_feature_columns(task, feature_type):
-    """Get column names from feature files."""
-    suffix_map = {
-        "traditional": "traditional",
-        "dynamic_drift": "dynamic_drift",
-        "dynamic_dispersion": "dynamic_dispersion",
-        "dynamic_recovery": "dynamic_recovery",
-    }
-    suffix = suffix_map.get(feature_type, feature_type)
-    path = data_dir / f"complete_{task}" / f"5_{task}_{suffix}_features.csv"
-
-    if not path.exists():
-        print(f"  Warning: {path} not found")
-        return []
-
-    df = pd.read_csv(path, encoding="utf-8-sig")
-    cols = [c for c in df.columns if c not in ["participant_id", "participantId"]]
-    return cols
-
-
-def generate_table5():
-    """Generate Table 5: Conventional indices regression results."""
-    print("\n" + "=" * 60)
-    print("Generating Table 5: Conventional Indices")
-    print("=" * 60)
-
-    conventional_extras = {
-        "wcst": ["pe_rate"],
-        "stroop": [],
-    }
-
-    all_rows = []
-
-    for task in ["stroop", "wcst"]:
-        hr_path = data_dir / "outputs" / "analysis" / task / "hierarchical_results.csv"
-        if not hr_path.exists():
-            print(f"  Warning: {hr_path} not found")
-            continue
-
-        hr = pd.read_csv(hr_path, encoding="utf-8-sig")
-
-        trad_cols = get_feature_columns(task, "traditional")
-        extra_cols = conventional_extras.get(task, [])
-        conv_cols = set(trad_cols + extra_cols)
-
-        print(f"  {task.upper()}: {len(conv_cols)} conventional columns")
-
-        filtered = hr[hr["outcome_column"].isin(conv_cols)].copy()
-        if len(filtered) == 0:
-            print("    No matching rows found in hierarchical_results")
-            continue
-
-        filtered["task"] = task.upper()
-        all_rows.append(filtered)
-
-    if not all_rows:
-        print("No data for Table 5")
-        return None
-
-    table5 = pd.concat(all_rows, ignore_index=True)
-
-    key_outcomes = ["stroop_rt_interference", "pe_rate"]
-    summary_mask = (table5["p_ucla_wald"] < 0.05) | (
-        table5["outcome_column"].isin(key_outcomes)
-    )
-    summary = table5[summary_mask].copy()
-    summary = summary.sort_values(["task", "p_ucla_wald"])
-
-    table5_out = format_regression_table(table5)
-    summary_out = format_regression_table(summary)
-
-    table5_out.to_csv(output_dir / "Table5_conventional_full.csv", index=False, encoding="utf-8-sig")
-    summary_out.to_csv(
-        output_dir / "Table5_conventional_summary.csv", index=False, encoding="utf-8-sig"
-    )
-
-    with open(output_dir / "Table5_conventional_summary.md", "w", encoding="utf-8") as f:
-        f.write("# Table 5. Hierarchical Regression Results: Conventional Indices\n\n")
-        f.write("*Note.* b = coefficient for z-scored UCLA predictor (Step 3, controlling for DASS-21).\n")
-        f.write("delta_R2 = incremental R^2 for UCLA step. Key outcomes and any significant results shown.\n\n")
-        f.write(summary_out.to_markdown(index=False))
-
-    print(f"\nTable 5 Full: {len(table5_out)} rows")
-    print(f"Table 5 Summary: {len(summary_out)} rows")
-    print("\nSummary:")
-    print(summary_out.to_string(index=False))
-
-    return table5_out
-
-
-def generate_table6():
-    """Generate Table 6: Temporal dynamics indices regression results."""
-    print("\n" + "=" * 60)
-    print("Generating Table 6: Temporal Dynamics Indices")
-    print("=" * 60)
-
-    all_rows = []
-
-    for task in ["stroop", "wcst"]:
-        hr_path = data_dir / "outputs" / "analysis" / task / "hierarchical_results.csv"
-        if not hr_path.exists():
-            continue
-
-        hr = pd.read_csv(hr_path, encoding="utf-8-sig")
-
-        temporal_cols = set()
-        for ftype in ["dynamic_drift", "dynamic_dispersion", "dynamic_recovery"]:
-            temporal_cols.update(get_feature_columns(task, ftype))
-
-        print(f"  {task.upper()}: {len(temporal_cols)} temporal columns")
-
-        filtered = hr[hr["outcome_column"].isin(temporal_cols)].copy()
-        if len(filtered) == 0:
-            continue
-
-        filtered["task"] = task.upper()
-        all_rows.append(filtered)
-
-    if not all_rows:
-        print("No data for Table 6")
-        return None
-
-    table6 = pd.concat(all_rows, ignore_index=True)
-    table6_out = format_regression_table(table6)
-
-    table6_out.to_csv(output_dir / "Table6_temporal_full.csv", index=False, encoding="utf-8-sig")
-
-    summary = table6[table6["p_ucla_wald"] < 0.05].sort_values(["task", "p_ucla_wald"])
-    summary_out = format_regression_table(summary)
-    summary_out.to_csv(
-        output_dir / "Table6_temporal_summary.csv", index=False, encoding="utf-8-sig"
-    )
-
-    with open(output_dir / "Table6_temporal_summary.md", "w", encoding="utf-8") as f:
-        f.write("# Table 6. Hierarchical Regression Results: Temporal Dynamics Indices\n\n")
-        f.write("*Note.* b = coefficient for z-scored UCLA predictor (Step 3, controlling for DASS-21).\n")
-        f.write("delta_R2 = incremental R^2 for UCLA step. Only significant results (p < .05) shown.\n\n")
-        f.write(summary_out.to_markdown(index=False))
-
-    print(f"\nTable 6 Full: {len(table6_out)} rows")
-    print(f"Table 6 Summary: {len(summary_out)} rows")
-    print("\nSummary:")
-    print(summary_out.to_string(index=False))
-
-    return table6_out
-
-
 def generate_table5_selected():
     """Generate Table 5: Conventional indices (selected set)."""
     print("\n" + "=" * 60)
@@ -439,9 +253,7 @@ def generate_table5_selected():
     cov_note = _format_cov_note(cov_label)
 
     specs = [
-        {"task": "STROOP", "outcome_column": "stroop_rt_interference", "dv": "RT interference"},
-        {"task": "STROOP", "outcome_column": "stroop_acc_interference", "dv": "Accuracy interference"},
-        {"task": "WCST", "outcome_column": "wcst_categories_completed", "dv": "Categories completed"},
+        {"task": "STROOP", "outcome_column": "stroop_interference", "dv": "RT interference"},
         {
             "task": "WCST",
             "outcome_column": "wcst_perseverative_error_rate",
@@ -459,7 +271,7 @@ def generate_table5_selected():
     with open(output_dir / "Table5_conventional_selected.md", "w", encoding="utf-8") as f:
         f.write("# Table 5. Conventional Indices\n\n")
         f.write("*Note.* b = coefficient for z-scored UCLA predictor (Step 3, controlling for DASS-21).\n")
-        f.write(f"95% CI computed as b ± 1.96 × SE ({cov_note}).\n\n")
+        f.write(f"95% CI computed as b +/- 1.96 * SE ({cov_note}).\n\n")
         f.write(table.to_markdown(index=False))
 
     print(f"\nTable 5 Selected: {len(table)} rows")
@@ -482,65 +294,30 @@ def generate_table6_selected():
         {
             "task": "STROOP",
             "axis": "Time-on-task drift",
-            "dv": "RT slope (incongruent)",
+            "dv": "Interference slope",
             "type": "RT",
-            "outcome_column": "stroop_incong_slope",
-        },
-        {
-            "task": "STROOP",
-            "axis": "Within-task dispersion",
-            "dv": "RT SD (incongruent)",
-            "type": "RT",
-            "outcome_column": "stroop_rt_sd_incong",
+            "outcome_column": "stroop_interference_slope",
         },
         {
             "task": "WCST",
-            "axis": "Time-on-task drift",
-            "dv": "RT slope (within-category)",
+            "axis": "Phase-specific RT",
+            "dv": "Confirmation RT",
             "type": "RT",
-            "outcome_column": "wcst_rt_slope_within_category",
+            "outcome_column": "wcst_confirmation_rt",
         },
         {
-            "task": "STROOP",
-            "axis": "Post-perturbation recovery",
-            "dv": "Post-error slowing",
+            "task": "WCST",
+            "axis": "Phase-specific RT",
+            "dv": "Exploitation RT",
             "type": "RT",
-            "outcome_column": "stroop_post_error_slowing",
-        },
-        {
-            "task": "STROOP",
-            "axis": "Post-perturbation recovery",
-            "dv": "Post-error accuracy drop",
-            "type": "Acc",
-            "outcome_column": "stroop_post_error_acc_diff",
+            "outcome_column": "wcst_exploitation_rt",
         },
         {
             "task": "WCST",
-            "axis": "Post-perturbation recovery",
-            "dv": "Post-switch RT cost (k1)",
+            "axis": "Phase contrast",
+            "dv": "Confirmation - Exploitation",
             "type": "RT",
-            "outcome_column": "wcst_switch_cost_rt_k1",
-        },
-        {
-            "task": "WCST",
-            "axis": "Post-perturbation recovery",
-            "dv": "Post-error accuracy",
-            "type": "Acc",
-            "outcome_column": "wcst_post_error_accuracy",
-        },
-        {
-            "task": "WCST",
-            "axis": "Post-perturbation recovery",
-            "dv": "Post-switch error rate",
-            "type": "Acc",
-            "outcome_column": "wcst_post_switch_error_rate",
-        },
-        {
-            "task": "WCST",
-            "axis": "Post-perturbation recovery",
-            "dv": "Trials to reacquisition",
-            "type": "Acc",
-            "outcome_column": "wcst_trials_to_rule_reacquisition",
+            "outcome_column": "wcst_confirmation_minus_exploitation_rt",
         },
     ]
 
@@ -554,7 +331,7 @@ def generate_table6_selected():
     with open(output_dir / "Table6_temporal_selected.md", "w", encoding="utf-8") as f:
         f.write("# Table 6. Temporal Dynamics Indices\n\n")
         f.write("*Note.* b = coefficient for z-scored UCLA predictor (Step 3, controlling for DASS-21).\n")
-        f.write(f"95% CI computed as b ± 1.96 × SE ({cov_note}).\n\n")
+        f.write(f"95% CI computed as b +/- 1.96 * SE ({cov_note}).\n\n")
         f.write(table.to_markdown(index=False))
 
     print(f"\nTable 6 Selected: {len(table)} rows")
@@ -569,8 +346,6 @@ if __name__ == "__main__":
 
     table3 = generate_table3()
     table4 = generate_table4()
-    table5 = generate_table5()
-    table6 = generate_table6()
     table5_selected = generate_table5_selected()
     table6_selected = generate_table6_selected()
 

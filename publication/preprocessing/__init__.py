@@ -1,16 +1,6 @@
 """
 Publication Preprocessing Module
 ================================
-
-Task-specific datasets:
-    from publication.preprocessing import load_master_dataset
-    df_stroop = load_master_dataset(task='stroop')
-    df_wcst = load_master_dataset(task='wcst')
-
-CLI:
-    python -m publication.preprocessing --build stroop
-    python -m publication.preprocessing --build all
-    python -m publication.preprocessing --list
 """
 
 from .constants import (
@@ -38,8 +28,6 @@ from .core import (
     ensure_participant_id,
     normalize_gender_value,
     normalize_gender_series,
-    coefficient_of_variation,
-    compute_post_error_slowing,
 )
 from .surveys import (
     SurveyQCCriteria,
@@ -56,12 +44,6 @@ from .stroop import (
     compute_stroop_qc_stats,
     get_stroop_valid_participants,
     derive_stroop_features,
-    derive_stroop_traditional_features,
-    derive_stroop_dispersion_features,
-    derive_stroop_drift_features,
-    derive_stroop_recovery_features,
-    compute_stroop_exgaussian_features,
-    load_or_compute_stroop_mechanism_features,
     build_stroop_dataset,
     get_stroop_complete_participants,
 )
@@ -74,20 +56,6 @@ from .wcst import (
     compute_wcst_qc_stats,
     get_wcst_valid_participants,
     derive_wcst_features,
-    derive_wcst_traditional_features,
-    derive_wcst_dispersion_features,
-    derive_wcst_drift_features,
-    derive_wcst_recovery_features,
-    compute_wcst_hmm_features,
-    load_or_compute_wcst_hmm_mechanism_features,
-    compute_wcst_rl_features,
-    load_or_compute_wcst_rl_mechanism_features,
-    compute_wcst_wsls_features,
-    load_or_compute_wcst_wsls_mechanism_features,
-    compute_wcst_bayesianrl_features,
-    load_or_compute_wcst_bayesianrl_mechanism_features,
-    compute_wcst_mechanism_features,
-    load_or_compute_wcst_mechanism_features,
     build_wcst_dataset,
     get_wcst_complete_participants,
 )
@@ -96,11 +64,6 @@ from .overall import (
     get_overall_complete_participants,
     load_overall_summary,
     derive_overall_features,
-    derive_overall_traditional_features,
-    derive_overall_dispersion_features,
-    derive_overall_drift_features,
-    derive_overall_recovery_features,
-    derive_overall_mechanism_features,
 )
 from .datasets import (
     load_master_dataset,
@@ -137,8 +100,6 @@ __all__ = [
     "ensure_participant_id",
     "normalize_gender_value",
     "normalize_gender_series",
-    "coefficient_of_variation",
-    "compute_post_error_slowing",
     "SurveyQCCriteria",
     "get_survey_valid_participants",
     "load_participants",
@@ -151,12 +112,6 @@ __all__ = [
     "compute_stroop_qc_stats",
     "get_stroop_valid_participants",
     "derive_stroop_features",
-    "derive_stroop_traditional_features",
-    "derive_stroop_dispersion_features",
-    "derive_stroop_drift_features",
-    "derive_stroop_recovery_features",
-    "compute_stroop_exgaussian_features",
-    "load_or_compute_stroop_mechanism_features",
     "build_stroop_dataset",
     "get_stroop_complete_participants",
     "load_wcst_trials",
@@ -167,31 +122,12 @@ __all__ = [
     "compute_wcst_qc_stats",
     "get_wcst_valid_participants",
     "derive_wcst_features",
-    "derive_wcst_traditional_features",
-    "derive_wcst_dispersion_features",
-    "derive_wcst_drift_features",
-    "derive_wcst_recovery_features",
-    "compute_wcst_hmm_features",
-    "load_or_compute_wcst_hmm_mechanism_features",
-    "compute_wcst_rl_features",
-    "load_or_compute_wcst_rl_mechanism_features",
-    "compute_wcst_wsls_features",
-    "load_or_compute_wcst_wsls_mechanism_features",
-    "compute_wcst_bayesianrl_features",
-    "load_or_compute_wcst_bayesianrl_mechanism_features",
-    "compute_wcst_mechanism_features",
-    "load_or_compute_wcst_mechanism_features",
     "build_wcst_dataset",
     "get_wcst_complete_participants",
     "build_overall_dataset",
     "get_overall_complete_participants",
     "load_overall_summary",
     "derive_overall_features",
-    "derive_overall_traditional_features",
-    "derive_overall_dispersion_features",
-    "derive_overall_drift_features",
-    "derive_overall_recovery_features",
-    "derive_overall_mechanism_features",
     "load_master_dataset",
     "build_all_datasets",
     "get_dataset_info",

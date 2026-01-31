@@ -3,7 +3,7 @@ Hierarchical Multiple Regression Analysis
 ==========================================
 
 Tests the incremental contribution of UCLA loneliness (beyond DASS-21 controls)
-to each Tier-1 executive-function outcome via four-step hierarchical models.
+to each manuscript outcome via four-step hierarchical models.
 
 Model Structure (4 Steps):
     Model 0: outcome ~ age + gender
@@ -11,12 +11,13 @@ Model Structure (4 Steps):
     Model 2: outcome ~ age + gender + DASS(3) + UCLA
     Model 3: outcome ~ age + gender + DASS(3) + UCLA*gender
 
-Tier-1 Outcomes (automatically iterated):
-    - Core EF: pe_rate, stroop_interference
-    - WCST summary metrics: wcst_accuracy, wcst_mean_rt, wcst_sd_rt, pe_count,
-      perseverativeResponses, perseverativeErrorCount, perseverativeResponsesPercent
-    - WCST trial-derived metrics: wcst_pes, wcst_post_switch_error_rate,
-      wcst_cv_rt, wcst_trials
+Manuscript Outcomes (automatically iterated):
+    - Stroop interference RT (correct-only)
+    - WCST perseverative error rate
+    - Stroop interference RT slope (time-on-task drift)
+    - WCST confirmation RT
+    - WCST exploitation RT
+    - WCST confirmation–exploitation RT difference
 
 Output:
     results/publication/analysis/hierarchical_results.csv
@@ -50,7 +51,7 @@ from publication.analysis.utils import (
     get_analysis_data,
     filter_vars,
     get_output_dir,
-    get_tier1_outcomes,
+    get_primary_outcomes,
     STANDARDIZED_PREDICTORS,
     print_section_header,
     format_pvalue,
@@ -388,7 +389,7 @@ def run(
     verbose: bool = True
 ) -> dict[str, pd.DataFrame]:
     """
-    Run hierarchical regression analysis for all Tier-1 outcomes.
+    Run hierarchical regression analysis for all manuscript outcomes.
 
     Parameters
     ----------
@@ -407,7 +408,7 @@ def run(
     if verbose:
         print("\n  Loading data...")
     df = get_analysis_data(task)
-    outcomes = filter_vars(df, get_tier1_outcomes(task))
+    outcomes = filter_vars(df, get_primary_outcomes(task))
     output_dir = get_output_dir(task)
 
     cov_label = _format_cov_type(cov_type)
@@ -516,7 +517,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--cov-type",
         default="nonrobust",
-        help="Covariance type for SEs (e.g., nonrobust/OLS, HC3).",
+        help="Covariance type for SEs (default: OLS/nonrobust).",
     )
     return parser.parse_args()
 

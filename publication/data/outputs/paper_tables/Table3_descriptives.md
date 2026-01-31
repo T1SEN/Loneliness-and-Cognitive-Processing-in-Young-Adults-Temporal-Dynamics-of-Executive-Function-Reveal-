@@ -9,5 +9,5 @@
 | DASS-21 Depression                | 223 |   7.65 |   7.86 |
 | DASS-21 Anxiety                   | 223 |   5.67 |   5.88 |
 | DASS-21 Stress                    | 223 |  10.18 |   7.55 |
-| Stroop Interference Effect (ms)   | 220 | 137.67 |  99.92 |
+| Stroop Interference RT (ms)       | 220 | 139.15 | 103.64 |
 | WCST Perseverative Error Rate (%) | 212 |  10.7  |   6.1  |

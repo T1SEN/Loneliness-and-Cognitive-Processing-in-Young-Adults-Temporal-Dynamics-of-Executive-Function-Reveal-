@@ -35,26 +35,18 @@ plt.rcParams["font.size"] = 10
 # Primary Indicators for Figure 3
 # =============================================================================
 
-# Conventional indicators (10) - Standard measures from literature
+# Conventional indicators (core manuscript outcomes)
 CONV_PRIMARY = [
-    ("STROOP", "stroop_rt_interference", "Stroop RT Interference"),
-    ("STROOP", "stroop_acc_interference", "Stroop Acc Interference"),
-    ("WCST", "wcst_categories_completed", "WCST Categories"),
-    ("WCST", "pe_rate", "WCST PE Rate"),
-    ("WCST", "wcst_nonperseverative_errors", "WCST NPE"),
-    ("WCST", "wcst_failure_to_maintain_set", "WCST FMS"),
-    ("WCST", "wcst_trials_to_first_category", "WCST Trials to 1st"),
+    ("STROOP", "stroop_interference", "Stroop Interference RT"),
+    ("WCST", "wcst_perseverative_error_rate", "WCST PE Rate"),
 ]
 
-# Temporal dynamics indicators (9)
+# Temporal dynamics indicators (core manuscript outcomes)
 TEMP_PRIMARY = [
-    ("STROOP", "stroop_incong_slope", "Stroop RT Slope"),
-    ("STROOP", "stroop_cv_fatigue_slope", "Stroop CV Slope"),
-    ("STROOP", "stroop_rt_sd_incong", "Stroop RT SD"),
-    ("WCST", "wcst_rt_slope_within_category", "WCST RT Slope"),
-    ("WCST", "wcst_cv_fatigue_slope", "WCST CV Slope"),
-    ("WCST", "wcst_volatility_adj", "WCST Detrended SD"),
-    ("WCST", "wcst_pes", "WCST PES"),
+    ("STROOP", "stroop_interference_slope", "Stroop Interference Slope"),
+    ("WCST", "wcst_confirmation_rt", "WCST Confirmation RT"),
+    ("WCST", "wcst_exploitation_rt", "WCST Exploitation RT"),
+    ("WCST", "wcst_confirmation_minus_exploitation_rt", "WCST Confirm-Exploit RT"),
 ]
 
 

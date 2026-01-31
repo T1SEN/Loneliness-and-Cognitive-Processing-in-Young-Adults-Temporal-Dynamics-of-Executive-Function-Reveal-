@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Dict, Any, Tuple
 
 import pandas as pd
+import numpy as np
 
 from ..constants import (
     STROOP_RT_MIN,
@@ -155,15 +156,19 @@ def load_stroop_summary(data_dir: Path) -> pd.DataFrame:
     stroop_wide.columns = ["_".join(col).rstrip("_") for col in stroop_wide.columns.values]
     stroop_wide = stroop_wide.reset_index()
 
-    if "rt_mean_incongruent" in stroop_wide.columns and "rt_mean_congruent" in stroop_wide.columns:
-        stroop_wide["stroop_interference"] = stroop_wide["rt_mean_incongruent"] - stroop_wide["rt_mean_congruent"]
-
+    interference = np.nan
     if (
         "rt_mean_correct_incongruent" in stroop_wide.columns
         and "rt_mean_correct_congruent" in stroop_wide.columns
     ):
-        stroop_wide["stroop_interference_correct"] = (
+        interference = (
             stroop_wide["rt_mean_correct_incongruent"] - stroop_wide["rt_mean_correct_congruent"]
         )
+    elif "rt_mean_incongruent" in stroop_wide.columns and "rt_mean_congruent" in stroop_wide.columns:
+        interference = stroop_wide["rt_mean_incongruent"] - stroop_wide["rt_mean_congruent"]
 
-    return stroop_wide
+    out = pd.DataFrame({
+        "participant_id": stroop_wide["participant_id"].astype(str),
+        "stroop_interference": interference,
+    })
+    return out

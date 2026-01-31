@@ -8,7 +8,8 @@ core demographic, survey, and executive-function measures.
 Variables:
     - Demographics: age
     - Surveys: UCLA loneliness, DASS-21 subscales
-    - Executive Function: WCST (perseverative error rate), Stroop interference
+    - Executive Function: Stroop interference + interference slope
+    - Executive Function: WCST PE rate + phase RTs (exploration, confirmation, exploitation)
 
 Output:
     results/publication/analysis/table1_descriptives.csv

@@ -10,6 +10,7 @@ import pandas as pd
 
 from ..constants import WCST_RT_MIN, WCST_RT_MAX, get_results_dir
 from .filters import clean_wcst_trials, filter_wcst_rt_trials
+from ._shared import _load_wcst_summary_metrics
 from ..core import ensure_participant_id
 
 def _coerce_bool_series(series: pd.Series) -> pd.Series:
@@ -120,14 +121,20 @@ def load_wcst_summary(data_dir: Path) -> pd.DataFrame:
     wcst_summary = wcst_trials.groupby("participant_id").agg(
         pe_count=("is_pe", "sum"),
         total_trials=("is_pe", "count"),
-        wcst_accuracy=("correct", lambda x: (x.sum() / len(x)) * 100),
     ).reset_index()
-    rt_trials = wcst_trials[wcst_trials["is_rt_valid"] == True]
-    rt_summary = rt_trials.groupby("participant_id").agg(
-        wcst_mean_rt=("rt_ms", "mean"),
-        wcst_sd_rt=("rt_ms", "std"),
-    ).reset_index()
-    wcst_summary = wcst_summary.merge(rt_summary, on="participant_id", how="left")
-    wcst_summary["pe_rate"] = (wcst_summary["pe_count"] / wcst_summary["total_trials"]) * 100
+    wcst_summary["wcst_perseverative_error_rate"] = (
+        wcst_summary["pe_count"] / wcst_summary["total_trials"]
+    ) * 100
+
+    wcst_summary = wcst_summary[[
+        "participant_id",
+        "wcst_perseverative_error_rate",
+    ]]
+
+    summary_metrics = _load_wcst_summary_metrics(data_dir)
+    if not summary_metrics.empty and "wcst_completed_categories" in summary_metrics.columns:
+        summary_metrics = summary_metrics[["participant_id", "wcst_completed_categories"]].copy()
+        summary_metrics = summary_metrics.rename(columns={"wcst_completed_categories": "wcst_categories_completed"})
+        wcst_summary = wcst_summary.merge(summary_metrics, on="participant_id", how="left")
 
     return wcst_summary

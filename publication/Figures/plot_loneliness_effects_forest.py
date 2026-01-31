@@ -58,8 +58,9 @@ def main() -> None:
     outcomes = [
         ("Stroop Interference RT", "stroop_interference", stroop),
         ("Stroop Interference Slope", "stroop_interference_slope", stroop),
-        ("WCST PE rate", "pe_rate", wcst),
-        ("WCST Post-error RT", "wcst_post_error_rt", wcst),
+        ("WCST PE Rate", "wcst_perseverative_error_rate", wcst),
+        ("WCST Confirmation RT", "wcst_confirmation_rt", wcst),
+        ("WCST Confirm-Exploit RT", "wcst_confirmation_minus_exploitation_rt", wcst),
     ]
 
     rows = []
@@ -92,7 +93,13 @@ def main() -> None:
     summary.to_csv(summary_path, index=False, encoding="utf-8-sig")
 
     fig, ax = plt.subplots(figsize=(8, 4.8))
-    order = ["Stroop Interference RT", "Stroop Interference Slope", "WCST PE rate", "WCST Post-error RT"]
+    order = [
+        "Stroop Interference RT",
+        "Stroop Interference Slope",
+        "WCST PE Rate",
+        "WCST Confirmation RT",
+        "WCST Confirm-Exploit RT",
+    ]
     summary["outcome"] = pd.Categorical(summary["outcome"], categories=order, ordered=True)
     summary = summary.sort_values("outcome")
 

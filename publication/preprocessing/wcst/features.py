@@ -1,876 +1,142 @@
-"""WCST feature derivation."""
+"""WCST feature derivation (manuscript outcomes + supplementary phases)."""
 
 from __future__ import annotations
 
-import ast
 from pathlib import Path
-from typing import List, Dict
+from typing import List
 
 import numpy as np
 import pandas as pd
 
-from ..constants import get_results_dir, WCST_RT_MIN, WCST_RT_MAX
-from ..core import (
-    coefficient_of_variation,
-    ensure_participant_id,
-    median_absolute_deviation,
-    interquartile_range,
-    dfa_alpha,
-    lag1_autocorrelation,
-    run_length_stats,
-    compute_error_cascade_metrics,
-    compute_post_error_recovery_metrics,
-    compute_momentum_metrics,
-    compute_volatility_metrics,
-    compute_iiv_parameters,
-    compute_fatigue_slopes,
-    compute_tau_quartile_metrics,
-    compute_error_awareness_metrics,
-    compute_pre_error_slope_metrics,
-    compute_temporal_variability_slopes,
-)
-from ..standardization import safe_zscore
-from .loaders import load_wcst_trials
-from .hmm_mechanism import load_or_compute_wcst_hmm_mechanism_features
-from .rl_mechanism import load_or_compute_wcst_rl_mechanism_features
-from .wsls_mechanism import load_or_compute_wcst_wsls_mechanism_features
-from .bayesianrl_mechanism import load_or_compute_wcst_bayesianrl_mechanism_features
+from ..constants import WCST_RT_MIN, WCST_RT_MAX
+from ._shared import prepare_wcst_trials
 
-WCST_BLOCK_SIZE = 20
+N_CATEGORIES = 6
+PHASE_ORDER = ["exploration", "confirmation", "exploitation"]
 
 
-def _run_lengths(mask: np.ndarray) -> List[int]:
-    lengths: List[int] = []
-    count = 0
-    for val in mask:
-        if val:
-            count += 1
-        elif count:
-            lengths.append(count)
-            count = 0
-    if count:
-        lengths.append(count)
-    return lengths
+def _label_wcst_phases(
+    wcst: pd.DataFrame,
+    rule_col: str,
+    trial_col: str,
+    confirm_len: int = 3,
+) -> pd.DataFrame:
+    df = wcst.sort_values(["participant_id", trial_col]).copy()
+    df["category_num"] = np.nan
+    df["phase"] = pd.NA
+
+    for pid, grp in df.groupby("participant_id"):
+        grp_sorted = grp.sort_values(trial_col).copy()
+        idxs = grp_sorted.index.to_list()
+        rules = (
+            grp_sorted[rule_col]
+            .astype(str)
+            .str.lower()
+            .replace({"color": "colour"})
+            .to_numpy()
+        )
+        correct = grp_sorted["correct"].astype(bool).to_numpy()
+
+        change_indices = [i for i in range(1, len(rules)) if rules[i] != rules[i - 1]]
+        segment_starts = [0] + change_indices
+        segment_ends = change_indices + [len(rules)]
+
+        for cat_idx, (start, end) in enumerate(zip(segment_starts, segment_ends), start=1):
+            if cat_idx > N_CATEGORIES:
+                break
+            if start >= end:
+                continue
+
+            reacq_start = None
+            reacq_idx = None
+            if confirm_len >= 1:
+                for j in range(start, end - (confirm_len - 1)):
+                    if np.all(correct[j : j + confirm_len]):
+                        reacq_start = j
+                        reacq_idx = j + confirm_len - 1
+                        break
+
+            for i in range(start, end):
+                row_idx = idxs[i]
+                df.at[row_idx, "category_num"] = float(cat_idx)
+                if reacq_start is None:
+                    df.at[row_idx, "phase"] = "exploration"
+                elif i < reacq_start:
+                    df.at[row_idx, "phase"] = "exploration"
+                elif i <= reacq_idx:
+                    df.at[row_idx, "phase"] = "confirmation"
+                else:
+                    df.at[row_idx, "phase"] = "exploitation"
+
+    df["phase"] = pd.Categorical(df["phase"], categories=PHASE_ORDER)
+    return df
 
 
-def _load_wcst_summary_metrics(data_dir: Path | None) -> pd.DataFrame:
-    if data_dir is None:
-        data_dir = get_results_dir("wcst")
-    summary_path = Path(data_dir) / "3_cognitive_tests_summary.csv"
-    if not summary_path.exists():
-        return pd.DataFrame()
-
-    summary = pd.read_csv(summary_path, encoding="utf-8")
-    summary = ensure_participant_id(summary)
-    if "testName" not in summary.columns:
-        return pd.DataFrame()
-    summary["testName"] = summary["testName"].astype(str).str.strip().str.lower()
-    summary = summary[summary["testName"] == "wcst"].copy()
-    if summary.empty:
-        return pd.DataFrame()
-
-    rename = {
-        "completedCategories": "wcst_completed_categories",
-        "totalErrorCount": "wcst_total_errors",
-        "totalTrialCount": "wcst_total_trials_summary",
-        "totalCorrectCount": "wcst_total_correct_summary",
-        "perseverativeResponses": "wcst_perseverative_responses",
-        "perseverativeResponsesPercent": "wcst_perseverative_response_percent",
-        "perseverativeErrorCount": "wcst_perseverative_errors",
-        "nonPerseverativeErrorCount": "wcst_nonperseverative_errors",
-        "trialsToCompleteFirstCategory": "wcst_trials_to_first_category",
-        "failureToMaintainSet": "wcst_failure_to_maintain_set",
-        "conceptualLevelResponses": "wcst_clr_count",
-        "conceptualLevelResponsesPercent": "wcst_clr_percent",
-        "learningToLearn": "wcst_learning_to_learn",
-        "learningToLearnHeatonClrDelta": "wcst_learning_to_learn_heaton_clr_delta",
-        "learningEfficiencyDeltaTrials": "wcst_learning_efficiency_delta_trials",
-        "trialsToFirstConceptualResp": "wcst_trials_to_first_conceptual_resp",
-        "trialsToFirstConceptualResp0": "wcst_trials_to_first_conceptual_resp0",
-        "hasFirstCLR": "wcst_has_first_clr",
-        "categoryClrPercents": "wcst_category_clr_percents",
-    }
-    cols = [c for c in rename if c in summary.columns]
-    summary = summary[["participant_id"] + cols].rename(columns=rename)
-    for col in summary.columns:
-        if col == "participant_id" or col == "wcst_category_clr_percents":
-            continue
-        summary[col] = pd.to_numeric(summary[col], errors="coerce")
-
-    def _parse_list(val: object) -> List[float]:
-        if isinstance(val, list):
-            return [float(x) for x in val]
-        if not isinstance(val, str):
-            return []
-        try:
-            parsed = ast.literal_eval(val)
-        except Exception:
-            return []
-        if isinstance(parsed, list):
-            return [float(x) for x in parsed]
-        return []
-
-    clr_lists = summary["wcst_category_clr_percents"].apply(_parse_list)
-    summary["wcst_category_clr_percents"] = clr_lists.apply(lambda x: x if x else np.nan)
-
-    delta_clr = []
-    slope_clr = []
-    for vals in clr_lists:
-        if not vals or len(vals) < 3:
-            delta_clr.append(np.nan)
-            slope_clr.append(np.nan)
-            continue
-        first = np.mean(vals[:3])
-        last = np.mean(vals[-3:])
-        delta_clr.append(float(first - last))
-        if len(vals) >= 2:
-            x = np.arange(1, len(vals) + 1)
-            slope = np.polyfit(x, vals, 1)[0]
-            slope_clr.append(float(slope))
-        else:
-            slope_clr.append(np.nan)
-
-    summary["wcst_delta_clr_percent_first3_last3"] = delta_clr
-    summary["wcst_learning_slope_clr_percent"] = slope_clr
-
-    return summary
+def _valid_rt(series: pd.Series, rt_max: float | None) -> pd.Series:
+    valid = series.notna() & (series >= WCST_RT_MIN)
+    if rt_max is not None:
+        valid &= series <= rt_max
+    return valid
 
 
 def derive_wcst_features(
     data_dir: None | str | Path = None,
-    filter_rt: bool = False,
+    confirm_len: int = 3,
     rt_max: float | None = None,
 ) -> pd.DataFrame:
-    if filter_rt:
-        wcst, _ = load_wcst_trials(data_dir=data_dir, clean=True, filter_rt=True, apply_trial_filters=False)
+    prepared = prepare_wcst_trials(data_dir=data_dir, filter_rt=False)
+    wcst = prepared["wcst"]
+    rt_col = prepared["rt_col"]
+    trial_col = prepared["trial_col"]
+    rule_col = prepared["rule_col"]
+
+    if not isinstance(wcst, pd.DataFrame) or wcst.empty:
+        return pd.DataFrame(columns=["participant_id"])
+    if rt_col is None or trial_col is None or rule_col is None:
+        return pd.DataFrame(columns=["participant_id"])
+    if "correct" not in wcst.columns:
+        return pd.DataFrame(columns=["participant_id"])
+
+    wcst = wcst.copy()
+    wcst["rt_ms"] = pd.to_numeric(wcst[rt_col], errors="coerce")
+
+    if "is_rt_valid" in wcst.columns:
+        wcst = wcst[wcst["is_rt_valid"] == True]
     else:
-        wcst, _ = load_wcst_trials(data_dir=data_dir, apply_trial_filters=True)
+        rt_max_val = WCST_RT_MAX if rt_max is None else rt_max
+        wcst = wcst[_valid_rt(wcst["rt_ms"], rt_max_val)]
 
-    rt_col = None
-    for cand in ("reactionTimeMs", "rt_ms", "reaction_time_ms", "rt"):
-        if cand in wcst.columns:
-            rt_col = cand
-            break
-    if not rt_col:
-        return pd.DataFrame(columns=["participant_id", "wcst_pes", "wcst_post_switch_error_rate", "wcst_cv_rt", "wcst_trials"])
+    wcst["rule_norm"] = wcst[rule_col].astype(str).str.lower().replace({"color": "colour"})
+    wcst = _label_wcst_phases(wcst, rule_col="rule_norm", trial_col=trial_col, confirm_len=confirm_len)
 
-    trial_col = None
-    for cand in ("trialIndex", "trial_index", "trial"):
-        if cand in wcst.columns:
-            trial_col = cand
-            break
+    phase_means = (
+        wcst.groupby(["participant_id", "phase"], observed=False)["rt_ms"]
+        .mean()
+        .unstack()
+    )
+    phase_means.index = phase_means.index.astype(str)
 
-        if trial_col:
-            wcst = wcst.sort_values(["participant_id", trial_col])
+    out = pd.DataFrame(index=phase_means.index)
+    out.index.name = "participant_id"
+    out["wcst_exploration_rt"] = phase_means.get("exploration")
+    out["wcst_confirmation_rt"] = phase_means.get("confirmation")
+    out["wcst_exploitation_rt"] = phase_means.get("exploitation")
+    out["wcst_confirmation_minus_exploitation_rt"] = (
+        out["wcst_confirmation_rt"] - out["wcst_exploitation_rt"]
+    )
 
-    rule_col = None
-    for cand in ("ruleAtThatTime", "rule_at_that_time", "rule_at_time", "rule"):
-        if cand in wcst.columns:
-            rule_col = cand
-            break
+    pre_map = wcst["phase"].map({"exploration": "pre_exploitation", "confirmation": "pre_exploitation", "exploitation": "exploitation"})
+    wcst_pre = wcst.copy()
+    wcst_pre["phase_pre"] = pre_map
+    pre_means = (
+        wcst_pre.groupby(["participant_id", "phase_pre"], observed=False)["rt_ms"]
+        .mean()
+        .unstack()
+    )
+    pre_means.index = pre_means.index.astype(str)
+    out["wcst_pre_exploitation_rt"] = pre_means.get("pre_exploitation")
+    out["wcst_pre_exploitation_minus_exploitation_rt"] = (
+        out["wcst_pre_exploitation_rt"] - pre_means.get("exploitation")
+    )
 
-    rt_max_val = WCST_RT_MAX if rt_max is None else rt_max
-
-    def _mean_if(values: np.ndarray, min_n: int) -> float:
-        return float(np.mean(values)) if len(values) >= min_n else np.nan
-
-    def _median_if(values: np.ndarray, min_n: int) -> float:
-        return float(np.median(values)) if len(values) >= min_n else np.nan
-
-    def _sd_if(values: np.ndarray, min_n: int) -> float:
-        return float(np.std(values, ddof=1)) if len(values) >= min_n else np.nan
-
-    records: List[Dict] = []
-    for pid, grp in wcst.groupby("participant_id"):
-        grp = grp.reset_index(drop=True)
-        grp_sorted = grp.sort_values(trial_col) if trial_col else grp
-        rt_series = pd.to_numeric(grp_sorted[rt_col], errors="coerce")
-        if "is_rt_valid" in grp_sorted.columns:
-            rt_valid_mask = grp_sorted["is_rt_valid"].astype(bool) & rt_series.notna()
-        else:
-            rt_valid_mask = rt_series.notna()
-            if rt_max_val is None:
-                rt_valid_mask &= rt_series >= WCST_RT_MIN
-            else:
-                rt_valid_mask &= rt_series.between(WCST_RT_MIN, rt_max_val)
-        rt_series_valid = rt_series.where(rt_valid_mask)
-        if trial_col:
-            trial_order = pd.to_numeric(grp_sorted[trial_col], errors="coerce")
-        else:
-            trial_order = pd.Series(np.arange(len(grp_sorted)), index=grp_sorted.index, dtype=float)
-        valid_order = trial_order.notna() & rt_series_valid.notna()
-        rt_slope_overall = np.nan
-        rt_slope_correct = np.nan
-        residual_abs_slope_correct = np.nan
-        if valid_order.sum() >= 5 and trial_order[valid_order].nunique() > 1:
-            rt_slope_overall = float(np.polyfit(trial_order[valid_order].values, rt_series_valid[valid_order].values, 1)[0])
-        if "correct" in grp_sorted.columns:
-            valid_correct = valid_order & grp_sorted["correct"].astype(bool)
-            if valid_correct.sum() >= 5 and trial_order[valid_correct].nunique() > 1:
-                rt_slope_correct = float(
-                    np.polyfit(trial_order[valid_correct].values, rt_series_valid[valid_correct].values, 1)[0]
-                )
-                x = trial_order[valid_correct].to_numpy(dtype=float)
-                y = rt_series_valid[valid_correct].to_numpy(dtype=float)
-                try:
-                    slope, intercept = np.polyfit(x, y, 1)
-                    resid = y - (slope * x + intercept)
-                    abs_resid = np.abs(resid)
-                    if np.isfinite(abs_resid).sum() >= 3:
-                        residual_abs_slope_correct = float(np.polyfit(x, abs_resid, 1)[0])
-                except Exception:
-                    residual_abs_slope_correct = np.nan
-        mad_rt = median_absolute_deviation(rt_series_valid)
-        iqr_rt = interquartile_range(rt_series_valid)
-        if "correct" in grp_sorted.columns:
-            rt_correct = rt_series_valid[grp_sorted["correct"] == True]
-        else:
-            rt_correct = rt_series_valid
-        mad_rt_correct = median_absolute_deviation(rt_correct)
-        iqr_rt_correct = interquartile_range(rt_correct)
-        dfa_rt_correct = dfa_alpha(rt_correct)
-        lag1_rt_correct = lag1_autocorrelation(rt_correct)
-        run_rt_correct = run_length_stats(rt_correct)
-
-        vincentile_quantiles = [0.1, 0.3, 0.5, 0.7, 0.9]
-        vincentile_labels = [10, 30, 50, 70, 90]
-        vincentile_vals = {f"wcst_rt_vincentile_p{label}_correct": np.nan for label in vincentile_labels}
-        delta_plot_slope = np.nan
-        rt_quant = rt_correct.dropna()
-        if len(rt_quant) >= 20:
-            q_vals = np.quantile(rt_quant, vincentile_quantiles)
-            for label, val in zip(vincentile_labels, q_vals):
-                vincentile_vals[f"wcst_rt_vincentile_p{label}_correct"] = float(val)
-            delta_plot_slope = float(q_vals[-1] - q_vals[0])
-
-        rt_vals = rt_series_valid.to_numpy()
-        pes = np.nan
-        post_error_rt = np.nan
-        post_correct_rt = np.nan
-        if "correct" in grp_sorted.columns:
-            correct = grp_sorted["correct"].values
-            post_error_rts = []
-            post_correct_rts = []
-            for i in range(len(grp_sorted) - 1):
-                rt_next = rt_vals[i + 1]
-                if (
-                    not np.isfinite(rt_next)
-                    or rt_next < WCST_RT_MIN
-                    or (rt_max_val is not None and rt_next > rt_max_val)
-                ):
-                    continue
-                if correct[i] == False:
-                    post_error_rts.append(rt_next)
-                elif correct[i] == True:
-                    post_correct_rts.append(rt_next)
-            if post_error_rts and post_correct_rts:
-                post_error_rt = float(np.mean(post_error_rts))
-                post_correct_rt = float(np.mean(post_correct_rts))
-                pes = post_error_rt - post_correct_rt
-            else:
-                if post_error_rts:
-                    post_error_rt = float(np.mean(post_error_rts))
-                if post_correct_rts:
-                    post_correct_rt = float(np.mean(post_correct_rts))
-
-        post_switch_error_rate = np.nan
-        if rule_col and "correct" in grp.columns:
-            rules = grp[rule_col].values
-            is_correct = grp["correct"].values
-            rule_changes = []
-            for i in range(1, len(rules)):
-                if rules[i] != rules[i - 1]:
-                    rule_changes.append(i)
-
-            post_switch_errors = []
-            for change_idx in rule_changes:
-                window_end = min(change_idx + 5, len(grp))
-                post_switch_trials = is_correct[change_idx:window_end]
-                if len(post_switch_trials) >= 3:
-                    post_switch_errors.append(1 - post_switch_trials.mean())
-
-            if post_switch_errors:
-                post_switch_error_rate = np.nanmean(post_switch_errors)
-
-        total_trials = int(len(grp))
-        correct = grp["correct"].astype(bool).values if "correct" in grp.columns else np.zeros(total_trials, dtype=bool)
-        errors = ~correct
-        total_errors = int(errors.sum()) if total_trials else 0
-        error_rate = (total_errors / total_trials) if total_trials else np.nan
-        accuracy_all = float(np.mean(correct)) if total_trials else np.nan
-        error_rate_all = float(1.0 - accuracy_all) if total_trials else np.nan
-
-        is_pe = grp["isPE"].astype(bool).values if "isPE" in grp.columns else np.zeros(total_trials, dtype=bool)
-        is_pr = grp["isPR"].astype(bool).values if "isPR" in grp.columns else np.zeros(total_trials, dtype=bool)
-        is_npe = grp["isNPE"].astype(bool).values if "isNPE" in grp.columns else np.zeros(total_trials, dtype=bool)
-        has_is_npe = "isNPE" in grp.columns
-
-        rt_all_vals = rt_vals[np.isfinite(rt_vals)]
-        rt_correct_vals = rt_vals[np.isfinite(rt_vals) & correct]
-        rt_error_vals = rt_vals[np.isfinite(rt_vals) & errors]
-        rt_pe_vals = rt_vals[np.isfinite(rt_vals) & is_pe]
-        rt_npe_vals = rt_vals[np.isfinite(rt_vals) & is_npe] if has_is_npe else np.array([], dtype=float)
-
-        rt_median_all = _median_if(rt_all_vals, 10)
-        rt_mean_correct = _mean_if(rt_correct_vals, 10)
-        rt_median_correct = _median_if(rt_correct_vals, 10)
-        rt_mean_error = _mean_if(rt_error_vals, 5)
-        rt_median_error = _median_if(rt_error_vals, 5)
-        rt_sd_all = _sd_if(rt_all_vals, 10)
-        rt_sd_correct = _sd_if(rt_correct_vals, 10)
-        rt_sd_error = _sd_if(rt_error_vals, 5)
-        rt_mean_pe = _mean_if(rt_pe_vals, 5)
-        rt_median_pe = _median_if(rt_pe_vals, 5)
-        rt_mean_npe = _mean_if(rt_npe_vals, 5) if has_is_npe else np.nan
-        rt_median_npe = _median_if(rt_npe_vals, 5) if has_is_npe else np.nan
-        rt_error_minus_correct_mean = (
-            float(rt_mean_error - rt_mean_correct)
-            if pd.notna(rt_mean_error) and pd.notna(rt_mean_correct)
-            else np.nan
-        )
-        rt_error_minus_correct_median = (
-            float(rt_median_error - rt_median_correct)
-            if pd.notna(rt_median_error) and pd.notna(rt_median_correct)
-            else np.nan
-        )
-        rt_pe_minus_npe_mean = (
-            float(rt_mean_pe - rt_mean_npe)
-            if pd.notna(rt_mean_pe) and pd.notna(rt_mean_npe)
-            else np.nan
-        )
-        rt_pe_minus_npe_median = (
-            float(rt_median_pe - rt_median_npe)
-            if pd.notna(rt_median_pe) and pd.notna(rt_median_npe)
-            else np.nan
-        )
-
-        post_pe_rt = np.nan
-        post_npe_rt = np.nan
-        post_pe_slowing = np.nan
-        if total_trials > 1:
-            post_pe_rts = []
-            post_npe_rts = []
-            for i in range(total_trials - 1):
-                rt_next = rt_vals[i + 1]
-                if (
-                    not np.isfinite(rt_next)
-                    or rt_next < WCST_RT_MIN
-                    or (rt_max_val is not None and rt_next > rt_max_val)
-                ):
-                    continue
-                if is_pe[i]:
-                    post_pe_rts.append(rt_next)
-                if has_is_npe and is_npe[i]:
-                    post_npe_rts.append(rt_next)
-            post_pe_rt = _mean_if(np.array(post_pe_rts, dtype=float), 5)
-            post_npe_rt = _mean_if(np.array(post_npe_rts, dtype=float), 5) if has_is_npe else np.nan
-            if pd.notna(post_pe_rt) and pd.notna(post_correct_rt):
-                post_pe_slowing = float(post_pe_rt - post_correct_rt)
-
-        pe_count = int(is_pe.sum())
-        pr_count = int(is_pr.sum())
-        npe_count = int(is_npe.sum()) if has_is_npe else max(total_errors - pe_count, 0)
-
-        pe_rate = (pe_count / total_trials) * 100 if total_trials else np.nan
-        pr_percent = (pr_count / total_trials) * 100 if total_trials else np.nan
-        error_pr_ratio = (int((is_pr & errors).sum()) / total_errors) if total_errors else np.nan
-        error_npe_ratio = (npe_count / total_errors) if total_errors else np.nan
-
-        pe_runs = _run_lengths(is_pe)
-        pr_runs = _run_lengths(is_pr)
-        pe_run_mean = float(np.mean(pe_runs)) if pe_runs else 0.0
-        pe_run_max = float(np.max(pe_runs)) if pe_runs else 0.0
-        pr_run_mean = float(np.mean(pr_runs)) if pr_runs else 0.0
-        pr_run_max = float(np.max(pr_runs)) if pr_runs else 0.0
-        pe_cluster_rate = (pe_run_max / pe_count) if pe_count else np.nan
-
-        trials_per_category = []
-        trials_to_first_category = np.nan
-        categories_completed = np.nan
-        rt_slope_within = np.nan
-        acc_slope_within = np.nan
-        rt_jump_at_switch = np.nan
-        switch_rt_mean = np.nan
-        repeat_rt_mean = np.nan
-        switch_cost_rt_mean = np.nan
-        category_total_rt_slope = np.nan
-        category_mean_rt = np.nan
-        category_accuracy_slope = np.nan
-        category_pe_slope = np.nan
-        category_pe_delta_first3_last3 = np.nan
-        post_shift_pe_count_slope = np.nan
-        post_shift_pe_rate_slope_k3 = np.nan
-        post_shift_pe_rate_slope_k5 = np.nan
-        switch_cost_rt = {k: [] for k in range(1, 6)}
-        switch_cost_err = {k: [] for k in range(1, 6)}
-        trials_to_reacq = np.nan
-
-        if rule_col:
-            rules = grp[rule_col].astype(str).str.lower().values
-            change_indices = [i for i in range(1, len(rules)) if rules[i] != rules[i - 1]]
-            segment_starts = [0] + change_indices
-            segment_ends = change_indices + [len(rules)]
-            trials_per_category = [end - start for start, end in zip(segment_starts, segment_ends)]
-            categories_completed = float(len(trials_per_category)) if trials_per_category else np.nan
-            if trials_per_category:
-                trials_to_first_category = float(trials_per_category[0])
-
-            switch_rts = []
-            repeat_rts = []
-            for i in range(1, len(rules)):
-                rt_val = rt_vals[i]
-                if not np.isfinite(rt_val):
-                    continue
-                if rules[i] != rules[i - 1]:
-                    switch_rts.append(rt_val)
-                else:
-                    repeat_rts.append(rt_val)
-            switch_rt_mean = _mean_if(np.array(switch_rts, dtype=float), 3)
-            repeat_rt_mean = _mean_if(np.array(repeat_rts, dtype=float), 5)
-            if pd.notna(switch_rt_mean) and pd.notna(repeat_rt_mean):
-                switch_cost_rt_mean = float(switch_rt_mean - repeat_rt_mean)
-
-            rt_jump_vals = []
-            rt_slope_vals = []
-            acc_slope_vals = []
-            category_total_rts = []
-            category_mean_rts = []
-            category_acc_rates = []
-            category_pe_rates = []
-            category_pe_counts = []
-            post_shift_pe_rates_k3 = []
-            post_shift_pe_rates_k5 = []
-
-            for start, end in zip(segment_starts, segment_ends):
-                seg_len = end - start
-                if seg_len >= 5:
-                    x = np.arange(seg_len)
-                    seg_rt = rt_vals[start:end]
-                    seg_acc = correct[start:end].astype(float)
-                    rt_mask = np.isfinite(seg_rt)
-                    if rt_mask.sum() >= 3:
-                        rt_slope_vals.append(float(np.polyfit(x[rt_mask], seg_rt[rt_mask], 1)[0]))
-                    acc_slope_vals.append(float(np.polyfit(x, seg_acc, 1)[0]))
-                seg_pe = is_pe[start:end]
-                if len(seg_pe):
-                    category_pe_rates.append(float(np.mean(seg_pe)))
-                    category_pe_counts.append(float(np.sum(seg_pe)))
-                if len(seg_acc):
-                    category_acc_rates.append(float(np.mean(seg_acc)))
-                seg_rt = rt_vals[start:end]
-                seg_correct = correct[start:end]
-                seg_rt_correct = seg_rt[seg_correct]
-                if np.isfinite(seg_rt_correct).sum() >= 1:
-                    category_mean_rts.append(float(np.nanmean(seg_rt_correct)))
-                else:
-                    category_mean_rts.append(np.nan)
-                if np.isfinite(seg_rt).sum() >= 3:
-                    category_total_rts.append(float(np.nansum(seg_rt)))
-                else:
-                    category_total_rts.append(np.nan)
-
-            if rt_slope_vals:
-                rt_slope_within = float(np.mean(rt_slope_vals))
-            if acc_slope_vals:
-                acc_slope_within = float(np.mean(acc_slope_vals))
-            if category_mean_rts:
-                mean_vals = np.array(category_mean_rts, dtype=float)
-                if np.isfinite(mean_vals).sum() >= 1:
-                    category_mean_rt = float(np.nanmean(mean_vals))
-            if len(category_acc_rates) >= 3:
-                x = np.arange(1, len(category_acc_rates) + 1, dtype=float)
-                category_accuracy_slope = float(np.polyfit(x, np.array(category_acc_rates, dtype=float), 1)[0])
-            if len(category_pe_rates) >= 3:
-                x = np.arange(1, len(category_pe_rates) + 1, dtype=float)
-                category_pe_slope = float(np.polyfit(x, np.array(category_pe_rates, dtype=float), 1)[0])
-            if len(category_pe_rates) >= 6:
-                first = np.mean(category_pe_rates[:3])
-                last = np.mean(category_pe_rates[-3:])
-                category_pe_delta_first3_last3 = float(first - last)
-            if len(category_pe_counts) >= 3:
-                x = np.arange(1, len(category_pe_counts) + 1, dtype=float)
-                post_shift_pe_count_slope = float(np.polyfit(x, np.array(category_pe_counts, dtype=float), 1)[0])
-            for idx in change_indices:
-                window_k3 = is_pe[idx:min(idx + 3, len(is_pe))]
-                if len(window_k3) >= 3:
-                    post_shift_pe_rates_k3.append(float(np.mean(window_k3)))
-                window_k5 = is_pe[idx:min(idx + 5, len(is_pe))]
-                if len(window_k5) >= 5:
-                    post_shift_pe_rates_k5.append(float(np.mean(window_k5)))
-            if len(post_shift_pe_rates_k3) >= 3:
-                x = np.arange(1, len(post_shift_pe_rates_k3) + 1, dtype=float)
-                post_shift_pe_rate_slope_k3 = float(np.polyfit(x, np.array(post_shift_pe_rates_k3, dtype=float), 1)[0])
-            if len(post_shift_pe_rates_k5) >= 3:
-                x = np.arange(1, len(post_shift_pe_rates_k5) + 1, dtype=float)
-                post_shift_pe_rate_slope_k5 = float(np.polyfit(x, np.array(post_shift_pe_rates_k5, dtype=float), 1)[0])
-            if len(category_total_rts) >= 2:
-                y = np.array(category_total_rts, dtype=float)
-                valid_totals = np.isfinite(y)
-                if valid_totals.sum() >= 2:
-                    x = np.arange(1, len(y) + 1, dtype=float)[valid_totals]
-                    category_total_rt_slope = float(np.polyfit(x, y[valid_totals], 1)[0])
-
-            for idx in change_indices:
-                pre_start = max(0, idx - 3)
-                pre_rt = rt_vals[pre_start:idx]
-                post_rt = rt_vals[idx: min(idx + 3, len(rt_vals))]
-                if len(pre_rt) and len(post_rt):
-                    pre_mean = np.nanmean(pre_rt)
-                    post_mean = np.nanmean(post_rt)
-                    if np.isfinite(pre_mean) and np.isfinite(post_mean):
-                        rt_jump_vals.append(float(post_mean - pre_mean))
-
-                for k in range(1, 6):
-                    if idx + k < len(rt_vals):
-                        err_val = 1 - int(correct[idx + k])
-                        switch_cost_err[k].append(err_val)
-                        if len(pre_rt) and np.isfinite(rt_vals[idx + k]):
-                            pre_mean = np.nanmean(pre_rt)
-                            if np.isfinite(pre_mean):
-                                switch_cost_rt[k].append(float(rt_vals[idx + k] - pre_mean))
-
-            for k in range(1, 6):
-                switch_cost_err[k] = float(np.mean(switch_cost_err[k])) if switch_cost_err[k] else np.nan
-                switch_cost_rt[k] = float(np.mean(switch_cost_rt[k])) if switch_cost_rt[k] else np.nan
-
-            if rt_jump_vals:
-                rt_jump_at_switch = float(np.mean(rt_jump_vals))
-
-            reacq_vals = []
-            for idx in change_indices:
-                found = False
-                for j in range(idx, len(correct) - 2):
-                    if correct[j] and correct[j + 1] and correct[j + 2]:
-                        reacq_vals.append(float((j + 3) - idx))
-                        found = True
-                        break
-                if not found:
-                    continue
-            if reacq_vals:
-                trials_to_reacq = float(np.mean(reacq_vals))
-
-        failure_to_maintain_set = np.nan
-        if total_trials and has_is_npe:
-            # Match Flutter FMS definition: first NPE after 5+ consecutive correct (one per episode).
-            ftm = 0
-            consecutive_correct = 0
-            in_fms_eligible = False
-            fms_episode_active = False
-            rules = grp[rule_col].astype(str).str.lower().values if rule_col else None
-            prev_rule = None
-
-            for i in range(total_trials):
-                if rules is not None:
-                    rule = rules[i]
-                    if prev_rule is None:
-                        prev_rule = rule
-                    elif rule != prev_rule:
-                        consecutive_correct = 0
-                        in_fms_eligible = False
-                        fms_episode_active = False
-                        prev_rule = rule
-
-                is_correct = bool(correct[i])
-                is_npe_flag = bool(is_npe[i])
-                if (not is_correct) and is_npe_flag and in_fms_eligible and (not fms_episode_active):
-                    ftm += 1
-                    fms_episode_active = True
-
-                if is_correct:
-                    consecutive_correct += 1
-                    if consecutive_correct == 5:
-                        in_fms_eligible = True
-                        fms_episode_active = False
-                    if fms_episode_active:
-                        fms_episode_active = False
-                else:
-                    consecutive_correct = 0
-                    in_fms_eligible = False
-
-            failure_to_maintain_set = float(ftm)
-
-        block_pe_slope = np.nan
-        block_pe_intercept = np.nan
-        block_pe_r2 = np.nan
-        block_pe_initial = np.nan
-        block_pe_final = np.nan
-        block_pe_change = np.nan
-        block_pe_blocks = np.nan
-        pe_rate_slope_half = np.nan
-        pe_rate_slope_quartile = np.nan
-        if "isPE" in grp_sorted.columns:
-            pe_flags = grp_sorted["isPE"].astype(bool).to_numpy()
-
-            def _pe_rate_slope_by_segments(n_segments: int, min_segment_n: int = 5) -> float:
-                if len(pe_flags) < n_segments * min_segment_n:
-                    return np.nan
-                edges = np.linspace(0, len(pe_flags), n_segments + 1, dtype=int)
-                rates: list[float] = []
-                for idx in range(n_segments):
-                    start, end = edges[idx], edges[idx + 1]
-                    segment = pe_flags[start:end]
-                    if len(segment) < min_segment_n:
-                        return np.nan
-                    rates.append(float(np.mean(segment)))
-                if len(rates) < 2:
-                    return np.nan
-                x = np.arange(1, len(rates) + 1, dtype=float)
-                return float(np.polyfit(x, np.array(rates, dtype=float), 1)[0])
-
-            pe_rate_slope_half = _pe_rate_slope_by_segments(2)
-            pe_rate_slope_quartile = _pe_rate_slope_by_segments(4)
-            n_blocks = len(pe_flags) // WCST_BLOCK_SIZE
-            if n_blocks >= 1:
-                block_rates = []
-                for b in range(n_blocks):
-                    start = b * WCST_BLOCK_SIZE
-                    end = start + WCST_BLOCK_SIZE
-                    block_rates.append(float(np.mean(pe_flags[start:end])))
-                block_pe_blocks = float(n_blocks)
-                block_pe_initial = block_rates[0]
-                block_pe_final = block_rates[-1]
-                block_pe_change = block_pe_final - block_pe_initial
-                if n_blocks >= 2:
-                    x = np.arange(1, n_blocks + 1, dtype=float)
-                    y = np.array(block_rates, dtype=float)
-                    slope, intercept = np.polyfit(x, y, 1)
-                    block_pe_slope = float(slope)
-                    block_pe_intercept = float(intercept)
-                    preds = slope * x + intercept
-                    ss_res = float(np.sum((y - preds) ** 2))
-                    ss_tot = float(np.sum((y - np.mean(y)) ** 2))
-                    block_pe_r2 = 1.0 - ss_res / ss_tot if ss_tot > 0 else np.nan
-
-        seq_rt = rt_series_valid
-        seq_correct = grp_sorted["correct"] if "correct" in grp_sorted.columns else pd.Series(dtype=object)
-        if "correct" in grp_sorted.columns:
-            seq_rt_correct = seq_rt[grp_sorted["correct"] == True]
-        else:
-            seq_rt_correct = seq_rt
-        fatigue_metrics = compute_fatigue_slopes(seq_rt_correct)
-        if "correct" in grp_sorted.columns:
-            acc_fatigue = compute_fatigue_slopes(seq_rt, seq_correct)["acc_fatigue_slope"]
-            fatigue_metrics["acc_fatigue_slope"] = acc_fatigue
-        tau_metrics = compute_tau_quartile_metrics(seq_rt, seq_correct)
-        cascade_metrics = compute_error_cascade_metrics(seq_correct)
-        recovery_metrics = compute_post_error_recovery_metrics(seq_rt, seq_correct, max_lag=5)
-        momentum_metrics = compute_momentum_metrics(seq_rt, seq_correct)
-        volatility_metrics = compute_volatility_metrics(seq_rt)
-        iiv_metrics = compute_iiv_parameters(seq_rt)
-        variability_slopes = compute_temporal_variability_slopes(seq_rt_correct)
-        awareness_metrics = compute_error_awareness_metrics(seq_rt, seq_correct)
-        pre_error_metrics = compute_pre_error_slope_metrics(seq_rt, seq_correct)
-        rt_valid_values = rt_series_valid.dropna()
-        mean_rt_all = float(rt_valid_values.mean()) if len(rt_valid_values) >= 10 else np.nan
-        ies = (
-            float(mean_rt_all / accuracy_all)
-            if pd.notna(mean_rt_all) and pd.notna(accuracy_all) and accuracy_all > 0
-            else np.nan
-        )
-
-        records.append({
-            "participant_id": pid,
-            "wcst_pes": pes,
-            "wcst_post_error_rt": post_error_rt,
-            "wcst_post_correct_rt": post_correct_rt,
-            "wcst_post_pe_rt": post_pe_rt,
-            "wcst_post_npe_rt": post_npe_rt,
-            "wcst_post_pe_slowing": post_pe_slowing,
-            "wcst_post_switch_error_rate": post_switch_error_rate,
-            "wcst_cv_rt": coefficient_of_variation(rt_valid_values),
-            "wcst_mad_rt": mad_rt,
-            "wcst_iqr_rt": iqr_rt,
-            "wcst_mad_rt_correct": mad_rt_correct,
-            "wcst_iqr_rt_correct": iqr_rt_correct,
-            "wcst_mean_rt_all": mean_rt_all,
-            "wcst_accuracy_all": accuracy_all,
-            "wcst_error_rate_all": error_rate_all,
-            "wcst_ies": ies,
-            "wcst_pre_error_slope_mean": pre_error_metrics["pre_error_slope_mean"],
-            "wcst_pre_error_slope_std": pre_error_metrics["pre_error_slope_std"],
-            "wcst_pre_error_n": pre_error_metrics["pre_error_n"],
-            "wcst_dfa_alpha_correct": dfa_rt_correct,
-            "wcst_lag1_correct": lag1_rt_correct,
-            "wcst_slow_run_mean_correct": run_rt_correct["slow_run_mean"],
-            "wcst_slow_run_max_correct": run_rt_correct["slow_run_max"],
-            "wcst_fast_run_mean_correct": run_rt_correct["fast_run_mean"],
-            "wcst_fast_run_max_correct": run_rt_correct["fast_run_max"],
-            "wcst_trials": len(grp),
-            "wcst_total_errors": total_errors,
-            "wcst_error_rate": error_rate,
-            "wcst_perseverative_errors": pe_count,
-            "wcst_perseverative_error_rate": pe_rate,
-            "wcst_nonperseverative_errors": npe_count,
-            "wcst_perseverative_responses": pr_count,
-            "wcst_perseverative_response_percent": pr_percent,
-            "wcst_pe_rt_mean": rt_mean_pe,
-            "wcst_npe_rt_mean": rt_mean_npe,
-            "wcst_pe_minus_npe_rt_mean": rt_pe_minus_npe_mean,
-            "wcst_error_pr_ratio": error_pr_ratio,
-            "wcst_error_npe_ratio": error_npe_ratio,
-            "wcst_pe_run_length_mean": pe_run_mean,
-            "wcst_pe_run_length_max": pe_run_max,
-            "wcst_pr_run_length_mean": pr_run_mean,
-            "wcst_pr_run_length_max": pr_run_max,
-            "wcst_pe_cluster_rate": pe_cluster_rate,
-            "wcst_trials_to_first_category": trials_to_first_category,
-            "wcst_categories_completed": categories_completed,
-            "wcst_trials_per_category_mean": float(np.mean(trials_per_category)) if trials_per_category else np.nan,
-            "wcst_trials_per_category_sd": float(np.std(trials_per_category)) if trials_per_category else np.nan,
-            "wcst_rt_slope_overall": rt_slope_overall,
-            "wcst_rt_slope_correct": rt_slope_correct,
-            "wcst_residual_abs_slope_correct": residual_abs_slope_correct,
-            "wcst_rt_slope_within_category": rt_slope_within,
-            "wcst_mean_rt_within_category": category_mean_rt,
-            "wcst_category_accuracy_slope": category_accuracy_slope,
-            "wcst_acc_slope_within_category": acc_slope_within,
-            "wcst_category_total_rt_slope": category_total_rt_slope,
-            "wcst_category_pe_slope": category_pe_slope,
-            "wcst_category_pe_delta_first3_last3": category_pe_delta_first3_last3,
-            "wcst_post_shift_pe_count_slope": post_shift_pe_count_slope,
-            "wcst_post_shift_pe_rate_slope_k3": post_shift_pe_rate_slope_k3,
-            "wcst_post_shift_pe_rate_slope_k5": post_shift_pe_rate_slope_k5,
-            "wcst_rt_jump_at_switch": rt_jump_at_switch,
-            "wcst_switch_rt": switch_rt_mean,
-            "wcst_repeat_rt": repeat_rt_mean,
-            "wcst_switch_cost_rt": switch_cost_rt_mean,
-            "wcst_failure_to_maintain_set": failure_to_maintain_set,
-            "wcst_trials_to_rule_reacquisition": trials_to_reacq,
-            "wcst_block_pe_slope": block_pe_slope,
-            "wcst_block_pe_intercept": block_pe_intercept,
-            "wcst_block_pe_r2": block_pe_r2,
-            "wcst_block_pe_initial": block_pe_initial,
-            "wcst_block_pe_final": block_pe_final,
-            "wcst_block_pe_change": block_pe_change,
-            "wcst_block_pe_blocks": block_pe_blocks,
-            "wcst_pe_rate_slope_half": pe_rate_slope_half,
-            "wcst_pe_rate_slope_quartile": pe_rate_slope_quartile,
-            "wcst_delta_plot_slope_correct": delta_plot_slope,
-            "wcst_rt_fatigue_slope": fatigue_metrics["rt_fatigue_slope"],
-            "wcst_cv_fatigue_slope": fatigue_metrics["cv_fatigue_slope"],
-            "wcst_cv_fatigue_slope_rolling": fatigue_metrics["cv_fatigue_slope_rolling"],
-            "wcst_acc_fatigue_slope": fatigue_metrics["acc_fatigue_slope"],
-            "wcst_tau_q1": tau_metrics["tau_q1"],
-            "wcst_tau_q2": tau_metrics["tau_q2"],
-            "wcst_tau_q3": tau_metrics["tau_q3"],
-            "wcst_tau_q4": tau_metrics["tau_q4"],
-            "wcst_tau_slope": tau_metrics["tau_slope"],
-            "wcst_error_cascade_count": cascade_metrics["error_cascade_count"],
-            "wcst_error_cascade_rate": cascade_metrics["error_cascade_rate"],
-            "wcst_error_cascade_mean_len": cascade_metrics["error_cascade_mean_len"],
-            "wcst_error_cascade_max_len": cascade_metrics["error_cascade_max_len"],
-            "wcst_error_cascade_trials": cascade_metrics["error_cascade_trials"],
-            "wcst_error_cascade_prop": cascade_metrics["error_cascade_prop"],
-            "wcst_recovery_rt_lag1": recovery_metrics["recovery_rt_lag1"],
-            "wcst_recovery_rt_lag2": recovery_metrics["recovery_rt_lag2"],
-            "wcst_recovery_rt_lag3": recovery_metrics["recovery_rt_lag3"],
-            "wcst_recovery_rt_lag4": recovery_metrics["recovery_rt_lag4"],
-            "wcst_recovery_rt_lag5": recovery_metrics["recovery_rt_lag5"],
-            "wcst_recovery_acc_lag1": recovery_metrics["recovery_acc_lag1"],
-            "wcst_recovery_acc_lag2": recovery_metrics["recovery_acc_lag2"],
-            "wcst_recovery_acc_lag3": recovery_metrics["recovery_acc_lag3"],
-            "wcst_recovery_acc_lag4": recovery_metrics["recovery_acc_lag4"],
-            "wcst_recovery_acc_lag5": recovery_metrics["recovery_acc_lag5"],
-            "wcst_recovery_rt_slope": recovery_metrics["recovery_rt_slope"],
-            "wcst_recovery_acc_slope": recovery_metrics["recovery_acc_slope"],
-            "wcst_momentum_slope": momentum_metrics["momentum_slope"],
-            "wcst_momentum_mean_streak": momentum_metrics["momentum_mean_streak"],
-            "wcst_momentum_max_streak": momentum_metrics["momentum_max_streak"],
-            "wcst_momentum_rt_streak_0": momentum_metrics["momentum_rt_streak_0"],
-            "wcst_momentum_rt_streak_1": momentum_metrics["momentum_rt_streak_1"],
-            "wcst_momentum_rt_streak_2": momentum_metrics["momentum_rt_streak_2"],
-            "wcst_momentum_rt_streak_3": momentum_metrics["momentum_rt_streak_3"],
-            "wcst_momentum_rt_streak_4": momentum_metrics["momentum_rt_streak_4"],
-            "wcst_momentum_rt_streak_5": momentum_metrics["momentum_rt_streak_5"],
-            "wcst_volatility_rmssd": volatility_metrics["volatility_rmssd"],
-            "wcst_volatility_adj": volatility_metrics["volatility_adj"],
-            "wcst_intercept": iiv_metrics["iiv_intercept"],
-            "wcst_slope": iiv_metrics["iiv_slope"],
-            "wcst_slope_p": iiv_metrics["iiv_slope_p"],
-            "wcst_residual_sd": iiv_metrics["iiv_residual_sd"],
-            "wcst_raw_cv": iiv_metrics["iiv_raw_cv"],
-            "wcst_iiv_trials": iiv_metrics["iiv_n_trials"],
-            "wcst_iiv_r_squared": iiv_metrics["iiv_r_squared"],
-            "wcst_rt_sd_block_slope": variability_slopes["sd_slope"],
-            "wcst_rt_p90_block_slope": variability_slopes["p90_slope"],
-            "wcst_residual_sd_block_slope": variability_slopes["residual_sd_slope"],
-            "wcst_post_error_cv": awareness_metrics["post_error_cv"],
-            "wcst_post_correct_cv": awareness_metrics["post_correct_cv"],
-            "wcst_post_error_cv_reduction": awareness_metrics["post_error_cv_reduction"],
-            "wcst_post_error_accuracy": awareness_metrics["post_error_acc"],
-            "wcst_post_correct_accuracy": awareness_metrics["post_correct_acc"],
-            "wcst_post_error_acc_diff": awareness_metrics["post_error_acc_diff"],
-            "wcst_post_error_recovery_rate": awareness_metrics["post_error_recovery_rate"],
-            "wcst_pes_adaptive": awareness_metrics["pes_adaptive"],
-            "wcst_pes_maladaptive": awareness_metrics["pes_maladaptive"],
-        })
-        records[-1].update(vincentile_vals)
-
-        if trials_per_category:
-            record = records[-1]
-            for idx, val in enumerate(trials_per_category, start=1):
-                record[f"wcst_trials_per_category_{idx}"] = float(val)
-            if len(trials_per_category) >= 6:
-                first = np.mean(trials_per_category[:3])
-                last = np.mean(trials_per_category[-3:])
-                record["wcst_delta_trials_first3_last3"] = float(first - last)
-            else:
-                record["wcst_delta_trials_first3_last3"] = np.nan
-            if len(trials_per_category) >= 2:
-                x = np.arange(1, len(trials_per_category) + 1)
-                record["wcst_learning_slope_trials"] = float(np.polyfit(x, trials_per_category, 1)[0])
-            else:
-                record["wcst_learning_slope_trials"] = np.nan
-
-            for k in range(1, 6):
-                record[f"wcst_switch_cost_error_k{k}"] = switch_cost_err[k]
-                record[f"wcst_switch_cost_rt_k{k}"] = switch_cost_rt[k]
-
-    features_df = pd.DataFrame(records)
-    if not features_df.empty:
-        required_cols = [
-            "wcst_post_error_cv_reduction",
-            "wcst_post_error_accuracy",
-            "wcst_post_error_recovery_rate",
-        ]
-        if all(col in features_df.columns for col in required_cols):
-            z_cv = safe_zscore(features_df["wcst_post_error_cv_reduction"])
-            z_acc = safe_zscore(features_df["wcst_post_error_accuracy"])
-            z_rec = safe_zscore(features_df["wcst_post_error_recovery_rate"])
-            features_df["wcst_error_awareness_index"] = (z_cv + z_acc + z_rec) / 3
-
-    hmm_df = load_or_compute_wcst_hmm_mechanism_features(data_dir=data_dir)
-    rl_df = load_or_compute_wcst_rl_mechanism_features(data_dir=data_dir)
-    wsls_df = load_or_compute_wcst_wsls_mechanism_features(data_dir=data_dir)
-    brl_df = load_or_compute_wcst_bayesianrl_mechanism_features(data_dir=data_dir)
-    mech_frames = [df for df in (hmm_df, rl_df, wsls_df, brl_df) if not df.empty]
-    if not mech_frames:
-        return features_df
-
-    if features_df.empty:
-        combined = mech_frames[0]
-        for extra_df in mech_frames[1:]:
-            overlap = [c for c in extra_df.columns if c != "participant_id" and c in combined.columns]
-            if overlap:
-                extra_df = extra_df.drop(columns=overlap)
-            combined = combined.merge(extra_df, on="participant_id", how="outer")
-        return combined
-
-    for mech_df in mech_frames:
-        overlap = [c for c in mech_df.columns if c != "participant_id" and c in features_df.columns]
-        if overlap:
-            features_df = features_df.drop(columns=overlap)
-        features_df = features_df.merge(mech_df, on="participant_id", how="left")
-
-    summary_df = _load_wcst_summary_metrics(data_dir if isinstance(data_dir, Path) else Path(data_dir) if data_dir else None)
-    if not summary_df.empty:
-        summary_df = summary_df.set_index("participant_id")
-        features_df = features_df.set_index("participant_id")
-        for col in summary_df.columns:
-            if col in features_df.columns:
-                features_df[col] = features_df[col].combine_first(summary_df[col])
-            else:
-                features_df[col] = summary_df[col]
-        features_df = features_df.reset_index()
-
-    return features_df
+    return out.reset_index()

@@ -8,7 +8,8 @@ loneliness, DASS-21 subscales, and executive-function outcomes.
 Variables:
     - UCLA Loneliness
     - DASS-21 subscales (Depression, Anxiety, Stress)
-    - Executive Function: WCST (perseverative error rate), Stroop interference
+    - Executive Function: Stroop interference + interference slope
+    - Executive Function: WCST PE rate + phase RTs (confirmation, exploitation) and contrast
 
 Output:
     results/publication/analysis/correlation_matrix.csv
