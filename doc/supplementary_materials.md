@@ -279,6 +279,53 @@ WCST에서 **6개 카테고리를 모두 완료한 참가자(N=193)**만 포함�
 
 ---
 
+## S17. Stroop 4분할 내 조건 분포 균형
+
+QC 통과 Stroop trial을 참가자별 4분할로 나눈 뒤, 각 분할에서 조건(일치/불일치/중립) 비율을 확인했다.
+
+| Segment | Congruent | Incongruent | Neutral |
+|---:|---:|---:|---:|
+| 1 | 0.337 | 0.332 | 0.331 |
+| 2 | 0.323 | 0.334 | 0.342 |
+| 3 | 0.334 | 0.334 | 0.331 |
+| 4 | 0.338 | 0.332 | 0.329 |
+
+→ 모든 분할에서 약 1/3 수준으로 **조건 분포가 고르게 유지됨**.
+
+---
+
+## S18. Stroop 2/3/6분할 내 조건 분포 균형
+
+### S18.1 2분할
+
+| Segment | Congruent | Incongruent | Neutral |
+|---:|---:|---:|---:|
+| 1 | 0.330 | 0.333 | 0.336 |
+| 2 | 0.336 | 0.333 | 0.330 |
+
+### S18.2 3분할
+
+| Segment | Congruent | Incongruent | Neutral |
+|---:|---:|---:|---:|
+| 1 | 0.331 | 0.337 | 0.332 |
+| 2 | 0.329 | 0.332 | 0.339 |
+| 3 | 0.340 | 0.331 | 0.329 |
+
+### S18.3 6분할
+
+| Segment | Congruent | Incongruent | Neutral |
+|---:|---:|---:|---:|
+| 1 | 0.341 | 0.328 | 0.331 |
+| 2 | 0.321 | 0.347 | 0.332 |
+| 3 | 0.329 | 0.325 | 0.346 |
+| 4 | 0.329 | 0.338 | 0.332 |
+| 5 | 0.345 | 0.328 | 0.328 |
+| 6 | 0.335 | 0.334 | 0.331 |
+
+→ 2/3/6분할 모두 **조건 비율이 대체로 1/3 수준으로 균형**됨.
+
+---
+
 **출력 파일**
 - `outputs/stats/analysis/overall/wcst_phase_rt_ols_alltrials.csv`
 - `outputs/stats/analysis/overall/wcst_phase_pre_exploit_rt_ols_alltrials.csv`
@@ -300,3 +347,11 @@ WCST에서 **6개 카테고리를 모두 완료한 참가자(N=193)**만 포함�
 - `outputs/stats/analysis/overall/dass_total_models.csv`
 - `outputs/stats/analysis/overall/ucla_first_model_comparison.csv`
 - `outputs/stats/analysis/overall/ucla_fdr_qvalues.csv`
+- `outputs/stats/analysis/overall/stroop_condition_balance_by_segment.csv`
+- `outputs/stats/analysis/overall/stroop_condition_balance_by_segment_pivot.csv`
+- `outputs/stats/analysis/overall/stroop_condition_balance_by_segment_2.csv`
+- `outputs/stats/analysis/overall/stroop_condition_balance_by_segment_2_pivot.csv`
+- `outputs/stats/analysis/overall/stroop_condition_balance_by_segment_3.csv`
+- `outputs/stats/analysis/overall/stroop_condition_balance_by_segment_3_pivot.csv`
+- `outputs/stats/analysis/overall/stroop_condition_balance_by_segment_6.csv`
+- `outputs/stats/analysis/overall/stroop_condition_balance_by_segment_6_pivot.csv`
