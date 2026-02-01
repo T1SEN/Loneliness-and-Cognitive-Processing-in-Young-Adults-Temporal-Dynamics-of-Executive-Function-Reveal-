@@ -14,7 +14,7 @@ if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))
 
 from static.preprocessing.constants import WCST_RT_MIN, WCST_RT_MAX, get_results_dir
-from static.wcst_phase_utils import prepare_wcst_trials
+from static.preprocessing.wcst.utils import prepare_wcst_trials
 
 
 def _compute_pre_switch_features(

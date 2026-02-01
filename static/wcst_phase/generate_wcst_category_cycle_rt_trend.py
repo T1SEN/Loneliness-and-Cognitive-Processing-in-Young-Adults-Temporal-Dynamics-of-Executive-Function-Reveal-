@@ -12,7 +12,7 @@ if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))
 
 from static.analysis.utils import get_analysis_data, get_output_dir, get_figures_dir
-from static.wcst_phase_utils import prepare_wcst_trials
+from static.preprocessing.wcst.utils import prepare_wcst_trials
 
 
 LOW_LABEL = "Low loneliness (bottom 25%)"

@@ -51,7 +51,13 @@
       "Bash(git push:*)",
       "Bash(.\\\\venv\\\\Scripts\\\\python.exe -c:*)",
       "Bash(C:Usersanselmy_research_exportervenvScriptspython.exe -c \"import pandas as pd; import numpy as np; from scipy import stats; import statsmodels.formula.api as smf; import sys; sys.path.insert\\(0, ''C:\\\\Users\\\\ansel\\\\my_research_exporter''\\); stroop = pd.read_csv\\(''C:\\\\Users\\\\ansel\\\\my_research_exporter\\\\publication\\\\data\\\\complete_stroop\\\\5_stroop_dynamic_drift_features.csv''\\); print\\(''Stroop drift columns:''\\); print\\([c for c in stroop.columns if ''slope'' in c.lower\\(\\)]\\)\")",
-      "Bash(C:/Users/ansel/my_research_exporter/venv/Scripts/python.exe:*)"
+      "Bash(C:/Users/ansel/my_research_exporter/venv/Scripts/python.exe:*)",
+      "Bash(..venvScriptspython -m static.preprocessing --build overall)",
+      "Bash(.venvScriptspython.exe -m static.preprocessing --build overall)",
+      "Bash(C:/Users/user/lonliness_article/.venv/Scripts/python.exe -m static.preprocessing --build overall)",
+      "Bash(C:/Users/user/lonliness_article/.venv/Scripts/python.exe -m static.analysis.correlation_analysis:*)",
+      "Bash(C:/Users/user/lonliness_article/.venv/Scripts/python.exe -c \"from static.preprocessing import load_master_dataset; df = load_master_dataset(''overall''); print([c for c in df.columns if ''_all'' in c])\")",
+      "Bash(C:/Users/user/lonliness_article/.venv/Scripts/python.exe:*)"
     ]
   }
 }

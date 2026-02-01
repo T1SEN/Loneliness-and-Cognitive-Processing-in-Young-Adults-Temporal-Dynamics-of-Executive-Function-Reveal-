@@ -70,7 +70,7 @@ def load_qc_ids(task: str) -> set[str]:
 
 
 def prepare_stroop_trials() -> pd.DataFrame:
-    trials_path = get_results_dir("overall") / "4c_stroop_trials.csv"
+    trials_path = get_results_dir("overall") / "4a_stroop_trials.csv"
     trials = _read_csv(trials_path)
     if trials.empty:
         return trials
@@ -109,7 +109,7 @@ def prepare_stroop_trials() -> pd.DataFrame:
 
 
 def prepare_interference_trials() -> pd.DataFrame:
-    trials_path = get_results_dir("overall") / "4c_stroop_trials.csv"
+    trials_path = get_results_dir("overall") / "4a_stroop_trials.csv"
     trials = _read_csv(trials_path)
     if trials.empty:
         return trials
@@ -479,3 +479,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+

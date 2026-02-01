@@ -80,7 +80,7 @@ def generate_figure1():
     survey_ids = {str(pid) for pid in get_survey_valid_participants(RAW_DIR, SurveyQCCriteria())}
     n_survey = len(survey_ids)
 
-    stroop_attempted = _load_participant_ids(data_dir / "raw" / "4c_stroop_trials.csv") & survey_ids
+    stroop_attempted = _load_participant_ids(data_dir / "raw" / "4a_stroop_trials.csv") & survey_ids
     wcst_attempted = _load_participant_ids(data_dir / "raw" / "4b_wcst_trials.csv") & survey_ids
 
     n_stroop_attempted = len(stroop_attempted)
@@ -507,3 +507,4 @@ if __name__ == "__main__":
     print("All figures generated successfully!")
     print(f"Figures directory: {figures_dir}")
     print(f"Data directory: {output_dir}")
+

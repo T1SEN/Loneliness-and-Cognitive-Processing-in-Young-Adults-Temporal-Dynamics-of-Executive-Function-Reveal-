@@ -7,8 +7,8 @@ import sys
 from pathlib import Path
 
 from static.preprocessing.constants import get_results_dir
-from static.preprocessing.overall.dataset import build_overall_dataset
-from static.preprocessing.overall.features import build_overall_features
+from static.preprocessing.datasets import build_overall_dataset
+from static.preprocessing.features import build_overall_features
 from static.analysis import descriptive_statistics, correlation_analysis, hierarchical_regression
 
 

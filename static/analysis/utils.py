@@ -62,6 +62,9 @@ CORRELATION_VARS = [
     ("wcst_confirmation_rt", "WCST Confirmation RT"),
     ("wcst_exploitation_rt", "WCST Exploitation RT"),
     ("wcst_confirmation_minus_exploitation_rt", "WCST Confirm - Exploit RT"),
+    ("wcst_confirmation_rt_all", "WCST Confirmation RT (all trials)"),
+    ("wcst_exploitation_rt_all", "WCST Exploitation RT (all trials)"),
+    ("wcst_confirmation_minus_exploitation_rt_all", "WCST Confirm - Exploit RT (all trials)"),
 ]
 
 # Primary outcomes for manuscript analyses

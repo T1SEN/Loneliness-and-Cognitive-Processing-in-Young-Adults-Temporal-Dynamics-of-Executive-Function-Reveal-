@@ -1,4 +1,6 @@
-"""Overall loaders (merged summaries)."""
+﻿"""
+Overall summary loader (merged cognitive summaries).
+"""
 
 from __future__ import annotations
 
@@ -6,7 +8,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from ..core import ensure_participant_id
+from .core import ensure_participant_id
 
 
 def _prepare_task_summary(df: pd.DataFrame, task: str) -> pd.DataFrame:

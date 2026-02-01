@@ -15,9 +15,8 @@ import sys
 import pandas as pd
 
 from .constants import VALID_TASKS, get_results_dir
-from .datasets import build_all_datasets, get_dataset_info, print_dataset_summary
-from .overall import build_overall_features
-from .overall.dataset import build_overall_dataset
+from .datasets import build_all_datasets, build_overall_dataset, get_dataset_info, print_dataset_summary
+from .features import build_overall_features
 
 
 if sys.platform.startswith("win") and hasattr(sys.stdout, "reconfigure"):

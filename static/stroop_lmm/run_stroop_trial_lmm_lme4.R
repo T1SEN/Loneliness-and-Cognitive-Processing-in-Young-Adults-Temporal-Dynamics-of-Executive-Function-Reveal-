@@ -22,7 +22,7 @@ if (!dir.exists(file.path(root, "static"))) {
 output_dir <- file.path(root, "outputs", "stats", "analysis", "overall", "stroop_lmm")
 dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
 
-trials_path <- file.path(root, "data", "complete_overall", "4c_stroop_trials.csv")
+trials_path <- file.path(root, "data", "complete_overall", "4a_stroop_trials.csv")
 trials <- read.csv(trials_path, fileEncoding = "UTF-8-BOM")
 
 if (!"participant_id" %in% names(trials) && "participantId" %in% names(trials)) {
@@ -121,3 +121,4 @@ out <- do.call(rbind, rows)
 
 out_path <- file.path(output_dir, "stroop_interference_slope_lme4.csv")
 write.csv(out, out_path, row.names = FALSE)
+

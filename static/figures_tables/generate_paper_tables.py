@@ -12,7 +12,7 @@ from static.preprocessing.surveys import (
     load_ucla_scores,
 )
 from static.preprocessing.constants import OUTPUT_STATS_DIR, OUTPUT_TABLES_DIR, RAW_DIR, get_results_dir
-from static.preprocessing.overall.loaders import load_overall_summary
+from static.preprocessing.summary import load_overall_summary
 
 if sys.platform.startswith("win") and hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")

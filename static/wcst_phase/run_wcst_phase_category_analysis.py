@@ -15,9 +15,8 @@ from static.analysis.utils import get_output_dir, run_ucla_regression
 from static.preprocessing.constants import get_results_dir
 from static.preprocessing.core import ensure_participant_id
 from static.preprocessing.surveys import load_dass_scores, load_participants, load_ucla_scores
-from static.wcst_phase_utils import prepare_wcst_trials
-
-from static.wcst_phase_utils import label_wcst_phases
+from static.preprocessing.wcst.phase import label_wcst_phases
+from static.preprocessing.wcst.utils import prepare_wcst_trials
 
 
 PHASE_ORDER = ["exploration", "confirmation", "exploitation"]
