@@ -48,7 +48,7 @@ RT 기반 지표는 **타임아웃 제외 + 유효 RT만 사용**하며, 오류 
 - Stroop QC: 108 trial 완료 + 전체 정확도 ≥ .70
 - WCST QC: 유효 trial ≥ 60 + 단일 카드 선택 비율 ≤ .85
 
-### 2.7.3 WCST phase 정의 (정석 3분할 + 2분할)
+### 2.7.3 WCST phase 정의 (정석 3분할 + 2분할 해석)
 
 **Rule segment**는 `ruleAtThatTime` 변화로 구간을 나누며 **최대 6 category**만 사용한다.
 
@@ -59,9 +59,9 @@ RT 기반 지표는 **타임아웃 제외 + 유효 RT만 사용**하며, 오류 
 - 3연속 정답이 나오지 않으면, 첫 정답 이후 구간은 confirmation으로 유지
 - 정답이 한 번도 없으면 전체가 exploration
 
-**2‑phase (보조 분석)**
-- pre‑exploitation = exploration + confirmation
-- exploitation = 3연속 정답 달성 이후
+**2‑phase (보조 분석; 개념적 해석: 규칙 탐색/활용)**  
+- **rule search (pre‑exploitation)** = exploration + confirmation  
+- **rule application (exploitation)** = 3연속 정답 달성 이후
 
 모든 phase RT는 **all‑trials 기준**(오류 포함)으로 계산하며, 유효 RT 및 비‑timeout trial만 평균에 포함한다.
 
@@ -83,3 +83,15 @@ WCST phase RT(3‑phase 및 2‑phase)에 대해 UCLA + DASS 통제 OLS 회귀�
 ### 2.8.3 신뢰도
 
 WCST phase RT는 category 홀/짝 분할(split‑half)로 신뢰도를 계산했고, Spearman‑Brown 보정을 보고했다. 자세한 수치는 Supplementary에 제시했다.
+
+### 2.8.4 Stroop trial‑level LMM (보조)
+
+Stroop trial‑level 혼합효과모형은 두 가지를 보고했다.
+
+**(1) 전체 trial LMM**  
+RT(ms)를 종속변수로 두고, `segment(참가자 내 4분위)` × `UCLA(z)` 상호작용을 포함했다. 공변량은 DASS‑Dep/Anx/Stress, age, gender를 통제했다. 랜덤효과는 참가자별 **random intercept + segment slope**를 포함했다.
+
+**(2) 간섭‑기울기 LMM**  
+congruent/incongruent trial만 사용하고 log(RT)를 종속변수로 설정했다. `trial_scaled(참가자 내 0–1)` × `cond_code(‑0.5/+0.5)` × `UCLA(z)`의 3‑way 상호작용을 포함했으며, 공변량은 동일하다. 랜덤효과는 수렴이 가능한 최우선 구조(1 + trial_scaled)를 채택했다.
+
+모든 LMM은 statsmodels MixedLM으로 ML 추정했고, 결과는 Supplementary에 제시했다.

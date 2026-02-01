@@ -56,10 +56,10 @@ Rule segment는 `ruleAtThatTime` 변화로 구간을 나누며 최대 6개 categ
 - 3연속 정답이 없으면 첫 정답 이후 구간은 confirmation
 - 정답이 전혀 없으면 전 구간 exploration
 
-### S4.2 2‑phase (보조)
+### S4.2 2‑phase (보조; 규칙 탐색/활용 해석)
 
-- **pre‑exploitation** = exploration + confirmation
-- **exploitation** = 3연속 정답 달성 이후
+- **rule search (pre‑exploitation)** = exploration + confirmation
+- **rule application (exploitation)** = 3연속 정답 달성 이후
 
 모든 phase RT는 **all‑trials 기준**이며, `is_rt_valid` 및 비‑timeout trial만 평균에 포함한다.
 
@@ -76,13 +76,13 @@ Rule segment는 `ruleAtThatTime` 변화로 구간을 나누며 최대 6개 categ
 | exploitation RT (all) | 212 | 27.148 | 0.4579 |
 | confirmation − exploitation | 212 | 100.204 | 0.01115 |
 
-### S5.2 2‑phase 회귀
+### S5.2 2‑phase 회귀 (rule search / rule application)
 
 | Outcome | n | UCLA β | p |
 |---|---:|---:|---:|
-| pre‑exploitation RT (all) | 212 | 122.573 | 0.01010 |
-| exploitation RT (all) | 212 | 27.148 | 0.4579 |
-| pre‑exploitation − exploitation | 212 | 95.425 | 0.01296 |
+| rule search (pre‑exploitation) RT (all) | 212 | 122.573 | 0.01010 |
+| rule application (exploitation) RT (all) | 212 | 27.148 | 0.4579 |
+| rule search − rule application | 212 | 95.425 | 0.01296 |
 
 ## S6. WCST Phase 신뢰도 (odd/even category split‑half)
 
@@ -91,7 +91,31 @@ Rule segment는 `ruleAtThatTime` 변화로 구간을 나누며 최대 6개 categ
 | exploration | 183 | 0.1862 | 0.3139 |
 | confirmation | 210 | 0.5955 | 0.7464 |
 | exploitation | 209 | 0.7484 | 0.8561 |
-| pre‑exploitation | 210 | 0.6472 | 0.7858 |
+| rule search (pre‑exploitation) | 210 | 0.6472 | 0.7858 |
+
+---
+
+## S7. Stroop trial‑level LMM (보조 분석)
+
+Stroop trial‑level 혼합효과모형은 QC 통과 trial만 사용했다(정답 + 타임아웃 제외 + 유효 RT). 공변량은 DASS‑Dep/Anx/Stress, age, gender를 통제했다.
+
+### S7.1 전체 trial LMM (segment × UCLA)
+
+모형: `rt_ms ~ segment * z_ucla_score + C(cond) + DASS(3) + age + gender`  
+랜덤효과: participant별 **1 + segment**
+
+| n_trials | n_participants | segment × UCLA β | p |
+|---:|---:|---:|---:|
+| 22544 | 212 | -0.0466 | 0.987 |
+
+### S7.2 간섭‑기울기 LMM (trial_scaled × cond × UCLA)
+
+모형: `log_rt ~ trial_scaled * cond_code * z_ucla_score + DASS(3) + age + gender`  
+랜덤효과(선택): **1 + trial_scaled** (수렴 우선 구조)
+
+| n_trials | n_participants | (trial_scaled × cond × UCLA) β | p |
+|---:|---:|---:|---:|
+| 14986 | 212 | 0.0509 | 0.00170 |
 
 ---
 
@@ -99,3 +123,6 @@ Rule segment는 `ruleAtThatTime` 변화로 구간을 나누며 최대 6개 categ
 - `outputs/stats/analysis/overall/wcst_phase_rt_ols_alltrials.csv`
 - `outputs/stats/analysis/overall/wcst_phase_pre_exploit_rt_ols_alltrials.csv`
 - `outputs/stats/analysis/overall/wcst_phase_split_half_reliability.csv`
+- `outputs/stats/analysis/overall/stroop_lmm/stroop_trial_level_lmm.csv`
+- `outputs/stats/analysis/overall/stroop_lmm/stroop_interference_slope_lmm.csv`
+- `outputs/stats/analysis/overall/stroop_lmm/stroop_interference_slope_lmm_variants.csv`
