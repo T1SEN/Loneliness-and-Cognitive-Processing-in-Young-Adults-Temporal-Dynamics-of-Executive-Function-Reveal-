@@ -379,6 +379,85 @@ def _compute_fdr_table() -> pd.DataFrame:
     return df_out
 
 
+def _safe_run(step: str, func, *args, **kwargs) -> None:
+    try:
+        func(*args, **kwargs)
+    except Exception as exc:
+        print(f"[WARN] {step} failed: {exc}")
+
+
+def _run_pipeline_extras() -> None:
+    from static.wcst_phase import run_wcst_phase_rt_ols
+    from static.wcst_phase import run_wcst_phase_split_half_reliability
+    from static.stroop_lmm import run_stroop_trial_lmm
+    from static.figures_tables import plot_stroop_interference_quartile_loneliness_extremes25_trend
+    from static.figures_tables import plot_wcst_phase_loneliness_extremes25_trend
+
+    _safe_run(
+        "wcst_phase_rt_ols_alltrials",
+        run_wcst_phase_rt_ols.main,
+        3,
+        True,
+        False,
+        False,
+    )
+    _safe_run(
+        "wcst_phase_pre_exploit_rt_ols_alltrials",
+        run_wcst_phase_rt_ols.main,
+        3,
+        True,
+        False,
+        True,
+    )
+    _safe_run(
+        "wcst_phase_pre_exploit_rt_ols_alltrials_m2",
+        run_wcst_phase_rt_ols.main,
+        2,
+        True,
+        False,
+        True,
+    )
+    _safe_run(
+        "wcst_phase_pre_exploit_rt_ols_alltrials_m4",
+        run_wcst_phase_rt_ols.main,
+        4,
+        True,
+        False,
+        True,
+    )
+
+    _safe_run(
+        "wcst_phase_split_half_reliability",
+        run_wcst_phase_split_half_reliability.main,
+        3,
+        False,
+    )
+    _safe_run(
+        "wcst_phase_split_half_reliability_m2",
+        run_wcst_phase_split_half_reliability.main,
+        2,
+        False,
+    )
+    _safe_run(
+        "wcst_phase_split_half_reliability_m4",
+        run_wcst_phase_split_half_reliability.main,
+        4,
+        False,
+    )
+
+    _safe_run("stroop_trial_lmm", run_stroop_trial_lmm.main)
+    _safe_run(
+        "plot_stroop_interference_quartile_loneliness_extremes25_trend",
+        plot_stroop_interference_quartile_loneliness_extremes25_trend.main,
+    )
+    _safe_run(
+        "plot_wcst_phase_loneliness_extremes25_trend",
+        plot_wcst_phase_loneliness_extremes25_trend.main,
+        3,
+        True,
+    )
+
+
 def run(task: str = "overall") -> dict[str, pd.DataFrame]:
     output_dir = get_output_dir(task)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -434,6 +513,8 @@ def run(task: str = "overall") -> dict[str, pd.DataFrame]:
     fdr_table = _compute_fdr_table()
     if not fdr_table.empty:
         fdr_table.to_csv(output_dir / "ucla_fdr_qvalues.csv", index=False, encoding="utf-8-sig")
+
+    _run_pipeline_extras()
 
     return {
         "stroop_ttest": stroop_ttest,

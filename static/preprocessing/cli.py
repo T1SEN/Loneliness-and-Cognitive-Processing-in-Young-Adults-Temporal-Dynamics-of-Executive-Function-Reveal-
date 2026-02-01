@@ -23,6 +23,22 @@ if sys.platform.startswith("win") and hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
 
+def run_preprocess_pipeline(
+    build: bool = True,
+    features: bool = True,
+    save: bool = True,
+    verbose: bool = True,
+) -> None:
+    if build:
+        build_overall_dataset(save=save, verbose=verbose)
+    if features:
+        build_overall_features(
+            data_dir=get_results_dir("overall"),
+            save=save,
+            verbose=verbose,
+        )
+
+
 def _report_features(task: str, features: pd.DataFrame, verbose: bool) -> None:
     if features.empty:
         if verbose:

@@ -12,6 +12,9 @@ if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))
 
 from static.analysis.utils import get_output_dir, get_figures_dir
+from static.preprocessing.constants import STROOP_RT_MIN, STROOP_RT_MAX, get_results_dir
+from static.preprocessing.core import ensure_participant_id
+from static.preprocessing.surveys import load_ucla_scores
 
 LOW_LABEL = "Low loneliness (bottom 25%)"
 HIGH_LABEL = "High loneliness (top 25%)"
@@ -25,6 +28,115 @@ def _trend_line(x_vals: np.ndarray, y_vals: np.ndarray) -> tuple[float, float]:
     return float(slope), float(intercept)
 
 
+def _load_qc_ids() -> set[str]:
+    task_dir = get_results_dir("overall")
+    qc_ids_path = task_dir / "filtered_participant_ids.csv"
+    if not qc_ids_path.exists():
+        return set()
+    qc_ids = pd.read_csv(qc_ids_path, encoding="utf-8-sig")
+    qc_ids = ensure_participant_id(qc_ids)
+    if "participant_id" not in qc_ids.columns:
+        return set()
+    return set(qc_ids["participant_id"].dropna().astype(str))
+
+
+def _build_table(output_dir: Path) -> pd.DataFrame:
+    data_dir = get_results_dir("overall")
+    trials_path = data_dir / "4a_stroop_trials.csv"
+    if not trials_path.exists():
+        raise FileNotFoundError("Missing Stroop trials file.")
+
+    trials = pd.read_csv(trials_path, encoding="utf-8-sig")
+    trials = ensure_participant_id(trials)
+
+    qc_ids = _load_qc_ids()
+    if qc_ids:
+        trials = trials[trials["participant_id"].isin(qc_ids)]
+
+    if "cond" in trials.columns:
+        trials["cond"] = trials["cond"].astype(str).str.lower()
+    elif "type" in trials.columns:
+        trials["cond"] = trials["type"].astype(str).str.lower()
+    else:
+        raise KeyError("No condition column found in Stroop trials.")
+
+    if "trial_index" in trials.columns:
+        trials["trial_order"] = pd.to_numeric(trials["trial_index"], errors="coerce")
+    elif "trial_order" in trials.columns:
+        trials["trial_order"] = pd.to_numeric(trials["trial_order"], errors="coerce")
+    elif "trial" in trials.columns:
+        trials["trial_order"] = pd.to_numeric(trials["trial"], errors="coerce")
+    else:
+        raise KeyError("No trial order column found in Stroop trials.")
+
+    trials["is_rt_valid"] = trials["is_rt_valid"].astype(str).str.lower().isin({"true", "1", "t", "yes"})
+    trials["timeout"] = trials["timeout"].astype(str).str.lower().isin({"true", "1", "t", "yes"})
+    trials["correct"] = trials["correct"].astype(str).str.lower().isin({"true", "1", "t", "yes"})
+    trials["rt_ms"] = pd.to_numeric(trials["rt_ms"], errors="coerce")
+
+    valid = (
+        trials["cond"].isin({"congruent", "incongruent"})
+        & trials["correct"]
+        & (~trials["timeout"])
+        & trials["is_rt_valid"]
+        & trials["rt_ms"].between(STROOP_RT_MIN, STROOP_RT_MAX)
+    )
+    trials = trials[valid].dropna(subset=["participant_id", "trial_order", "rt_ms"])
+    if trials.empty:
+        raise RuntimeError("No valid Stroop trials after filtering.")
+
+    trials = trials.sort_values(["participant_id", "trial_order"]).reset_index(drop=True)
+    trials["segment"] = np.nan
+    for pid, grp in trials.groupby("participant_id"):
+        order_rank = grp["trial_order"].rank(method="first")
+        try:
+            seg = pd.qcut(order_rank, q=4, labels=[1, 2, 3, 4], duplicates="drop")
+        except ValueError:
+            continue
+        trials.loc[grp.index, "segment"] = seg.astype(float)
+    trials = trials.dropna(subset=["segment"])
+
+    means = (
+        trials.groupby(["participant_id", "segment", "cond"])["rt_ms"]
+        .mean()
+        .unstack()
+    )
+    if "incongruent" not in means.columns or "congruent" not in means.columns:
+        raise RuntimeError("Missing condition means for interference computation.")
+    means["interference_rt"] = means["incongruent"] - means["congruent"]
+    means = means.reset_index()
+
+    ucla = load_ucla_scores(data_dir).rename(columns={"ucla_total": "ucla_score"})
+    ucla = ensure_participant_id(ucla)
+    ucla = ucla[["participant_id", "ucla_score"]].dropna()
+    q25 = ucla["ucla_score"].quantile(0.25)
+    q75 = ucla["ucla_score"].quantile(0.75)
+    ucla["loneliness_group"] = pd.NA
+    ucla.loc[ucla["ucla_score"] <= q25, "loneliness_group"] = LOW_LABEL
+    ucla.loc[ucla["ucla_score"] >= q75, "loneliness_group"] = HIGH_LABEL
+    ucla = ucla[ucla["loneliness_group"].notna()]
+
+    merged = means.merge(ucla, on="participant_id", how="inner")
+    if merged.empty:
+        raise RuntimeError("No participants in loneliness extremes after merge.")
+
+    summary = (
+        merged.groupby(["loneliness_group", "segment"])["interference_rt"]
+        .agg(["mean", "std", "count"])
+        .reset_index()
+        .rename(columns={"mean": "mean_interference_rt", "std": "sd_interference_rt", "count": "n"})
+    )
+    summary["sem_interference_rt"] = summary.apply(
+        lambda row: float(row["sd_interference_rt"] / np.sqrt(row["n"])) if row["n"] > 1 else np.nan,
+        axis=1,
+    )
+    summary = summary.drop(columns=["sd_interference_rt"])
+
+    table_path = output_dir / "stroop_rt_timeseg4_loneliness_extremes25_table.csv"
+    summary.to_csv(table_path, index=False, encoding="utf-8-sig")
+    return summary
+
+
 def _load_summary(output_dir: Path) -> pd.DataFrame:
     summary_path = output_dir / "stroop_interference_quartile_loneliness_extremes25_summary.csv"
     if summary_path.exists():
@@ -32,9 +144,9 @@ def _load_summary(output_dir: Path) -> pd.DataFrame:
 
     table_path = output_dir / "stroop_rt_timeseg4_loneliness_extremes25_table.csv"
     if not table_path.exists():
-        raise FileNotFoundError("Missing stroop interference summary/table files.")
-
-    table = pd.read_csv(table_path, encoding="utf-8-sig")
+        table = _build_table(output_dir)
+    else:
+        table = pd.read_csv(table_path, encoding="utf-8-sig")
     summary = table.rename(
         columns={
             "segment": "quartile",

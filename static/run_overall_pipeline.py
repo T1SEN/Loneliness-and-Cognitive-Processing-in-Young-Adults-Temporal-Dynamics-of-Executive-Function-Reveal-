@@ -7,8 +7,7 @@ import sys
 from pathlib import Path
 
 from static.preprocessing.constants import get_results_dir
-from static.preprocessing.datasets import build_overall_dataset
-from static.preprocessing.features import build_overall_features
+from static.preprocessing.cli import run_preprocess_pipeline
 from static.analysis import descriptive_statistics, correlation_analysis, hierarchical_regression
 from static.analysis import supplementary_analyses
 
@@ -23,12 +22,11 @@ def main(run_preprocess: bool, run_analysis: bool) -> None:
         sys.stdout.reconfigure(encoding="utf-8")
 
     if run_preprocess:
-        build_overall_dataset(save=True, verbose=True)
-        build_overall_features(save=True, verbose=True)
+        run_preprocess_pipeline(build=True, features=True, save=True, verbose=True)
 
     if not _features_ready():
         if run_preprocess:
-            build_overall_features(save=True, verbose=True)
+            run_preprocess_pipeline(build=False, features=True, save=True, verbose=True)
 
     if not _features_ready():
         print("[WARN] 5_overall_features.csv not found in complete_overall.")
