@@ -159,6 +159,34 @@ Stroop trial‑level 혼합효과모형은 QC 통과 trial만 사용했다(정�
 
 ---
 
+## S9. WCST 6‑카테고리 완료자(Complete‑6) 분석
+
+WCST에서 **6개 카테고리를 모두 완료한 참가자(N=193)**만 포함하여 3‑phase/2‑phase 회귀와 신뢰도를 다시 계산했다.
+
+### S9.1 3‑phase/2‑phase 회귀 (OLS, all‑trials)
+
+| Outcome | n | UCLA β | p |
+|---|---:|---:|---:|
+| exploration | 191 | 60.648 | 0.430 |
+| confirmation | 193 | 99.729 | 0.0333 |
+| exploitation | 193 | 2.534 | 0.926 |
+| confirmation − exploitation | 193 | 97.195 | 0.00854 |
+| pre‑exploitation | 193 | 97.856 | 0.02999 |
+| pre‑exploitation − exploitation | 193 | 95.322 | 0.00632 |
+
+### S9.2 신뢰도 (odd/even split‑half)
+
+**3‑phase**
+- exploration: n=173, r=0.1829, SB=0.3093  
+- confirmation: n=193, r=0.5825, SB=0.7362  
+- exploitation: n=193, r=0.6949, SB=0.8200  
+
+**2‑phase**
+- pre‑exploitation: n=193, r=0.6328, SB=0.7751  
+- exploitation: n=193, r=0.6949, SB=0.8200  
+
+---
+
 **출력 파일**
 - `outputs/stats/analysis/overall/wcst_phase_rt_ols_alltrials.csv`
 - `outputs/stats/analysis/overall/wcst_phase_pre_exploit_rt_ols_alltrials.csv`
@@ -171,3 +199,5 @@ Stroop trial‑level 혼합효과모형은 QC 통과 trial만 사용했다(정�
 - `outputs/stats/analysis/overall/stroop_lmm/stroop_interference_slope_lmm.csv`
 - `outputs/stats/analysis/overall/stroop_lmm/stroop_interference_slope_lmm_variants.csv`
 - `outputs/stats/analysis/overall/stroop_interference_slope_segment_sensitivity_2_3_6.csv`
+- `outputs/stats/analysis/overall/wcst_phase_3_2phase_6categories_ols_alltrials.csv`
+- `outputs/stats/analysis/overall/wcst_phase_3_2phase_6categories_split_half_reliability.csv`
