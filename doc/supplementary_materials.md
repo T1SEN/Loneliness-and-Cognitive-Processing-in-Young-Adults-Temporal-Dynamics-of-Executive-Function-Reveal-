@@ -147,6 +147,18 @@ Stroop trial‑level 혼합효과모형은 QC 통과 trial만 사용했다(정�
 
 ---
 
+## S8. Stroop 간섭 기울기 분할 민감도 (2/3/6분할)
+
+분할 수에 따라 간섭 기울기(OLS, DASS 통제)가 어떻게 변하는지 비교했다.
+
+| 분할 | n | UCLA β | p | R² |
+|---:|---:|---:|---:|---:|
+| 2 | 212 | 40.140 | 0.00159 | 0.0605 |
+| 3 | 212 | 28.406 | 0.000678 | 0.0692 |
+| 6 | 212 | 14.739 | 0.000106 | 0.0909 |
+
+---
+
 **출력 파일**
 - `outputs/stats/analysis/overall/wcst_phase_rt_ols_alltrials.csv`
 - `outputs/stats/analysis/overall/wcst_phase_pre_exploit_rt_ols_alltrials.csv`
@@ -158,3 +170,4 @@ Stroop trial‑level 혼합효과모형은 QC 통과 trial만 사용했다(정�
 - `outputs/stats/analysis/overall/stroop_lmm/stroop_trial_level_lmm.csv`
 - `outputs/stats/analysis/overall/stroop_lmm/stroop_interference_slope_lmm.csv`
 - `outputs/stats/analysis/overall/stroop_lmm/stroop_interference_slope_lmm_variants.csv`
+- `outputs/stats/analysis/overall/stroop_interference_slope_segment_sensitivity_2_3_6.csv`
