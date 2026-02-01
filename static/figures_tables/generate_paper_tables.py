@@ -11,7 +11,7 @@ from static.preprocessing.surveys import (
     load_participants,
     load_ucla_scores,
 )
-from static.preprocessing.constants import OUTPUT_STATS_DIR, OUTPUT_TABLES_DIR, RAW_DIR, get_results_dir
+from static.preprocessing.constants import OUTPUT_STATS_CORE_DIR, OUTPUT_TABLES_CORE_DIR, RAW_DIR, get_results_dir
 from static.preprocessing.summary import load_overall_summary
 
 if sys.platform.startswith("win") and hasattr(sys.stdout, "reconfigure"):
@@ -20,7 +20,7 @@ if sys.platform.startswith("win") and hasattr(sys.stdout, "reconfigure"):
 # Paths
 repo_root = Path(__file__).resolve().parents[2]
 data_dir = repo_root / "data"
-output_dir = OUTPUT_TABLES_DIR
+output_dir = OUTPUT_TABLES_CORE_DIR
 output_dir.mkdir(parents=True, exist_ok=True)
 
 
@@ -66,7 +66,7 @@ def _format_cov_note(cov_label: str) -> str:
 
 
 def _load_hierarchical(task: str) -> pd.DataFrame:
-    hr_path = OUTPUT_STATS_DIR / "analysis" / task / "hierarchical_results.csv"
+    hr_path = OUTPUT_STATS_CORE_DIR / task / "hierarchical_results.csv"
     if not hr_path.exists():
         print(f"  Warning: {hr_path} not found")
         return pd.DataFrame()
@@ -193,12 +193,12 @@ def generate_table4():
     print("=" * 60)
 
     r = pd.read_csv(
-        OUTPUT_STATS_DIR / "analysis" / "overall" / "correlation_matrix.csv",
+        OUTPUT_STATS_CORE_DIR / "overall" / "correlation_matrix.csv",
         index_col=0,
         encoding="utf-8-sig",
     )
     p = pd.read_csv(
-        OUTPUT_STATS_DIR / "analysis" / "overall" / "correlation_pvalues.csv",
+        OUTPUT_STATS_CORE_DIR / "overall" / "correlation_pvalues.csv",
         index_col=0,
         encoding="utf-8-sig",
     )

@@ -202,7 +202,7 @@ def main(confirm_len: int, include_errors: bool, use_log: bool, merge_pre: bool)
         results.append(res)
 
     results_df = pd.DataFrame(results)
-    output_dir = get_output_dir("overall")
+    output_dir = get_output_dir("overall", bucket="supplementary")
     if use_log and not include_errors and not merge_pre:
         if confirm_len == 3:
             filename = "wcst_phase_rt_log_ols.csv"

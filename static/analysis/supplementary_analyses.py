@@ -459,7 +459,7 @@ def _run_pipeline_extras() -> None:
 
 
 def run(task: str = "overall") -> dict[str, pd.DataFrame]:
-    output_dir = get_output_dir(task)
+    output_dir = get_output_dir(task, bucket="supplementary")
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # Stroop t-test

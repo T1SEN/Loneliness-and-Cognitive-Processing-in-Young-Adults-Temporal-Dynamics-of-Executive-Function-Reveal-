@@ -107,8 +107,8 @@ def main(confirm_len: int, include_errors: bool) -> None:
     if sys.platform.startswith("win") and hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
 
-    output_dir = get_output_dir("overall")
-    figures_dir = get_figures_dir()
+    output_dir = get_output_dir("overall", bucket="supplementary")
+    figures_dir = get_figures_dir(bucket="supplementary")
 
     base = _load_base_ucla()
     phase_means = _phase_means(confirm_len=confirm_len, include_errors=include_errors)

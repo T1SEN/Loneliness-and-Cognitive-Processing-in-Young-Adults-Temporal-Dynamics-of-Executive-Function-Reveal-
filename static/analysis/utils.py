@@ -25,7 +25,10 @@ from static.preprocessing import load_master_dataset
 
 from static.preprocessing.constants import (
     ANALYSIS_OUTPUT_DIR,
-    OUTPUT_FIGURES_DIR,
+    OUTPUT_FIGURES_CORE_DIR,
+    OUTPUT_FIGURES_SUPP_DIR,
+    OUTPUT_STATS_CORE_DIR,
+    OUTPUT_STATS_SUPP_DIR,
     VALID_TASKS,
     get_results_dir,
 )
@@ -145,17 +148,22 @@ def filter_vars(
     return [(col, label) for col, label in var_list if col in df.columns]
 
 
-def get_output_dir(task: str) -> Path:
+def get_output_dir(task: str, bucket: str = "core") -> Path:
     """Return task-specific output directory for basic analysis."""
-    base_dir = ANALYSIS_OUTPUT_DIR / "analysis"
+    bucket_norm = (bucket or "core").strip().lower()
+    if bucket_norm == "supplementary":
+        base_dir = OUTPUT_STATS_SUPP_DIR
+    else:
+        base_dir = OUTPUT_STATS_CORE_DIR
     output_dir = base_dir / task
     output_dir.mkdir(parents=True, exist_ok=True)
     return output_dir
 
 
-def get_figures_dir() -> Path:
-    """Return the static figures directory."""
-    figures_dir = OUTPUT_FIGURES_DIR
+def get_figures_dir(bucket: str = "core") -> Path:
+    """Return the figures directory."""
+    bucket_norm = (bucket or "core").strip().lower()
+    figures_dir = OUTPUT_FIGURES_SUPP_DIR if bucket_norm == "supplementary" else OUTPUT_FIGURES_CORE_DIR
     figures_dir.mkdir(parents=True, exist_ok=True)
     return figures_dir
 

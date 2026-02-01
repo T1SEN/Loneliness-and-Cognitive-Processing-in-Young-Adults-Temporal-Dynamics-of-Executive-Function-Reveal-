@@ -119,7 +119,7 @@ def main(confirm_len: int, correct_only: bool) -> None:
 
     results_df = pd.DataFrame(results)
 
-    output_dir = get_output_dir("overall")
+    output_dir = get_output_dir("overall", bucket="supplementary")
     suffix = "_correct" if correct_only else ""
     if confirm_len == 3:
         filename = f"wcst_phase_split_half_reliability{suffix}.csv"

@@ -15,12 +15,12 @@ if not (ROOT / "static").exists():
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))
 
-from static.preprocessing.constants import OUTPUT_STATS_DIR, get_results_dir
+from static.preprocessing.constants import OUTPUT_STATS_SUPP_DIR, get_results_dir
 from static.preprocessing.core import ensure_participant_id
 from static.preprocessing.surveys import load_dass_scores, load_participants, load_ucla_scores
 
 
-OUTPUT_DIR = OUTPUT_STATS_DIR / "analysis" / "overall" / "stroop_lmm"
+OUTPUT_DIR = OUTPUT_STATS_SUPP_DIR / "overall" / "stroop_lmm"
 
 
 def _read_csv(path: Path) -> pd.DataFrame:

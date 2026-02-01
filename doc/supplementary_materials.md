@@ -1,35 +1,35 @@
-ï»¿# Supplementary Materials
+# Supplementary Materials
 
-## S1. ê¸°ìˆ  ì‚¬ì–‘
+## S1. ±â¼ú »ç¾ç
 
-- êµ¬í˜„: Flutter Web + Firebase
-- ì ‘ì†: ë°ìŠ¤í¬í†± ë¸Œë¼ìš°ì €ë§Œ í—ˆìš©
-- RT ê¸°ë¡: `performance.now()` ê¸°ë°˜
+- ±¸Çö: Flutter Web + Firebase
+- Á¢¼Ó: µ¥½ºÅ©Åé ºê¶ó¿ìÀú¸¸ Çã¿ë
+- RT ±â·Ï: `performance.now()` ±â¹İ
 
-## S2. QC ë° ì „ì²˜ë¦¬ ê¸°ì¤€
+## S2. QC ¹× ÀüÃ³¸® ±âÁØ
 
-### S2.1 Trialâ€‘level
+### S2.1 Trial?level
 
-| ê³¼ì œ | ê¸°ì¤€ | ê·œì¹™ |
+| °úÁ¦ | ±âÁØ | ±ÔÄ¢ |
 |---|---|---|
-| Stroop | RT ë²”ìœ„ | 200â€“3000 ms (`is_rt_valid`) |
-| Stroop | Timeout | ë³´ì¡´í•˜ë˜ ì˜¤ë‹µ ì²˜ë¦¬, RT í‰ê· ì—ì„œëŠ” ì œì™¸ |
-| WCST | rule/card ìœ íš¨ì„± | colour/shape/number, 4ê°œ ê¸°ì¤€ ì¹´ë“œë§Œ ìœ ì§€ |
-| WCST | RT ìµœì†Œ | < 200 ms ì œê±° |
-| WCST | RT ìœ íš¨ ë²”ìœ„ | 200â€“10,000 ms (`is_rt_valid`) |
-| WCST | Timeout | ì˜¤ë‹µ ì²˜ë¦¬, RT í‰ê· ì—ì„œëŠ” ì œì™¸ |
+| Stroop | RT ¹üÀ§ | 200?3000 ms (`is_rt_valid`) |
+| Stroop | Timeout | º¸Á¸ÇÏµÇ ¿À´ä Ã³¸®, RT Æò±Õ¿¡¼­´Â Á¦¿Ü |
+| WCST | rule/card À¯È¿¼º | colour/shape/number, 4°³ ±âÁØ Ä«µå¸¸ À¯Áö |
+| WCST | RT ÃÖ¼Ò | < 200 ms Á¦°Å |
+| WCST | RT À¯È¿ ¹üÀ§ | 200?10,000 ms (`is_rt_valid`) |
+| WCST | Timeout | ¿À´ä Ã³¸®, RT Æò±Õ¿¡¼­´Â Á¦¿Ü |
 
-### S2.2 Participantâ€‘level
+### S2.2 Participant?level
 
-| ê³¼ì œ | ê¸°ì¤€ | ì„ê³„ê°’ |
+| °úÁ¦ | ±âÁØ | ÀÓ°è°ª |
 |---|---|---|
-| ê³µí†µ | ì„¤ë¬¸ ìœ íš¨ | UCLA ì´ì  + DASS 3ì²™ë„ + ì„±ë³„ ì •ë³´ ì¡´ì¬ |
-| ê³µí†µ | ê³¼ì œ ì™„ë£Œ | Stroop + WCST ì™„ë£Œ ê¸°ë¡ |
-| Stroop | ì™„ì£¼/ì •í™•ë„ | 108 trial ì™„ë£Œ, ì •í™•ë„ â‰¥ .70 |
-| WCST | ìœ íš¨ trial | â‰¥ 60 |
-| WCST | ë‹¨ì¼ ì¹´ë“œ ë¹„ìœ¨ | â‰¤ .85 |
+| °øÅë | ¼³¹® À¯È¿ | UCLA ÃÑÁ¡ + DASS 3Ã´µµ + ¼ºº° Á¤º¸ Á¸Àç |
+| °øÅë | °úÁ¦ ¿Ï·á | Stroop + WCST ¿Ï·á ±â·Ï |
+| Stroop | ¿ÏÁÖ/Á¤È®µµ | 108 trial ¿Ï·á, Á¤È®µµ ¡Ã .70 |
+| WCST | À¯È¿ trial | ¡Ã 60 |
+| WCST | ´ÜÀÏ Ä«µå ºñÀ² | ¡Â .85 |
 
-## S3. ì£¼ìš” ë³€ìˆ˜ ì‚°ì¶œ
+## S3. ÁÖ¿ä º¯¼ö »êÃâ
 
 ### S3.1 Stroop
 
@@ -44,114 +44,114 @@ stroop_interference = mean(rt_ms | incongruent, timeout=False, rt_valid=True)
 wcst_perseverative_error_rate = 100 * sum(isPE) / n_trials
 ```
 
-## S4. WCST Phase ì •ì˜
+## S4. WCST Phase Á¤ÀÇ
 
-### S4.1 3â€‘phase (ì •ì„)
+### S4.1 3?phase (Á¤¼®)
 
-Rule segmentëŠ” `ruleAtThatTime` ë³€í™”ë¡œ êµ¬ê°„ì„ ë‚˜ëˆ„ë©° ìµœëŒ€ 6ê°œ categoryë§Œ ì‚¬ìš©í•œë‹¤.
+Rule segment´Â `ruleAtThatTime` º¯È­·Î ±¸°£À» ³ª´©¸ç ÃÖ´ë 6°³ category¸¸ »ç¿ëÇÑ´Ù.
 
-- **exploration**: rule ì „í™˜ ì´í›„ ì²« ì •ë‹µ ì „
-- **confirmation**: ì²« ì •ë‹µë¶€í„° 3ì—°ì† ì •ë‹µ ë‹¬ì„±ê¹Œì§€(í¬í•¨)
-- **exploitation**: 3ì—°ì† ì •ë‹µ ë‹¬ì„± ì´í›„
-- 3ì—°ì† ì •ë‹µì´ ì—†ìœ¼ë©´ ì²« ì •ë‹µ ì´í›„ êµ¬ê°„ì€ confirmation
-- ì •ë‹µì´ ì „í˜€ ì—†ìœ¼ë©´ ì „ êµ¬ê°„ exploration
+- **exploration**: rule ÀüÈ¯ ÀÌÈÄ Ã¹ Á¤´ä Àü
+- **confirmation**: Ã¹ Á¤´äºÎÅÍ 3¿¬¼Ó Á¤´ä ´Ş¼º±îÁö(Æ÷ÇÔ)
+- **exploitation**: 3¿¬¼Ó Á¤´ä ´Ş¼º ÀÌÈÄ
+- 3¿¬¼Ó Á¤´äÀÌ ¾øÀ¸¸é Ã¹ Á¤´ä ÀÌÈÄ ±¸°£Àº confirmation
+- Á¤´äÀÌ ÀüÇô ¾øÀ¸¸é Àü ±¸°£ exploration
 
-### S4.2 2â€‘phase (ë³´ì¡°; ê·œì¹™ íƒìƒ‰/í™œìš© í•´ì„)
+### S4.2 2?phase (º¸Á¶; ±ÔÄ¢ Å½»ö/È°¿ë ÇØ¼®)
 
-- **rule search (preâ€‘exploitation)** = exploration + confirmation
-- **rule application (exploitation)** = 3ì—°ì† ì •ë‹µ ë‹¬ì„± ì´í›„
+- **rule search (pre?exploitation)** = exploration + confirmation
+- **rule application (exploitation)** = 3¿¬¼Ó Á¤´ä ´Ş¼º ÀÌÈÄ
 
-ëª¨ë“  phase RTëŠ” **allâ€‘trials ê¸°ì¤€**ì´ë©°, `is_rt_valid` ë° ë¹„â€‘timeout trialë§Œ í‰ê· ì— í¬í•¨í•œë‹¤.
+¸ğµç phase RT´Â **all?trials ±âÁØ**ÀÌ¸ç, `is_rt_valid` ¹× ºñ?timeout trial¸¸ Æò±Õ¿¡ Æ÷ÇÔÇÑ´Ù.
 
-## S5. WCST Phase íƒ€ë‹¹ë„ (OLS, DASS í†µì œ)
+## S5. WCST Phase Å¸´çµµ (OLS, DASS ÅëÁ¦)
 
-ê³µë³€ëŸ‰: DASSâ€‘Dep/Anx/Stress + age + gender. OLS(nonâ€‘robust).
+°øº¯·®: DASS?Dep/Anx/Stress + age + gender. OLS(non?robust).
 
-### S5.1 3â€‘phase íšŒê·€
+### S5.1 3?phase È¸±Í
 
-| Outcome | n | UCLA Î² | p |
+| Outcome | n | UCLA ¥â | p |
 |---|---:|---:|---:|
 | exploration RT (all) | 208 | 106.173 | 0.2327 |
 | confirmation RT (all) | 212 | 127.352 | 0.00934 |
 | exploitation RT (all) | 212 | 27.148 | 0.4579 |
-| confirmation âˆ’ exploitation | 212 | 100.204 | 0.01115 |
+| confirmation ? exploitation | 212 | 100.204 | 0.01115 |
 
-### S5.2 2â€‘phase íšŒê·€ (rule search / rule application)
+### S5.2 2?phase È¸±Í (rule search / rule application)
 
-| Outcome | n | UCLA Î² | p |
+| Outcome | n | UCLA ¥â | p |
 |---|---:|---:|---:|
-| rule search (preâ€‘exploitation) RT (all) | 212 | 122.573 | 0.01010 |
+| rule search (pre?exploitation) RT (all) | 212 | 122.573 | 0.01010 |
 | rule application (exploitation) RT (all) | 212 | 27.148 | 0.4579 |
-| rule search âˆ’ rule application | 212 | 95.425 | 0.01296 |
+| rule search ? rule application | 212 | 95.425 | 0.01296 |
 
-### S5.3 2â€‘phase íšŒê·€ (2â€‘ì—°ì†/4â€‘ì—°ì† ê¸°ì¤€)
+### S5.3 2?phase È¸±Í (2?¿¬¼Ó/4?¿¬¼Ó ±âÁØ)
 
-**2â€‘ì—°ì† ê¸°ì¤€ (confirm_len=2)**  
+**2?¿¬¼Ó ±âÁØ (confirm_len=2)**  
 
-| Outcome | n | UCLA Î² | p |
+| Outcome | n | UCLA ¥â | p |
 |---|---:|---:|---:|
-| rule search (preâ€‘exploitation) RT (all) | 212 | 134.121 | 0.02495 |
+| rule search (pre?exploitation) RT (all) | 212 | 134.121 | 0.02495 |
 | rule application (exploitation) RT (all) | 212 | 49.979 | 0.18962 |
-| rule search âˆ’ rule application | 212 | 84.143 | 0.06108 |
+| rule search ? rule application | 212 | 84.143 | 0.06108 |
 
-**4â€‘ì—°ì† ê¸°ì¤€ (confirm_len=4)**  
+**4?¿¬¼Ó ±âÁØ (confirm_len=4)**  
 
-| Outcome | n | UCLA Î² | p |
+| Outcome | n | UCLA ¥â | p |
 |---|---:|---:|---:|
-| rule search (preâ€‘exploitation) RT (all) | 212 | 118.728 | 0.01037 |
+| rule search (pre?exploitation) RT (all) | 212 | 118.728 | 0.01037 |
 | rule application (exploitation) RT (all) | 212 | 22.231 | 0.50040 |
-| rule search âˆ’ rule application | 212 | 96.497 | 0.00369 |
+| rule search ? rule application | 212 | 96.497 | 0.00369 |
 
-## S6. WCST Phase ì‹ ë¢°ë„ (odd/even category splitâ€‘half)
+## S6. WCST Phase ½Å·Úµµ (odd/even category split?half)
 
-| Phase | n | r | Spearmanâ€‘Brown |
+| Phase | n | r | Spearman?Brown |
 |---|---:|---:|---:|
 | exploration | 183 | 0.1862 | 0.3139 |
 | confirmation | 210 | 0.5955 | 0.7464 |
 | exploitation | 209 | 0.7484 | 0.8561 |
-| rule search (preâ€‘exploitation) | 210 | 0.6472 | 0.7858 |
+| rule search (pre?exploitation) | 210 | 0.6472 | 0.7858 |
 
-### S6.1 2â€‘phase ì‹ ë¢°ë„ (2â€‘ì—°ì†/4â€‘ì—°ì† ê¸°ì¤€)
+### S6.1 2?phase ½Å·Úµµ (2?¿¬¼Ó/4?¿¬¼Ó ±âÁØ)
 
-**2â€‘ì—°ì† ê¸°ì¤€ (confirm_len=2)**  
-- rule search (preâ€‘exploitation): r=0.5417, SB=0.7027 (n=210)  
+**2?¿¬¼Ó ±âÁØ (confirm_len=2)**  
+- rule search (pre?exploitation): r=0.5417, SB=0.7027 (n=210)  
 - rule application (exploitation): r=0.6926, SB=0.8184 (n=209)
 
-**4â€‘ì—°ì† ê¸°ì¤€ (confirm_len=4)**  
-- rule search (preâ€‘exploitation): r=0.6455, SB=0.7846 (n=210)  
+**4?¿¬¼Ó ±âÁØ (confirm_len=4)**  
+- rule search (pre?exploitation): r=0.6455, SB=0.7846 (n=210)  
 - rule application (exploitation): r=0.6711, SB=0.8031 (n=209)
 
 ---
 
-## S7. Stroop trialâ€‘level LMM (ë³´ì¡° ë¶„ì„)
+## S7. Stroop trial?level LMM (º¸Á¶ ºĞ¼®)
 
-Stroop trialâ€‘level í˜¼í•©íš¨ê³¼ëª¨í˜•ì€ QC í†µê³¼ trialë§Œ ì‚¬ìš©í–ˆë‹¤(ì •ë‹µ + íƒ€ì„ì•„ì›ƒ ì œì™¸ + ìœ íš¨ RT). ê³µë³€ëŸ‰ì€ DASSâ€‘Dep/Anx/Stress, age, genderë¥¼ í†µì œí–ˆë‹¤.
+Stroop trial?level È¥ÇÕÈ¿°ú¸ğÇüÀº QC Åë°ú trial¸¸ »ç¿ëÇß´Ù(Á¤´ä + Å¸ÀÓ¾Æ¿ô Á¦¿Ü + À¯È¿ RT). °øº¯·®Àº DASS?Dep/Anx/Stress, age, gender¸¦ ÅëÁ¦Çß´Ù.
 
-### S7.1 ì „ì²´ trial LMM (segment Ã— UCLA)
+### S7.1 ÀüÃ¼ trial LMM (segment ¡¿ UCLA)
 
-ëª¨í˜•: `rt_ms ~ segment * z_ucla_score + C(cond) + DASS(3) + age + gender`  
-ëœë¤íš¨ê³¼: participantë³„ **1 + segment**
+¸ğÇü: `rt_ms ~ segment * z_ucla_score + C(cond) + DASS(3) + age + gender`  
+·£´ıÈ¿°ú: participantº° **1 + segment**
 
-| n_trials | n_participants | segment Ã— UCLA Î² | p |
+| n_trials | n_participants | segment ¡¿ UCLA ¥â | p |
 |---:|---:|---:|---:|
 | 22544 | 212 | -0.0466 | 0.987 |
 
-### S7.2 ê°„ì„­â€‘ê¸°ìš¸ê¸° LMM (trial_scaled Ã— cond Ã— UCLA)
+### S7.2 °£¼·?±â¿ï±â LMM (trial_scaled ¡¿ cond ¡¿ UCLA)
 
-ëª¨í˜•: `log_rt ~ trial_scaled * cond_code * z_ucla_score + DASS(3) + age + gender`  
-ëœë¤íš¨ê³¼(ì„ íƒ): **1 + trial_scaled** (ìˆ˜ë ´ ìš°ì„  êµ¬ì¡°)
+¸ğÇü: `log_rt ~ trial_scaled * cond_code * z_ucla_score + DASS(3) + age + gender`  
+·£´ıÈ¿°ú(¼±ÅÃ): **1 + trial_scaled** (¼ö·Å ¿ì¼± ±¸Á¶)
 
-| n_trials | n_participants | (trial_scaled Ã— cond Ã— UCLA) Î² | p |
+| n_trials | n_participants | (trial_scaled ¡¿ cond ¡¿ UCLA) ¥â | p |
 |---:|---:|---:|---:|
 | 14986 | 212 | 0.0509 | 0.00170 |
 
 ---
 
-## S8. Stroop ê°„ì„­ ê¸°ìš¸ê¸° ë¶„í•  ë¯¼ê°ë„ (2/3/6ë¶„í• )
+## S8. Stroop °£¼· ±â¿ï±â ºĞÇÒ ¹Î°¨µµ (2/3/6ºĞÇÒ)
 
-ë¶„í•  ìˆ˜ì— ë”°ë¼ ê°„ì„­ ê¸°ìš¸ê¸°(OLS, DASS í†µì œ)ê°€ ì–´ë–»ê²Œ ë³€í•˜ëŠ”ì§€ ë¹„êµí–ˆë‹¤.
+ºĞÇÒ ¼ö¿¡ µû¶ó °£¼· ±â¿ï±â(OLS, DASS ÅëÁ¦)°¡ ¾î¶»°Ô º¯ÇÏ´ÂÁö ºñ±³Çß´Ù.
 
-| ë¶„í•  | n | UCLA Î² | p | RÂ² |
+| ºĞÇÒ | n | UCLA ¥â | p | R©÷ |
 |---:|---:|---:|---:|---:|
 | 2 | 212 | 40.140 | 0.00159 | 0.0605 |
 | 3 | 212 | 28.406 | 0.000678 | 0.0692 |
@@ -159,80 +159,80 @@ Stroop trialâ€‘level í˜¼í•©íš¨ê³¼ëª¨í˜•ì€ QC í†µê³¼ trialë§Œ ì‚¬ìš©í–ˆë‹¤(ì •ë‹
 
 ---
 
-## S9. WCST 6â€‘ì¹´í…Œê³ ë¦¬ ì™„ë£Œì(Completeâ€‘6) ë¶„ì„
+## S9. WCST 6?Ä«Å×°í¸® ¿Ï·áÀÚ(Complete?6) ºĞ¼®
 
-WCSTì—ì„œ **6ê°œ ì¹´í…Œê³ ë¦¬ë¥¼ ëª¨ë‘ ì™„ë£Œí•œ ì°¸ê°€ì(N=193)**ë§Œ í¬í•¨í•˜ì—¬ 3â€‘phase/2â€‘phase íšŒê·€ì™€ ì‹ ë¢°ë„ë¥¼ ë‹¤ì‹œ ê³„ì‚°í–ˆë‹¤.
+WCST¿¡¼­ **6°³ Ä«Å×°í¸®¸¦ ¸ğµÎ ¿Ï·áÇÑ Âü°¡ÀÚ(N=193)**¸¸ Æ÷ÇÔÇÏ¿© 3?phase/2?phase È¸±Í¿Í ½Å·Úµµ¸¦ ´Ù½Ã °è»êÇß´Ù.
 
-### S9.1 3â€‘phase/2â€‘phase íšŒê·€ (OLS, allâ€‘trials)
+### S9.1 3?phase/2?phase È¸±Í (OLS, all?trials)
 
-| Outcome | n | UCLA Î² | p |
+| Outcome | n | UCLA ¥â | p |
 |---|---:|---:|---:|
 | exploration | 191 | 60.648 | 0.430 |
 | confirmation | 193 | 99.729 | 0.0333 |
 | exploitation | 193 | 2.534 | 0.926 |
-| confirmation âˆ’ exploitation | 193 | 97.195 | 0.00854 |
-| preâ€‘exploitation | 193 | 97.856 | 0.02999 |
-| preâ€‘exploitation âˆ’ exploitation | 193 | 95.322 | 0.00632 |
+| confirmation ? exploitation | 193 | 97.195 | 0.00854 |
+| pre?exploitation | 193 | 97.856 | 0.02999 |
+| pre?exploitation ? exploitation | 193 | 95.322 | 0.00632 |
 
-### S9.2 ì‹ ë¢°ë„ (odd/even splitâ€‘half)
+### S9.2 ½Å·Úµµ (odd/even split?half)
 
-**3â€‘phase**
+**3?phase**
 - exploration: n=173, r=0.1829, SB=0.3093  
 - confirmation: n=193, r=0.5825, SB=0.7362  
 - exploitation: n=193, r=0.6949, SB=0.8200  
 
-**2â€‘phase**
-- preâ€‘exploitation: n=193, r=0.6328, SB=0.7751  
+**2?phase**
+- pre?exploitation: n=193, r=0.6328, SB=0.7751  
 - exploitation: n=193, r=0.6949, SB=0.8200  
 
 ---
 
-## S10. WCST Phaseâ€‘complete ìƒ˜í”Œ ë¶„ì„ (N=208)
+## S10. WCST Phase?complete »ùÇÃ ºĞ¼® (N=208)
 
-3â€‘phase ê°’ì´ ëª¨ë‘ ì¡´ì¬í•˜ëŠ” ì°¸ê°€ìë§Œ í¬í•¨í•˜ì—¬ íšŒê·€ë¥¼ ì¬ì¶”ì •í–ˆë‹¤.
+3?phase °ªÀÌ ¸ğµÎ Á¸ÀçÇÏ´Â Âü°¡ÀÚ¸¸ Æ÷ÇÔÇÏ¿© È¸±Í¸¦ ÀçÃßÁ¤Çß´Ù.
 
-| Outcome | n | UCLA Î² | p |
+| Outcome | n | UCLA ¥â | p |
 |---|---:|---:|---:|
 | exploration | 208 | 107.979 | 0.2256 |
 | confirmation | 208 | 142.766 | 0.00786 |
 | exploitation | 208 | 33.491 | 0.3719 |
-| confirmation âˆ’ exploitation | 208 | 109.274 | 0.00780 |
-| preâ€‘exploitation | 208 | 139.564 | 0.00786 |
-| preâ€‘exploitation âˆ’ exploitation | 208 | 106.073 | 0.00799 |
+| confirmation ? exploitation | 208 | 109.274 | 0.00780 |
+| pre?exploitation | 208 | 139.564 | 0.00786 |
+| pre?exploitation ? exploitation | 208 | 106.073 | 0.00799 |
 
 ---
 
-## S11. WCST 3â€‘phase ì„ê³„ì¹˜ ë¯¼ê°ë„ (Phaseâ€‘complete ìƒ˜í”Œ)
+## S11. WCST 3?phase ÀÓ°èÄ¡ ¹Î°¨µµ (Phase?complete »ùÇÃ)
 
-**2â€‘ì—°ì† ê¸°ì¤€ (confirm_len=2)**  
+**2?¿¬¼Ó ±âÁØ (confirm_len=2)**  
 
-| Outcome | n | UCLA Î² | p |
+| Outcome | n | UCLA ¥â | p |
 |---|---:|---:|---:|
 | exploration | 208 | 107.979 | 0.2256 |
 | confirmation | 208 | 157.517 | 0.01561 |
 | exploitation | 208 | 49.969 | 0.2002 |
-| confirmation âˆ’ exploitation | 208 | 107.549 | 0.02970 |
+| confirmation ? exploitation | 208 | 107.549 | 0.02970 |
 
-**4â€‘ì—°ì† ê¸°ì¤€ (confirm_len=4)**  
+**4?¿¬¼Ó ±âÁØ (confirm_len=4)**  
 
-| Outcome | n | UCLA Î² | p |
+| Outcome | n | UCLA ¥â | p |
 |---|---:|---:|---:|
 | exploration | 208 | 107.979 | 0.2256 |
 | confirmation | 208 | 118.090 | 0.01362 |
 | exploitation | 208 | 18.043 | 0.5880 |
-| confirmation âˆ’ exploitation | 208 | 100.047 | 0.00458 |
+| confirmation ? exploitation | 208 | 100.047 | 0.00458 |
 
 ---
 
-## S12. Stroop interference íš¨ê³¼ tâ€‘test
+## S12. Stroop interference È¿°ú t?test
 
 | n | Mean (ms) | SD | t | p |
 |---:|---:|---:|---:|---:|
-| 212 | 139.466 | 104.264 | 19.476 | 4.97eâ€‘49 |
+| 212 | 139.466 | 104.264 | 19.476 | 4.97e?49 |
 
 ---
 
-## S13. WCST ê·œë²” ì§€í‘œ
+## S13. WCST ±Ô¹ü ÁöÇ¥
 
 | n | Categories M | SD | n_complete6 | % complete6 |
 |---:|---:|---:|---:|---:|
@@ -240,33 +240,33 @@ WCSTì—ì„œ **6ê°œ ì¹´í…Œê³ ë¦¬ë¥¼ ëª¨ë‘ ì™„ë£Œí•œ ì°¸ê°€ì(N=193)**ë§Œ í¬í•¨í
 
 ---
 
-## S14. DASS total ëª¨ë¸ (ë³´ì¡°)
+## S14. DASS total ¸ğµ¨ (º¸Á¶)
 
-| Outcome | n | UCLA Î² | p |
+| Outcome | n | UCLA ¥â | p |
 |---|---:|---:|---:|
 | Stroop Interference RT | 212 | 2.181 | 0.819 |
 | WCST PE Rate | 212 | -0.203 | 0.714 |
 | Stroop Interference RT Slope | 212 | 19.754 | 0.000511 |
 | WCST Confirmation RT (all) | 212 | 137.957 | 0.00697 |
 | WCST Exploitation RT (all) | 212 | 44.707 | 0.2126 |
-| WCST Confirm âˆ’ Exploit (all) | 212 | 93.250 | 0.01734 |
+| WCST Confirm ? Exploit (all) | 212 | 93.250 | 0.01734 |
 
 ---
 
-## S15. UCLA ë¨¼ì € íˆ¬ì…í•˜ëŠ” ì—­ìˆœ ëª¨ë¸
+## S15. UCLA ¸ÕÀú ÅõÀÔÇÏ´Â ¿ª¼ø ¸ğµ¨
 
-| Outcome | n | Î”RÂ² (UCLA first) | p | Î”RÂ² (DASS after UCLA) | p |
+| Outcome | n | ¥ÄR©÷ (UCLA first) | p | ¥ÄR©÷ (DASS after UCLA) | p |
 |---|---:|---:|---:|---:|---:|
 | Stroop Interference RT | 212 | 0.00002 | 0.953 | 0.00575 | 0.753 |
 | WCST PE Rate | 212 | 0.01513 | 0.0750 | 0.01208 | 0.468 |
-| Stroop Interference RT Slope | 212 | 0.07501 | 5.33eâ€‘05 | 0.01612 | 0.302 |
+| Stroop Interference RT Slope | 212 | 0.07501 | 5.33e?05 | 0.01612 | 0.302 |
 | WCST Confirmation RT (all) | 212 | 0.01458 | 0.0778 | 0.02055 | 0.219 |
 | WCST Exploitation RT (all) | 212 | 0.00253 | 0.455 | 0.01634 | 0.308 |
-| WCST Confirm âˆ’ Exploit (all) | 212 | 0.01255 | 0.104 | 0.02171 | 0.204 |
+| WCST Confirm ? Exploit (all) | 212 | 0.01255 | 0.104 | 0.02171 | 0.204 |
 
 ---
 
-## S16. FDR ë³´ì • (UCLA pâ€‘value ê¸°ì¤€)
+## S16. FDR º¸Á¤ (UCLA p?value ±âÁØ)
 
 | Outcome | UCLA p | FDR q |
 |---|---:|---:|
@@ -275,13 +275,13 @@ WCSTì—ì„œ **6ê°œ ì¹´í…Œê³ ë¦¬ë¥¼ ëª¨ë‘ ì™„ë£Œí•œ ì°¸ê°€ì(N=193)**ë§Œ í¬í•¨í
 | Stroop Interference RT Slope | 0.000131 | 0.000789 |
 | WCST Confirmation RT (all) | 0.01079 | 0.02368 |
 | WCST Exploitation RT (all) | 0.371 | 0.5565 |
-| WCST Confirm âˆ’ Exploit (all) | 0.01184 | 0.02368 |
+| WCST Confirm ? Exploit (all) | 0.01184 | 0.02368 |
 
 ---
 
-## S17. Stroop 4ë¶„í•  ë‚´ ì¡°ê±´ ë¶„í¬ ê· í˜•
+## S17. Stroop 4ºĞÇÒ ³» Á¶°Ç ºĞÆ÷ ±ÕÇü
 
-QC í†µê³¼ Stroop trialì„ ì°¸ê°€ìë³„ 4ë¶„í• ë¡œ ë‚˜ëˆˆ ë’¤, ê° ë¶„í• ì—ì„œ ì¡°ê±´(ì¼ì¹˜/ë¶ˆì¼ì¹˜/ì¤‘ë¦½) ë¹„ìœ¨ì„ í™•ì¸í–ˆë‹¤.
+QC Åë°ú Stroop trialÀ» Âü°¡ÀÚº° 4ºĞÇÒ·Î ³ª´« µÚ, °¢ ºĞÇÒ¿¡¼­ Á¶°Ç(ÀÏÄ¡/ºÒÀÏÄ¡/Áß¸³) ºñÀ²À» È®ÀÎÇß´Ù.
 
 | Segment | Congruent | Incongruent | Neutral |
 |---:|---:|---:|---:|
@@ -290,20 +290,20 @@ QC í†µê³¼ Stroop trialì„ ì°¸ê°€ìë³„ 4ë¶„í• ë¡œ ë‚˜ëˆˆ ë’¤, ê° ë¶„í• ì—ì„œ ì
 | 3 | 0.334 | 0.334 | 0.331 |
 | 4 | 0.338 | 0.332 | 0.329 |
 
-â†’ ëª¨ë“  ë¶„í• ì—ì„œ ì•½ 1/3 ìˆ˜ì¤€ìœ¼ë¡œ **ì¡°ê±´ ë¶„í¬ê°€ ê³ ë¥´ê²Œ ìœ ì§€ë¨**.
+¡æ ¸ğµç ºĞÇÒ¿¡¼­ ¾à 1/3 ¼öÁØÀ¸·Î **Á¶°Ç ºĞÆ÷°¡ °í¸£°Ô À¯ÁöµÊ**.
 
 ---
 
-## S18. Stroop 2/3/6ë¶„í•  ë‚´ ì¡°ê±´ ë¶„í¬ ê· í˜•
+## S18. Stroop 2/3/6ºĞÇÒ ³» Á¶°Ç ºĞÆ÷ ±ÕÇü
 
-### S18.1 2ë¶„í• 
+### S18.1 2ºĞÇÒ
 
 | Segment | Congruent | Incongruent | Neutral |
 |---:|---:|---:|---:|
 | 1 | 0.330 | 0.333 | 0.336 |
 | 2 | 0.336 | 0.333 | 0.330 |
 
-### S18.2 3ë¶„í• 
+### S18.2 3ºĞÇÒ
 
 | Segment | Congruent | Incongruent | Neutral |
 |---:|---:|---:|---:|
@@ -311,7 +311,7 @@ QC í†µê³¼ Stroop trialì„ ì°¸ê°€ìë³„ 4ë¶„í• ë¡œ ë‚˜ëˆˆ ë’¤, ê° ë¶„í• ì—ì„œ ì
 | 2 | 0.329 | 0.332 | 0.339 |
 | 3 | 0.340 | 0.331 | 0.329 |
 
-### S18.3 6ë¶„í• 
+### S18.3 6ºĞÇÒ
 
 | Segment | Congruent | Incongruent | Neutral |
 |---:|---:|---:|---:|
@@ -322,36 +322,36 @@ QC í†µê³¼ Stroop trialì„ ì°¸ê°€ìë³„ 4ë¶„í• ë¡œ ë‚˜ëˆˆ ë’¤, ê° ë¶„í• ì—ì„œ ì
 | 5 | 0.345 | 0.328 | 0.328 |
 | 6 | 0.335 | 0.334 | 0.331 |
 
-â†’ 2/3/6ë¶„í•  ëª¨ë‘ **ì¡°ê±´ ë¹„ìœ¨ì´ ëŒ€ì²´ë¡œ 1/3 ìˆ˜ì¤€ìœ¼ë¡œ ê· í˜•**ë¨.
+¡æ 2/3/6ºĞÇÒ ¸ğµÎ **Á¶°Ç ºñÀ²ÀÌ ´ëÃ¼·Î 1/3 ¼öÁØÀ¸·Î ±ÕÇü**µÊ.
 
 ---
 
-**ì¶œë ¥ íŒŒì¼**
-- `outputs/stats/analysis/overall/wcst_phase_rt_ols_alltrials.csv`
-- `outputs/stats/analysis/overall/wcst_phase_pre_exploit_rt_ols_alltrials.csv`
-- `outputs/stats/analysis/overall/wcst_phase_split_half_reliability.csv`
-- `outputs/stats/analysis/overall/wcst_phase_pre_exploit_rt_ols_m2_alltrials.csv`
-- `outputs/stats/analysis/overall/wcst_phase_pre_exploit_rt_ols_m4_alltrials.csv`
-- `outputs/stats/analysis/overall/wcst_phase_split_half_reliability_m2.csv`
-- `outputs/stats/analysis/overall/wcst_phase_split_half_reliability_m4.csv`
-- `outputs/stats/analysis/overall/stroop_lmm/stroop_trial_level_lmm.csv`
-- `outputs/stats/analysis/overall/stroop_lmm/stroop_interference_slope_lmm.csv`
-- `outputs/stats/analysis/overall/stroop_lmm/stroop_interference_slope_lmm_variants.csv`
-- `outputs/stats/analysis/overall/stroop_interference_slope_segment_sensitivity_2_3_6.csv`
-- `outputs/stats/analysis/overall/wcst_phase_3_2phase_6categories_ols_alltrials.csv`
-- `outputs/stats/analysis/overall/wcst_phase_3_2phase_6categories_split_half_reliability.csv`
-- `outputs/stats/analysis/overall/wcst_phase_3phase_complete_ols_alltrials.csv`
-- `outputs/stats/analysis/overall/wcst_phase_3phase_threshold_sensitivity_complete_ols_alltrials.csv`
-- `outputs/stats/analysis/overall/stroop_interference_ttest.csv`
-- `outputs/stats/analysis/overall/wcst_normative_stats.csv`
-- `outputs/stats/analysis/overall/dass_total_models.csv`
-- `outputs/stats/analysis/overall/ucla_first_model_comparison.csv`
-- `outputs/stats/analysis/overall/ucla_fdr_qvalues.csv`
-- `outputs/stats/analysis/overall/stroop_condition_balance_by_segment.csv`
-- `outputs/stats/analysis/overall/stroop_condition_balance_by_segment_pivot.csv`
-- `outputs/stats/analysis/overall/stroop_condition_balance_by_segment_2.csv`
-- `outputs/stats/analysis/overall/stroop_condition_balance_by_segment_2_pivot.csv`
-- `outputs/stats/analysis/overall/stroop_condition_balance_by_segment_3.csv`
-- `outputs/stats/analysis/overall/stroop_condition_balance_by_segment_3_pivot.csv`
-- `outputs/stats/analysis/overall/stroop_condition_balance_by_segment_6.csv`
-- `outputs/stats/analysis/overall/stroop_condition_balance_by_segment_6_pivot.csv`
+**Ãâ·Â ÆÄÀÏ**
+- `outputs/stats/supplementary/overall/wcst_phase_rt_ols_alltrials.csv`
+- `outputs/stats/supplementary/overall/wcst_phase_pre_exploit_rt_ols_alltrials.csv`
+- `outputs/stats/supplementary/overall/wcst_phase_split_half_reliability.csv`
+- `outputs/stats/supplementary/overall/wcst_phase_pre_exploit_rt_ols_m2_alltrials.csv`
+- `outputs/stats/supplementary/overall/wcst_phase_pre_exploit_rt_ols_m4_alltrials.csv`
+- `outputs/stats/supplementary/overall/wcst_phase_split_half_reliability_m2.csv`
+- `outputs/stats/supplementary/overall/wcst_phase_split_half_reliability_m4.csv`
+- `outputs/stats/supplementary/overall/stroop_lmm/stroop_trial_level_lmm.csv`
+- `outputs/stats/supplementary/overall/stroop_lmm/stroop_interference_slope_lmm.csv`
+- `outputs/stats/supplementary/overall/stroop_lmm/stroop_interference_slope_lmm_variants.csv`
+- `outputs/stats/supplementary/overall/stroop_interference_slope_segment_sensitivity_2_3_6.csv`
+- `outputs/stats/supplementary/overall/wcst_phase_3_2phase_6categories_ols_alltrials.csv`
+- `outputs/stats/supplementary/overall/wcst_phase_3_2phase_6categories_split_half_reliability.csv`
+- `outputs/stats/supplementary/overall/wcst_phase_3phase_complete_ols_alltrials.csv`
+- `outputs/stats/supplementary/overall/wcst_phase_3phase_threshold_sensitivity_complete_ols_alltrials.csv`
+- `outputs/stats/supplementary/overall/stroop_interference_ttest.csv`
+- `outputs/stats/supplementary/overall/wcst_normative_stats.csv`
+- `outputs/stats/supplementary/overall/dass_total_models.csv`
+- `outputs/stats/supplementary/overall/ucla_first_model_comparison.csv`
+- `outputs/stats/supplementary/overall/ucla_fdr_qvalues.csv`
+- `outputs/stats/supplementary/overall/stroop_condition_balance_by_segment.csv`
+- `outputs/stats/supplementary/overall/stroop_condition_balance_by_segment_pivot.csv`
+- `outputs/stats/supplementary/overall/stroop_condition_balance_by_segment_2.csv`
+- `outputs/stats/supplementary/overall/stroop_condition_balance_by_segment_2_pivot.csv`
+- `outputs/stats/supplementary/overall/stroop_condition_balance_by_segment_3.csv`
+- `outputs/stats/supplementary/overall/stroop_condition_balance_by_segment_3_pivot.csv`
+- `outputs/stats/supplementary/overall/stroop_condition_balance_by_segment_6.csv`
+- `outputs/stats/supplementary/overall/stroop_condition_balance_by_segment_6_pivot.csv`
