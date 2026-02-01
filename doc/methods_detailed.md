@@ -1,121 +1,85 @@
-﻿# Methods Section (Detailed)
+﻿# Methods (Detailed)
 
-## 2.4 Measures
+## 2.4 측정
 
-### 2.4.1 Self-Report Measures
+### 2.4.1 자기보고 척도
 
-**UCLA Loneliness Scale (Version 3; UCLA-LS)**. The 20-item Korean version of the UCLA Loneliness Scale (Russell, 1996) assessed subjective feelings of loneliness and social isolation over the past week. All items were presented simultaneously on a single scrollable page in fixed order (items 1–20), with each item displayed as an individual card containing the question text and response options. Participants responded using a 4-point Likert scale with the following anchors: 1 = "전혀 그렇지 않았다" (Not at all), 2 = "거의 그렇지 않았다" (Almost never), 3 = "가끔 그랬다" (Sometimes), 4 = "자주 그랬다" (Often).
+**UCLA Loneliness Scale (Version 3; UCLA‑LS)**. UCLA 외로움 척도 20문항 한국어판을 사용했다. 응답은 1(전혀 그렇지 않았다)–4(자주 그랬다) Likert 척도이며, 긍정 진술 9문항(1, 5, 6, 9, 10, 15, 16, 19, 20)은 역채점했다. 총점(20–80)은 모든 문항 응답을 합산해 계산했다. 미응답은 인터페이스에서 차단하여 결측 없이 수집했다.
 
-Nine items measuring positive social connection (items 1, 5, 6, 9, 10, 15, 16, 19, 20) were reverse-coded prior to scoring. Total scores were computed by summing all 20 items after reverse-coding, yielding scores ranging from 20 to 80, with higher scores indicating greater loneliness. The survey could not be submitted until all 20 items received responses; incomplete submissions were prevented at the interface level. Survey completion time was recorded from first item display to submission.
+**Depression Anxiety Stress Scales (DASS‑21)**. DASS‑21 한국어판을 사용했고, 0–3 Likert 척도로 응답했다. 우울/불안/스트레스 각 7문항 합산 후 표준 규정에 따라 2배하여 0–42 범위의 하위척도 점수를 산출했다. UCLA와 동일하게 모든 문항 응답을 요구했다.
 
-**Depression Anxiety Stress Scales (DASS-21)**. The 21-item Korean version of the DASS-21 (Lovibond & Lovibond, 1995) assessed symptoms of depression, anxiety, and stress over the past week. Items were presented in fixed order (items 1–21) on a single scrollable page using the same card-based format as the UCLA-LS. Participants responded on a 4-point scale indicating symptom frequency: 0 = "전혀 해당되지 않음" (Did not apply to me at all), 1 = "약간 또는 가끔 해당됨" (Applied to me to some degree, or some of the time), 2 = "상당히 또는 자주 해당됨" (Applied to me to a considerable degree, or a good part of time), 3 = "매우 많이 또는 거의 대부분 해당됨" (Applied to me very much, or most of the time).
+### 2.4.2 인지 과제
 
-Three subscales comprised seven items each: Depression (items 3, 5, 10, 13, 16, 17, 21), Anxiety (items 2, 4, 7, 9, 15, 19, 20), and Stress (items 1, 6, 8, 11, 12, 14, 18). Following standard DASS-21 scoring procedures, raw subscale scores were multiplied by 2 to correspond with the original 42-item DASS scoring, yielding subscale scores ranging from 0 to 42. As with the UCLA-LS, all 21 items required responses before submission was permitted.
+**Stroop 과제**. 한국어 색 단어 4개(빨강/초록/파랑/노랑)와 중립 단어 3개(기차/학교/가방)를 4가지 잉크색으로 제시했다. 총 108 trial(일치 36, 불일치 36, 중립 36)이며, 연속 동일 자극이 나오지 않도록 무작위화했다. 각 trial은 고정주시(500 ms) → 공백(100 ms) → 자극 제시(반응 또는 3000 ms 타임아웃) 순서로 진행했다. 반응은 화면상의 색 버튼 클릭으로 기록했다.
 
-### 2.4.2 Cognitive Tasks
+**WCST**. 128‑card 버전 WCST를 사용했다. 기준 카드 4장(1 yellow circle, 2 black rectangles, 3 blue stars, 4 red triangles)을 화면 상단에 고정하고, 중앙에 제시된 자극 카드를 4개 버튼 중 하나로 분류하도록 했다. 규칙은 color → shape → number 순으로 진행되며, **10연속 정답** 시 규칙이 변경된다. 최대 6 category 완료 또는 128장 소진 시 종료된다. 반응 시간 제한은 없으며 각 trial의 RT를 기록했다.
 
-**Stroop Task**. A computerized color-word Stroop task assessed interference control, the ability to inhibit prepotent responses when faced with conflicting information. Participants identified the ink color of Korean color words by clicking one of four on-screen response buttons labeled with Korean color names: 빨강 (red), 초록 (green), 파랑 (blue), and 노랑 (yellow). Response button order was counterbalanced across participants: approximately half viewed buttons in the standard order and half in reversed order, determined by a hash function of participant ID ensuring reproducible assignment.
+## 2.5 실험 환경
 
-The stimulus set comprised four color words and three semantically neutral words (기차 [train], 학교 [school], 가방 [bag]), each presentable in four ink colors (red, green, blue, yellow). The main task consisted of 108 trials distributed equally across three conditions (36 trials each): (a) congruent trials, where color word meaning matched ink color (e.g., "빨강" in red ink); (b) incongruent trials, where color word meaning conflicted with ink color (e.g., "빨강" in blue ink); and (c) neutral trials, where semantically neutral words appeared in colored ink (e.g., "기차" in green ink). For congruent trials, each of the four word-color combinations was repeated 9 times. For incongruent trials, each color word appeared 3 times in each of the three non-matching colors (4 words × 3 colors × 3 repetitions = 36). For neutral trials, each neutral word appeared in each of the four colors with 3 repetitions (3 words × 4 colors × 3 repetitions = 36).
+실험은 Flutter 기반 웹 애플리케이션(데스크톱 전용)으로 구현되었고 Firebase를 통해 데이터가 저장되었다. RT는 `performance.now()` 기반으로 기록하여 밀리초 이하 정밀도를 확보했다.
 
-Trial presentation order was pseudo-randomized with the constraint that identical stimuli (same word and same ink color) could not appear on consecutive trials. Randomization was seeded using participant ID hash to ensure reproducibility. Each trial followed a fixed temporal sequence: (1) fixation cross displayed centrally for 500 ms (font size 48 pt), (2) blank inter-stimulus interval for 100 ms, (3) stimulus word displayed in colored ink at screen center (font size 48 pt) until response or timeout. The response deadline was 3000 ms from stimulus onset; trials without response within this window were coded as timeouts.
+## 2.6 절차
 
-Ten practice trials preceded the main task to familiarize participants with the response interface. Practice trials consisted of 3 congruent and 7 incongruent trials (no neutral trials), with trial order randomized. Explicit feedback was provided after each practice trial: "맞았습니다!" (Correct!) for accurate responses and "틀렸습니다!" (Incorrect!) for errors or timeouts. Feedback remained on screen until participants clicked to advance. No feedback was provided during the main 108-trial block.
+동의 후 인구통계(성별/나이/학력) → UCLA → DASS 순으로 설문을 완료했다. 이후 Stroop 과제, 2분 휴식, WCST 순서로 진행했다. 전체 소요 시간은 약 30–40분이었다.
 
-Response times were recorded using the JavaScript Performance API (`html.window.performance.now()`) at both stimulus onset and button press, with RT computed as the difference. This method provides sub-millisecond temporal resolution. Response detection occurred at pointer-down event rather than pointer-up to minimize response registration latency.
+## 2.7 데이터 전처리 및 QC
 
-**Wisconsin Card Sorting Test (WCST)**. A computerized 128-card version of the Wisconsin Card Sorting Test (Heaton et al., 1993) assessed cognitive flexibility, set-shifting ability, and the capacity to adapt behavior based on feedback. Four reference cards were displayed continuously in a horizontal row at the top of the screen: (1) one yellow circle, (2) two black rectangles, (3) three blue stars, and (4) four red triangles. Reference cards measured 120 × 120 pixels with 10-pixel margins.
+### 2.7.1 Trial‑level 정제
 
-On each trial, a stimulus card (200 × 200 pixels) appeared centrally below the reference cards. Stimulus cards varied along three dimensions: color (yellow, black, blue, red), shape (circle, rectangle, star, triangle), and number (1, 2, 3, 4), yielding 64 unique combinations. The card deck consisted of two complete sets of these 64 cards, shuffled once using a seeded random generator (participant ID hash) and then duplicated, for 128 total trials. Participants sorted each stimulus card by clicking one of four response buttons labeled "1번 카드," "2번 카드," "3번 카드," and "4번 카드" (Card 1, Card 2, Card 3, Card 4), corresponding to the four reference cards.
-
-Sorting rules followed a fixed sequence: color → shape → number, repeating as categories were completed. After 10 consecutive correct responses according to the current rule, the sorting criterion changed to the next rule in the sequence without explicit notification. The test terminated when either (a) six categories were successfully completed (requiring at least 60 correct responses) or (b) all 128 cards were exhausted.
-
-Immediate feedback was displayed for exactly 1000 ms after each response: "정답" (Correct) for responses matching the current sorting criterion, and "오답" (Incorrect) for non-matching responses. No practice trials were provided; the task began directly with experimental trials following a single instruction screen. No response time limit was imposed; participants could take unlimited time to respond, though response times were recorded for each trial.
-
-Perseverative errors were operationally defined according to three conjunctive criteria: (1) a previous sorting rule must exist and differ from the current rule (i.e., at least one category must have been completed); (2) the selected reference card must match the stimulus card on the previous rule's dimension; and (3) exactly one reference card must match the stimulus on the previous dimension (disambiguation criterion to distinguish true perseveration from coincidental matches). Perseverative responses were defined identically but could occur on either correct or incorrect trials; perseverative errors were perseverative responses that were also incorrect.
-
-## 2.5 Apparatus
-
-The experiment was implemented as a web application using the Flutter framework (version 3.x, Dart programming language) with Google Firebase backend for data storage and participant authentication. The application was accessible exclusively via desktop web browsers; mobile device access was blocked at the interface level to ensure standardized display dimensions, input modalities, and response timing.
-
-Response times were recorded using the JavaScript Performance API (`performance.now()`) with sub-millisecond resolution, implemented via Dart's `dart:html` library. This API provides high-resolution timestamps relative to the navigation start time, avoiding the precision limitations of standard JavaScript `Date.now()`. Both stimulus onset times and response registration times were captured, with reaction times computed as the difference. All timing calculations were performed client-side to eliminate network latency effects on measurement.
-
-Response counterbalancing was implemented using deterministic hash functions of participant ID strings, ensuring: (a) reproducible randomization—the same participant would receive identical counterbalancing assignment if the experiment were repeated; (b) approximately uniform distribution across counterbalancing conditions; and (c) independence from experimenter intervention or participant characteristics.
-
-Stimulus presentation used Flutter's widget rendering system with SVG graphics for WCST card images and text rendering for Stroop stimuli. Display refresh synchronization was handled by the browser's rendering pipeline. Response collection used pointer-down events (Stroop, WCST) to minimize input latency.
-
-## 2.6 Procedure
-
-All procedures were conducted online via the custom web application. After providing informed consent electronically, participants completed demographic questions (age, gender, education level) before proceeding to self-report measures. Surveys were administered in fixed order: UCLA Loneliness Scale followed by DASS-21. Both surveys implemented completion validation: participants could not proceed until all items received responses, preventing missing data. Duplicate submission was prevented by checking for existing survey documents in the database; participants who had previously completed a survey were automatically advanced to the next section.
-
-After survey completion, participants viewed an instruction page describing both cognitive tasks, including task-specific instructions, estimated duration, and general guidelines (quiet environment, sustained attention, 2-minute rest interval between tasks). Participants confirmed readiness via a dialog acknowledging that tasks could not be paused once started.
-
-Cognitive task order was fixed: the Stroop task was administered first and the WCST was administered last. WCST was placed last because: (a) it is the longest task (10–15 minutes), and placing it last minimizes fatigue effects on preceding tasks; (b) it requires sustained cognitive flexibility, which may be disproportionately affected by prior fatigue; and (c) fixed positioning eliminates WCST-position confounds in analyses of set-shifting performance.
-
-Mandatory 2-minute (120-second) rest intervals with countdown timers were inserted between the Stroop task and the WCST. During rest intervals, participants viewed a rest screen with a coffee cup icon, countdown timer, and suggestion to stretch or take deep breaths ("잠시 휴식을 취하세요. 스트레칭이나 심호흡을 하시면 좋습니다."). Rest periods terminated automatically without participant input, transitioning to the next task. No rest preceded the first task or followed the final task.
-
-The entire session lasted approximately 30–40 minutes: surveys (10–15 minutes), Stroop (5–7 minutes), WCST (10–15 minutes), plus the rest interval (2 minutes total). Upon completion of all tasks, participants viewed a completion screen and received debriefing information. Course credit was granted upon verified completion.
-
-## 2.7 Data Preprocessing and Quality Control
-
-**Trial-level filtering and flags**. Trial-level datasets retain all recorded trials and append quality flags rather than dropping rows. For Stroop, timeouts are preserved and marked, and RT validity is defined as 200–3000 ms. For WCST, trials are cleaned for required fields and valid condition/card values, with RT < 200 ms removed; an RT-valid flag marks 200–10,000 ms for RT-based analyses. In analysis loaders, RT-focused indices exclude timeouts (Stroop) and require valid RTs; accuracy/error indices treat timeouts as incorrect while retaining those trials.
-
-**Participant-level exclusions**. Task-specific inclusion criteria were applied to ensure data quality:
-
-*Stroop task*: Participants were retained if they completed all 108 main trials and overall accuracy was ≥ 70% (timeouts counted as incorrect).
-
-*WCST*: Participants were retained if they had at least 60 valid trials after cleaning and did not select any single reference card on more than 85% of trials.
-
-**Derived performance measures**. For Stroop, RT indices were computed on non-timeout trials with valid RTs (200–3000 ms); correct-only variants were computed separately. Accuracy metrics used all trials with timeouts coded as incorrect.
-
-For WCST, primary dependent variables included: (a) number of categories completed (0–6); (b) total errors; (c) perseverative errors (count and percentage of total errors); (d) non-perseverative errors; (e) conceptual level responses (runs of 3+ consecutive correct responses); and (f) trials to first category completion. Failure to maintain set was computed as the number of times an error occurred after achieving 5+ consecutive correct responses. RT-based indices applied the 10,000 ms upper bound via the RT-valid flag.
-
-## 2.8 Statistical Analyses
-
-Hierarchical multiple regression models were estimated using OLS (non-robust) standard errors. For each outcome, Step 1 included age and gender, Step 2 added DASS-21 subscales (depression, anxiety, stress), and Step 3 added UCLA loneliness. The incremental contribution of loneliness was quantified as ΔR^2 from the Step 2 → Step 3 comparison.
-
-Primary endpoints were pre-specified as (a) the Stroop interference RT slope (quartile-based interference trend) and (b) WCST post-shift error RT mean. Multiple-testing control was implemented using Benjamini-Hochberg FDR across seven focal outcomes (two primary endpoints plus five conventional/secondary indices). We report unadjusted p-values alongside FDR q-values. Multicollinearity was evaluated using VIF diagnostics.
-
-Sensitivity analyses included: (a) a single-covariate DASS total model, (b) reverse entry order (UCLA before DASS) to assess shared variance, (c) winsorizing RT-based outcomes at 2.5% tails, (d) excluding participants with extreme RT variability (top 2.5% of within-person RT SD), (e) HC3-robust OLS standard errors for primary endpoints, (f) trial-level OLS with participant fixed effects testing segment × UCLA interactions, and (g) segment-count sensitivity for the interference slope (3, 5, 6 segments). Reliability of slope indices was assessed via split-half correlations and bootstrap CI-width distributions (reported in Supplementary).
-
-### 2.8.3 Exploratory Computational Indices (optional)
-
-In addition to the pre-specified temporal dynamics indices, we explored computational model-derived parameters as potential markers of loneliness-related cognitive differences. These included Hidden Markov Model state transition probabilities from WCST performance and distributional parameters from Stroop RTs. Given their exploratory nature, these analyses are reported separately and interpreted cautiously.
-
----
-
-## Summary Tables
-
-### Table 1. Task Parameters Overview
-
-| Parameter | Stroop | WCST |
-|-----------|--------|------|
-| Total trials | 108 (+ 10 practice) | 128 max |
-| Response modality | On-screen buttons | On-screen buttons |
-| Response deadline | 3000 ms | None |
-| Counterbalancing | Button order (2 conditions) | None |
-| Rest breaks | None | None |
-| Feedback | Practice only | Every trial (1 s) |
-| Timing precision | performance.now() | performance.now() |
-
-### Table 2. Trial Timing Sequences
-
-**Stroop Task**
-| Phase | Duration |
-|-------|----------|
-| Fixation cross | 500 ms |
-| Inter-stimulus interval | 100 ms |
-| Stimulus display | Until response (max 3000 ms) |
+**Stroop**
+- 타임아웃은 보존하되 `timeout=True`로 표시, 정확도 계산 시 오답 처리
+- RT 유효 범위: 200–3000 ms (`is_rt_valid`)
 
 **WCST**
-| Phase | Duration |
-|-------|----------|
-| Stimulus display | Until response (no limit) |
-| Feedback | 1000 ms |
+- rule 유효성: colour/shape/number만 유지
+- 선택 카드 유효성: 4개 기준 카드만 유지
+- RT < 200 ms 제거
+- RT 유효 범위: 200–10,000 ms (`is_rt_valid`)
+- 타임아웃은 오답 처리
 
-### Table 3. Self-Report Measures
+RT 기반 지표는 **타임아웃 제외 + 유효 RT만 사용**하며, 오류 trial도 포함한 all‑trials 기준을 기본으로 사용한다.
 
-| Measure | Items | Scale | Scoring |
-|---------|-------|-------|---------|
-| UCLA-LS | 20 | 1-4 Likert | Sum (20-80), 9 items reverse-coded |
-| DASS-21 | 21 | 0-3 Likert | 3 subscales × 2 (0-42 each) |
+### 2.7.2 Participant‑level 제외 기준
+
+다음 기준을 모두 만족하는 참가자만 포함했다.
+
+- 설문 유효성: UCLA 총점, DASS 하위척도(우울/불안/스트레스), 성별 정보 존재
+- 과제 완료: Stroop과 WCST 모두 완료 기록 존재
+- Stroop QC: 108 trial 완료 + 전체 정확도 ≥ .70
+- WCST QC: 유효 trial ≥ 60 + 단일 카드 선택 비율 ≤ .85
+
+### 2.7.3 WCST phase 정의 (정석 3분할 + 2분할)
+
+**Rule segment**는 `ruleAtThatTime` 변화로 구간을 나누며 **최대 6 category**만 사용한다.
+
+**3‑phase (정석)**
+- exploration: rule 전환 이후 **첫 정답 이전**
+- confirmation: **첫 정답부터 3연속 정답 달성까지(포함)**
+- exploitation: 3연속 정답 달성 이후
+- 3연속 정답이 나오지 않으면, 첫 정답 이후 구간은 confirmation으로 유지
+- 정답이 한 번도 없으면 전체가 exploration
+
+**2‑phase (보조 분석)**
+- pre‑exploitation = exploration + confirmation
+- exploitation = 3연속 정답 달성 이후
+
+모든 phase RT는 **all‑trials 기준**(오류 포함)으로 계산하며, 유효 RT 및 비‑timeout trial만 평균에 포함한다.
+
+## 2.8 통계 분석
+
+### 2.8.1 기본 회귀
+
+모든 회귀는 **OLS(비‑robust)**로 수행했다. 공변량은 항상 DASS 하위척도(우울/불안/스트레스)와 나이, 성별을 통제했다. 주요 분석은 다음의 단계적 모델을 사용했다.
+
+- Model 0: outcome ~ age + gender
+- Model 1: Model 0 + DASS(3)
+- Model 2: Model 1 + UCLA
+- Model 3: Model 2 + UCLA × gender
+
+### 2.8.2 WCST phase 타당도(보조)
+
+WCST phase RT(3‑phase 및 2‑phase)에 대해 UCLA + DASS 통제 OLS 회귀를 수행하여 **타당도**를 평가했다. 3‑phase는 exploration/confirmation/exploitation 및 대비(confirmation‑exploitation)를, 2‑phase는 pre‑exploitation 및 대비(pre‑exploitation‑exploitation)를 보고한다.
+
+### 2.8.3 신뢰도
+
+WCST phase RT는 category 홀/짝 분할(split‑half)로 신뢰도를 계산했고, Spearman‑Brown 보정을 보고했다. 자세한 수치는 Supplementary에 제시했다.
