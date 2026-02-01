@@ -1,5 +1,0 @@
-﻿Task,Axis,DV,Type,b,SE,95% CI,p,delta_R2
-STROOP,Time-on-task drift,Interference slope,RT,17.613,5.578,"[6.679, 28.546]",0.002,0.0434
-WCST,Phase-specific RT,Confirmation RT,RT,158.207,47.23,"[65.635, 250.778]",0.001,0.05
-WCST,Phase-specific RT,Exploitation RT,RT,27.148,36.507,"[-44.405, 98.701]",0.458,0.0025
-WCST,Phase contrast,Confirmation - Exploitation,RT,131.059,38.793,"[55.024, 207.094]",0.001,0.0519

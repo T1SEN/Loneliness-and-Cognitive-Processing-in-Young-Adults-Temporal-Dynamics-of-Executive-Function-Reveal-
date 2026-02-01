@@ -1,3 +1,0 @@
-﻿task,measure,method,n_participants,split_half_r,spearman_brown_r,interpretation
-Stroop,Interference Effect,Odd/Even Split-Half,212,0.40943165992164526,0.58098831119546,
-WCST,Perseverative Error Rate,First/Second Half Split,212,0.5872956564013325,0.7399952920337866,

@@ -1,9 +1,0 @@
-# Table 5. Hierarchical Regression Results: Conventional Indices
-
-*Note.* b = coefficient for z-scored UCLA predictor (Step 3, controlling for DASS-21).
-delta_R2 = incremental R^2 for UCLA step. Key outcomes and any significant results shown.
-
-| Task   | Outcome                       |   N |      b |     SE |     t |     p |   delta_R2 |
-|:-------|:------------------------------|----:|-------:|-------:|------:|------:|-----------:|
-| STROOP | Stroop RT Interference        | 220 |  6.141 |  9.365 |  0.66 | 0.513 |     0.002  |
-| WCST   | WCST Perseverative Error Rate | 212 | -0.165 |  0.576 | -0.29 | 0.775 |     0.0004 |

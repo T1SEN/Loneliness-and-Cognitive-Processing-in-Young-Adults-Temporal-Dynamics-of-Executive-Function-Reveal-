@@ -1,2 +1,0 @@
-﻿confirm_len,n_trials,n_participants,re_formula,method,reml,converged,fit_note,warning_count,boundary_warning,warning_msg,llf,aic,bic,formula
-3,17214,197,1,powell,False,True,,0,False,,-9351.3690362833,18740.7380725666,18888.05415998558,log_rt ~ C(phase) * trial_progress * z_ucla_score + z_dass_depression + z_dass_anxiety + z_dass_stress + z_age + gender_male

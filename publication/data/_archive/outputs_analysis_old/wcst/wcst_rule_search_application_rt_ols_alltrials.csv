@@ -1,4 +1,0 @@
-﻿outcome_column,n,ucla_beta,ucla_se,ucla_t,ucla_p,r2,adj_r2,cov_type,outcome,outcome_type,confirm_len,min_trials,include_errors
-rule_search_rt_mean,194,99.66663288027749,58.39375762001158,1.7068028663070942,0.08951861851734853,0.031501415680533884,0.00042659479327833427,nonrobust,rule_search_rt_mean,phase_mean,3,0,True
-rule_application_rt_mean,197,62.053962798552,35.30647392752069,1.7575802932329125,0.08042939820693443,0.07917039015506078,0.05009156037048368,nonrobust,rule_application_rt_mean,phase_mean,3,0,True
-rule_search_minus_application,194,37.503898958800164,48.10419488700522,0.7796388453625569,0.4365890917174635,0.014097587304354176,-0.017535645188554216,nonrobust,rule_search_minus_application,phase_contrast,3,0,True

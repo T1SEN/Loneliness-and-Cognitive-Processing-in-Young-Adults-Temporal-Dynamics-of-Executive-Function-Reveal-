@@ -15,76 +15,62 @@ Research data analysis pipeline for a psychology study examining loneliness (UCL
 
 **Components:**
 1. **Data Collection**: Flutter mobile app (`lib/`)
-2. **Data Export**: Firebase → CSV (`export_alldata.py`)
-3. **Statistical Analysis**: Publication package (`publication/`)
+2. **Statistical Analysis**: Static package (`static/`)
 
 ## Data Flow
 
 ```
-Firebase (Firestore) → export_alldata.py → publication/data/raw/
-                                              ↓
-                       python -m publication.preprocessing --build all
-                                              ↓
-                       ├── publication/data/complete_prp/     (N ~ 195)
-                       ├── publication/data/complete_overall/ (N ~ 212)
-                                              ↓
-                       python -m publication.* → results/publication/
+data/raw/
+       ->
+python -m static.preprocessing --build all
+       ->
+data/complete_overall/ (N ~ 212)
+       ->
+python -m static.* -> outputs/
 ```
+
+
 
 ## Essential Commands
 
 ```bash
 # Activate venv (Windows)
-.\venv\Scripts\activate
+.\.venv\Scripts\activate
 
 # Preprocessing: Build overall dataset
-python -m publication.preprocessing --build overall
-python -m publication.preprocessing --build all
-python -m publication.preprocessing --list
+python -m static.preprocessing --build overall
+python -m static.preprocessing --build all
+python -m static.preprocessing --list
 
 # Core Analyses
-python -m publication.analysis.descriptive_statistics
-python -m publication.analysis.correlation_analysis
-python -m publication.analysis.hierarchical_regression
+python -m static.analysis.descriptive_statistics
+python -m static.analysis.correlation_analysis
+python -m static.analysis.hierarchical_regression
 
 # Advanced Analyses
-python -m publication.advanced_analysis.mediation_suite
-python -m publication.path_analysis.path_depression --task overall
+python -m static.advanced_analysis.mediation_suite
+python -m static.path_analysis.path_depression --task overall
 
 # Validity & Reliability
-python -m publication.validity_reliability.reliability_suite
-python -m publication.validity_reliability.validity_suite
+python -m static.validity_reliability.reliability_suite
+python -m static.validity_reliability.validity_suite
 
 # Gender Analysis
-python -m publication.gender_analysis --all
-python -m publication.gender_analysis -a male_vulnerability
-
-# Export data from Firebase
-PYTHONIOENCODING=utf-8 .\venv\Scripts\python.exe export_alldata.py
+python -m static.gender_analysis --all
+python -m static.gender_analysis -a male_vulnerability
 
 # Run specific WCST phase analysis scripts
-python publication/4_wcst_phase/run_wcst_segment_regressions.py
-python publication/4_wcst_phase/run_wcst_segment_error_regressions.py
-python publication/4_wcst_phase/run_wcst_segment_delta_regressions.py
-python publication/4_wcst_phase/run_wcst_post_shift_error_log_ols.py
-python publication/4_wcst_phase/run_wcst_post_error_log_ols.py
-python publication/4_wcst_phase/run_wcst_post_error_rt_ols_overall.py
-python publication/4_wcst_phase/compute_wcst_switching_features.py
-python publication/4_wcst_phase/compute_wcst_pre_switch_features.py
-python publication/4_wcst_phase/generate_wcst_segment_rt_trend.py
-python publication/4_wcst_phase/generate_wcst_category_segment_rt_trend.py
-python publication/4_wcst_phase/generate_wcst_category_cycle_rt_trend.py
-python publication/4_wcst_phase/plot_wcst_segment_regression_ols.py
-python publication/4_wcst_phase/plot_wcst_segment_regression_ols_timeseries.py
+python static/wcst_phase/compute_wcst_pre_switch_features.py
+python static/wcst_phase/generate_wcst_category_cycle_rt_trend.py
 ```
 
 ## Key Data Files
 
 | Directory | Contents |
 |-----------|----------|
-| `publication/data/raw/` | Raw exported data (N=251) |
-| `publication/data/complete_overall/` | All tasks complete (N ~ 212) |
-| `publication/data/outputs/` | Generated results |
+| `data/raw/` | Raw exported data (N=251) |
+| `data/complete_overall/` | All tasks complete (N ~ 212) |
+| `outputs/` | Generated results |
 
 **CSV files in each directory:**
 - `1_participants_info.csv` - Demographics
@@ -95,7 +81,7 @@ python publication/4_wcst_phase/plot_wcst_segment_regression_ols_timeseries.py
 ## Package Architecture
 
 ```
-publication/
+static/
 ├── preprocessing/          # Data loading & feature extraction
 │   ├── __init__.py        # Main exports (load_master_dataset, etc.)
 │   ├── constants.py       # RT thresholds, QC criteria
@@ -106,8 +92,9 @@ publication/
 │   ├── hierarchical_regression.py
 │   └── correlation_analysis.py
 ├── scripts/               # Ad-hoc analysis scripts
-├── 4_wcst_phase/            # WCST phase-related scripts & logic
-├── 3_stroop_lmm/            # Stroop linear mixed model scripts
+├── wcst_phase/            # WCST phase-related scripts & logic
+├── stroop_lmm/            # Stroop linear mixed model scripts
+├── figures_tables/            # Figure & table generation scripts
 ├── advanced_analysis/     # Mediation, Bayesian
 └── gender_analysis/       # Gender stratified analyses
 ```
@@ -120,7 +107,7 @@ UCLA and DASS correlate r ~ 0.5-0.7. Without control, "loneliness effects" confo
 
 ### Standard Regression Formula
 ```python
-from publication.analysis.utils import get_analysis_data, run_ucla_regression
+from static.analysis.utils import get_analysis_data, run_ucla_regression
 
 df = get_analysis_data("overall")
 
@@ -141,7 +128,7 @@ model = smf.ols(formula, data=df).fit(cov_type="nonrobust")  # OLS, not HC3
 ## Data Loading API
 
 ```python
-from publication.preprocessing import (
+from static.preprocessing import (
     load_master_dataset,      # Main entry point
     get_results_dir,          # Output paths
     VALID_TASKS,              # {'overall'}
@@ -151,14 +138,14 @@ from publication.preprocessing import (
 df_overall = load_master_dataset(task='overall') # N ~ 212
 
 # For analysis scripts, use utils wrapper:
-from publication.analysis.utils import get_analysis_data
+from static.analysis.utils import get_analysis_data
 df = get_analysis_data("overall")  # Includes QC filter
 ```
 
 ## RT Filtering Constants
 
 ```python
-from publication.preprocessing import (
+from static.preprocessing import (
     DEFAULT_RT_MIN,           # 100 ms (drop anticipations)
     WCST_RT_MIN,              # 100 ms
     STROOP_RT_MAX,            # 3000 ms
@@ -195,9 +182,10 @@ def _parse_wcst_extra(extra_str):
 
 | Category | Directory |
 |----------|-----------|
-| Publication results | `results/publication/` |
-| Analysis outputs | `publication/data/outputs/analysis/{task}/` |
-| Paper tables | `publication/data/outputs/paper_tables/` |
+| Publication results | `outputs/` |
+| Analysis outputs | `outputs/stats/analysis/{task}/` |
+| Paper tables | `outputs/tables/` |
+| Paper figures | `outputs/figures/` |
 
 ## Results Recording
 
@@ -222,5 +210,3 @@ Data collection app structure:
 - Tasks: `pages/ncft/{wcst,stroop,prp}_page.dart`
 - Surveys: `pages/survey/{ucla,dass}_page.dart`
 - Flow: `pages/intro/test_sequencer_page.dart`
-
-Data flows to Firebase Firestore, exported via `export_alldata.py`.

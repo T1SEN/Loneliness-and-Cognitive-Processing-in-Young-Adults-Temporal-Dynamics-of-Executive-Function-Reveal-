@@ -1,4 +1,0 @@
-﻿phase,n_participants,total_trials,mean_trials,median_trials,sd_trials,min_trials,max_trials,q25_trials,q75_trials
-exploration,212,3805.0,17.94811320754717,14.5,13.054466513389531,0.0,88.0,11.0,22.0
-confirmation,212,3648.0,17.20754716981132,18.0,2.7954498612342196,3.0,18.0,18.0,18.0
-exploitation,212,11200.0,52.83018867924528,49.0,15.227483072475414,21.0,122.0,42.0,58.0

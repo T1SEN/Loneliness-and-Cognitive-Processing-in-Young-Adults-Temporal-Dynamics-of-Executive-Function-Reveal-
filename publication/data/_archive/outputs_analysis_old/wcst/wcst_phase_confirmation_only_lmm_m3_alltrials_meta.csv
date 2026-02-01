@@ -1,2 +1,0 @@
-﻿confirm_len,include_errors,model,n_trials,n_participants,re_formula,method,reml,converged,fit_note,warning_count,boundary_warning,warning_msg,llf,aic,bic,formula
-3,True,confirmation_only_log_rt,3417,197,1,lbfgs,False,True,,1,True,The MLE may be on the boundary of the parameter space.,-2423.2748189518534,4866.549637903707,4927.9148204248595,log_rt ~ z_ucla_score + z_dass_depression + z_dass_anxiety + z_dass_stress + z_age + gender_male

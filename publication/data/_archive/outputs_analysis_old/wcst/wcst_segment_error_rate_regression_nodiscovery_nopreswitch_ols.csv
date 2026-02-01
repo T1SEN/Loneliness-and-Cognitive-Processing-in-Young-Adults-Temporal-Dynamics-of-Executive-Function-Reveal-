@@ -1,3 +1,0 @@
-﻿outcome_column,n,ucla_beta,ucla_se,ucla_t,ucla_p,r2,adj_r2,cov_type,outcome,outcome_type,segment
-wcst_exploration_error_rate,207,0.00682597834158581,0.010501792816772446,0.6499821945338722,0.5164495970360367,0.016558578901517018,-0.012944663731437434,nonrobust,WCST exploration Error Rate,segment_error_rate,exploration
-wcst_exploitation_error_rate,209,0.0005073666136695334,0.00691608834947132,0.07336034301937706,0.9415919649095249,0.013288500218912036,-0.016019762150823347,nonrobust,WCST exploitation Error Rate,segment_error_rate,exploitation
