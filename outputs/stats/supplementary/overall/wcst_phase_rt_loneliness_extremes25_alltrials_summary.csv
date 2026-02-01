@@ -1,0 +1,7 @@
+﻿phase,loneliness_group,mean_rt,sem_rt,n
+exploration,Low loneliness (bottom 25%),1934.435764402698,118.48446735177347,52
+exploration,High loneliness (top 25%),2135.8201717106444,143.890345572906,57
+confirmation,Low loneliness (bottom 25%),1901.3495435353634,58.05346148657998,53
+confirmation,High loneliness (top 25%),2079.3925533783986,82.42391688614525,57
+exploitation,Low loneliness (bottom 25%),1364.878932825234,42.81256040731313,53
+exploitation,High loneliness (top 25%),1431.383972264936,51.920276574675455,57
