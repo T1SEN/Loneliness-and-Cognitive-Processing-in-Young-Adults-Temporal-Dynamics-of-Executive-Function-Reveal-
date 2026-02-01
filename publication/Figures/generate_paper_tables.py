@@ -12,8 +12,7 @@ from publication.preprocessing.surveys import (
     load_ucla_scores,
 )
 from publication.preprocessing.constants import RAW_DIR, get_results_dir
-from publication.preprocessing.stroop.loaders import load_stroop_summary
-from publication.preprocessing.wcst.loaders import load_wcst_summary
+from publication.preprocessing.overall.loaders import load_overall_summary
 
 if sys.platform.startswith("win") and hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
@@ -81,7 +80,7 @@ def _build_selected_table(specs, hr_by_task, include_axis: bool) -> pd.DataFrame
     for spec in specs:
         task = spec["task"]
         col = spec["outcome_column"]
-        hr = hr_by_task.get(task.lower())
+        hr = hr_by_task.get(task.lower()) or hr_by_task.get("overall")
         if hr is None or hr.empty:
             continue
         match = hr[hr["outcome_column"] == col]
@@ -149,24 +148,20 @@ def generate_table3():
     rows.append(calc_stats(dass, "dass_anxiety", "DASS-21 Anxiety"))
     rows.append(calc_stats(dass, "dass_stress", "DASS-21 Stress"))
 
-    stroop_summary = load_stroop_summary(get_results_dir("stroop"))
-    wcst_summary = load_wcst_summary(get_results_dir("wcst"))
+    overall_summary = load_overall_summary(get_results_dir("overall"))
 
-    print(
-        f"Stroop N: {len(stroop_summary)}, "
-        f"WCST N: {len(wcst_summary)}"
-    )
+    print(f"Overall task-complete N: {len(overall_summary)}")
 
     rows.append(
         calc_stats(
-            stroop_summary,
+            overall_summary,
             "stroop_interference",
             "Stroop Interference RT (ms)",
         )
     )
     rows.append(
         calc_stats(
-            wcst_summary,
+            overall_summary,
             "wcst_perseverative_error_rate",
             "WCST Perseverative Error Rate (%)",
         )
@@ -182,7 +177,7 @@ def generate_table3():
     with open(output_dir / "Table3_descriptives.md", "w", encoding="utf-8") as f:
         f.write("# Table 3. Descriptive Statistics\n\n")
         f.write("*Note.* Demographics and self-report measures based on survey-complete sample. ")
-        f.write("Cognitive task metrics based on task-specific samples.\n\n")
+        f.write("Cognitive task metrics based on overall task-complete sample.\n\n")
         f.write(md)
 
     print(f"\nTable 3: {len(table3)} rows")
@@ -232,7 +227,7 @@ def generate_table4():
 
     with open(output_dir / "Table4_correlation_matrix.md", "w", encoding="utf-8") as f:
         f.write("# Table 4. Correlation Matrix\n\n")
-        f.write("*Note.* N = 197 (all tasks complete). Lower triangle shows Pearson correlations.\n")
+        f.write("*Note.* Overall task-complete sample. Lower triangle shows Pearson correlations.\n")
         f.write("*p < .05, **p < .01, ***p < .001\n\n")
         f.write(out.to_markdown())
 
@@ -248,7 +243,7 @@ def generate_table5_selected():
     print("Generating Table 5 (Selected): Conventional Indices")
     print("=" * 60)
 
-    hr_by_task = {t: _load_hierarchical(t) for t in ["stroop", "wcst"]}
+    hr_by_task = {"overall": _load_hierarchical("overall")}
     cov_label = _infer_cov_type(hr_by_task)
     cov_note = _format_cov_note(cov_label)
 
@@ -286,7 +281,7 @@ def generate_table6_selected():
     print("Generating Table 6 (Selected): Temporal Dynamics Indices")
     print("=" * 60)
 
-    hr_by_task = {t: _load_hierarchical(t) for t in ["stroop", "wcst"]}
+    hr_by_task = {"overall": _load_hierarchical("overall")}
     cov_label = _infer_cov_type(hr_by_task)
     cov_note = _format_cov_note(cov_label)
 

@@ -51,7 +51,7 @@ def main() -> None:
     if sys.platform.startswith("win") and hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
 
-    output_dir = get_output_dir("stroop")
+    output_dir = get_output_dir("overall")
     figures_dir = get_figures_dir()
 
     summary = _load_summary(output_dir)

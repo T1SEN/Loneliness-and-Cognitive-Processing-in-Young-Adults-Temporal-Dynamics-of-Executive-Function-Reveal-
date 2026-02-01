@@ -201,7 +201,7 @@ def main() -> None:
     grid["pred_log_rt"] = _predict_fixed_effects(result, grid)
     grid["pred_rt_ms"] = np.exp(grid["pred_log_rt"])
 
-    output_dir = get_output_dir("stroop")
+    output_dir = get_output_dir("overall")
     figures_dir = get_figures_dir()
 
     pred_path = output_dir / "stroop_interference_triallevel_interaction_predictions.csv"

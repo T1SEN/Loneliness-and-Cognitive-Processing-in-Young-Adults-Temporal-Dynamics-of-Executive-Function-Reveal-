@@ -87,15 +87,30 @@ def generate_figure1():
     n_stroop_attempted = len(stroop_attempted)
     n_wcst_attempted = len(wcst_attempted)
 
-    n_stroop = len(_load_participant_ids(data_dir / "complete_stroop" / "filtered_participant_ids.csv"))
-    n_wcst = len(_load_participant_ids(data_dir / "complete_wcst" / "filtered_participant_ids.csv"))
+    summary_path = data_dir / "raw" / "3_cognitive_tests_summary.csv"
+    if summary_path.exists():
+        summary = pd.read_csv(summary_path, encoding="utf-8-sig")
+    else:
+        summary = pd.DataFrame()
+
+    if not summary.empty and "participantId" in summary.columns and "testName" in summary.columns:
+        summary = summary[summary["participantId"].astype(str).isin(survey_ids)].copy()
+        summary["testName"] = summary["testName"].astype(str).str.lower()
+        stroop_complete_ids = set(summary[summary["testName"] == "stroop"]["participantId"].dropna().astype(str))
+        wcst_complete_ids = set(summary[summary["testName"] == "wcst"]["participantId"].dropna().astype(str))
+    else:
+        stroop_complete_ids = set()
+        wcst_complete_ids = set()
+
+    n_stroop = len(stroop_complete_ids)
+    n_wcst = len(wcst_complete_ids)
     n_all = len(_load_participant_ids(data_dir / "complete_overall" / "filtered_participant_ids.csv"))
 
     print(f"Raw: {n_raw}")
     print(f"Survey Complete: {n_survey}")
     print(f"Stroop attempted: {n_stroop_attempted}, complete: {n_stroop}")
     print(f"WCST attempted: {n_wcst_attempted}, complete: {n_wcst}")
-    print(f"All Tasks (Stroop + WCST): {n_all}")
+    print(f"All Tasks Complete (overall sample): {n_all}")
 
     excluded_survey = n_raw - n_survey
     stroop_not_attempted = max(0, n_survey - n_stroop_attempted)
@@ -136,29 +151,29 @@ def generate_figure1():
 
     # Task boxes
     ax.text(
-        3, 7.5, f"Stroop Complete\n(QC passed)\nN = {n_stroop}",
+        3, 7.5, f"Stroop Complete\n(survey-eligible)\nN = {n_stroop}",
         ha="center", va="center", fontsize=10, fontweight="bold", bbox=box_props,
     )
     ax.text(
-        7, 7.5, f"WCST Complete\n(QC passed)\nN = {n_wcst}",
+        7, 7.5, f"WCST Complete\n(survey-eligible)\nN = {n_wcst}",
         ha="center", va="center", fontsize=10, fontweight="bold", bbox=box_props,
     )
 
     # Task exclusions with QC reasons
     ax.text(
         3, 5.5,
-        f"Not attempted: {stroop_not_attempted}\nQC excluded: {excluded_stroop} (trials/accuracy)",
+        f"Not attempted: {stroop_not_attempted}\nNot complete: {excluded_stroop}",
         ha="center", va="center", fontsize=8, color="gray"
     )
     ax.text(
         7, 5.5,
-        f"Not attempted: {wcst_not_attempted}\nQC excluded: {excluded_wcst} (trials/choice ratio)",
+        f"Not attempted: {wcst_not_attempted}\nNot complete: {excluded_wcst}",
         ha="center", va="center", fontsize=8, color="gray"
     )
 
     # Final sample
     ax.text(
-        5, 3.5, f"All Tasks Complete\n(Stroop + WCST)\nN = {n_all}",
+        5, 3.5, f"All Tasks Complete\n(overall sample)\nN = {n_all}",
         ha="center", va="center", fontsize=11, fontweight="bold",
         bbox=dict(boxstyle="round,pad=0.5", facecolor="lightgreen", edgecolor="black", linewidth=2),
     )
@@ -267,35 +282,23 @@ def generate_figure3():
     print("Generating Figure 3: Forest Plot (Standardized beta)")
     print("=" * 60)
 
-    # Load hierarchical results from each task
-    hr_files = {
-        "STROOP": ba_dir / "stroop" / "hierarchical_results.csv",
-        "WCST": ba_dir / "wcst" / "hierarchical_results.csv",
-    }
-
-    all_results = []
-    for task, path in hr_files.items():
-        if path.exists():
-            df = pd.read_csv(path, encoding="utf-8-sig")
-            df["task"] = task
-            all_results.append(df)
-        else:
-            print(f"WARNING: {path} not found")
-
-    if not all_results:
-        print("ERROR: No hierarchical results found. Skipping Figure 3.")
+    hr_path = ba_dir / "overall" / "hierarchical_results.csv"
+    if not hr_path.exists():
+        print(f"WARNING: {hr_path} not found. Skipping Figure 3.")
         return
 
-    hr = pd.concat(all_results, ignore_index=True)
+    hr = pd.read_csv(hr_path, encoding="utf-8-sig")
+    hr["task"] = "overall"
     print(f"Loaded {len(hr)} outcomes from hierarchical results")
 
     # Filter to Primary indicators
     rows = []
 
     for task, outcome_col, label in CONV_PRIMARY:
-        match = hr[(hr["task"] == task) & (hr["outcome_column"] == outcome_col)]
+        match = hr[hr["outcome_column"] == outcome_col]
         if len(match) > 0:
             row = match.iloc[0].to_dict()
+            row["task"] = "overall"
             row["label"] = label
             row["group"] = "Conventional"
             rows.append(row)
@@ -303,9 +306,10 @@ def generate_figure3():
             print(f"  Missing: {task} - {outcome_col}")
 
     for task, outcome_col, label in TEMP_PRIMARY:
-        match = hr[(hr["task"] == task) & (hr["outcome_column"] == outcome_col)]
+        match = hr[hr["outcome_column"] == outcome_col]
         if len(match) > 0:
             row = match.iloc[0].to_dict()
+            row["task"] = "overall"
             row["label"] = label
             row["group"] = "Temporal"
             rows.append(row)

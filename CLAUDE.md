@@ -25,9 +25,8 @@ Firebase (Firestore) → export_alldata.py → publication/data/raw/
                                               ↓
                        python -m publication.preprocessing --build all
                                               ↓
-                       ├── publication/data/complete_stroop/  (N ~ 200)
                        ├── publication/data/complete_prp/     (N ~ 195)
-                       └── publication/data/complete_wcst/    (N ~ 190)
+                       ├── publication/data/complete_overall/ (N ~ 212)
                                               ↓
                        python -m publication.* → results/publication/
 ```
@@ -38,9 +37,8 @@ Firebase (Firestore) → export_alldata.py → publication/data/raw/
 # Activate venv (Windows)
 .\venv\Scripts\activate
 
-# Preprocessing: Build task-specific datasets
-python -m publication.preprocessing --build stroop
-python -m publication.preprocessing --build wcst
+# Preprocessing: Build overall dataset
+python -m publication.preprocessing --build overall
 python -m publication.preprocessing --build all
 python -m publication.preprocessing --list
 
@@ -65,19 +63,19 @@ python -m publication.gender_analysis -a male_vulnerability
 PYTHONIOENCODING=utf-8 .\venv\Scripts\python.exe export_alldata.py
 
 # Run specific WCST phase analysis scripts
-python publication/Wcst_phase/run_wcst_segment_regressions.py
-python publication/Wcst_phase/run_wcst_segment_error_regressions.py
-python publication/Wcst_phase/run_wcst_segment_delta_regressions.py
-python publication/Wcst_phase/run_wcst_post_shift_error_log_ols.py
-python publication/Wcst_phase/run_wcst_post_error_log_ols.py
-python publication/Wcst_phase/run_wcst_post_error_rt_ols_overall.py
-python publication/Wcst_phase/compute_wcst_switching_features.py
-python publication/Wcst_phase/compute_wcst_pre_switch_features.py
-python publication/Wcst_phase/generate_wcst_segment_rt_trend.py
-python publication/Wcst_phase/generate_wcst_category_segment_rt_trend.py
-python publication/Wcst_phase/generate_wcst_category_cycle_rt_trend.py
-python publication/Wcst_phase/plot_wcst_segment_regression_ols.py
-python publication/Wcst_phase/plot_wcst_segment_regression_ols_timeseries.py
+python publication/4_wcst_phase/run_wcst_segment_regressions.py
+python publication/4_wcst_phase/run_wcst_segment_error_regressions.py
+python publication/4_wcst_phase/run_wcst_segment_delta_regressions.py
+python publication/4_wcst_phase/run_wcst_post_shift_error_log_ols.py
+python publication/4_wcst_phase/run_wcst_post_error_log_ols.py
+python publication/4_wcst_phase/run_wcst_post_error_rt_ols_overall.py
+python publication/4_wcst_phase/compute_wcst_switching_features.py
+python publication/4_wcst_phase/compute_wcst_pre_switch_features.py
+python publication/4_wcst_phase/generate_wcst_segment_rt_trend.py
+python publication/4_wcst_phase/generate_wcst_category_segment_rt_trend.py
+python publication/4_wcst_phase/generate_wcst_category_cycle_rt_trend.py
+python publication/4_wcst_phase/plot_wcst_segment_regression_ols.py
+python publication/4_wcst_phase/plot_wcst_segment_regression_ols_timeseries.py
 ```
 
 ## Key Data Files
@@ -85,9 +83,7 @@ python publication/Wcst_phase/plot_wcst_segment_regression_ols_timeseries.py
 | Directory | Contents |
 |-----------|----------|
 | `publication/data/raw/` | Raw exported data (N=251) |
-| `publication/data/complete_stroop/` | Stroop completers (N ~ 200) |
-| `publication/data/complete_wcst/` | WCST completers (N ~ 190) |
-| `publication/data/complete_overall/` | All tasks complete (N ~ 180) |
+| `publication/data/complete_overall/` | All tasks complete (N ~ 212) |
 | `publication/data/outputs/` | Generated results |
 
 **CSV files in each directory:**
@@ -103,15 +99,15 @@ publication/
 ├── preprocessing/          # Data loading & feature extraction
 │   ├── __init__.py        # Main exports (load_master_dataset, etc.)
 │   ├── constants.py       # RT thresholds, QC criteria
-│   ├── prp/, stroop/, wcst/, overall/  # Task-specific modules
+│   ├── overall/            # Overall-only task module
 │   └── standardization.py # z-scoring utilities
 ├── analysis/              # Core statistical analyses
 │   ├── utils.py           # Shared: get_analysis_data(), run_ucla_regression()
 │   ├── hierarchical_regression.py
 │   └── correlation_analysis.py
 ├── scripts/               # Ad-hoc analysis scripts
-├── Wcst_phase/            # WCST phase-related scripts & logic
-├── stroop_lmm/            # Stroop linear mixed model scripts
+├── 4_wcst_phase/            # WCST phase-related scripts & logic
+├── 3_stroop_lmm/            # Stroop linear mixed model scripts
 ├── advanced_analysis/     # Mediation, Bayesian
 └── gender_analysis/       # Gender stratified analyses
 ```
@@ -126,7 +122,7 @@ UCLA and DASS correlate r ~ 0.5-0.7. Without control, "loneliness effects" confo
 ```python
 from publication.analysis.utils import get_analysis_data, run_ucla_regression
 
-df = get_analysis_data("wcst")  # or "stroop", "overall"
+df = get_analysis_data("overall")
 
 # run_ucla_regression uses this formula internally:
 # {outcome} ~ z_ucla_score + z_dass_depression + z_dass_anxiety + z_dass_stress + z_age + C(gender_male)
@@ -147,20 +143,16 @@ model = smf.ols(formula, data=df).fit(cov_type="nonrobust")  # OLS, not HC3
 ```python
 from publication.preprocessing import (
     load_master_dataset,      # Main entry point
-    load_wcst_trials,         # Trial-level data
-    load_stroop_trials,
     get_results_dir,          # Output paths
-    VALID_TASKS,              # {'stroop', 'prp', 'wcst', 'overall'}
+    VALID_TASKS,              # {'overall'}
 )
 
 # Load task-specific master dataset
-df_wcst = load_master_dataset(task='wcst')     # N ~ 190
-df_stroop = load_master_dataset(task='stroop') # N ~ 200
-df_overall = load_master_dataset(task='overall') # N ~ 180
+df_overall = load_master_dataset(task='overall') # N ~ 212
 
 # For analysis scripts, use utils wrapper:
 from publication.analysis.utils import get_analysis_data
-df = get_analysis_data("wcst")  # Includes extra features + QC filter
+df = get_analysis_data("overall")  # Includes QC filter
 ```
 
 ## RT Filtering Constants

@@ -49,18 +49,15 @@ def main() -> None:
     if sys.platform.startswith("win") and hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
 
-    stroop = get_analysis_data("stroop")
-    wcst = get_analysis_data("wcst")
-
-    stroop = add_zscores(stroop, ["ucla_score", "dass_depression", "dass_anxiety", "dass_stress", "age"])
-    wcst = add_zscores(wcst, ["ucla_score", "dass_depression", "dass_anxiety", "dass_stress", "age"])
+    df = get_analysis_data("overall")
+    df = add_zscores(df, ["ucla_score", "dass_depression", "dass_anxiety", "dass_stress", "age"])
 
     outcomes = [
-        ("Stroop Interference RT", "stroop_interference", stroop),
-        ("Stroop Interference Slope", "stroop_interference_slope", stroop),
-        ("WCST PE Rate", "wcst_perseverative_error_rate", wcst),
-        ("WCST Confirmation RT", "wcst_confirmation_rt", wcst),
-        ("WCST Confirm-Exploit RT", "wcst_confirmation_minus_exploitation_rt", wcst),
+        ("Stroop Interference RT", "stroop_interference", df),
+        ("Stroop Interference Slope", "stroop_interference_slope", df),
+        ("WCST PE Rate", "wcst_perseverative_error_rate", df),
+        ("WCST Confirmation RT", "wcst_confirmation_rt", df),
+        ("WCST Confirm-Exploit RT", "wcst_confirmation_minus_exploitation_rt", df),
     ]
 
     rows = []

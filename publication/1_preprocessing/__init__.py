@@ -1,18 +1,7 @@
 """
-Publication Preprocessing Module (compat shim).
-
-This package points to the implementation under publication/1_preprocessing.
+Publication Preprocessing Module
+================================
 """
-
-from __future__ import annotations
-
-from pathlib import Path
-from pkgutil import extend_path
-
-__path__ = extend_path(__path__, __name__)
-_IMPL_DIR = Path(__file__).resolve().parent.parent / "1_preprocessing"
-if _IMPL_DIR.exists():
-    __path__.append(str(_IMPL_DIR))
 
 from .constants import (
     ANALYSIS_OUTPUT_DIR,

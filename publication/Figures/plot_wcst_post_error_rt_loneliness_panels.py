@@ -113,7 +113,7 @@ def main() -> None:
     if sys.platform.startswith("win") and hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
 
-    df = get_analysis_data("wcst")
+    df = get_analysis_data("overall")
 
     dv_col = _pick_column(df, ["wcst_post_error_rt", "wcst_post_error_rt_mean", "wcst_post_error_rt_ms"])
     overall_col = _pick_column(df, ["wcst_mean_rt_all", "wcst_mean_rt", "wcst_mean_rt_all_correct"])
@@ -145,7 +145,7 @@ def main() -> None:
 
     summary = pd.concat([summary_simple, summary_adj], ignore_index=True)
 
-    output_dir = Path(ROOT) / "publication" / "data" / "outputs" / "analysis" / "wcst"
+    output_dir = Path(ROOT) / "publication" / "data" / "outputs" / "analysis" / "overall"
     output_dir.mkdir(parents=True, exist_ok=True)
     summary_path = output_dir / "wcst_post_error_rt_loneliness_panels_summary.csv"
     summary.to_csv(summary_path, index=False, encoding="utf-8-sig")
