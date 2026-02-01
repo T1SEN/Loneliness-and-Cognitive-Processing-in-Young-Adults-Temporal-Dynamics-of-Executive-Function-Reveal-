@@ -84,6 +84,24 @@ Rule segment는 `ruleAtThatTime` 변화로 구간을 나누며 최대 6개 categ
 | rule application (exploitation) RT (all) | 212 | 27.148 | 0.4579 |
 | rule search − rule application | 212 | 95.425 | 0.01296 |
 
+### S5.3 2‑phase 회귀 (2‑연속/4‑연속 기준)
+
+**2‑연속 기준 (confirm_len=2)**  
+
+| Outcome | n | UCLA β | p |
+|---|---:|---:|---:|
+| rule search (pre‑exploitation) RT (all) | 212 | 134.121 | 0.02495 |
+| rule application (exploitation) RT (all) | 212 | 49.979 | 0.18962 |
+| rule search − rule application | 212 | 84.143 | 0.06108 |
+
+**4‑연속 기준 (confirm_len=4)**  
+
+| Outcome | n | UCLA β | p |
+|---|---:|---:|---:|
+| rule search (pre‑exploitation) RT (all) | 212 | 118.728 | 0.01037 |
+| rule application (exploitation) RT (all) | 212 | 22.231 | 0.50040 |
+| rule search − rule application | 212 | 96.497 | 0.00369 |
+
 ## S6. WCST Phase 신뢰도 (odd/even category split‑half)
 
 | Phase | n | r | Spearman‑Brown |
@@ -92,6 +110,16 @@ Rule segment는 `ruleAtThatTime` 변화로 구간을 나누며 최대 6개 categ
 | confirmation | 210 | 0.5955 | 0.7464 |
 | exploitation | 209 | 0.7484 | 0.8561 |
 | rule search (pre‑exploitation) | 210 | 0.6472 | 0.7858 |
+
+### S6.1 2‑phase 신뢰도 (2‑연속/4‑연속 기준)
+
+**2‑연속 기준 (confirm_len=2)**  
+- rule search (pre‑exploitation): r=0.5417, SB=0.7027 (n=210)  
+- rule application (exploitation): r=0.6926, SB=0.8184 (n=209)
+
+**4‑연속 기준 (confirm_len=4)**  
+- rule search (pre‑exploitation): r=0.6455, SB=0.7846 (n=210)  
+- rule application (exploitation): r=0.6711, SB=0.8031 (n=209)
 
 ---
 
@@ -123,6 +151,10 @@ Stroop trial‑level 혼합효과모형은 QC 통과 trial만 사용했다(정�
 - `outputs/stats/analysis/overall/wcst_phase_rt_ols_alltrials.csv`
 - `outputs/stats/analysis/overall/wcst_phase_pre_exploit_rt_ols_alltrials.csv`
 - `outputs/stats/analysis/overall/wcst_phase_split_half_reliability.csv`
+- `outputs/stats/analysis/overall/wcst_phase_pre_exploit_rt_ols_m2_alltrials.csv`
+- `outputs/stats/analysis/overall/wcst_phase_pre_exploit_rt_ols_m4_alltrials.csv`
+- `outputs/stats/analysis/overall/wcst_phase_split_half_reliability_m2.csv`
+- `outputs/stats/analysis/overall/wcst_phase_split_half_reliability_m4.csv`
 - `outputs/stats/analysis/overall/stroop_lmm/stroop_trial_level_lmm.csv`
 - `outputs/stats/analysis/overall/stroop_lmm/stroop_interference_slope_lmm.csv`
 - `outputs/stats/analysis/overall/stroop_lmm/stroop_interference_slope_lmm_variants.csv`
