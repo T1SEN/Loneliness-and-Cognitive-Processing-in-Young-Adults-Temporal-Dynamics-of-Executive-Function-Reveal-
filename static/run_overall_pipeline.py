@@ -10,6 +10,7 @@ from static.preprocessing.constants import get_results_dir
 from static.preprocessing.datasets import build_overall_dataset
 from static.preprocessing.features import build_overall_features
 from static.analysis import descriptive_statistics, correlation_analysis, hierarchical_regression
+from static.analysis import supplementary_analyses
 
 
 def _features_ready() -> bool:
@@ -40,6 +41,7 @@ def main(run_preprocess: bool, run_analysis: bool) -> None:
         descriptive_statistics.run(task="overall", verbose=True)
         correlation_analysis.run(task="overall", verbose=True)
         hierarchical_regression.run(task="overall", cov_type="nonrobust", verbose=True)
+        supplementary_analyses.run(task="overall")
 
 
 if __name__ == "__main__":

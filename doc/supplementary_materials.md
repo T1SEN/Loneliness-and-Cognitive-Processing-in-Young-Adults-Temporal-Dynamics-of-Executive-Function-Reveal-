@@ -187,6 +187,98 @@ WCST에서 **6개 카테고리를 모두 완료한 참가자(N=193)**만 포함�
 
 ---
 
+## S10. WCST Phase‑complete 샘플 분석 (N=208)
+
+3‑phase 값이 모두 존재하는 참가자만 포함하여 회귀를 재추정했다.
+
+| Outcome | n | UCLA β | p |
+|---|---:|---:|---:|
+| exploration | 208 | 107.979 | 0.2256 |
+| confirmation | 208 | 142.766 | 0.00786 |
+| exploitation | 208 | 33.491 | 0.3719 |
+| confirmation − exploitation | 208 | 109.274 | 0.00780 |
+| pre‑exploitation | 208 | 139.564 | 0.00786 |
+| pre‑exploitation − exploitation | 208 | 106.073 | 0.00799 |
+
+---
+
+## S11. WCST 3‑phase 임계치 민감도 (Phase‑complete 샘플)
+
+**2‑연속 기준 (confirm_len=2)**  
+
+| Outcome | n | UCLA β | p |
+|---|---:|---:|---:|
+| exploration | 208 | 107.979 | 0.2256 |
+| confirmation | 208 | 157.517 | 0.01561 |
+| exploitation | 208 | 49.969 | 0.2002 |
+| confirmation − exploitation | 208 | 107.549 | 0.02970 |
+
+**4‑연속 기준 (confirm_len=4)**  
+
+| Outcome | n | UCLA β | p |
+|---|---:|---:|---:|
+| exploration | 208 | 107.979 | 0.2256 |
+| confirmation | 208 | 118.090 | 0.01362 |
+| exploitation | 208 | 18.043 | 0.5880 |
+| confirmation − exploitation | 208 | 100.047 | 0.00458 |
+
+---
+
+## S12. Stroop interference 효과 t‑test
+
+| n | Mean (ms) | SD | t | p |
+|---:|---:|---:|---:|---:|
+| 212 | 139.466 | 104.264 | 19.476 | 4.97e‑49 |
+
+---
+
+## S13. WCST 규범 지표
+
+| n | Categories M | SD | n_complete6 | % complete6 |
+|---:|---:|---:|---:|---:|
+| 212 | 5.774 | 0.829 | 193 | 91.04 |
+
+---
+
+## S14. DASS total 모델 (보조)
+
+| Outcome | n | UCLA β | p |
+|---|---:|---:|---:|
+| Stroop Interference RT | 212 | 2.181 | 0.819 |
+| WCST PE Rate | 212 | -0.203 | 0.714 |
+| Stroop Interference RT Slope | 212 | 19.754 | 0.000511 |
+| WCST Confirmation RT (all) | 212 | 137.957 | 0.00697 |
+| WCST Exploitation RT (all) | 212 | 44.707 | 0.2126 |
+| WCST Confirm − Exploit (all) | 212 | 93.250 | 0.01734 |
+
+---
+
+## S15. UCLA 먼저 투입하는 역순 모델
+
+| Outcome | n | ΔR² (UCLA first) | p | ΔR² (DASS after UCLA) | p |
+|---|---:|---:|---:|---:|---:|
+| Stroop Interference RT | 212 | 0.00002 | 0.953 | 0.00575 | 0.753 |
+| WCST PE Rate | 212 | 0.01513 | 0.0750 | 0.01208 | 0.468 |
+| Stroop Interference RT Slope | 212 | 0.07501 | 5.33e‑05 | 0.01612 | 0.302 |
+| WCST Confirmation RT (all) | 212 | 0.01458 | 0.0778 | 0.02055 | 0.219 |
+| WCST Exploitation RT (all) | 212 | 0.00253 | 0.455 | 0.01634 | 0.308 |
+| WCST Confirm − Exploit (all) | 212 | 0.01255 | 0.104 | 0.02171 | 0.204 |
+
+---
+
+## S16. FDR 보정 (UCLA p‑value 기준)
+
+| Outcome | UCLA p | FDR q |
+|---|---:|---:|
+| Stroop Interference RT | 0.629 | 0.755 |
+| WCST PE Rate | 0.775 | 0.775 |
+| Stroop Interference RT Slope | 0.000131 | 0.000789 |
+| WCST Confirmation RT (all) | 0.01079 | 0.02368 |
+| WCST Exploitation RT (all) | 0.371 | 0.5565 |
+| WCST Confirm − Exploit (all) | 0.01184 | 0.02368 |
+
+---
+
 **출력 파일**
 - `outputs/stats/analysis/overall/wcst_phase_rt_ols_alltrials.csv`
 - `outputs/stats/analysis/overall/wcst_phase_pre_exploit_rt_ols_alltrials.csv`
@@ -201,3 +293,10 @@ WCST에서 **6개 카테고리를 모두 완료한 참가자(N=193)**만 포함�
 - `outputs/stats/analysis/overall/stroop_interference_slope_segment_sensitivity_2_3_6.csv`
 - `outputs/stats/analysis/overall/wcst_phase_3_2phase_6categories_ols_alltrials.csv`
 - `outputs/stats/analysis/overall/wcst_phase_3_2phase_6categories_split_half_reliability.csv`
+- `outputs/stats/analysis/overall/wcst_phase_3phase_complete_ols_alltrials.csv`
+- `outputs/stats/analysis/overall/wcst_phase_3phase_threshold_sensitivity_complete_ols_alltrials.csv`
+- `outputs/stats/analysis/overall/stroop_interference_ttest.csv`
+- `outputs/stats/analysis/overall/wcst_normative_stats.csv`
+- `outputs/stats/analysis/overall/dass_total_models.csv`
+- `outputs/stats/analysis/overall/ucla_first_model_comparison.csv`
+- `outputs/stats/analysis/overall/ucla_fdr_qvalues.csv`
