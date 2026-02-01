@@ -1,3 +1,5 @@
+﻿"""Plot WCST phase RT trends for loneliness extremes (top/bottom 25%)."""
+
 from __future__ import annotations
 
 import argparse
@@ -207,4 +209,3 @@ if __name__ == "__main__":
     parser.add_argument("--correct-only", action="store_true")
     args = parser.parse_args()
     main(args.confirm_len, include_errors=not args.correct_only)
-

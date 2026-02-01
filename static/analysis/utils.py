@@ -45,9 +45,9 @@ DESCRIPTIVE_VARS = [
     ("stroop_interference", "Stroop Interference RT"),
     ("stroop_interference_slope", "Stroop Interference RT Slope"),
     ("wcst_perseverative_error_rate", "WCST Perseverative Error Rate (%)"),
-    ("wcst_exploration_rt", "WCST Exploration RT (ms)"),
-    ("wcst_confirmation_rt", "WCST Confirmation RT (ms)"),
-    ("wcst_exploitation_rt", "WCST Exploitation RT (ms)"),
+    ("wcst_exploration_rt_all", "WCST Exploration RT (ms, all trials)"),
+    ("wcst_confirmation_rt_all", "WCST Confirmation RT (ms, all trials)"),
+    ("wcst_exploitation_rt_all", "WCST Exploitation RT (ms, all trials)"),
 ]
 
 # Variables for correlation matrix
@@ -59,9 +59,6 @@ CORRELATION_VARS = [
     ("stroop_interference", "Stroop Interference RT"),
     ("wcst_perseverative_error_rate", "WCST PE Rate"),
     ("stroop_interference_slope", "Stroop Interference RT Slope"),
-    ("wcst_confirmation_rt", "WCST Confirmation RT"),
-    ("wcst_exploitation_rt", "WCST Exploitation RT"),
-    ("wcst_confirmation_minus_exploitation_rt", "WCST Confirm - Exploit RT"),
     ("wcst_confirmation_rt_all", "WCST Confirmation RT (all trials)"),
     ("wcst_exploitation_rt_all", "WCST Exploitation RT (all trials)"),
     ("wcst_confirmation_minus_exploitation_rt_all", "WCST Confirm - Exploit RT (all trials)"),
@@ -72,9 +69,9 @@ PRIMARY_OUTCOMES = [
     ("stroop_interference", "Stroop Interference RT"),
     ("wcst_perseverative_error_rate", "WCST Perseverative Error Rate (%)"),
     ("stroop_interference_slope", "Stroop Interference RT Slope"),
-    ("wcst_confirmation_rt", "WCST Confirmation RT (ms)"),
-    ("wcst_exploitation_rt", "WCST Exploitation RT (ms)"),
-    ("wcst_confirmation_minus_exploitation_rt", "WCST Confirmation - Exploitation RT (ms)"),
+    ("wcst_confirmation_rt_all", "WCST Confirmation RT (ms, all trials)"),
+    ("wcst_exploitation_rt_all", "WCST Exploitation RT (ms, all trials)"),
+    ("wcst_confirmation_minus_exploitation_rt_all", "WCST Confirmation - Exploitation RT (ms, all trials)"),
 ]
 
 OUTCOMES_BY_TASK = {

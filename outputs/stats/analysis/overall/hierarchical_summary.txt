@@ -82,7 +82,7 @@ Diagnostics:
   Shapiro-Wilk p: 0.140
 
 
-Outcome: WCST Confirmation RT (ms) (N = 212)
+Outcome: WCST Confirmation RT (ms, all trials) (N = 212)
 --------------------------------------------------
 
 Model Comparison:
@@ -106,7 +106,7 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: WCST Exploitation RT (ms) (N = 212)
+Outcome: WCST Exploitation RT (ms, all trials) (N = 212)
 --------------------------------------------------
 
 Model Comparison:
@@ -130,7 +130,7 @@ Diagnostics:
   Shapiro-Wilk p: < 0.001
 
 
-Outcome: WCST Confirmation - Exploitation RT (ms) (N = 212)
+Outcome: WCST Confirmation - Exploitation RT (ms, all trials) (N = 212)
 --------------------------------------------------
 
 Model Comparison:
