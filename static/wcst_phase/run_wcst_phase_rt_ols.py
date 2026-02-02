@@ -252,6 +252,37 @@ def _compute_phase_threshold_sensitivity(confirm_lens: list[int]) -> pd.DataFram
     return pd.concat(rows, ignore_index=True)
 
 
+def _get_complete6_ids(wcst: pd.DataFrame) -> set[str]:
+    if wcst.empty:
+        return set()
+    wcst = wcst.sort_values(["participant_id", "trial_order"]).copy()
+    cat_counts = (
+        wcst.groupby("participant_id")["rule"]
+        .apply(lambda s: s.ne(s.shift()).sum())
+    )
+    return set(cat_counts[cat_counts >= 6].index.astype(str))
+
+
+def _compute_phase_complete_complete6(confirm_len: int = 3) -> pd.DataFrame:
+    wcst = _read_wcst_trials_for_phase()
+    if wcst.empty:
+        return pd.DataFrame()
+    complete6_ids = _get_complete6_ids(wcst)
+    if not complete6_ids:
+        return pd.DataFrame()
+    wcst = wcst[wcst["participant_id"].isin(complete6_ids)].copy()
+    wcst = wcst.dropna(subset=["trial_order"]).copy()
+    wcst = label_wcst_phases(wcst, rule_col="rule", trial_col="trial_order", confirm_len=confirm_len)
+    phase_means = _phase_means_alltrials(wcst)
+    required = [
+        "wcst_exploration_rt_all",
+        "wcst_confirmation_rt_all",
+        "wcst_exploitation_rt_all",
+    ]
+    phase_means = phase_means.dropna(subset=required)
+    return phase_means
+
+
 def run_phase_complete_outputs(confirm_len: int = 3) -> pd.DataFrame:
     output_dir = get_output_dir("overall", bucket="supplementary")
     phase_complete = _compute_phase_complete(confirm_len=confirm_len)
@@ -289,6 +320,29 @@ def run_phase_threshold_sensitivity_outputs(confirm_lens: list[int] | None = Non
     return threshold_results
 
 
+def run_complete6_outputs(confirm_len: int = 3) -> pd.DataFrame:
+    output_dir = get_output_dir("overall", bucket="supplementary")
+    phase_complete = _compute_phase_complete_complete6(confirm_len=confirm_len)
+    if phase_complete.empty:
+        return pd.DataFrame()
+    outcomes = [
+        ("wcst_exploration_rt_all", "exploration"),
+        ("wcst_confirmation_rt_all", "confirmation"),
+        ("wcst_exploitation_rt_all", "exploitation"),
+        ("wcst_confirmation_minus_exploitation_rt_all", "confirmation_minus_exploitation"),
+        ("wcst_pre_exploitation_rt_all", "pre_exploitation"),
+        ("wcst_pre_exploitation_minus_exploitation_rt_all", "pre_exploitation_minus_exploitation"),
+    ]
+    results = _run_phase_regressions(phase_complete, outcomes)
+    if not results.empty:
+        results.to_csv(
+            output_dir / "wcst_phase_3_2phase_6categories_ols_alltrials.csv",
+            index=False,
+            encoding="utf-8-sig",
+        )
+    return results
+
+
 def main(confirm_len: int, include_errors: bool, use_log: bool, merge_pre: bool) -> None:
     base = load_base_data()
     base = add_zscores(
@@ -312,6 +366,8 @@ def main(confirm_len: int, include_errors: bool, use_log: bool, merge_pre: bool)
     wcst = wcst[wcst["rt_ms"].notna()]
     if "is_rt_valid" in wcst.columns:
         wcst = wcst[wcst["is_rt_valid"] == True]
+    if "timeout" in wcst.columns:
+        wcst = wcst[~wcst["timeout"]]
 
     wcst["rule"] = wcst[rule_col].astype(str).str.lower().replace({"color": "colour"})
     wcst = label_wcst_phases(wcst, rule_col="rule", trial_col=trial_col, confirm_len=confirm_len)

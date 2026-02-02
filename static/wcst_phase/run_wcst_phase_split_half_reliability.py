@@ -75,6 +75,17 @@ def _split_half_stats(df: pd.DataFrame, phase_col: str, phase_value: str) -> dic
     }
 
 
+def _get_complete6_ids(wcst: pd.DataFrame) -> set[str]:
+    if wcst.empty or "rule" not in wcst.columns or "trial_order" not in wcst.columns:
+        return set()
+    wcst = wcst.sort_values(["participant_id", "trial_order"]).copy()
+    cat_counts = (
+        wcst.groupby("participant_id")["rule"]
+        .apply(lambda s: s.ne(s.shift()).sum())
+    )
+    return set(cat_counts[cat_counts >= 6].index.astype(str))
+
+
 def main(confirm_len: int, correct_only: bool) -> None:
     prepared = prepare_wcst_trials()
     wcst = prepared["wcst"]
@@ -92,6 +103,8 @@ def main(confirm_len: int, correct_only: bool) -> None:
     wcst = wcst[wcst["rt_ms"].notna()]
     if "is_rt_valid" in wcst.columns:
         wcst = wcst[wcst["is_rt_valid"] == True]
+    if "timeout" in wcst.columns:
+        wcst = wcst[~wcst["timeout"]]
 
     wcst["rule"] = wcst[rule_col].astype(str).str.lower().replace({"color": "colour"})
     wcst = label_wcst_phases(wcst, rule_col="rule", trial_col=trial_col, confirm_len=confirm_len)
@@ -131,6 +144,69 @@ def main(confirm_len: int, correct_only: bool) -> None:
     print(f"Saved: {out_path}")
     if not results_df.empty:
         print(results_df.to_string(index=False))
+
+
+def run_complete6_outputs(confirm_len: int = 3, correct_only: bool = False) -> pd.DataFrame:
+    prepared = prepare_wcst_trials()
+    wcst = prepared["wcst"]
+    rt_col = prepared["rt_col"]
+    trial_col = prepared["trial_col"]
+    rule_col = prepared["rule_col"]
+    if not isinstance(wcst, pd.DataFrame) or wcst.empty or rt_col is None or trial_col is None or rule_col is None:
+        raise RuntimeError("WCST trials missing required columns.")
+
+    qc_ids = load_qc_ids("overall")
+    if qc_ids:
+        wcst = wcst[wcst["participant_id"].isin(qc_ids)]
+
+    wcst["rule"] = wcst[rule_col].astype(str).str.lower().replace({"color": "colour"})
+    wcst["trial_order"] = pd.to_numeric(wcst[trial_col], errors="coerce")
+    complete6_ids = _get_complete6_ids(wcst)
+    if complete6_ids:
+        wcst = wcst[wcst["participant_id"].isin(complete6_ids)].copy()
+    else:
+        return pd.DataFrame()
+
+    wcst["rt_ms"] = pd.to_numeric(wcst[rt_col], errors="coerce")
+    wcst = wcst[wcst["rt_ms"].notna()]
+    if "is_rt_valid" in wcst.columns:
+        wcst = wcst[wcst["is_rt_valid"] == True]
+    if "timeout" in wcst.columns:
+        wcst = wcst[~wcst["timeout"]]
+
+    wcst = label_wcst_phases(wcst, rule_col="rule", trial_col="trial_order", confirm_len=confirm_len)
+    wcst = wcst.dropna(subset=["phase", "category_num"])
+
+    if correct_only:
+        wcst = wcst[wcst["correct"].astype(bool)]
+
+    wcst["category_num"] = pd.to_numeric(wcst["category_num"], errors="coerce")
+    wcst = wcst.dropna(subset=["category_num"])
+    wcst["half"] = np.where(wcst["category_num"].astype(int) % 2 == 1, "odd", "even")
+
+    results = []
+    for phase in PHASES:
+        results.append(_split_half_stats(wcst, "phase", phase))
+
+    wcst["phase_merge"] = wcst["phase"].map(
+        {
+            "exploration": "pre_exploitation",
+            "confirmation": "pre_exploitation",
+            "exploitation": "exploitation",
+        }
+    )
+    results.append(_split_half_stats(wcst, "phase_merge", "pre_exploitation"))
+
+    results_df = pd.DataFrame(results)
+    output_dir = get_output_dir("overall", bucket="supplementary")
+    out_path = output_dir / "wcst_phase_3_2phase_6categories_split_half_reliability.csv"
+    results_df.to_csv(out_path, index=False, encoding="utf-8-sig")
+
+    print(f"Saved: {out_path}")
+    if not results_df.empty:
+        print(results_df.to_string(index=False))
+
+    return results_df
 
 
 if __name__ == "__main__":

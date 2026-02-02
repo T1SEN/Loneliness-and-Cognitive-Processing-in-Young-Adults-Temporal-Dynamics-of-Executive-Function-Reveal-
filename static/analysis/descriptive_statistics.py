@@ -39,6 +39,7 @@ from static.analysis.utils import (
     DESCRIPTIVE_VARS,
     print_section_header,
     format_coefficient,
+    run_ucla_regression,
 )
 from static.preprocessing.constants import (
     VALID_TASKS,
@@ -102,6 +103,36 @@ def _prepare_stroop_trials(task: str) -> pd.DataFrame:
     return trials[valid].dropna(subset=["participant_id", "trial_order", "rt_ms"])
 
 
+def _load_stroop_trials_raw(task: str) -> pd.DataFrame:
+    data_dir = get_results_dir(task)
+    trials = _read_csv(data_dir / "4a_stroop_trials.csv")
+    if trials.empty:
+        return trials
+    trials = ensure_participant_id(trials)
+    qc_ids = _load_qc_ids(task)
+    if qc_ids:
+        trials = trials[trials["participant_id"].isin(qc_ids)]
+    trials["cond"] = trials["cond"].astype(str).str.lower()
+    trials["rt_ms"] = pd.to_numeric(trials["rt_ms"], errors="coerce")
+    if "trial_index" in trials.columns:
+        trials["trial_order"] = pd.to_numeric(trials["trial_index"], errors="coerce")
+    else:
+        trials["trial_order"] = pd.to_numeric(trials["trial_order"], errors="coerce")
+    if "timeout" in trials.columns:
+        trials["timeout"] = _coerce_bool(trials["timeout"])
+    else:
+        trials["timeout"] = False
+    if "correct" in trials.columns:
+        trials["correct"] = _coerce_bool(trials["correct"])
+    else:
+        trials["correct"] = False
+    if "is_rt_valid" in trials.columns:
+        trials["is_rt_valid"] = _coerce_bool(trials["is_rt_valid"])
+    else:
+        trials["is_rt_valid"] = trials["rt_ms"].between(STROOP_RT_MIN, STROOP_RT_MAX)
+    return trials
+
+
 def _prepare_wcst_trials(task: str) -> pd.DataFrame:
     data_dir = get_results_dir(task)
     wcst_raw = _read_csv(data_dir / "4b_wcst_trials.csv")
@@ -163,6 +194,151 @@ def _compute_wcst_normative_stats(task: str) -> pd.DataFrame:
             }
         ]
     )
+
+
+def _assign_segments(df: pd.DataFrame, n_segments: int) -> pd.DataFrame:
+    if df.empty:
+        return df.assign(segment=np.nan)
+
+    def _assign(group: pd.DataFrame) -> pd.DataFrame:
+        group = group.sort_values("trial_order").copy()
+        group["segment"] = np.nan
+        valid = group["trial_order"].notna()
+        if not valid.any():
+            return group
+        sub = group[valid].copy()
+        n_trials = len(sub)
+        if n_trials == 0:
+            return group
+        positions = np.arange(1, n_trials + 1)
+        edges = np.linspace(0, n_trials, n_segments + 1)
+        sub["segment"] = pd.cut(
+            positions,
+            bins=edges,
+            labels=list(range(1, n_segments + 1)),
+            include_lowest=True,
+        ).astype(float)
+        group.loc[sub.index, "segment"] = sub["segment"]
+        return group
+
+    return df.groupby("participant_id", group_keys=False).apply(_assign)
+
+
+def _compute_condition_balance(task: str, n_segments: int) -> tuple[pd.DataFrame, pd.DataFrame]:
+    trials = _load_stroop_trials_raw(task)
+    if trials.empty:
+        return pd.DataFrame(), pd.DataFrame()
+
+    trials = trials[trials["cond"].isin({"congruent", "incongruent", "neutral"})]
+    trials = trials.dropna(subset=["trial_order"])
+    if trials.empty:
+        return pd.DataFrame(), pd.DataFrame()
+
+    trials = _assign_segments(trials, n_segments)
+    trials = trials.dropna(subset=["segment"])
+    if trials.empty:
+        return pd.DataFrame(), pd.DataFrame()
+
+    trials["segment"] = trials["segment"].astype(int)
+    counts = trials.groupby(["segment", "cond"]).size().reset_index(name="count")
+    totals = counts.groupby("segment")["count"].transform("sum")
+    counts["total_segment"] = totals
+    counts["proportion"] = counts["count"] / counts["total_segment"]
+
+    pivot = (
+        counts.pivot(index="segment", columns="cond", values="proportion")
+        .reindex(columns=["congruent", "incongruent", "neutral"])
+        .reset_index()
+    )
+    return counts, pivot
+
+
+def _compute_interference_slope(trials: pd.DataFrame, n_segments: int) -> pd.Series:
+    if trials.empty:
+        return pd.Series(dtype=float)
+    trials = trials[trials["cond"].isin({"congruent", "incongruent"})].copy()
+    valid = (
+        trials["correct"]
+        & (~trials["timeout"])
+        & trials["is_rt_valid"]
+        & trials["rt_ms"].between(STROOP_RT_MIN, STROOP_RT_MAX)
+    )
+    trials = trials[valid].copy()
+    if trials.empty:
+        return pd.Series(dtype=float)
+
+    trials = _assign_segments(trials, n_segments)
+    trials = trials.dropna(subset=["segment"])
+    if trials.empty:
+        return pd.Series(dtype=float)
+
+    seg_means = (
+        trials.groupby(["participant_id", "segment", "cond"])["rt_ms"].mean().unstack()
+    )
+    if "incongruent" not in seg_means.columns or "congruent" not in seg_means.columns:
+        return pd.Series(dtype=float)
+
+    seg_means["interference"] = seg_means["incongruent"] - seg_means["congruent"]
+    seg_means = seg_means.reset_index()[["participant_id", "segment", "interference"]]
+
+    def _slope(group: pd.DataFrame) -> float:
+        group = group.dropna(subset=["interference"])
+        if len(group) < 2:
+            return np.nan
+        x = group["segment"].astype(float).to_numpy()
+        y = group["interference"].to_numpy()
+        return float(np.polyfit(x, y, 1)[0])
+
+    return seg_means.groupby("participant_id").apply(_slope)
+
+
+def run_condition_balance(
+    task: str = "overall",
+    segment_sizes: tuple[int, ...] = (4, 2, 3, 6),
+) -> dict[int, tuple[pd.DataFrame, pd.DataFrame]]:
+    output_dir = get_output_dir(task, bucket="supplementary")
+    results: dict[int, tuple[pd.DataFrame, pd.DataFrame]] = {}
+    for n_segments in segment_sizes:
+        long_df, pivot_df = _compute_condition_balance(task, n_segments)
+        if long_df.empty or pivot_df.empty:
+            continue
+        if n_segments == 4:
+            base = "stroop_condition_balance_by_segment"
+        else:
+            base = f"stroop_condition_balance_by_segment_{n_segments}"
+        long_df.to_csv(output_dir / f"{base}.csv", index=False, encoding="utf-8-sig")
+        pivot_df.to_csv(output_dir / f"{base}_pivot.csv", index=False, encoding="utf-8-sig")
+        results[n_segments] = (long_df, pivot_df)
+    return results
+
+
+def run_interference_slope_segment_sensitivity(
+    task: str = "overall",
+    segment_sizes: tuple[int, ...] = (2, 3, 6),
+) -> pd.DataFrame:
+    output_dir = get_output_dir(task, bucket="supplementary")
+    master = get_analysis_data(task)
+    trials = _load_stroop_trials_raw(task)
+    rows = []
+    for n_segments in segment_sizes:
+        slopes = _compute_interference_slope(trials, n_segments)
+        if slopes.empty:
+            continue
+        slope_df = slopes.rename("stroop_interference_slope").reset_index()
+        merged = master.merge(slope_df, on="participant_id", how="inner")
+        res = run_ucla_regression(merged, "stroop_interference_slope", cov_type="nonrobust")
+        if res is None:
+            continue
+        rows.append({"segments": n_segments, **res})
+
+    out = pd.DataFrame(rows)
+    if not out.empty:
+        out.to_csv(
+            output_dir / "stroop_interference_slope_segment_sensitivity_2_3_6.csv",
+            index=False,
+            encoding="utf-8-sig",
+        )
+    return out
 
 
 def _safe_run(step: str, func, *args, **kwargs) -> pd.DataFrame:
@@ -458,6 +634,19 @@ def run(
                 index=False,
                 encoding="utf-8-sig",
             )
+
+        _safe_run(
+            "stroop_condition_balance_by_segment",
+            run_condition_balance,
+            task,
+            (4, 2, 3, 6),
+        )
+        _safe_run(
+            "stroop_interference_slope_segment_sensitivity_2_3_6",
+            run_interference_slope_segment_sensitivity,
+            task,
+            (2, 3, 6),
+        )
 
     if verbose:
         print_apa_table(desc_total, cat_stats)

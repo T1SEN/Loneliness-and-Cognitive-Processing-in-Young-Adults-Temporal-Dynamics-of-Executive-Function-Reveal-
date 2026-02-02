@@ -81,6 +81,12 @@ def _run_supplementary_extras() -> None:
         4,
         False,
     )
+    _safe_run(
+        "wcst_phase_3_2phase_6categories_split_half_reliability",
+        run_wcst_phase_split_half_reliability.run_complete6_outputs,
+        3,
+        False,
+    )
 
     _safe_run("stroop_trial_lmm", run_stroop_trial_lmm.main)
 
@@ -103,6 +109,11 @@ def _run_supplementary_extras() -> None:
         "wcst_phase_threshold_sensitivity_complete_ols_alltrials",
         run_wcst_phase_rt_ols.run_phase_threshold_sensitivity_outputs,
         [2, 4],
+    )
+    _safe_run(
+        "wcst_phase_3_2phase_6categories_ols_alltrials",
+        run_wcst_phase_rt_ols.run_complete6_outputs,
+        3,
     )
 
 
