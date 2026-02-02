@@ -62,6 +62,124 @@ Supplementary outputs are under:
 - `doc/methods_detailed.md` : detailed methods (English, OSF-ready)
 - `doc/supplementary_materials.md` : supplementary results (English, OSF-ready)
 
+## OSF submission (detailed guide)
+
+This section describes how to prepare a **public OSF package** for this project.
+It is written to maximize reproducibility while minimizing re-identification risk.
+
+### Public vs. restricted content
+
+**Recommended public content**
+
+- `README.md`
+- `requirements.txt`
+- `doc/`
+- `static/`
+- `outputs/` (derived results only)
+- `data/public/` (de-identified; see below)
+
+**Recommended restricted/private content**
+
+- `data/raw/`
+- `data/complete_overall/1_participants_info.csv`
+- Any file containing direct identifiers or exact timestamps
+
+Direct identifiers to remove or mask include:
+
+- `studentId`
+- `birthDate`
+- `courseName`
+- `professorName`
+- `classSection`
+- `createdAt`
+
+### De-identification checklist (public data)
+
+- Remove all direct identifiers listed above.
+- Replace `participantId` with a random, non-reversible ID (one-way mapping stored privately).
+- Remove exact timestamps; if necessary, coarsen to date or study week.
+- Bin `age` (e.g., 18-19, 20-21, 22-24, 25+), especially for small cells.
+- Remove any free-text fields.
+- Verify that no table or output exposes very small cells (e.g., n < 5).
+
+### Suggested public data layout
+
+Create a public-only folder (do not include raw data):
+
+```
+data/public/
+  participants_public.csv
+  surveys_public.csv
+  features_public.csv
+  stroop_trials_public.csv        # optional (trial-level)
+  wcst_trials_public.csv          # optional (trial-level)
+  metadata.json                   # schema + units + missing codes
+```
+
+### Codebook / data dictionary
+
+Add a data dictionary with:
+
+- column name
+- data type
+- units / scale
+- valid ranges
+- missingness codes
+- derivation notes for computed variables
+
+Recommended location:
+
+- `doc/data_dictionary.md` (or `data/public/codebook.csv`)
+
+### Reproducibility steps (public package)
+
+1. Create a clean environment and install dependencies:
+
+```
+python -m pip install -r requirements.txt
+```
+
+2. Run the full pipeline from repository root:
+
+```
+python -m static.run_overall_pipeline
+```
+
+3. Verify that expected outputs exist:
+
+- `outputs/stats/core/overall/`
+- `outputs/figures/core/`
+- `outputs/stats/supplementary/overall/`
+- `outputs/figures/supplementary/`
+
+4. (Optional) Record file hashes for OSF integrity checks:
+
+```
+Get-FileHash outputs/stats/core/overall/* | Format-Table -AutoSize
+```
+
+### OSF component map (example)
+
+- **Code and documentation**: `README.md`, `requirements.txt`, `static/`, `doc/`
+- **Derived outputs**: `outputs/`
+- **Public data (de-identified)**: `data/public/`
+- **Restricted raw data**: `data/raw/` (private component or not uploaded)
+
+### Citation and license (recommended)
+
+Add the following to the repository for OSF compliance:
+
+- `LICENSE` (e.g., CC-BY 4.0 for documents, MIT for code)
+- `CITATION.cff` (preferred) or a citation block in `README.md`
+
+### Data use / ethics statement (recommended)
+
+Include a brief statement indicating:
+
+- data are de-identified
+- only de-identified data are publicly shared
+- raw data are restricted or not shared
+
 ## Reproducibility note (S7 in Supplementary)
 
 S7.1 tests general within-task slowing (segment x UCLA) across conditions. The main hypothesis concerns interference drift, which is tested directly in S7.2 via trial_scaled x cond x UCLA. Therefore, a null S7.1 interaction does not contradict a significant S7.2 interaction.
