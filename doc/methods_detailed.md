@@ -1,97 +1,101 @@
-﻿# Methods (Detailed)
+# Methods (Detailed)
 
-## 2.4 측정
+## 2.4 Measures
 
-### 2.4.1 자기보고 척도
+### 2.4.1 Self-report scales
 
-**UCLA Loneliness Scale (Version 3; UCLA‑LS)**. UCLA 외로움 척도 20문항 한국어판을 사용했다. 응답은 1(전혀 그렇지 않았다)–4(자주 그랬다) Likert 척도이며, 긍정 진술 9문항(1, 5, 6, 9, 10, 15, 16, 19, 20)은 역채점했다. 총점(20–80)은 모든 문항 응답을 합산해 계산했다. 미응답은 인터페이스에서 차단하여 결측 없이 수집했다.
+**UCLA Loneliness Scale (Version 3; UCLA-LS).** We administered the 20-item Korean version of the UCLA Loneliness Scale. Responses were collected on a 1 (never) to 4 (often) Likert scale. Nine positively worded items (items 1, 5, 6, 9, 10, 15, 16, 19, 20) were reverse-scored. The total score (range 20-80) was computed by summing all items. The interface required all items, so no item-level missing data were allowed.
 
-**Depression Anxiety Stress Scales (DASS‑21)**. DASS‑21 한국어판을 사용했고, 0–3 Likert 척도로 응답했다. 우울/불안/스트레스 각 7문항 합산 후 표준 규정에 따라 2배하여 0–42 범위의 하위척도 점수를 산출했다. UCLA와 동일하게 모든 문항 응답을 요구했다.
+**Depression Anxiety Stress Scales (DASS-21).** We used the Korean DASS-21. Items were rated on a 0-3 Likert scale. For each subscale (Depression, Anxiety, Stress), the seven items were summed and multiplied by 2 to yield the standard 0-42 subscale scores. All items were required, so no item-level missing data were allowed.
 
-### 2.4.2 인지 과제
+### 2.4.2 Cognitive tasks
 
-**Stroop 과제**. 한국어 색 단어 4개(빨강/초록/파랑/노랑)와 중립 단어 3개(기차/학교/가방)를 4가지 잉크색으로 제시했다. 총 108 trial(일치 36, 불일치 36, 중립 36)이며, 연속 동일 자극이 나오지 않도록 무작위화했다. 각 trial은 고정주시(500 ms) → 공백(100 ms) → 자극 제시(반응 또는 3000 ms 타임아웃) 순서로 진행했다. 반응은 화면상의 색 버튼 클릭으로 기록했다.
+**Stroop task.** We used four Korean color words (red, green, blue, yellow) and three neutral words (train, school, bag), each displayed in one of four ink colors. The task consisted of 108 trials (36 congruent, 36 incongruent, 36 neutral) with randomized order and no immediate repeats. Each trial followed a fixed sequence: fixation (500 ms) -> blank (100 ms) -> stimulus (until response or 3000 ms timeout). Responses were made via on-screen color buttons. Reaction time (RT) and accuracy were recorded.
 
-**WCST**. 128‑card 버전 WCST를 사용했다. 기준 카드 4장(1 yellow circle, 2 black rectangles, 3 blue stars, 4 red triangles)을 화면 상단에 고정하고, 중앙에 제시된 자극 카드를 4개 버튼 중 하나로 분류하도록 했다. 규칙은 color → shape → number 순으로 진행되며, **10연속 정답** 시 규칙이 변경된다. 최대 6 category 완료 또는 128장 소진 시 종료된다. 반응 시간 제한은 없으며 각 trial의 RT를 기록했다.
+**Wisconsin Card Sorting Task (WCST).** We used the standard 128-card WCST. Four key cards (1 yellow circle, 2 black rectangles, 3 blue stars, 4 red triangles) were displayed at the top of the screen, and participants selected the matching key for each stimulus card. Sorting rules progressed in a fixed order (color -> shape -> number). The rule changed after 10 consecutive correct responses. The task ended after completing 6 categories or after 128 trials. There was no time limit per trial; RT was recorded for each trial.
 
-## 2.5 실험 환경
+## 2.5 Apparatus and environment
 
-실험은 Flutter 기반 웹 애플리케이션(데스크톱 전용)으로 구현되었고 Firebase를 통해 데이터가 저장되었다. RT는 `performance.now()` 기반으로 기록하여 밀리초 이하 정밀도를 확보했다.
+The experiment was implemented as a Flutter web application (desktop only) with Firebase-based data storage. RTs were recorded using `performance.now()` for sub-millisecond timing precision.
 
-## 2.6 절차
+## 2.6 Procedure
 
-동의 후 인구통계(성별/나이/학력) → UCLA → DASS 순으로 설문을 완료했다. 이후 Stroop 과제, 2분 휴식, WCST 순서로 진행했다. 전체 소요 시간은 약 30–40분이었다.
+After consent, participants completed demographics (gender, age, education), followed by the UCLA-LS and DASS-21. They then completed the Stroop task, took a 2-minute rest, and completed the WCST. Total duration was approximately 30-40 minutes.
 
-## 2.7 데이터 전처리 및 QC
+## 2.7 Data preprocessing and QC
 
-### 2.7.1 Trial‑level 정제
+### 2.7.1 Trial-level cleaning
 
 **Stroop**
-- 타임아웃은 보존하되 `timeout=True`로 표시, 정확도 계산 시 오답 처리
-- RT 유효 범위: 200–3000 ms (`is_rt_valid`)
+- Timeouts were retained but coded as incorrect for accuracy calculations.
+- Valid RT window: 200-3000 ms (`is_rt_valid`).
 
 **WCST**
-- rule 유효성: colour/shape/number만 유지
-- 선택 카드 유효성: 4개 기준 카드만 유지
-- RT < 200 ms 제거
-- RT 유효 범위: 200–10,000 ms (`is_rt_valid`)
-- 타임아웃은 오답 처리
+- Valid rules: colour/shape/number only.
+- Valid chosen cards: the four target key cards only.
+- RT < 200 ms removed.
+- Valid RT window: 200-10,000 ms (`is_rt_valid`).
+- Timeouts were treated as incorrect.
 
-RT 기반 지표는 **타임아웃 제외 + 유효 RT만 사용**하며, 오류 trial도 포함한 all‑trials 기준을 기본으로 사용한다.
+For all RT-based metrics, we used **non-timeout trials with valid RTs** and included error trials (all-trials convention) unless noted otherwise.
 
-### 2.7.2 Participant‑level 제외 기준
+### 2.7.2 Participant-level inclusion criteria
 
-다음 기준을 모두 만족하는 참가자만 포함했다.
+Participants were included only if they met all of the following:
 
-- 설문 유효성: UCLA 총점, DASS 하위척도(우울/불안/스트레스), 성별 정보 존재
-- 과제 완료: Stroop과 WCST 모두 완료 기록 존재
-- Stroop QC: 108 trial 완료 + 전체 정확도 ≥ .70
-- WCST QC: 유효 trial ≥ 60 + 단일 카드 선택 비율 ≤ .85
+- Valid surveys: UCLA total, all three DASS subscales, and gender present.
+- Task completion: both Stroop and WCST completed.
+- Stroop QC: 108 trials completed and overall accuracy >= .70.
+- WCST QC: >= 60 valid trials and single-card choice proportion <= .85.
 
-### 2.7.3 WCST phase 정의 (정석 3분할 + 2분할 해석)
+### 2.7.3 WCST phase definitions (primary 3-phase + auxiliary 2-phase)
 
-**Rule segment**는 `ruleAtThatTime` 변화로 구간을 나누며 **최대 6 category**만 사용한다.
+Rule segments were defined by changes in `ruleAtThatTime` and limited to the first 6 categories.
 
-**3‑phase (정석)**
-- exploration: rule 전환 이후 **첫 정답 이전**
-- confirmation: **첫 정답부터 3연속 정답 달성까지(포함)**
-- exploitation: 3연속 정답 달성 이후
-- 3연속 정답이 나오지 않으면, 첫 정답 이후 구간은 confirmation으로 유지
-- 정답이 한 번도 없으면 전체가 exploration
+**Three-phase (primary)**
+- exploration: after a rule switch until the first correct response
+- confirmation: from the first correct response through achieving 3 consecutive correct responses (inclusive)
+- exploitation: after achieving 3 consecutive correct responses
+- If 3 consecutive correct responses never occur, all post-first-correct trials remain confirmation.
+- If there are no correct responses, the entire segment is exploration.
 
-**2‑phase (보조 분석; 개념적 해석: 규칙 탐색/활용)**  
-- **rule search (pre‑exploitation)** = exploration + confirmation  
-- **rule application (exploitation)** = 3연속 정답 달성 이후
+**Two-phase (auxiliary; rule search/application)**
+- rule search (pre-exploitation) = exploration + confirmation
+- rule application (exploitation) = after 3 consecutive correct responses
 
-모든 phase RT는 **all‑trials 기준**(오류 포함)으로 계산하며, 유효 RT 및 비‑timeout trial만 평균에 포함한다.
+All phase RTs were computed on **all trials (errors included)** using valid RTs and **excluding timeouts**.
 
-## 2.8 통계 분석
+## 2.8 Statistical analysis
 
-### 2.8.1 기본 회귀
+### 2.8.1 Primary regressions
 
-모든 회귀는 **OLS(비‑robust)**로 수행했다. 공변량은 항상 DASS 하위척도(우울/불안/스트레스)와 나이, 성별을 통제했다. 주요 분석은 다음의 단계적 모델을 사용했다.
+All regressions used **OLS (non-robust)** standard errors. Covariates were DASS-Dep/Anx/Stress, age, and gender. We used the following hierarchical model sequence for each outcome:
 
 - Model 0: outcome ~ age + gender
 - Model 1: Model 0 + DASS(3)
 - Model 2: Model 1 + UCLA
-- Model 3: Model 2 + UCLA × gender
+- Model 3: Model 2 + UCLA x gender
 
-### 2.8.2 WCST phase 타당도(보조)
+### 2.8.2 WCST phase validity (supplementary)
 
-WCST phase RT(3‑phase 및 2‑phase)에 대해 UCLA + DASS 통제 OLS 회귀를 수행하여 **타당도**를 평가했다. 3‑phase는 exploration/confirmation/exploitation 및 대비(confirmation‑exploitation)를, 2‑phase는 pre‑exploitation 및 대비(pre‑exploitation‑exploitation)를 보고한다.
+We evaluated WCST phase RT validity using OLS regressions with UCLA as the focal predictor and DASS/age/gender covariates. The 3-phase analysis reported exploration/confirmation/exploitation and the confirmation-exploitation contrast; the 2-phase analysis reported pre-exploitation, exploitation, and their contrast.
 
-### 2.8.3 신뢰도
+### 2.8.3 Reliability
 
-WCST phase RT는 category 홀/짝 분할(split‑half)로 신뢰도를 계산했고, Spearman‑Brown 보정을 보고했다. 자세한 수치는 Supplementary에 제시했다.
+WCST phase RT reliability was estimated using odd/even category split-half correlations and Spearman-Brown correction. Alternative confirmation thresholds (2 and 4 consecutive correct) were reported in the Supplementary Materials.
 
-### 2.8.4 Stroop trial‑level LMM (보조)
+### 2.8.4 Stroop trial-level LMM (supplementary)
 
-Stroop trial‑level 혼합효과모형은 두 가지를 보고했다.
+Two mixed-effects models were reported:
 
-**(1) 전체 trial LMM**  
-RT(ms)를 종속변수로 두고, `segment(참가자 내 4분위)` × `UCLA(z)` 상호작용을 포함했다. 공변량은 DASS‑Dep/Anx/Stress, age, gender를 통제했다. 랜덤효과는 참가자별 **random intercept + segment slope**를 포함했다.
+**(1) Full-trial LMM**
+- Outcome: RT (ms)
+- Fixed effects: segment (participant-level quartiles) x UCLA(z), plus condition, DASS(3), age, gender
+- Random effects: participant-level random intercept + segment slope
 
-**(2) 간섭‑기울기 LMM**  
-congruent/incongruent trial만 사용하고 log(RT)를 종속변수로 설정했다. `trial_scaled(참가자 내 0–1)` × `cond_code(‑0.5/+0.5)` × `UCLA(z)`의 3‑way 상호작용을 포함했으며, 공변량은 동일하다. 랜덤효과는 수렴이 가능한 최우선 구조(1 + trial_scaled)를 채택했다.
+**(2) Interference-slope LMM**
+- Outcome: log(RT) on congruent/incongruent trials only
+- Fixed effects: trial_scaled (within-participant 0-1) x cond_code (-0.5/+0.5) x UCLA(z), plus DASS(3), age, gender
+- Random effects: preferred structure 1 + trial_scaled (convergence prioritized)
 
-모든 LMM은 statsmodels MixedLM으로 ML 추정했고, 결과는 Supplementary에 제시했다.
+All LMMs were estimated with `statsmodels` MixedLM using maximum likelihood. Detailed results are provided in the Supplementary Materials.
