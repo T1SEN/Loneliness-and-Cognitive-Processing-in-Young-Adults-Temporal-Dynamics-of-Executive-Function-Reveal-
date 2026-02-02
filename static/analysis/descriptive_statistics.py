@@ -26,6 +26,8 @@ if sys.platform.startswith("win") and hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding='utf-8')
 
 import argparse
+from pathlib import Path
+
 import pandas as pd
 import numpy as np
 from scipy import stats
@@ -38,7 +40,137 @@ from static.analysis.utils import (
     print_section_header,
     format_coefficient,
 )
-from static.preprocessing.constants import VALID_TASKS
+from static.preprocessing.constants import (
+    VALID_TASKS,
+    STROOP_RT_MIN,
+    STROOP_RT_MAX,
+    get_results_dir,
+)
+from static.preprocessing.core import ensure_participant_id
+from static.preprocessing.wcst.qc import clean_wcst_trials
+
+
+def _read_csv(path: Path) -> pd.DataFrame:
+    if not path.exists():
+        return pd.DataFrame()
+    return pd.read_csv(path, encoding="utf-8-sig")
+
+
+def _coerce_bool(series: pd.Series) -> pd.Series:
+    if series.dtype == bool:
+        return series
+    return series.astype(str).str.strip().str.lower().isin({"true", "1", "t", "yes"})
+
+
+def _load_qc_ids(task: str) -> set[str]:
+    task_dir = get_results_dir(task)
+    ids_path = task_dir / "filtered_participant_ids.csv"
+    if not ids_path.exists():
+        return set()
+    ids_df = pd.read_csv(ids_path, encoding="utf-8-sig")
+    ids_df = ensure_participant_id(ids_df)
+    if "participant_id" not in ids_df.columns:
+        return set()
+    return set(ids_df["participant_id"].dropna().astype(str))
+
+
+def _prepare_stroop_trials(task: str) -> pd.DataFrame:
+    data_dir = get_results_dir(task)
+    trials = _read_csv(data_dir / "4a_stroop_trials.csv")
+    if trials.empty:
+        return trials
+    trials = ensure_participant_id(trials)
+    qc_ids = _load_qc_ids(task)
+    if qc_ids:
+        trials = trials[trials["participant_id"].isin(qc_ids)]
+    trials["is_rt_valid"] = _coerce_bool(trials["is_rt_valid"])
+    trials["timeout"] = _coerce_bool(trials["timeout"])
+    trials["correct"] = _coerce_bool(trials["correct"])
+    trials["cond"] = trials["cond"].astype(str).str.lower()
+    trials["rt_ms"] = pd.to_numeric(trials["rt_ms"], errors="coerce")
+    if "trial_index" in trials.columns:
+        trials["trial_order"] = pd.to_numeric(trials["trial_index"], errors="coerce")
+    else:
+        trials["trial_order"] = pd.to_numeric(trials["trial_order"], errors="coerce")
+    valid = (
+        trials["cond"].isin({"congruent", "incongruent"})
+        & trials["correct"]
+        & (~trials["timeout"])
+        & trials["is_rt_valid"]
+        & trials["rt_ms"].between(STROOP_RT_MIN, STROOP_RT_MAX)
+    )
+    return trials[valid].dropna(subset=["participant_id", "trial_order", "rt_ms"])
+
+
+def _prepare_wcst_trials(task: str) -> pd.DataFrame:
+    data_dir = get_results_dir(task)
+    wcst_raw = _read_csv(data_dir / "4b_wcst_trials.csv")
+    if wcst_raw.empty:
+        return wcst_raw
+    wcst = clean_wcst_trials(wcst_raw)
+    qc_ids = _load_qc_ids(task)
+    if qc_ids:
+        wcst = wcst[wcst["participant_id"].isin(qc_ids)].copy()
+    return wcst
+
+
+def _compute_stroop_interference_ttest(task: str) -> pd.DataFrame:
+    trials = _prepare_stroop_trials(task)
+    if trials.empty:
+        return pd.DataFrame()
+    means = trials.groupby(["participant_id", "cond"])["rt_ms"].mean().unstack()
+    if "incongruent" not in means.columns or "congruent" not in means.columns:
+        return pd.DataFrame()
+    interference = means["incongruent"] - means["congruent"]
+    interference = interference.dropna()
+    n = int(len(interference))
+    t_stat, p_val = stats.ttest_1samp(interference, 0.0)
+    return pd.DataFrame(
+        [
+            {
+                "n": n,
+                "mean": float(interference.mean()),
+                "sd": float(interference.std(ddof=1)),
+                "t": float(t_stat),
+                "p": float(p_val),
+            }
+        ]
+    )
+
+
+def _compute_wcst_normative_stats(task: str) -> pd.DataFrame:
+    wcst = _prepare_wcst_trials(task)
+    if wcst.empty:
+        return pd.DataFrame()
+    wcst = wcst.sort_values(["participant_id", "trial_order"])
+    cat_counts = (
+        wcst.groupby("participant_id")["rule"]
+        .apply(lambda s: s.ne(s.shift()).sum())
+        .rename("n_categories")
+    )
+    cat_counts = cat_counts.clip(upper=6)
+    n = int(cat_counts.shape[0])
+    complete6 = int((cat_counts >= 6).sum())
+    pct_complete6 = float(complete6 / n * 100) if n else np.nan
+    return pd.DataFrame(
+        [
+            {
+                "n": n,
+                "mean_categories": float(cat_counts.mean()),
+                "sd_categories": float(cat_counts.std(ddof=1)),
+                "n_complete6": complete6,
+                "pct_complete6": pct_complete6,
+            }
+        ]
+    )
+
+
+def _safe_run(step: str, func, *args, **kwargs) -> pd.DataFrame:
+    try:
+        return func(*args, **kwargs)
+    except Exception as exc:
+        print(f"[WARN] {step} failed: {exc}")
+        return pd.DataFrame()
 
 
 def compute_descriptive_stats(
@@ -223,7 +355,11 @@ def print_apa_table(desc_df: pd.DataFrame, cat_df: pd.DataFrame = None) -> None:
     print("  Note. M = Mean; SD = Standard Deviation")
 
 
-def run(task: str, verbose: bool = True) -> dict[str, pd.DataFrame]:
+def run(
+    task: str,
+    verbose: bool = True,
+    run_supplementary: bool = True,
+) -> dict[str, pd.DataFrame]:
     """
     Run descriptive statistics analysis.
 
@@ -235,7 +371,7 @@ def run(task: str, verbose: bool = True) -> dict[str, pd.DataFrame]:
     Returns
     -------
     dict
-        Dictionary with 'total' and 'by_gender' DataFrames
+        Dictionary with descriptive and supplementary outputs
     """
     if verbose:
         print_section_header("DESCRIPTIVE STATISTICS ANALYSIS")
@@ -295,6 +431,34 @@ def run(task: str, verbose: bool = True) -> dict[str, pd.DataFrame]:
         output_file_comparison = output_dir / "table1_gender_comparison.csv"
         gender_comparison.to_csv(output_file_comparison, index=False, encoding='utf-8-sig')
 
+    stroop_ttest = pd.DataFrame()
+    wcst_norms = pd.DataFrame()
+    if run_supplementary:
+        supp_output_dir = get_output_dir(task, bucket="supplementary")
+        stroop_ttest = _safe_run(
+            "stroop_interference_ttest",
+            _compute_stroop_interference_ttest,
+            task,
+        )
+        if not stroop_ttest.empty:
+            stroop_ttest.to_csv(
+                supp_output_dir / "stroop_interference_ttest.csv",
+                index=False,
+                encoding="utf-8-sig",
+            )
+
+        wcst_norms = _safe_run(
+            "wcst_normative_stats",
+            _compute_wcst_normative_stats,
+            task,
+        )
+        if not wcst_norms.empty:
+            wcst_norms.to_csv(
+                supp_output_dir / "wcst_normative_stats.csv",
+                index=False,
+                encoding="utf-8-sig",
+            )
+
     if verbose:
         print_apa_table(desc_total, cat_stats)
 
@@ -321,6 +485,8 @@ def run(task: str, verbose: bool = True) -> dict[str, pd.DataFrame]:
         'categorical': cat_stats,
         'by_gender': desc_by_gender,
         'gender_comparison': gender_comparison,
+        'stroop_ttest': stroop_ttest,
+        'wcst_norms': wcst_norms,
     }
 
 

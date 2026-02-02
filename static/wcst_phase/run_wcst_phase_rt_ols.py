@@ -6,16 +6,19 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import statsmodels.formula.api as smf
 
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))
 
 from static.analysis.utils import get_output_dir, run_ucla_regression
-from static.preprocessing.constants import get_results_dir
+from static.preprocessing.constants import WCST_RT_MIN, WCST_RT_MAX, get_results_dir
 from static.preprocessing.core import ensure_participant_id
+from static.preprocessing.datasets import load_master_dataset
 from static.preprocessing.surveys import load_dass_scores, load_participants, load_ucla_scores
 from static.preprocessing.wcst.phase import label_wcst_phases
+from static.preprocessing.wcst.qc import clean_wcst_trials
 from static.preprocessing.wcst.utils import prepare_wcst_trials
 
 
@@ -114,6 +117,176 @@ def _prepare_pre_exploit_means(df: pd.DataFrame, value_col: str, prefix: str) ->
         phase_means[f"{prefix}_pre_exploitation"] - phase_means[f"{prefix}_exploitation"]
     )
     return phase_means
+
+
+def _read_wcst_trials_for_phase() -> pd.DataFrame:
+    data_dir = get_results_dir("overall")
+    trials_path = data_dir / "4b_wcst_trials.csv"
+    if not trials_path.exists():
+        return pd.DataFrame()
+    wcst_raw = pd.read_csv(trials_path, encoding="utf-8-sig")
+    if wcst_raw.empty:
+        return wcst_raw
+    wcst = clean_wcst_trials(wcst_raw)
+    qc_ids = load_qc_ids("overall")
+    if qc_ids:
+        wcst = wcst[wcst["participant_id"].isin(qc_ids)].copy()
+    return wcst
+
+
+def _phase_means_alltrials(wcst: pd.DataFrame) -> pd.DataFrame:
+    rt_valid = (
+        wcst["rt_ms"].between(WCST_RT_MIN, WCST_RT_MAX)
+        & (~wcst["timeout"])
+        & (wcst["phase"].notna())
+    )
+    rt_df = wcst[rt_valid].copy()
+    means = (
+        rt_df.groupby(["participant_id", "phase"], observed=False)["rt_ms"]
+        .mean()
+        .unstack()
+        .reset_index()
+    )
+    means = means.rename(
+        columns={
+            "exploration": "wcst_exploration_rt_all",
+            "confirmation": "wcst_confirmation_rt_all",
+            "exploitation": "wcst_exploitation_rt_all",
+        }
+    )
+    means["wcst_confirmation_minus_exploitation_rt_all"] = (
+        means["wcst_confirmation_rt_all"] - means["wcst_exploitation_rt_all"]
+    )
+    pre_vals = rt_df[rt_df["phase"].isin(["exploration", "confirmation"])]
+    pre_mean = pre_vals.groupby("participant_id")["rt_ms"].mean()
+    means["wcst_pre_exploitation_rt_all"] = means["participant_id"].map(pre_mean)
+    means["wcst_pre_exploitation_minus_exploitation_rt_all"] = (
+        means["wcst_pre_exploitation_rt_all"] - means["wcst_exploitation_rt_all"]
+    )
+    return means
+
+
+def _run_ucla_regression(df: pd.DataFrame, outcome: str) -> dict[str, float] | None:
+    required = [
+        outcome,
+        "z_ucla_score",
+        "z_dass_depression",
+        "z_dass_anxiety",
+        "z_dass_stress",
+        "z_age",
+        "gender_male",
+    ]
+    cols = [c for c in required if c in df.columns]
+    sub = df[cols].dropna()
+    if len(sub) < 30:
+        return None
+    formula = (
+        f"{outcome} ~ z_ucla_score + z_dass_depression + "
+        "z_dass_anxiety + z_dass_stress + z_age + C(gender_male)"
+    )
+    model = smf.ols(formula, data=sub).fit()
+    return {
+        "n": int(len(sub)),
+        "ucla_beta": float(model.params.get("z_ucla_score", np.nan)),
+        "ucla_se": float(model.bse.get("z_ucla_score", np.nan)),
+        "ucla_t": float(model.tvalues.get("z_ucla_score", np.nan)),
+        "ucla_p": float(model.pvalues.get("z_ucla_score", np.nan)),
+        "r2": float(model.rsquared),
+        "adj_r2": float(model.rsquared_adj),
+    }
+
+
+def _run_phase_regressions(
+    phase_df: pd.DataFrame,
+    outcomes: list[tuple[str, str]],
+) -> pd.DataFrame:
+    master = load_master_dataset(task="overall", merge_trial_features=False)
+    qc_ids = load_qc_ids("overall")
+    if qc_ids:
+        master = master[master["participant_id"].isin(qc_ids)].copy()
+    merged = master.merge(phase_df, on="participant_id", how="inner")
+    rows: list[dict[str, float]] = []
+    for col, label in outcomes:
+        res = _run_ucla_regression(merged, col)
+        if res is None:
+            continue
+        rows.append({"outcome": label, **res})
+    return pd.DataFrame(rows)
+
+
+def _compute_phase_complete(confirm_len: int = 3) -> pd.DataFrame:
+    wcst = _read_wcst_trials_for_phase()
+    if wcst.empty:
+        return pd.DataFrame()
+    wcst = wcst.dropna(subset=["trial_order"]).copy()
+    wcst = label_wcst_phases(wcst, rule_col="rule", trial_col="trial_order", confirm_len=confirm_len)
+    phase_means = _phase_means_alltrials(wcst)
+    required = [
+        "wcst_exploration_rt_all",
+        "wcst_confirmation_rt_all",
+        "wcst_exploitation_rt_all",
+    ]
+    phase_means = phase_means.dropna(subset=required)
+    return phase_means
+
+
+def _compute_phase_threshold_sensitivity(confirm_lens: list[int]) -> pd.DataFrame:
+    rows = []
+    for confirm_len in confirm_lens:
+        phase_means = _compute_phase_complete(confirm_len=confirm_len)
+        if phase_means.empty:
+            continue
+        outcomes = [
+            ("wcst_exploration_rt_all", "exploration"),
+            ("wcst_confirmation_rt_all", "confirmation"),
+            ("wcst_exploitation_rt_all", "exploitation"),
+            ("wcst_confirmation_minus_exploitation_rt_all", "confirmation_minus_exploitation"),
+        ]
+        results = _run_phase_regressions(phase_means, outcomes)
+        if results.empty:
+            continue
+        results["confirm_len"] = confirm_len
+        rows.append(results)
+    if not rows:
+        return pd.DataFrame()
+    return pd.concat(rows, ignore_index=True)
+
+
+def run_phase_complete_outputs(confirm_len: int = 3) -> pd.DataFrame:
+    output_dir = get_output_dir("overall", bucket="supplementary")
+    phase_complete = _compute_phase_complete(confirm_len=confirm_len)
+    if phase_complete.empty:
+        return pd.DataFrame()
+    outcomes = [
+        ("wcst_exploration_rt_all", "exploration"),
+        ("wcst_confirmation_rt_all", "confirmation"),
+        ("wcst_exploitation_rt_all", "exploitation"),
+        ("wcst_confirmation_minus_exploitation_rt_all", "confirmation_minus_exploitation"),
+        ("wcst_pre_exploitation_rt_all", "pre_exploitation"),
+        ("wcst_pre_exploitation_minus_exploitation_rt_all", "pre_exploitation_minus_exploitation"),
+    ]
+    phase_complete_results = _run_phase_regressions(phase_complete, outcomes)
+    if not phase_complete_results.empty:
+        phase_complete_results.to_csv(
+            output_dir / "wcst_phase_3phase_complete_ols_alltrials.csv",
+            index=False,
+            encoding="utf-8-sig",
+        )
+    return phase_complete_results
+
+
+def run_phase_threshold_sensitivity_outputs(confirm_lens: list[int] | None = None) -> pd.DataFrame:
+    if confirm_lens is None:
+        confirm_lens = [2, 4]
+    output_dir = get_output_dir("overall", bucket="supplementary")
+    threshold_results = _compute_phase_threshold_sensitivity(confirm_lens)
+    if not threshold_results.empty:
+        threshold_results.to_csv(
+            output_dir / "wcst_phase_3phase_threshold_sensitivity_complete_ols_alltrials.csv",
+            index=False,
+            encoding="utf-8-sig",
+        )
+    return threshold_results
 
 
 def main(confirm_len: int, include_errors: bool, use_log: bool, merge_pre: bool) -> None:

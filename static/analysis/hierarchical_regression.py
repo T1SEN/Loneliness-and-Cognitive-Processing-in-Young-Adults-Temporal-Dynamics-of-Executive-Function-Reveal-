@@ -383,10 +383,129 @@ def generate_summary_report(
         f.write('\n'.join(lines))
 
 
+def _compute_dass_total_models(task: str) -> pd.DataFrame:
+    df = get_analysis_data(task)
+    if df.empty:
+        return pd.DataFrame()
+    df = df.copy()
+    df["dass_total"] = df[["dass_depression", "dass_anxiety", "dass_stress"]].sum(axis=1)
+    std = df["dass_total"].std()
+    df["z_dass_total"] = (df["dass_total"] - df["dass_total"].mean()) / std if std else np.nan
+    outcomes = get_primary_outcomes(task)
+    rows = []
+    for outcome, label in outcomes:
+        required = ["z_ucla_score", "z_dass_total", "z_age", "gender_male", outcome]
+        sub = df[required].dropna()
+        if len(sub) < 30:
+            continue
+        formula = f"{outcome} ~ z_ucla_score + z_dass_total + z_age + C(gender_male)"
+        model = smf.ols(formula, data=sub).fit()
+        rows.append(
+            {
+                "outcome": label,
+                "outcome_column": outcome,
+                "n": int(len(sub)),
+                "ucla_beta": float(model.params.get("z_ucla_score", np.nan)),
+                "ucla_p": float(model.pvalues.get("z_ucla_score", np.nan)),
+                "dass_total_beta": float(model.params.get("z_dass_total", np.nan)),
+                "dass_total_p": float(model.pvalues.get("z_dass_total", np.nan)),
+                "r2": float(model.rsquared),
+                "adj_r2": float(model.rsquared_adj),
+            }
+        )
+    return pd.DataFrame(rows)
+
+
+def _compute_ucla_first_models(task: str) -> pd.DataFrame:
+    df = get_analysis_data(task)
+    if df.empty:
+        return pd.DataFrame()
+    outcomes = get_primary_outcomes(task)
+    rows = []
+    for outcome, label in outcomes:
+        required = [
+            outcome,
+            "z_ucla_score",
+            "z_dass_depression",
+            "z_dass_anxiety",
+            "z_dass_stress",
+            "z_age",
+            "gender_male",
+        ]
+        sub = df[required].dropna()
+        if len(sub) < 30:
+            continue
+        m0 = smf.ols(f"{outcome} ~ z_age + C(gender_male)", data=sub).fit()
+        m1 = smf.ols(f"{outcome} ~ z_age + C(gender_male) + z_ucla_score", data=sub).fit()
+        m2 = smf.ols(
+            f"{outcome} ~ z_age + C(gender_male) + z_ucla_score + "
+            "z_dass_depression + z_dass_anxiety + z_dass_stress",
+            data=sub,
+        ).fit()
+        try:
+            anova_1v0 = anova_lm(m0, m1)
+            p_ucla = float(anova_1v0["Pr(>F)"][1])
+        except Exception:
+            p_ucla = float(m1.pvalues.get("z_ucla_score", np.nan))
+        try:
+            anova_2v1 = anova_lm(m1, m2)
+            p_dass = float(anova_2v1["Pr(>F)"][1])
+        except Exception:
+            p_dass = float(m2.f_pvalue)
+        rows.append(
+            {
+                "outcome": label,
+                "outcome_column": outcome,
+                "n": int(len(sub)),
+                "model0_r2": float(m0.rsquared),
+                "model1_r2": float(m1.rsquared),
+                "model2_r2": float(m2.rsquared),
+                "delta_r2_ucla_first": float(m1.rsquared - m0.rsquared),
+                "delta_r2_dass_after_ucla": float(m2.rsquared - m1.rsquared),
+                "p_ucla_first": p_ucla,
+                "p_dass_after_ucla": p_dass,
+            }
+        )
+    return pd.DataFrame(rows)
+
+
+def _bh_fdr(pvals: list[float]) -> list[float]:
+    pvals = np.array(pvals, dtype=float)
+    n = len(pvals)
+    order = np.argsort(pvals)
+    ranks = np.arange(1, n + 1)
+    p_sorted = pvals[order]
+    q_sorted = p_sorted * n / ranks
+    q_sorted = np.minimum.accumulate(q_sorted[::-1])[::-1]
+    q_sorted = np.clip(q_sorted, 0, 1)
+    q = np.empty_like(pvals)
+    q[order] = q_sorted
+    return q.tolist()
+
+
+def _compute_fdr_table(results_df: pd.DataFrame) -> pd.DataFrame:
+    if results_df.empty or "ucla_p" not in results_df.columns:
+        return pd.DataFrame()
+    pvals = results_df["ucla_p"].astype(float).tolist()
+    qvals = _bh_fdr(pvals)
+    df_out = results_df[["outcome", "outcome_column", "ucla_p"]].copy()
+    df_out["fdr_q"] = qvals
+    return df_out
+
+
+def _safe_run(step: str, func, *args, **kwargs) -> pd.DataFrame:
+    try:
+        return func(*args, **kwargs)
+    except Exception as exc:
+        print(f"[WARN] {step} failed: {exc}")
+        return pd.DataFrame()
+
+
 def run(
     task: str,
     cov_type: Optional[str] = "nonrobust",
-    verbose: bool = True
+    verbose: bool = True,
+    run_supplementary: bool = True,
 ) -> dict[str, pd.DataFrame]:
     """
     Run hierarchical regression analysis for all manuscript outcomes.
@@ -500,9 +619,41 @@ def run(
         print(f"    - {output_dir / 'model_comparison.csv'}")
         print(f"    - {output_dir / 'hierarchical_summary.txt'}")
 
+    dass_total = pd.DataFrame()
+    ucla_first = pd.DataFrame()
+    fdr_table = pd.DataFrame()
+    if run_supplementary:
+        supp_output_dir = get_output_dir(task, bucket="supplementary")
+        dass_total = _safe_run("dass_total_models", _compute_dass_total_models, task)
+        if not dass_total.empty:
+            dass_total.to_csv(
+                supp_output_dir / "dass_total_models.csv",
+                index=False,
+                encoding="utf-8-sig",
+            )
+
+        ucla_first = _safe_run("ucla_first_model_comparison", _compute_ucla_first_models, task)
+        if not ucla_first.empty:
+            ucla_first.to_csv(
+                supp_output_dir / "ucla_first_model_comparison.csv",
+                index=False,
+                encoding="utf-8-sig",
+            )
+
+        fdr_table = _safe_run("ucla_fdr_qvalues", _compute_fdr_table, results_df)
+        if not fdr_table.empty:
+            fdr_table.to_csv(
+                supp_output_dir / "ucla_fdr_qvalues.csv",
+                index=False,
+                encoding="utf-8-sig",
+            )
+
     return {
         'results': results_df,
         'model_comparison': comparison_df,
+        'dass_total': dass_total,
+        'ucla_first': ucla_first,
+        'fdr': fdr_table,
     }
 
 

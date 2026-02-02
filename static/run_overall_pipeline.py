@@ -9,12 +9,101 @@ from pathlib import Path
 from static.preprocessing.constants import get_results_dir
 from static.preprocessing.cli import run_preprocess_pipeline
 from static.analysis import descriptive_statistics, correlation_analysis, hierarchical_regression
-from static.analysis import supplementary_analyses
 
 
 def _features_ready() -> bool:
     features_path = get_results_dir("overall") / "5_overall_features.csv"
     return features_path.exists()
+
+
+def _safe_run(step: str, func, *args, **kwargs) -> None:
+    try:
+        func(*args, **kwargs)
+    except Exception as exc:
+        print(f"[WARN] {step} failed: {exc}")
+
+
+def _run_supplementary_extras() -> None:
+    from static.wcst_phase import run_wcst_phase_rt_ols
+    from static.wcst_phase import run_wcst_phase_split_half_reliability
+    from static.stroop_lmm import run_stroop_trial_lmm
+    from static.figures_tables import plot_stroop_interference_quartile_loneliness_extremes25_trend
+    from static.figures_tables import plot_wcst_phase_loneliness_extremes25_trend
+
+    _safe_run(
+        "wcst_phase_rt_ols_alltrials",
+        run_wcst_phase_rt_ols.main,
+        3,
+        True,
+        False,
+        False,
+    )
+    _safe_run(
+        "wcst_phase_pre_exploit_rt_ols_alltrials",
+        run_wcst_phase_rt_ols.main,
+        3,
+        True,
+        False,
+        True,
+    )
+    _safe_run(
+        "wcst_phase_pre_exploit_rt_ols_alltrials_m2",
+        run_wcst_phase_rt_ols.main,
+        2,
+        True,
+        False,
+        True,
+    )
+    _safe_run(
+        "wcst_phase_pre_exploit_rt_ols_alltrials_m4",
+        run_wcst_phase_rt_ols.main,
+        4,
+        True,
+        False,
+        True,
+    )
+
+    _safe_run(
+        "wcst_phase_split_half_reliability",
+        run_wcst_phase_split_half_reliability.main,
+        3,
+        False,
+    )
+    _safe_run(
+        "wcst_phase_split_half_reliability_m2",
+        run_wcst_phase_split_half_reliability.main,
+        2,
+        False,
+    )
+    _safe_run(
+        "wcst_phase_split_half_reliability_m4",
+        run_wcst_phase_split_half_reliability.main,
+        4,
+        False,
+    )
+
+    _safe_run("stroop_trial_lmm", run_stroop_trial_lmm.main)
+
+    _safe_run(
+        "plot_stroop_interference_quartile_loneliness_extremes25_trend",
+        plot_stroop_interference_quartile_loneliness_extremes25_trend.main,
+    )
+    _safe_run(
+        "plot_wcst_phase_loneliness_extremes25_trend",
+        plot_wcst_phase_loneliness_extremes25_trend.main,
+        3,
+        True,
+    )
+    _safe_run(
+        "wcst_phase_complete_ols_alltrials",
+        run_wcst_phase_rt_ols.run_phase_complete_outputs,
+        3,
+    )
+    _safe_run(
+        "wcst_phase_threshold_sensitivity_complete_ols_alltrials",
+        run_wcst_phase_rt_ols.run_phase_threshold_sensitivity_outputs,
+        [2, 4],
+    )
 
 
 def main(run_preprocess: bool, run_analysis: bool) -> None:
@@ -39,7 +128,7 @@ def main(run_preprocess: bool, run_analysis: bool) -> None:
         descriptive_statistics.run(task="overall", verbose=True)
         correlation_analysis.run(task="overall", verbose=True)
         hierarchical_regression.run(task="overall", cov_type="nonrobust", verbose=True)
-        supplementary_analyses.run(task="overall")
+        _run_supplementary_extras()
 
 
 if __name__ == "__main__":
