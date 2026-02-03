@@ -26,7 +26,11 @@ def _safe_run(step: str, func, *args, **kwargs) -> None:
 def _run_supplementary_extras() -> None:
     from static.wcst_phase import run_wcst_phase_rt_ols
     from static.wcst_phase import run_wcst_phase_split_half_reliability
+    from static.stroop_supplementary import run_stroop_random_slope_variance
+    from static.stroop_supplementary import run_stroop_interference_reliability
+    from static.stroop_supplementary import run_stroop_slope_bootstrap
     from static.stroop_lmm import run_stroop_trial_lmm
+    from static.stroop_supplementary import run_stroop_threshold_sensitivity
     from static.figures_tables import plot_stroop_interference_quartile_loneliness_extremes25_trend
     from static.figures_tables import plot_wcst_phase_loneliness_extremes25_trend
 
@@ -89,6 +93,10 @@ def _run_supplementary_extras() -> None:
     )
 
     _safe_run("stroop_trial_lmm", run_stroop_trial_lmm.main)
+    _safe_run("stroop_threshold_sensitivity", run_stroop_threshold_sensitivity.main)
+    _safe_run("stroop_random_slope_variance", run_stroop_random_slope_variance.main)
+    _safe_run("stroop_interference_reliability", run_stroop_interference_reliability.main)
+    _safe_run("stroop_slope_bootstrap", run_stroop_slope_bootstrap.main)
 
     _safe_run(
         "plot_stroop_interference_quartile_loneliness_extremes25_trend",

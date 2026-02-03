@@ -10,6 +10,7 @@ This repository contains code, data, and outputs for the loneliness and executiv
 - `static/analysis/` : core analyses and supplementary generators
 - `static/wcst_phase/` : WCST phase analyses
 - `static/stroop_lmm/` : Stroop trial-level mixed models
+- `static/stroop_supplementary/` : Stroop supplementary analyses
 - `static/figures_tables/` : figure and table scripts
 - `outputs/` : generated figures and statistics
 - `doc/` : methods and supplementary materials
