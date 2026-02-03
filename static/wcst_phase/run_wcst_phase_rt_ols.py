@@ -185,6 +185,11 @@ def _run_ucla_regression(df: pd.DataFrame, outcome: str) -> dict[str, float] | N
         "z_dass_anxiety + z_dass_stress + z_age + C(gender_male)"
     )
     model = smf.ols(formula, data=sub).fit()
+    reduced = smf.ols(
+        f"{outcome} ~ z_dass_depression + z_dass_anxiety + z_dass_stress + z_age + C(gender_male)",
+        data=sub,
+    ).fit()
+    delta_r2 = float(model.rsquared - reduced.rsquared)
     return {
         "n": int(len(sub)),
         "ucla_beta": float(model.params.get("z_ucla_score", np.nan)),
@@ -193,6 +198,7 @@ def _run_ucla_regression(df: pd.DataFrame, outcome: str) -> dict[str, float] | N
         "ucla_p": float(model.pvalues.get("z_ucla_score", np.nan)),
         "r2": float(model.rsquared),
         "adj_r2": float(model.rsquared_adj),
+        "delta_r2_ucla": delta_r2,
     }
 
 
