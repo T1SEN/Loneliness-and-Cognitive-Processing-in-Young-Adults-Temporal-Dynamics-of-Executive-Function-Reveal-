@@ -6,6 +6,7 @@ This repository contains code, data, and outputs for the loneliness and executiv
 
 - `data/raw/` : raw exports (input data)
 - `data/complete_overall/` : QC-passed dataset used for analyses
+- `lib/` : data collection code (source app/scripts)
 - `static/preprocessing/` : preprocessing and QC code
 - `static/analysis/` : core analyses and supplementary generators
 - `static/wcst_phase/` : WCST phase analyses
@@ -67,6 +68,23 @@ Supplementary outputs are under:
 
 This section describes how to prepare a **public OSF package** for this project.
 It is written to maximize reproducibility while minimizing re-identification risk.
+
+### OSF readiness (current repo)
+
+Status checklist:
+
+- [x] Analysis pipeline and outputs reproducible (`static/run_overall_pipeline.py`)
+- [x] Methods and supplementary docs present (`doc/`)
+- [ ] `LICENSE` file missing
+- [ ] `CITATION.cff` file missing
+- [ ] `data/public/` not created yet
+- [ ] Data dictionary not created yet
+
+Known sensitive fields in current data (do **not** make public as-is):
+
+- `data/complete_overall/1_participants_info.csv` includes `studentId`, `birthDate`, `courseName`, `professorName`, `classSection`, `createdAt`
+- `data/complete_overall/3_cognitive_tests_summary.csv` includes `timestamp`
+- `data/complete_overall/4b_wcst_trials.csv` includes `timestamp`
 
 ### Public vs. restricted content
 
