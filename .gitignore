@@ -68,3 +68,4 @@ nul
 *.tmp
 *.log
 patch.diff
+agents.md
