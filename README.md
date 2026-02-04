@@ -4,8 +4,7 @@ This repository contains code, data, and outputs for the loneliness and executiv
 
 ## Repository structure
 
-- `data/raw/` : raw exports (input data)
-- `data/complete_overall/` : QC-passed dataset used for analyses
+- `data/public/` : de-identified public data bundle
 - `materials/` : task runtime code (sanitized subset for blind review)
 - `static/preprocessing/` : preprocessing and QC code
 - `static/analysis/` : core analyses and supplementary generators
@@ -33,7 +32,7 @@ From the repository root:
 python -m static.run_overall_pipeline
 ```
 
-If `data/complete_overall/` is already built, you can skip preprocessing:
+If `data/complete_overall/` is already built, you can skip preprocessing (restricted data only):
 
 ```
 python -m static.run_overall_pipeline --skip-preprocess
@@ -75,8 +74,7 @@ Status checklist:
 
 - [x] Analysis pipeline and outputs reproducible (`static/run_overall_pipeline.py`)
 - [x] Methods and supplementary docs present (`doc/`)
-- [x] Participant info and cognitive summary removed from `data/raw/` and `data/complete_overall/`
-- [x] WCST timestamps removed from `data/raw/4b_wcst_trials.csv` and `data/complete_overall/4b_wcst_trials.csv`
+- [x] Raw/complete datasets removed from this public repository
 - [x] `materials/` trimmed to task-only files (no consent/IRB contact text)
 - [ ] `LICENSE` file missing
 - [ ] `CITATION.cff` file missing
@@ -85,8 +83,7 @@ Status checklist:
 
 Known sensitive fields in current data (do **not** make public as-is):
 
-- `participantId` / `participant_id` are still present in raw/complete datasets and must be remapped for any public release
-- `data/raw/` and `data/complete_overall/` are still not de-identified public datasets
+- Raw/complete datasets contain `participantId`/`participant_id` and are restricted (not included here)
 
 ### Public vs. restricted content
 
@@ -101,8 +98,8 @@ Known sensitive fields in current data (do **not** make public as-is):
 
 **Recommended restricted/private content**
 
-- `data/raw/`
-- `data/complete_overall/`
+- `data/raw/` (restricted; not included in this repo)
+- `data/complete_overall/` (restricted; not included in this repo)
 - Any file containing direct identifiers or exact timestamps
 
 Direct identifiers to remove or mask include:
@@ -166,6 +163,8 @@ python -m pip install -r requirements.txt
 ```
 python -m static.run_overall_pipeline
 ```
+
+Note: Full reproduction requires restricted datasets (`data/raw/`, `data/complete_overall/`) that are not included in the public repository.
 
 2b. (Optional) Regenerate de-identified public data:
 
