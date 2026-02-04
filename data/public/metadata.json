@@ -1,0 +1,32 @@
+{
+  "created_on": "2026-02-04T05:59:15Z",
+  "source_dir": "data\\complete_overall",
+  "id_mapping": "random, not stored",
+  "removed_columns": [
+    "participantId",
+    "participant_id",
+    "timestamp"
+  ],
+  "files": {
+    "surveys_public.csv": {
+      "source": "2_surveys_results.csv",
+      "rows": 424,
+      "cols": 28
+    },
+    "features_public.csv": {
+      "source": "5_overall_features.csv",
+      "rows": 212,
+      "cols": 16
+    },
+    "stroop_trials_public.csv": {
+      "source": "4a_stroop_trials.csv",
+      "rows": 22896,
+      "cols": 20
+    },
+    "wcst_trials_public.csv": {
+      "source": "4b_wcst_trials.csv",
+      "rows": 18776,
+      "cols": 29
+    }
+  }
+}
