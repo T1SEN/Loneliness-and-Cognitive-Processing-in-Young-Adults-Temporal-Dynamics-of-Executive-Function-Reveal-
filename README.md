@@ -6,7 +6,7 @@ This repository contains code, data, and outputs for the loneliness and executiv
 
 - `data/raw/` : raw exports (input data)
 - `data/complete_overall/` : QC-passed dataset used for analyses
-- `lib/` : task runtime code (sanitized subset for blind review)
+- `materials/` : task runtime code (sanitized subset for blind review)
 - `static/preprocessing/` : preprocessing and QC code
 - `static/analysis/` : core analyses and supplementary generators
 - `static/wcst_phase/` : WCST phase analyses
@@ -77,7 +77,7 @@ Status checklist:
 - [x] Methods and supplementary docs present (`doc/`)
 - [x] Participant info and cognitive summary removed from `data/raw/` and `data/complete_overall/`
 - [x] WCST timestamps removed from `data/raw/4b_wcst_trials.csv` and `data/complete_overall/4b_wcst_trials.csv`
-- [x] `lib/` trimmed to task-only files (no consent/IRB contact text)
+- [x] `materials/` trimmed to task-only files (no consent/IRB contact text)
 - [ ] `LICENSE` file missing
 - [ ] `CITATION.cff` file missing
 - [x] `data/public/` created (de-identified public files)
@@ -195,7 +195,7 @@ Get-FileHash outputs/stats/core/overall/* | Format-Table -AutoSize
 
 ### Blind review check (current repo)
 
-- No institution- or author-identifying strings found in code/docs after sanitizing `lib/`
+- No institution- or author-identifying strings found in code/docs after sanitizing `materials/`
 - PDF metadata for figures contains only Matplotlib creator/producer fields (no author)
 - Raw/complete datasets still contain `participantId` and should remain restricted for review
 
