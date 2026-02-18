@@ -140,22 +140,17 @@ def filter_vars(
 
 
 def get_output_dir(task: str, bucket: str = "core") -> Path:
-    """Return stats output directory (public runtime: no task subfolder)."""
-    _ = task  # retained for API compatibility
-    bucket_norm = (bucket or "core").strip().lower()
-    if bucket_norm == "supplementary":
-        base_dir = OUTPUT_STATS_SUPP_DIR
-    else:
-        base_dir = OUTPUT_STATS_CORE_DIR
-    output_dir = base_dir
+    """Return flattened stats output directory."""
+    _ = (task, bucket)  # retained for API compatibility
+    output_dir = OUTPUT_STATS_CORE_DIR
     output_dir.mkdir(parents=True, exist_ok=True)
     return output_dir
 
 
 def get_figures_dir(bucket: str = "core") -> Path:
-    """Return the figures directory."""
-    bucket_norm = (bucket or "core").strip().lower()
-    figures_dir = OUTPUT_FIGURES_SUPP_DIR if bucket_norm == "supplementary" else OUTPUT_FIGURES_CORE_DIR
+    """Return flattened figures directory."""
+    _ = bucket  # retained for API compatibility
+    figures_dir = OUTPUT_FIGURES_CORE_DIR
     figures_dir.mkdir(parents=True, exist_ok=True)
     return figures_dir
 

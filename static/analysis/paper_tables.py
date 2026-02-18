@@ -387,7 +387,8 @@ def compute_table3(task: str, output_dir: Path) -> pd.DataFrame:
 
 
 def run(task: str = "overall", verbose: bool = True) -> dict[str, pd.DataFrame]:
-    output_dir = OUTPUT_TABLES_CORE_DIR / task
+    _ = task
+    output_dir = OUTPUT_TABLES_CORE_DIR
     output_dir.mkdir(parents=True, exist_ok=True)
 
     results = {}

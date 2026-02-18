@@ -43,10 +43,9 @@ python -m static.run_overall_pipeline --expected-n 212 --allow-n-mismatch
 
 ## Key outputs
 
-- Core tables: `outputs/tables/core/overall/`
-- Core stats: `outputs/stats/core/`
-- Supplementary stats: `outputs/stats/supplementary/`
-- Figures (PNG/PDF): `outputs/figures/supplementary/`
+- Tables: `outputs/tables/`
+- Stats: `outputs/stats/`
+- Figures (PNG/PDF): `outputs/figures/`
 
 ## Public data generation (deterministic)
 
