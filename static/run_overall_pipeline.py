@@ -50,7 +50,6 @@ def _remove_nonpaper_outputs() -> None:
         Path("outputs/stats/wcst_phase_rt_loneliness_extremes25_alltrials_slopes.csv"),
         Path("outputs/stats/wcst_phase_category_weighted_ols.csv"),
         Path("outputs/stats/wcst_phase_rt_ols.csv"),
-        Path("outputs/stats/stroop_threshold_sensitivity.csv"),
         Path("outputs/stats/stroop_lmm/stroop_lmm_predictors.csv"),
     ]
     for path in paths:
@@ -64,6 +63,7 @@ def _run_supplementary_extras() -> None:
     from static.stroop_lmm import run_stroop_trial_lmm
     from static.stroop_supplementary import run_stroop_interference_reliability
     from static.stroop_supplementary import run_stroop_random_slope_variance
+    from static.supplementary_tables import run_supplementary_tables_s1_s4
     from static.wcst_phase import run_wcst_phase_rt_ols
     from static.wcst_phase import run_wcst_phase_split_half_reliability
 
@@ -90,19 +90,17 @@ def _run_supplementary_extras() -> None:
         3,
         True,
     )
+    # Canonical supplementary tables are release artifacts; fail fast if generation fails.
+    run_supplementary_tables_s1_s4.run(True)
 
 
 def main(
     run_analysis: bool,
     expected_n: int = 212,
     allow_n_mismatch: bool = False,
-    skip_preprocess: bool = False,
 ) -> None:
     if sys.platform.startswith("win") and hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
-
-    if skip_preprocess:
-        print("[WARN] --skip-preprocess is deprecated in public-only mode and has no effect.")
 
     validate_public_bundle(raise_on_error=True)
 
@@ -130,11 +128,6 @@ def main(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run manuscript analyses from data/public only.")
-    parser.add_argument(
-        "--skip-preprocess",
-        action="store_true",
-        help="Deprecated in public-only mode (ignored).",
-    )
     parser.add_argument("--skip-analysis", action="store_true", help="Skip running core analyses.")
     parser.add_argument(
         "--expected-n",
@@ -153,5 +146,4 @@ if __name__ == "__main__":
         run_analysis=not args.skip_analysis,
         expected_n=args.expected_n,
         allow_n_mismatch=args.allow_n_mismatch,
-        skip_preprocess=args.skip_preprocess,
     )

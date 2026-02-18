@@ -44,6 +44,15 @@ python -m static.run_overall_pipeline --expected-n 212 --allow-n-mismatch
 ## Key outputs
 
 - Tables: `outputs/tables/`
+- Supplementary canonical tables:
+  - `outputs/tables/supp_table_s1.csv`
+  - `outputs/tables/supp_table_s2.csv`
+  - `outputs/tables/supp_table_s3.csv`
+  - `outputs/tables/supp_table_s4.csv`
+  - `outputs/tables/supp_table_s1.md`
+  - `outputs/tables/supp_table_s2.md`
+  - `outputs/tables/supp_table_s3.md`
+  - `outputs/tables/supp_table_s4.md`
 - Stats: `outputs/stats/`
 - Figures (PNG/PDF): `outputs/figures/`
 

@@ -38,7 +38,7 @@ def prepare_wcst_trials(data_dir: Path | None = None) -> Dict[str, Any]:
     """
     Load WCST trials from overall-complete data.
 
-    Returns a dict compatible with legacy scripts:
+    Returns a dict compatible with existing analysis scripts:
         - wcst: trial-level dataframe
         - rt_col: column name for RT (ms)
         - trial_col: column name for trial order

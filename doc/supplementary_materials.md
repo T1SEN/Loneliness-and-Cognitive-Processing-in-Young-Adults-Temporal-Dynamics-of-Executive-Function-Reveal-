@@ -161,15 +161,12 @@ Random effects (preferred): **1 + trial_scaled**
 
 ---
 
-## S8. Stroop Interference Slope Sensitivity (2/3/6 segments)
+## S8. Stroop Interference Slope Sensitivity
 
-We evaluated how the interference slope varies with the number of within-subject segments (OLS, DASS-controlled).
+Sensitivity outputs are reported in:
 
-|   Segments |   n |   UCLA beta |        p |     R2 |
-|-----------:|----:|------------:|---------:|-------:|
-|          2 | 212 |      40.14  | 0.00159  | 0.0605 |
-|          3 | 212 |      28.406 | 0.000678 | 0.0692 |
-|          6 | 212 |      14.739 | 0.000106 | 0.0909 |
+- `outputs/tables/supp_table_s1.csv`
+- `outputs/tables/supp_table_s1.md`
 
 ---
 
@@ -243,7 +240,6 @@ We evaluated how the interference slope varies with the number of within-subject
 - `outputs/stats/stroop_lmm/stroop_interference_slope_lmm_variants.csv`
 - `outputs/stats/stroop_random_slope_variance.csv`
 - `outputs/stats/stroop_interference_reliability.csv`
-- `outputs/stats/stroop_interference_slope_segment_sensitivity_2_3_6.csv`
 - `outputs/stats/stroop_interference_ttest.csv`
 - `outputs/stats/wcst_normative_stats.csv`
 - `outputs/stats/stroop_condition_balance_by_segment.csv`
@@ -254,5 +250,13 @@ We evaluated how the interference slope varies with the number of within-subject
 - `outputs/stats/stroop_condition_balance_by_segment_3_pivot.csv`
 - `outputs/stats/stroop_condition_balance_by_segment_6.csv`
 - `outputs/stats/stroop_condition_balance_by_segment_6_pivot.csv`
+- `outputs/tables/supp_table_s1.csv`
+- `outputs/tables/supp_table_s2.csv`
+- `outputs/tables/supp_table_s3.csv`
+- `outputs/tables/supp_table_s4.csv`
+- `outputs/tables/supp_table_s1.md`
+- `outputs/tables/supp_table_s2.md`
+- `outputs/tables/supp_table_s3.md`
+- `outputs/tables/supp_table_s4.md`
 
 

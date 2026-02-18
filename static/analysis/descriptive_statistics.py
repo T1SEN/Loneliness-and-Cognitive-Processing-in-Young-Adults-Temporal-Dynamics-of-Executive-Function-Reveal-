@@ -38,8 +38,6 @@ from static.analysis.utils import (
     get_output_dir,
     DESCRIPTIVE_VARS,
     print_section_header,
-    format_coefficient,
-    run_ucla_regression,
 )
 from static.preprocessing.constants import (
     VALID_TASKS,
@@ -246,45 +244,6 @@ def _compute_condition_balance(task: str, n_segments: int) -> tuple[pd.DataFrame
     return counts, pivot
 
 
-def _compute_interference_slope(trials: pd.DataFrame, n_segments: int) -> pd.Series:
-    if trials.empty:
-        return pd.Series(dtype=float)
-    trials = trials[trials["cond"].isin({"congruent", "incongruent"})].copy()
-    valid = (
-        trials["correct"]
-        & (~trials["timeout"])
-        & trials["is_rt_valid"]
-        & trials["rt_ms"].between(STROOP_RT_MIN, STROOP_RT_MAX)
-    )
-    trials = trials[valid].copy()
-    if trials.empty:
-        return pd.Series(dtype=float)
-
-    trials = _assign_segments(trials, n_segments)
-    trials = trials.dropna(subset=["segment"])
-    if trials.empty:
-        return pd.Series(dtype=float)
-
-    seg_means = (
-        trials.groupby(["participant_id", "segment", "cond"])["rt_ms"].mean().unstack()
-    )
-    if "incongruent" not in seg_means.columns or "congruent" not in seg_means.columns:
-        return pd.Series(dtype=float)
-
-    seg_means["interference"] = seg_means["incongruent"] - seg_means["congruent"]
-    seg_means = seg_means.reset_index()[["participant_id", "segment", "interference"]]
-
-    def _slope(group: pd.DataFrame) -> float:
-        group = group.dropna(subset=["interference"])
-        if len(group) < 2:
-            return np.nan
-        x = group["segment"].astype(float).to_numpy()
-        y = group["interference"].to_numpy()
-        return float(np.polyfit(x, y, 1)[0])
-
-    return seg_means.groupby("participant_id").apply(_slope)
-
-
 def run_condition_balance(
     task: str = "overall",
     segment_sizes: tuple[int, ...] = (4, 2, 3, 6),
@@ -303,35 +262,6 @@ def run_condition_balance(
         pivot_df.to_csv(output_dir / f"{base}_pivot.csv", index=False, encoding="utf-8-sig")
         results[n_segments] = (long_df, pivot_df)
     return results
-
-
-def run_interference_slope_segment_sensitivity(
-    task: str = "overall",
-    segment_sizes: tuple[int, ...] = (2, 3, 6),
-) -> pd.DataFrame:
-    output_dir = get_output_dir(task, bucket="supplementary")
-    master = get_analysis_data(task)
-    trials = _load_stroop_trials_raw(task)
-    rows = []
-    for n_segments in segment_sizes:
-        slopes = _compute_interference_slope(trials, n_segments)
-        if slopes.empty:
-            continue
-        slope_df = slopes.rename("stroop_interference_slope").reset_index()
-        merged = master.merge(slope_df, on="participant_id", how="inner")
-        res = run_ucla_regression(merged, "stroop_interference_slope", cov_type="nonrobust")
-        if res is None:
-            continue
-        rows.append({"segments": n_segments, **res})
-
-    out = pd.DataFrame(rows)
-    if not out.empty:
-        out.to_csv(
-            output_dir / "stroop_interference_slope_segment_sensitivity_2_3_6.csv",
-            index=False,
-            encoding="utf-8-sig",
-        )
-    return out
 
 
 def _safe_run(step: str, func, *args, **kwargs) -> pd.DataFrame:
@@ -633,12 +563,6 @@ def run(
             run_condition_balance,
             task,
             (4, 2, 3, 6),
-        )
-        _safe_run(
-            "stroop_interference_slope_segment_sensitivity_2_3_6",
-            run_interference_slope_segment_sensitivity,
-            task,
-            (2, 3, 6),
         )
 
     if verbose:
