@@ -15,7 +15,7 @@ if not (ROOT / "static").exists():
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))
 
-from static.preprocessing.constants import OUTPUT_STATS_SUPP_DIR, get_results_dir
+from static.preprocessing.constants import OUTPUT_STATS_SUPP_DIR, get_results_dir, get_stroop_trials_path
 from static.preprocessing.core import ensure_participant_id
 from static.preprocessing.surveys import load_dass_scores, load_participants, load_ucla_scores
 
@@ -70,7 +70,7 @@ def load_qc_ids(task: str) -> set[str]:
 
 
 def prepare_stroop_trials() -> pd.DataFrame:
-    trials_path = get_results_dir("overall") / "4a_stroop_trials.csv"
+    trials_path = get_stroop_trials_path("overall")
     trials = _read_csv(trials_path)
     if trials.empty:
         return trials
@@ -109,7 +109,7 @@ def prepare_stroop_trials() -> pd.DataFrame:
 
 
 def prepare_interference_trials() -> pd.DataFrame:
-    trials_path = get_results_dir("overall") / "4a_stroop_trials.csv"
+    trials_path = get_stroop_trials_path("overall")
     trials = _read_csv(trials_path)
     if trials.empty:
         return trials
@@ -416,11 +416,6 @@ def main() -> None:
             "gender_male",
         ]
     ].dropna()
-    predictors.to_csv(
-        OUTPUT_DIR / "stroop_lmm_predictors.csv",
-        index=False,
-        encoding="utf-8-sig",
-    )
     df = trials.merge(predictors, on="participant_id", how="inner")
 
     if df.empty:

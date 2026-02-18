@@ -32,10 +32,18 @@ From the repository root:
 python -m static.run_overall_pipeline
 ```
 
+By default, the pipeline enforces manuscript sample size (`N=212`) and stops on mismatch.
+
 If `data/complete_overall/` is already built, you can skip preprocessing (restricted data only):
 
 ```
 python -m static.run_overall_pipeline --skip-preprocess
+```
+
+If you intentionally need to run with a non-manuscript sample size, override explicitly:
+
+```
+python -m static.run_overall_pipeline --skip-preprocess --allow-n-mismatch
 ```
 
 ## Key analysis conventions

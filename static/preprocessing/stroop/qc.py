@@ -75,7 +75,10 @@ def clean_stroop_trials(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def prepare_stroop_trials(data_dir: Path) -> pd.DataFrame:
+    # Resolve both 4a/4c naming conventions.
     trials_path = data_dir / "4a_stroop_trials.csv"
+    if not trials_path.exists():
+        trials_path = data_dir / "4c_stroop_trials.csv"
     if not trials_path.exists():
         return pd.DataFrame(columns=["participant_id"])
     df = pd.read_csv(trials_path, encoding="utf-8-sig")

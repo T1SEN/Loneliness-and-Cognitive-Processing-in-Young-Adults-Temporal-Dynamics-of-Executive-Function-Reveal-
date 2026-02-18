@@ -21,7 +21,7 @@ if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))
 
 from static.analysis.utils import get_output_dir
-from static.preprocessing.constants import get_results_dir
+from static.preprocessing.constants import get_results_dir, get_stroop_trials_path
 from static.preprocessing.core import ensure_participant_id
 from static.preprocessing.stroop.qc import clean_stroop_trials
 
@@ -38,7 +38,7 @@ def _load_qc_ids() -> set[str]:
 
 
 def _load_stroop_trials() -> pd.DataFrame:
-    trials_path = get_results_dir("overall") / "4a_stroop_trials.csv"
+    trials_path = get_stroop_trials_path("overall")
     if not trials_path.exists():
         return pd.DataFrame()
     df = pd.read_csv(trials_path, encoding="utf-8-sig")

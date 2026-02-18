@@ -1,4 +1,0 @@
-﻿outcome_column,n,ucla_beta,ucla_se,ucla_t,ucla_p,r2,adj_r2,cov_type,outcome,outcome_type,confirm_len,include_errors,use_log,merge_pre
-rt_ms_confirmation,212,141.67667075809018,46.76854026770995,3.0293156456693375,0.0027663575872345107,0.06804535942874068,0.04076863824128918,OLS,confirmation,phase_mean,3,False,False,False
-rt_ms_exploitation,212,25.646401923335247,35.45128062784679,0.7234266708884456,0.47024242830567053,0.07972896080147229,0.05279419867858848,OLS,exploitation,phase_mean,3,False,False,False
-confirmation_minus_exploitation,212,116.03026883475505,37.23706748419283,3.1159883598247906,0.0020960728442141127,0.05461448072185604,0.026944660645422558,OLS,confirmation_minus_exploitation,phase_contrast,3,False,False,False

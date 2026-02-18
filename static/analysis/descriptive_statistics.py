@@ -45,6 +45,7 @@ from static.preprocessing.constants import (
     VALID_TASKS,
     STROOP_RT_MIN,
     STROOP_RT_MAX,
+    get_stroop_trials_path,
     get_results_dir,
 )
 from static.preprocessing.core import ensure_participant_id
@@ -76,8 +77,7 @@ def _load_qc_ids(task: str) -> set[str]:
 
 
 def _prepare_stroop_trials(task: str) -> pd.DataFrame:
-    data_dir = get_results_dir(task)
-    trials = _read_csv(data_dir / "4a_stroop_trials.csv")
+    trials = _read_csv(get_stroop_trials_path(task))
     if trials.empty:
         return trials
     trials = ensure_participant_id(trials)
@@ -104,8 +104,7 @@ def _prepare_stroop_trials(task: str) -> pd.DataFrame:
 
 
 def _load_stroop_trials_raw(task: str) -> pd.DataFrame:
-    data_dir = get_results_dir(task)
-    trials = _read_csv(data_dir / "4a_stroop_trials.csv")
+    trials = _read_csv(get_stroop_trials_path(task))
     if trials.empty:
         return trials
     trials = ensure_participant_id(trials)

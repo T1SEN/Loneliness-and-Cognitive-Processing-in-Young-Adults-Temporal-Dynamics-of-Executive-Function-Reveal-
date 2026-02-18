@@ -52,6 +52,23 @@ def get_results_dir(task: str) -> Path:
         raise ValueError(f"Unknown task: {task}. Valid tasks: {VALID_TASKS}")
     return TASK_DIRS[task]
 
+
+def get_stroop_trials_path(task: str = "overall") -> Path:
+    """
+    Return the Stroop trials CSV path for a task.
+
+    Prefer the manuscript-era filename (4a), but support 4c as fallback so
+    old/new exports both resolve without code changes.
+    """
+    data_dir = get_results_dir(task)
+    candidates = ["4a_stroop_trials.csv", "4c_stroop_trials.csv"]
+    for name in candidates:
+        path = data_dir / name
+        if path.exists():
+            return path
+    # default expected filename when neither exists
+    return data_dir / candidates[0]
+
 # RT filtering constants
 DEFAULT_RT_MIN = 100          # ms; drop anticipations
 DEFAULT_RT_MAX = 5000         # ms; general upper bound (WCST etc.)

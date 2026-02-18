@@ -1,0 +1,2 @@
+﻿n_trials,n_participants,re_formula,method,converged,var_intercept,var_slope_trial_scaled,cov_int_slope,corr_int_slope,var_slope_se,var_slope_ci_low,var_slope_ci_high
+13950,197,1 + trial_scaled,lbfgs,True,0.0370847580438015,0.020641648669778037,-0.0058521503832885645,-0.2115171381725876,0.012131567627807137,-0.0031362238807239526,0.04441952122028003

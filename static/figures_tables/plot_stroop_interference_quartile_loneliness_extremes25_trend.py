@@ -17,7 +17,7 @@ plt.rcParams["font.family"] = ["Malgun Gothic", "NanumGothic", "DejaVu Sans"]
 plt.rcParams["axes.unicode_minus"] = False
 
 from static.analysis.utils import get_output_dir, get_figures_dir
-from static.preprocessing.constants import STROOP_RT_MIN, STROOP_RT_MAX, get_results_dir
+from static.preprocessing.constants import STROOP_RT_MIN, STROOP_RT_MAX, get_results_dir, get_stroop_trials_path
 from static.preprocessing.core import ensure_participant_id
 from static.preprocessing.surveys import load_ucla_scores
 
@@ -101,7 +101,7 @@ def _load_qc_ids() -> set[str]:
 
 def _build_table(output_dir: Path) -> pd.DataFrame:
     data_dir = get_results_dir("overall")
-    trials_path = data_dir / "4a_stroop_trials.csv"
+    trials_path = get_stroop_trials_path("overall")
     if not trials_path.exists():
         raise FileNotFoundError("Missing Stroop trials file.")
 

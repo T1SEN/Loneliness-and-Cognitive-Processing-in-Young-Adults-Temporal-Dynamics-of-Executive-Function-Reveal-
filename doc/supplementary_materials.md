@@ -173,66 +173,16 @@ We evaluated how the interference slope varies with the number of within-subject
 
 ---
 
-## S9. WCST Complete-6 Categories Subsample
+## S9-S11. Legacy WCST Subsample Analyses (excluded from manuscript pipeline)
 
-Complete-6 participants: n = 193. Regression sample sizes may be smaller due to missing phase RTs.
+The following analyses were generated in earlier exploratory runs but are **not**
+included in the locked manuscript reproduction pipeline:
 
-### S9.1 Three-/Two-phase regressions (OLS, all trials)
+- Complete-6 WCST subsample models (N around 193)
+- Phase-complete WCST subsample models (N around 208)
+- 3-phase threshold sensitivity on phase-complete subsample
 
-| Outcome                                 |   n |   UCLA beta |       p |
-|:----------------------------------------|----:|------------:|--------:|
-| Exploration RT (all)                    | 191 |      60.648 | 0.43047 |
-| Confirmation RT (all)                   | 191 |     100.817 | 0.03186 |
-| Exploitation RT (all)                   | 191 |       3.115 | 0.90922 |
-| Confirmation - Exploitation             | 191 |      97.702 | 0.00855 |
-| Rule search (pre-exploitation) RT (all) | 191 |      99.038 | 0.02842 |
-| Rule search - Rule application          | 191 |      95.923 | 0.00626 |
-
-### S9.2 Reliability (odd/even split-half)
-
-| Phase                          |   n |     r |   Spearman-Brown |
-|:-------------------------------|----:|------:|-----------------:|
-| exploration                    | 173 | 0.183 |            0.309 |
-| confirmation                   | 193 | 0.57  |            0.726 |
-| exploitation                   | 193 | 0.696 |            0.821 |
-| Rule search (pre-exploitation) | 193 | 0.625 |            0.769 |
-
----
-
-## S10. WCST Phase-complete Sample (N = 208)
-
-Participants with all three phase RTs available.
-
-| Outcome                                 |   n |   UCLA beta |       p |
-|:----------------------------------------|----:|------------:|--------:|
-| Exploration RT (all)                    | 208 |     107.979 | 0.22559 |
-| Confirmation RT (all)                   | 208 |     142.766 | 0.00786 |
-| Exploitation RT (all)                   | 208 |      33.491 | 0.37187 |
-| Confirmation - Exploitation             | 208 |     109.274 | 0.0078  |
-| Rule search (pre-exploitation) RT (all) | 208 |     139.564 | 0.00786 |
-| Rule search - Rule application          | 208 |     106.073 | 0.00799 |
-
----
-
-## S11. WCST 3-phase Threshold Sensitivity (phase-complete sample)
-
-**confirm_len = 2**
-
-| Outcome                     |   n |   UCLA beta |       p |
-|:----------------------------|----:|------------:|--------:|
-| Exploration RT (all)        | 208 |     107.979 | 0.22559 |
-| Confirmation RT (all)       | 208 |     157.517 | 0.01561 |
-| Exploitation RT (all)       | 208 |      49.969 | 0.20023 |
-| Confirmation - Exploitation | 208 |     107.549 | 0.0297  |
-
-**confirm_len = 4**
-
-| Outcome                     |   n |   UCLA beta |       p |
-|:----------------------------|----:|------------:|--------:|
-| Exploration RT (all)        | 208 |     107.979 | 0.22559 |
-| Confirmation RT (all)       | 208 |     118.09  | 0.01362 |
-| Exploitation RT (all)       | 208 |      18.043 | 0.588   |
-| Confirmation - Exploitation | 208 |     100.047 | 0.00458 |
+Current manuscript reproduction is locked to the common-sample pipeline (target N = 212).
 
 ---
 
@@ -343,11 +293,9 @@ Participants with all three phase RTs available.
 - `outputs/stats/supplementary/overall/stroop_lmm/stroop_trial_level_lmm.csv`
 - `outputs/stats/supplementary/overall/stroop_lmm/stroop_interference_slope_lmm.csv`
 - `outputs/stats/supplementary/overall/stroop_lmm/stroop_interference_slope_lmm_variants.csv`
+- `outputs/stats/supplementary/overall/stroop_random_slope_variance.csv`
+- `outputs/stats/supplementary/overall/stroop_interference_reliability.csv`
 - `outputs/stats/supplementary/overall/stroop_interference_slope_segment_sensitivity_2_3_6.csv`
-- `outputs/stats/supplementary/overall/wcst_phase_3_2phase_6categories_ols_alltrials.csv`
-- `outputs/stats/supplementary/overall/wcst_phase_3_2phase_6categories_split_half_reliability.csv`
-- `outputs/stats/supplementary/overall/wcst_phase_3phase_complete_ols_alltrials.csv`
-- `outputs/stats/supplementary/overall/wcst_phase_3phase_threshold_sensitivity_complete_ols_alltrials.csv`
 - `outputs/stats/supplementary/overall/stroop_interference_ttest.csv`
 - `outputs/stats/supplementary/overall/wcst_normative_stats.csv`
 - `outputs/stats/supplementary/overall/dass_total_models.csv`
