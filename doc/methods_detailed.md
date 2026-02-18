@@ -67,9 +67,11 @@ All phase RTs were computed on **all trials (errors included)** using valid RTs 
 
 ## 2.8 Statistical analysis
 
+Descriptive sex comparisons in Table 1 were tested using Welch's independent-samples t-tests (`equal_var=False`).
+
 ### 2.8.1 Primary regressions
 
-All regressions used **OLS (non-robust)** standard errors. Covariates were DASS-Dep/Anx/Stress, age, and gender. We used the following hierarchical model sequence for each outcome:
+All regressions used **OLS (non-robust)** standard errors. Continuous predictors (UCLA, DASS-Dep/Anx/Str, age) were z-standardized before model fitting, so reported UCLA coefficients correspond to a **1-SD increase** in loneliness. We used the following hierarchical model sequence for each outcome:
 
 - Model 0: outcome ~ age + gender
 - Model 1: Model 0 + DASS(3)

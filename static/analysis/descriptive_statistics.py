@@ -569,7 +569,7 @@ def run(
         print_apa_table(desc_total, cat_stats)
 
         if len(gender_comparison) > 0:
-            print("\n  Gender Comparison (t-tests)")
+            print("\n  Gender Comparison (Welch's t-tests)")
             print("  " + "-" * 65)
             sig_vars = gender_comparison[gender_comparison['Significant']]
             if len(sig_vars) > 0:

@@ -386,7 +386,10 @@ def generate_summary_report(
         lines.append("")
 
     lines.append("=" * 70)
-    lines.append(f"Note. {cov_label} standard errors used for all tests.")
+    lines.append(
+        f"Note. {cov_label} standard errors used for all tests. "
+        "Continuous predictors are z-standardized; UCLA coefficients reflect a 1-SD increase."
+    )
     lines.append("=" * 70)
 
     with open(output_path, 'w', encoding='utf-8') as f:

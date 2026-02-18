@@ -12,10 +12,11 @@ if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))
 
 from static.analysis.utils import get_output_dir, run_ucla_regression
+from static.preprocessing.constants import WCST_RT_MAX, WCST_RT_MIN, get_results_dir
 from static.preprocessing.public_validate import get_common_public_ids
 from static.preprocessing.surveys import load_dass_scores, load_participants, load_ucla_scores
 from static.preprocessing.wcst.phase import label_wcst_phases
-from static.preprocessing.wcst.utils import prepare_wcst_trials
+from static.preprocessing.wcst.qc import prepare_wcst_trials as prepare_wcst_trials_qc
 
 
 PHASE_ORDER = ["exploration", "confirmation", "exploitation"]
@@ -46,6 +47,29 @@ def load_base_data() -> pd.DataFrame:
 def load_qc_ids(task: str) -> set[str]:
     _ = task
     return get_common_public_ids(validate=True)
+
+
+def prepare_wcst_trials() -> dict[str, object]:
+    """
+    Backward-compatible loader for callers that expect the legacy dict contract.
+
+    Returns:
+        {
+            "wcst": cleaned wcst dataframe,
+            "rt_col": "rt_ms",
+            "trial_col": "trial_order",
+            "rule_col": "rule",
+        }
+    """
+    wcst = prepare_wcst_trials_qc(get_results_dir("overall"))
+    if not isinstance(wcst, pd.DataFrame):
+        wcst = pd.DataFrame()
+    return {
+        "wcst": wcst,
+        "rt_col": "rt_ms",
+        "trial_col": "trial_order",
+        "rule_col": "rule",
+    }
 
 
 def _prepare_phase_means(df: pd.DataFrame, value_col: str, prefix: str) -> pd.DataFrame:
@@ -115,27 +139,24 @@ def main(confirm_len: int, include_errors: bool, use_log: bool, merge_pre: bool)
         ["ucla_score", "dass_depression", "dass_anxiety", "dass_stress", "age"],
     )
 
-    prepared = prepare_wcst_trials()
-    wcst = prepared["wcst"]
-    rt_col = prepared["rt_col"]
-    trial_col = prepared["trial_col"]
-    rule_col = prepared["rule_col"]
-    if not isinstance(wcst, pd.DataFrame) or wcst.empty or rt_col is None or trial_col is None or rule_col is None:
+    wcst = prepare_wcst_trials_qc(get_results_dir("overall"))
+    if not isinstance(wcst, pd.DataFrame) or wcst.empty:
         raise RuntimeError("WCST trials missing required columns.")
 
     qc_ids = load_qc_ids("overall")
     if qc_ids:
         wcst = wcst[wcst["participant_id"].isin(qc_ids)]
 
-    wcst["rt_ms"] = pd.to_numeric(wcst[rt_col], errors="coerce")
-    wcst = wcst[wcst["rt_ms"].notna()]
-    if "is_rt_valid" in wcst.columns:
-        wcst = wcst[wcst["is_rt_valid"] == True]
-    if "timeout" in wcst.columns:
-        wcst = wcst[~wcst["timeout"]]
+    # Keep phase labeling on the full cleaned sequence to match supplementary tables.
+    wcst = wcst.dropna(subset=["trial_order"]).copy()
+    wcst = label_wcst_phases(wcst, rule_col="rule", trial_col="trial_order", confirm_len=confirm_len)
 
-    wcst["rule"] = wcst[rule_col].astype(str).str.lower().replace({"color": "colour"})
-    wcst = label_wcst_phases(wcst, rule_col="rule", trial_col=trial_col, confirm_len=confirm_len)
+    valid_rt = (
+        wcst["rt_ms"].between(WCST_RT_MIN, WCST_RT_MAX)
+        & (~wcst["timeout"])
+        & (wcst["phase"].notna())
+    )
+    wcst = wcst[valid_rt].copy()
     if not include_errors:
         wcst = wcst[wcst["correct"].astype(bool)]
 

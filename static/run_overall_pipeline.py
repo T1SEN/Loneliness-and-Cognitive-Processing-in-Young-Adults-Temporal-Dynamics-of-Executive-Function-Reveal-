@@ -50,6 +50,12 @@ def _remove_nonpaper_outputs() -> None:
         Path("outputs/stats/wcst_phase_rt_loneliness_extremes25_alltrials_slopes.csv"),
         Path("outputs/stats/wcst_phase_category_weighted_ols.csv"),
         Path("outputs/stats/wcst_phase_rt_ols.csv"),
+        # Canonical supplementary WCST stats are in outputs/tables/supp_table_s3.csv and supp_table_s4.csv.
+        # Remove legacy duplicate OLS exports to avoid conflicting value routes.
+        Path("outputs/stats/wcst_phase_rt_ols_alltrials.csv"),
+        Path("outputs/stats/wcst_phase_pre_exploit_rt_ols_alltrials.csv"),
+        Path("outputs/stats/wcst_phase_pre_exploit_rt_ols_m2_alltrials.csv"),
+        Path("outputs/stats/wcst_phase_pre_exploit_rt_ols_m4_alltrials.csv"),
         Path("outputs/stats/stroop_lmm/stroop_lmm_predictors.csv"),
     ]
     for path in paths:
@@ -64,13 +70,7 @@ def _run_supplementary_extras() -> None:
     from static.stroop_supplementary import run_stroop_interference_reliability
     from static.stroop_supplementary import run_stroop_random_slope_variance
     from static.supplementary_tables import run_supplementary_tables_s1_s4
-    from static.wcst_phase import run_wcst_phase_rt_ols
     from static.wcst_phase import run_wcst_phase_split_half_reliability
-
-    _safe_run("wcst_phase_rt_ols_alltrials", run_wcst_phase_rt_ols.main, 3, True, False, False)
-    _safe_run("wcst_phase_pre_exploit_rt_ols_alltrials", run_wcst_phase_rt_ols.main, 3, True, False, True)
-    _safe_run("wcst_phase_pre_exploit_rt_ols_alltrials_m2", run_wcst_phase_rt_ols.main, 2, True, False, True)
-    _safe_run("wcst_phase_pre_exploit_rt_ols_alltrials_m4", run_wcst_phase_rt_ols.main, 4, True, False, True)
 
     _safe_run("wcst_phase_split_half_reliability", run_wcst_phase_split_half_reliability.main, 3, False)
     _safe_run("wcst_phase_split_half_reliability_m2", run_wcst_phase_split_half_reliability.main, 2, False)

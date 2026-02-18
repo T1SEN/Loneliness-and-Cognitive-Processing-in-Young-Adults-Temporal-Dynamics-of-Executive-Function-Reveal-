@@ -65,44 +65,42 @@ All phase RTs are computed on **all trials** (errors included), using valid RTs 
 
 ## S5. WCST Phase Validity (OLS, DASS-controlled)
 
-Covariates: DASS-Dep/Anx/Stress + age + gender. OLS (non-robust).
+Covariates: z(DASS-Dep), z(DASS-Anx), z(DASS-Str), z(age), and gender. UCLA was also entered as z(UCLA), so B is the effect per 1-SD increase in loneliness. OLS (non-robust).
 
 ### S5.1 Three-phase regressions
 
 | Outcome                     |   n |   UCLA beta |       p |
 |:----------------------------|----:|------------:|--------:|
-| Exploration RT (all)        | 208 |     106.173 | 0.23275 |
-| Confirmation RT (all)       | 212 |     127.352 | 0.00934 |
-| Exploitation RT (all)       | 212 |      27.148 | 0.45795 |
-| Exploration - Exploitation  | 208 |      78.691 | 0.34629 |
-| Confirmation - Exploitation | 212 |     100.204 | 0.01115 |
-| Exploration - Confirmation  | 208 |     -28.349 | 0.72316 |
+| Exploration RT (all)        | 208 |     107.391 | 0.22780 |
+| Confirmation RT (all)       | 212 |     136.898 | 0.01011 |
+| Exploitation RT (all)       | 212 |      33.698 | 0.36343 |
+| Confirmation - Exploitation | 212 |     103.200 | 0.01132 |
 
 ### S5.2 Two-phase regressions (rule search / rule application)
 
 | Outcome                                  |   n |   UCLA beta |       p |
 |:-----------------------------------------|----:|------------:|--------:|
-| Rule search (pre-exploitation) RT (all)  | 212 |     122.573 | 0.0101  |
-| Rule application (exploitation) RT (all) | 212 |      27.148 | 0.45795 |
-| Rule search - Rule application           | 212 |      95.425 | 0.01296 |
+| Rule search (pre-exploitation) RT (all)  | 212 |     123.783 | 0.00943 |
+| Rule application (exploitation) RT (all) | 212 |      27.797 | 0.44688 |
+| Rule search - Rule application           | 212 |      95.987 | 0.01254 |
 
-### S5.3 Two-phase regressions with alternative thresholds
+### S5.3 Three-phase regressions with alternative thresholds
 
 **confirm_len = 2**
 
 | Outcome                                  |   n |   UCLA beta |       p |
 |:-----------------------------------------|----:|------------:|--------:|
-| Rule search (pre-exploitation) RT (all)  | 212 |     134.121 | 0.02495 |
-| Rule application (exploitation) RT (all) | 212 |      49.979 | 0.18962 |
-| Rule search - Rule application           | 212 |      84.143 | 0.06108 |
+| Confirmation RT (all)                    | 212 |     151.355 | 0.01885 |
+| Exploitation RT (all)                    | 212 |      49.807 | 0.19734 |
+| Confirmation - Exploitation              | 212 |     101.548 | 0.03849 |
 
 **confirm_len = 4**
 
 | Outcome                                  |   n |   UCLA beta |       p |
 |:-----------------------------------------|----:|------------:|--------:|
-| Rule search (pre-exploitation) RT (all)  | 212 |     118.728 | 0.01037 |
-| Rule application (exploitation) RT (all) | 212 |      22.231 | 0.5004  |
-| Rule search - Rule application           | 212 |      96.497 | 0.00369 |
+| Confirmation RT (all)                    | 212 |     119.286 | 0.01166 |
+| Exploitation RT (all)                    | 212 |      18.805 | 0.56816 |
+| Confirmation - Exploitation              | 212 |     100.480 | 0.00394 |
 
 ## S6. WCST Phase Reliability (odd/even category split-half)
 
@@ -137,7 +135,7 @@ Covariates: DASS-Dep/Anx/Stress + age + gender. OLS (non-robust).
 
 ## S7. Stroop Trial-level LMM (supplementary)
 
-Trial-level mixed models use QC-passed trials (correct, non-timeout, valid RT). Covariates: DASS-Dep/Anx/Stress, age, gender.
+Trial-level mixed models use QC-passed trials (correct, non-timeout, valid RT). Continuous predictors (UCLA, DASS subscales, age) were z-standardized; gender was entered as a binary covariate.
 
 **Interpretation note.** S7.1 tests general within-task slowing (segment x UCLA) pooled across conditions. It does **not** test interference drift because it omits the condition-dependent interaction (segment x condition x UCLA). The primary hypothesis concerns changes in the *interference* effect over time, which is directly evaluated in S7.2 via the trial_scaled x cond x UCLA interaction. Therefore, a null S7.1 interaction does not contradict a significant S7.2 interaction.
 
@@ -228,11 +226,7 @@ Sensitivity outputs are reported in:
 ---
 
 **Output files**
-- `outputs/stats/wcst_phase_rt_ols_alltrials.csv`
-- `outputs/stats/wcst_phase_pre_exploit_rt_ols_alltrials.csv`
 - `outputs/stats/wcst_phase_split_half_reliability.csv`
-- `outputs/stats/wcst_phase_pre_exploit_rt_ols_m2_alltrials.csv`
-- `outputs/stats/wcst_phase_pre_exploit_rt_ols_m4_alltrials.csv`
 - `outputs/stats/wcst_phase_split_half_reliability_m2.csv`
 - `outputs/stats/wcst_phase_split_half_reliability_m4.csv`
 - `outputs/stats/stroop_lmm/stroop_trial_level_lmm.csv`
