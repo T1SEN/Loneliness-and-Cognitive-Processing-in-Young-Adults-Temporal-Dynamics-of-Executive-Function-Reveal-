@@ -1,7 +1,4 @@
 ﻿outcome,outcome_column,ucla_p,fdr_q
-Stroop Interference RT,stroop_interference,0.6287595313921996,0.7545114376706396
-WCST Perseverative Error Rate (%),wcst_perseverative_error_rate,0.7750266999370544,0.7750266999370544
-Stroop Interference RT Slope,stroop_interference_slope,0.00013145303261064695,0.0007887181956638817
-"WCST Confirmation RT (ms, all trials)",wcst_confirmation_rt_all,0.010790513683679517,0.023680227990582014
-"WCST Exploitation RT (ms, all trials)",wcst_exploitation_rt_all,0.37103030691512295,0.5565454603726845
-"WCST Confirmation - Exploitation RT (ms, all trials)",wcst_confirmation_minus_exploitation_rt_all,0.011840113995291005,0.023680227990582014
+Stroop Interference RT,stroop_interference,0.6413754671132188,0.9296081616218427
+WCST Perseverative Error Rate (%),wcst_perseverative_error_rate,0.9296081616218427,0.9296081616218427
+Stroop Interference RT Slope,stroop_interference_slope,0.0017927367700058623,0.005378210310017587

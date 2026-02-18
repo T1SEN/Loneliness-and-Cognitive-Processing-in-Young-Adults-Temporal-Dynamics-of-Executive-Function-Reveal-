@@ -227,12 +227,6 @@ def _compute_phase_complete(confirm_len: int = 3) -> pd.DataFrame:
     wcst = wcst.dropna(subset=["trial_order"]).copy()
     wcst = label_wcst_phases(wcst, rule_col="rule", trial_col="trial_order", confirm_len=confirm_len)
     phase_means = _phase_means_alltrials(wcst)
-    required = [
-        "wcst_exploration_rt_all",
-        "wcst_confirmation_rt_all",
-        "wcst_exploitation_rt_all",
-    ]
-    phase_means = phase_means.dropna(subset=required)
     return phase_means
 
 
@@ -280,12 +274,6 @@ def _compute_phase_complete_complete6(confirm_len: int = 3) -> pd.DataFrame:
     wcst = wcst.dropna(subset=["trial_order"]).copy()
     wcst = label_wcst_phases(wcst, rule_col="rule", trial_col="trial_order", confirm_len=confirm_len)
     phase_means = _phase_means_alltrials(wcst)
-    required = [
-        "wcst_exploration_rt_all",
-        "wcst_confirmation_rt_all",
-        "wcst_exploitation_rt_all",
-    ]
-    phase_means = phase_means.dropna(subset=required)
     return phase_means
 
 
@@ -294,13 +282,12 @@ def run_phase_complete_outputs(confirm_len: int = 3) -> pd.DataFrame:
     phase_complete = _compute_phase_complete(confirm_len=confirm_len)
     if phase_complete.empty:
         return pd.DataFrame()
+    # Keep this stage-complete output focused on exploration-only effects.
+    # Primary confirmation / confirmation-minus-exploitation results are reported
+    # from core hierarchical models (N=212), avoiding duplicate rows with a stricter
+    # stage-complete subset (N=208).
     outcomes = [
         ("wcst_exploration_rt_all", "exploration"),
-        ("wcst_confirmation_rt_all", "confirmation"),
-        ("wcst_exploitation_rt_all", "exploitation"),
-        ("wcst_confirmation_minus_exploitation_rt_all", "confirmation_minus_exploitation"),
-        ("wcst_pre_exploitation_rt_all", "pre_exploitation"),
-        ("wcst_pre_exploitation_minus_exploitation_rt_all", "pre_exploitation_minus_exploitation"),
     ]
     phase_complete_results = _run_phase_regressions(phase_complete, outcomes)
     if not phase_complete_results.empty:

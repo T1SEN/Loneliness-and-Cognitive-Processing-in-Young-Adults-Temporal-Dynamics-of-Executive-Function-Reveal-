@@ -9,6 +9,7 @@ from pathlib import Path
 from static.preprocessing.constants import get_results_dir
 from static.preprocessing.cli import run_preprocess_pipeline
 from static.analysis import descriptive_statistics, correlation_analysis, hierarchical_regression
+from static.analysis import paper_tables
 
 
 def _features_ready() -> bool:
@@ -148,6 +149,7 @@ def main(run_preprocess: bool, run_analysis: bool) -> None:
         correlation_analysis.run(task="overall", verbose=True)
         hierarchical_regression.run(task="overall", cov_type="nonrobust", verbose=True)
         _run_supplementary_extras()
+        _safe_run("paper_tables", paper_tables.run, task="overall", verbose=True)
 
 
 if __name__ == "__main__":

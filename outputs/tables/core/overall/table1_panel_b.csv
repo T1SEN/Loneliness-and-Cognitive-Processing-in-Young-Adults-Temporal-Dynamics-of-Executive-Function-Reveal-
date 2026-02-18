@@ -1,0 +1,7 @@
+﻿Measure,Column,N,Mean,SD,M_SD,r_sb,Reliability_note
+Stroop Interference RT (ms),stroop_interference,197.0,138.6802030456853,104.15904373502714,138.68 (104.16),0.6309763932054769,
+Interference RT slope,stroop_interference_slope,197.0,-0.0705920921602149,62.853763203715246,-0.07 (62.85),,Split-half reliability not estimated; each half contains too few trials per condition per segment (~9) for stable per-person slope estimates.
+WCST PE rate (%),wcst_perseverative_error_rate,197.0,10.636210713096954,6.138233550402466,10.64 (6.14),,"Split-half reliability not estimated; PE rate is a single proportion tied to rule shifts, yielding non-equivalent halves and unstable split-half estimates."
+Exploration RT (ms),wcst_exploration_rt_all,,,,NA,0.311790998799254,
+Confirmation RT (ms),wcst_confirmation_rt_all,,,,NA,0.7420259899370728,
+Exploitation RT (ms),wcst_exploitation_rt_all,,,,NA,0.8755563805906968,

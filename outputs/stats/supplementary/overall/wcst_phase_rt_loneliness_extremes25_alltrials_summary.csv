@@ -1,7 +1,7 @@
-﻿phase,loneliness_group,mean_rt,sem_rt,n
-exploration,Low loneliness (bottom 25%),1934.435764402698,118.48446735177347,52
-exploration,High loneliness (top 25%),2135.8201717106444,143.890345572906,57
-confirmation,Low loneliness (bottom 25%),1901.3495435353634,58.05346148657998,53
-confirmation,High loneliness (top 25%),2079.3925533783986,82.42391688614525,57
-exploitation,Low loneliness (bottom 25%),1364.878932825234,42.81256040731313,53
-exploitation,High loneliness (top 25%),1431.383972264936,51.920276574675455,57
+﻿phase,loneliness_group,mean_rt,ci95_rt,n
+exploration,Low loneliness (bottom 25%),1966.8440424959285,242.83033541316382,49
+exploration,High loneliness (top 25%),2162.2582126872303,307.9472322664477,52
+confirmation,Low loneliness (bottom 25%),1916.1126747491587,117.97144174793229,50
+confirmation,High loneliness (top 25%),2080.0108648207984,172.97982042364234,52
+exploitation,Low loneliness (bottom 25%),1382.0617717302935,87.84165324846614,50
+exploitation,High loneliness (top 25%),1437.8065680147338,112.71435425098578,52

@@ -9,10 +9,15 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
+from scipy.stats import t as student_t
 
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))
+
+plt.rcParams["font.family"] = ["Malgun Gothic", "NanumGothic", "DejaVu Sans"]
+plt.rcParams["axes.unicode_minus"] = False
 
 from static.analysis.utils import get_output_dir, get_figures_dir
 from static.preprocessing.constants import get_results_dir
@@ -24,6 +29,11 @@ from static.preprocessing.wcst.utils import prepare_wcst_trials
 
 LOW_LABEL = "Low loneliness (bottom 25%)"
 HIGH_LABEL = "High loneliness (top 25%)"
+LOW_COLOR = "#5B8DB8"   # Steel blue
+HIGH_COLOR = "#E8886F"  # Soft coral
+PLOT_NOTES = [
+    "Points are means; error bars indicate 95% CIs.",
+]
 PHASES = ["exploration", "confirmation", "exploitation"]
 PHASE_LABELS = ["Exploration", "Confirmation", "Exploitation"]
 
@@ -44,6 +54,26 @@ def _trend_line(x_vals: np.ndarray, y_vals: np.ndarray) -> tuple[float, float]:
         return np.nan, np.nan
     slope, intercept = np.polyfit(x_vals[mask], y_vals[mask], 1)
     return float(slope), float(intercept)
+
+
+def _ci95_halfwidth(sd: float, n: int) -> float:
+    if not np.isfinite(sd) or n <= 1:
+        return np.nan
+    sem = sd / np.sqrt(n)
+    t_crit = float(student_t.ppf(0.975, df=n - 1))
+    return float(t_crit * sem)
+
+
+def _legend_with_notes(ax: plt.Axes) -> None:
+    handles, labels = ax.get_legend_handles_labels()
+    note_handles = [Line2D([], [], linestyle="", marker=None) for _ in PLOT_NOTES]
+    ax.legend(handles + note_handles, labels + PLOT_NOTES, loc="upper right")
+
+
+def _group_label(group: str, n_val: int) -> str:
+    if group == HIGH_LABEL:
+        return f"{group} (n={n_val}, 4 ties)"
+    return f"{group} (n={n_val})"
 
 
 def _load_base_ucla() -> pd.DataFrame:
@@ -121,12 +151,13 @@ def main(confirm_len: int, include_errors: bool) -> None:
             vals = df.loc[df["loneliness_group"] == group, phase].dropna()
             n = int(len(vals))
             mean = float(vals.mean()) if n else np.nan
-            sem = float(vals.std(ddof=1) / np.sqrt(n)) if n > 1 else np.nan
+            sd = float(vals.std(ddof=1)) if n > 1 else np.nan
+            ci95 = _ci95_halfwidth(sd, n)
             summary_rows.append({
                 "phase": phase,
                 "loneliness_group": group,
                 "mean_rt": mean,
-                "sem_rt": sem,
+                "ci95_rt": ci95,
                 "n": n,
             })
     summary = pd.DataFrame(summary_rows)
@@ -140,29 +171,29 @@ def main(confirm_len: int, include_errors: bool) -> None:
     for group in (LOW_LABEL, HIGH_LABEL):
         group_df = summary[summary["loneliness_group"] == group]
         means = []
-        sems = []
+        ci95 = []
         n_val = int(group_df["n"].max()) if not group_df.empty else 0
         for phase in PHASES:
             row = group_df[group_df["phase"] == phase]
             means.append(float(row["mean_rt"].iloc[0]) if not row.empty else np.nan)
-            sems.append(float(row["sem_rt"].iloc[0]) if not row.empty else np.nan)
-        group_data[group] = (np.array(means, dtype=float), np.array(sems, dtype=float), n_val)
+            ci95.append(float(row["ci95_rt"].iloc[0]) if not row.empty else np.nan)
+        group_data[group] = (np.array(means, dtype=float), np.array(ci95, dtype=float), n_val)
 
     fig, ax = plt.subplots(figsize=(10, 6))
-    colors = {LOW_LABEL: "#1f77b4", HIGH_LABEL: "#d62728"}
+    colors = {LOW_LABEL: LOW_COLOR, HIGH_LABEL: HIGH_COLOR}
 
     slopes_rows = []
     for group in (HIGH_LABEL, LOW_LABEL):
-        means, sems, n_val = group_data[group]
+        means, ci95, n_val = group_data[group]
         ax.errorbar(
             x,
             means,
-            yerr=sems,
+            yerr=ci95,
             color=colors[group],
             marker="o",
             linewidth=2,
             capsize=4,
-            label=f"{group} (n={n_val})",
+            label=_group_label(group, n_val),
         )
         slope, intercept = _trend_line(x, means)
         if np.isfinite(slope) and np.isfinite(intercept):
@@ -185,7 +216,7 @@ def main(confirm_len: int, include_errors: bool) -> None:
     ax.set_xticks(x)
     ax.set_xticklabels(PHASE_LABELS)
     ax.grid(True, axis="y", alpha=0.2)
-    ax.legend(loc="upper right")
+    _legend_with_notes(ax)
     fig.tight_layout()
 
     fig_path = figures_dir / f"wcst_phase_rt_loneliness_extremes25_{err_tag}.png"

@@ -6,10 +6,15 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
+from scipy.stats import t as student_t
 
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))
+
+plt.rcParams["font.family"] = ["Malgun Gothic", "NanumGothic", "DejaVu Sans"]
+plt.rcParams["axes.unicode_minus"] = False
 
 from static.analysis.utils import get_output_dir, get_figures_dir
 from static.preprocessing.constants import STROOP_RT_MIN, STROOP_RT_MAX, get_results_dir
@@ -18,6 +23,11 @@ from static.preprocessing.surveys import load_ucla_scores
 
 LOW_LABEL = "Low loneliness (bottom 25%)"
 HIGH_LABEL = "High loneliness (top 25%)"
+LOW_COLOR = "#5B8DB8"   # Steel blue
+HIGH_COLOR = "#E8886F"  # Soft coral
+PLOT_NOTES = [
+    "Points are means; error bars indicate 95% CIs.",
+]
 
 
 def _trend_line(x_vals: np.ndarray, y_vals: np.ndarray) -> tuple[float, float]:
@@ -26,6 +36,55 @@ def _trend_line(x_vals: np.ndarray, y_vals: np.ndarray) -> tuple[float, float]:
         return np.nan, np.nan
     slope, intercept = np.polyfit(x_vals[mask], y_vals[mask], 1)
     return float(slope), float(intercept)
+
+
+def _ci95_halfwidth(sd: float, n: int) -> float:
+    if not np.isfinite(sd) or n <= 1:
+        return np.nan
+    sem = sd / np.sqrt(n)
+    t_crit = float(student_t.ppf(0.975, df=n - 1))
+    return float(t_crit * sem)
+
+
+def _sem_to_ci95(sem: float, n: int) -> float:
+    if not np.isfinite(sem) or n <= 1:
+        return np.nan
+    t_crit = float(student_t.ppf(0.975, df=n - 1))
+    return float(t_crit * sem)
+
+
+def _ensure_ci95_summary(summary: pd.DataFrame) -> pd.DataFrame:
+    out = summary.copy()
+    if "ci95_interference_rt" in out.columns and "ci95_interference" not in out.columns:
+        out = out.rename(columns={"ci95_interference_rt": "ci95_interference"})
+    if "ci95_interference" not in out.columns:
+        if "sem_interference" in out.columns:
+            out["ci95_interference"] = out.apply(
+                lambda row: _sem_to_ci95(float(row["sem_interference"]), int(row["n"]))
+                if pd.notna(row.get("n"))
+                else np.nan,
+                axis=1,
+            )
+        elif "sem_interference_rt" in out.columns:
+            out["ci95_interference"] = out.apply(
+                lambda row: _sem_to_ci95(float(row["sem_interference_rt"]), int(row["n"]))
+                if pd.notna(row.get("n"))
+                else np.nan,
+                axis=1,
+            )
+    return out
+
+
+def _legend_with_notes(ax: plt.Axes) -> None:
+    handles, labels = ax.get_legend_handles_labels()
+    note_handles = [Line2D([], [], linestyle="", marker=None) for _ in PLOT_NOTES]
+    ax.legend(handles + note_handles, labels + PLOT_NOTES, loc="upper right")
+
+
+def _group_label(group: str, n_val: int) -> str:
+    if group == HIGH_LABEL:
+        return f"{group} (n={n_val}, 4 ties)"
+    return f"{group} (n={n_val})"
 
 
 def _load_qc_ids() -> set[str]:
@@ -126,8 +185,8 @@ def _build_table(output_dir: Path) -> pd.DataFrame:
         .reset_index()
         .rename(columns={"mean": "mean_interference_rt", "std": "sd_interference_rt", "count": "n"})
     )
-    summary["sem_interference_rt"] = summary.apply(
-        lambda row: float(row["sd_interference_rt"] / np.sqrt(row["n"])) if row["n"] > 1 else np.nan,
+    summary["ci95_interference_rt"] = summary.apply(
+        lambda row: _ci95_halfwidth(float(row["sd_interference_rt"]), int(row["n"])),
         axis=1,
     )
     summary = summary.drop(columns=["sd_interference_rt"])
@@ -140,7 +199,10 @@ def _build_table(output_dir: Path) -> pd.DataFrame:
 def _load_summary(output_dir: Path) -> pd.DataFrame:
     summary_path = output_dir / "stroop_interference_quartile_loneliness_extremes25_summary.csv"
     if summary_path.exists():
-        return pd.read_csv(summary_path, encoding="utf-8-sig")
+        summary = pd.read_csv(summary_path, encoding="utf-8-sig")
+        summary = _ensure_ci95_summary(summary)
+        summary.to_csv(summary_path, index=False, encoding="utf-8-sig")
+        return summary
 
     table_path = output_dir / "stroop_rt_timeseg4_loneliness_extremes25_table.csv"
     if not table_path.exists():
@@ -151,10 +213,12 @@ def _load_summary(output_dir: Path) -> pd.DataFrame:
         columns={
             "segment": "quartile",
             "mean_interference_rt": "mean_interference",
+            "ci95_interference_rt": "ci95_interference",
             "sem_interference_rt": "sem_interference",
         }
     )
-    summary = summary[["loneliness_group", "quartile", "mean_interference", "sem_interference", "n"]]
+    summary = _ensure_ci95_summary(summary)
+    summary = summary[["loneliness_group", "quartile", "mean_interference", "ci95_interference", "n"]]
     summary.to_csv(summary_path, index=False, encoding="utf-8-sig")
     return summary
 
@@ -177,43 +241,41 @@ def main() -> None:
     for group in (HIGH_LABEL, LOW_LABEL):
         group_df = summary[summary["loneliness_group"] == group]
         means = []
-        sems = []
+        ci95 = []
         n_val = int(group_df["n"].max()) if not group_df.empty else 0
         for seg in segments:
             row = group_df[group_df["quartile"] == seg]
             means.append(float(row["mean_interference"].iloc[0]) if not row.empty else np.nan)
-            sems.append(float(row["sem_interference"].iloc[0]) if not row.empty else np.nan)
-        group_data[group] = (np.array(means, dtype=float), np.array(sems, dtype=float), n_val)
+            ci95.append(float(row["ci95_interference"].iloc[0]) if not row.empty else np.nan)
+        group_data[group] = (np.array(means, dtype=float), np.array(ci95, dtype=float), n_val)
 
     fig, ax = plt.subplots(figsize=(10, 6))
-    colors = {LOW_LABEL: "#1f77b4", HIGH_LABEL: "#d62728"}
+    colors = {LOW_LABEL: LOW_COLOR, HIGH_LABEL: HIGH_COLOR}
 
     slopes_rows = []
     for group in (HIGH_LABEL, LOW_LABEL):
-        means, sems, n_val = group_data[group]
+        means, ci95, n_val = group_data[group]
         overall_mean = float(np.nanmean(means)) if np.isfinite(means).any() else np.nan
         ax.errorbar(
             x,
             means,
-            yerr=sems,
+            yerr=ci95,
             color=colors[group],
             marker="o",
             linewidth=2,
             capsize=4,
-            label=f"{group} (n={n_val})",
+            label=_group_label(group, n_val),
         )
-        if np.isfinite(overall_mean):
-            ax.hlines(
-                overall_mean,
-                x.min(),
-                x.max(),
-                colors=colors[group],
-                linestyles=":",
-                linewidth=2,
-                alpha=0.8,
-                label=f"{group} mean ({overall_mean:.1f} ms)",
+        slope, intercept = _trend_line(x, means)
+        if np.isfinite(slope) and np.isfinite(intercept):
+            ax.plot(
+                x,
+                slope * x + intercept,
+                linestyle="--",
+                color=colors[group],
+                alpha=0.6,
+                label=f"{group} trend ({slope:.1f} ms/segment)",
             )
-        slope, _ = _trend_line(x, means)
         slopes_rows.append({
             "loneliness_group": group,
             "slope_ms_per_segment": slope,
@@ -226,7 +288,7 @@ def main() -> None:
     ax.set_xticks(x)
     ax.set_xticklabels([str(s) for s in segments])
     ax.grid(True, axis="y", alpha=0.2)
-    ax.legend(loc="upper right")
+    _legend_with_notes(ax)
     fig.tight_layout()
 
     fig_path = figures_dir / "stroop_interference_quartile_loneliness_extremes25_trend.png"
