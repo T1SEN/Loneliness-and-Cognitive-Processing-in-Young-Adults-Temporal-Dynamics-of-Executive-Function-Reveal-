@@ -48,7 +48,6 @@ def _remove_nonpaper_outputs() -> None:
         Path("outputs/stats/stroop_rt_timeseg4_loneliness_extremes25_table.csv"),
         Path("outputs/stats/wcst_phase_rt_loneliness_extremes25_alltrials_summary.csv"),
         Path("outputs/stats/wcst_phase_rt_loneliness_extremes25_alltrials_slopes.csv"),
-        Path("outputs/stats/wcst_n212_main_results_extract.csv"),
         Path("outputs/stats/wcst_phase_category_weighted_ols.csv"),
         Path("outputs/stats/wcst_phase_rt_ols.csv"),
         Path("outputs/stats/stroop_threshold_sensitivity.csv"),

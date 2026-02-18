@@ -173,19 +173,6 @@ We evaluated how the interference slope varies with the number of within-subject
 
 ---
 
-## S9-S11. Legacy WCST Subsample Analyses (excluded from manuscript pipeline)
-
-The following analyses were generated in earlier exploratory runs but are **not**
-included in the locked manuscript reproduction pipeline:
-
-- Complete-6 WCST subsample models (N around 193)
-- Phase-complete WCST subsample models (N around 208)
-- 3-phase threshold sensitivity on phase-complete subsample
-
-Current manuscript reproduction is locked to the common-sample pipeline (target N = 212).
-
----
-
 ## S12. Stroop Interference One-sample t-test
 
 |   n |   Mean (ms) |      SD |      t |        p |
@@ -199,45 +186,6 @@ Current manuscript reproduction is locked to the common-sample pipeline (target 
 |   n |   Categories M |    SD |   n_complete6 |   % complete6 |
 |----:|---------------:|------:|--------------:|--------------:|
 | 212 |          5.774 | 0.829 |           193 |         91.04 |
-
----
-
-## S14. DASS Total Models (supplementary)
-
-| Outcome                                |   n |   UCLA beta |        p |
-|:---------------------------------------|----:|------------:|---------:|
-| Stroop Interference RT                 | 212 |       2.181 | 0.81946  |
-| WCST Perseverative Error Rate (%)      | 212 |      -0.203 | 0.71403  |
-| Stroop Interference RT Slope           | 212 |      19.754 | 0.000511 |
-| WCST Confirmation RT (all)             | 212 |     137.957 | 0.00697  |
-| WCST Exploitation RT (all)             | 212 |      44.707 | 0.21261  |
-| WCST Confirmation - Exploitation (all) | 212 |      93.25  | 0.01734  |
-
----
-
-## S15. Reverse-order Models (UCLA entered before DASS)
-
-| Outcome                                              |   n |   Delta R2 (UCLA first) |        p |   Delta R2 (DASS after UCLA) |      p  |
-|:-----------------------------------------------------|----:|------------------------:|---------:|-----------------------------:|--------:|
-| Stroop Interference RT                               | 212 |                 2e-05   | 0.95347  |                      0.00575 | 0.75315 |
-| WCST Perseverative Error Rate (%)                    | 212 |                 0.01513 | 0.07504  |                      0.01208 | 0.46786 |
-| Stroop Interference RT Slope                         | 212 |                 0.07501 | 5.33e-05 |                      0.01612 | 0.30216 |
-| WCST Confirmation RT (ms, all trials)                | 212 |                 0.01458 | 0.07779  |                      0.02055 | 0.21946 |
-| WCST Exploitation RT (ms, all trials)                | 212 |                 0.00253 | 0.45542  |                      0.01634 | 0.3076  |
-| WCST Confirmation - Exploitation RT (ms, all trials) | 212 |                 0.01255 | 0.10449  |                      0.02171 | 0.20394 |
-
----
-
-## S16. FDR Correction (UCLA p-values)
-
-| Outcome                                              |   UCLA p |    FDR q |
-|:-----------------------------------------------------|---------:|---------:|
-| Stroop Interference RT                               | 0.62876  | 0.75451  |
-| WCST Perseverative Error Rate (%)                    | 0.77503  | 0.77503  |
-| Stroop Interference RT Slope                         | 0.000131 | 0.000789 |
-| WCST Confirmation RT (ms, all trials)                | 0.01079  | 0.02368  |
-| WCST Exploitation RT (ms, all trials)                | 0.37103  | 0.55655  |
-| WCST Confirmation - Exploitation RT (ms, all trials) | 0.01184  | 0.02368  |
 
 ---
 
@@ -298,9 +246,6 @@ Current manuscript reproduction is locked to the common-sample pipeline (target 
 - `outputs/stats/stroop_interference_slope_segment_sensitivity_2_3_6.csv`
 - `outputs/stats/stroop_interference_ttest.csv`
 - `outputs/stats/wcst_normative_stats.csv`
-- `outputs/stats/dass_total_models.csv`
-- `outputs/stats/ucla_first_model_comparison.csv`
-- `outputs/stats/ucla_fdr_qvalues.csv`
 - `outputs/stats/stroop_condition_balance_by_segment.csv`
 - `outputs/stats/stroop_condition_balance_by_segment_pivot.csv`
 - `outputs/stats/stroop_condition_balance_by_segment_2.csv`
