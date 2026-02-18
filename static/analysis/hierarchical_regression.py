@@ -262,14 +262,24 @@ def run_hierarchical_regression(
             results[f'{gender_label}_ucla_p'] = np.nan
 
     # Diagnostics
-    # VIF
+    # VIF (Model 2 design matrix; includes gender dummy, excludes intercept)
     try:
-        pred_cols = ['z_ucla_score', 'z_dass_depression', 'z_dass_anxiety', 'z_dass_stress', 'z_age']
-        X = df[[c for c in pred_cols if c in df.columns]].dropna()
-        if len(X) > 0 and X.shape[1] > 1:
-            vif_vals = [variance_inflation_factor(X.values, i) for i in range(X.shape[1])]
-            results['vif_max'] = max(vif_vals)
-            results['vif_mean'] = np.mean(vif_vals)
+        model2_exog = pd.DataFrame(
+            models["model2"].model.exog,
+            columns=models["model2"].model.exog_names,
+        )
+        model2_exog = model2_exog.drop(
+            columns=[c for c in model2_exog.columns if c.lower() in {"intercept", "const"}],
+            errors="ignore",
+        )
+        model2_exog = model2_exog.loc[:, model2_exog.nunique(dropna=False) > 1]
+        if model2_exog.shape[1] > 1:
+            vif_vals = [
+                variance_inflation_factor(model2_exog.values, i)
+                for i in range(model2_exog.shape[1])
+            ]
+            results['vif_max'] = float(np.max(vif_vals))
+            results['vif_mean'] = float(np.mean(vif_vals))
         else:
             results['vif_max'] = np.nan
             results['vif_mean'] = np.nan
