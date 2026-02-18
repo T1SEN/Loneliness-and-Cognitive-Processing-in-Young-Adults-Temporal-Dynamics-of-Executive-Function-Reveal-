@@ -22,9 +22,9 @@ if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))
 
 from static.analysis.utils import get_output_dir
-from static.preprocessing.constants import STROOP_RT_MIN, STROOP_RT_MAX, get_results_dir, get_stroop_trials_path
-from static.preprocessing.core import ensure_participant_id
+from static.preprocessing.constants import STROOP_RT_MIN, STROOP_RT_MAX, get_stroop_trials_path
 from static.preprocessing.datasets import load_master_dataset
+from static.preprocessing.public_validate import get_common_public_ids
 from static.preprocessing.stroop.qc import clean_stroop_trials
 
 
@@ -32,14 +32,7 @@ DEFAULT_SEGMENTS = [2, 3, 4, 6]
 
 
 def _load_qc_ids() -> set[str]:
-    ids_path = get_results_dir("overall") / "filtered_participant_ids.csv"
-    if not ids_path.exists():
-        return set()
-    ids_df = pd.read_csv(ids_path, encoding="utf-8-sig")
-    ids_df = ensure_participant_id(ids_df)
-    if "participant_id" not in ids_df.columns:
-        return set()
-    return set(ids_df["participant_id"].dropna().astype(str))
+    return get_common_public_ids(validate=True)
 
 
 def _load_stroop_trials() -> pd.DataFrame:

@@ -1,15 +1,16 @@
+﻿"""Create the public-only de-identified data bundle from restricted inputs."""
+
+from __future__ import annotations
+
 import argparse
-import csv
-import json
-import os
-import random
-import string
-from datetime import datetime, timezone
+import hashlib
+from pathlib import Path
+
+import pandas as pd
 
 
-DEFAULT_INPUT_DIR = os.path.join("data", "complete_overall")
-DEFAULT_OUTPUT_DIR = os.path.join("data", "public")
-
+DEFAULT_INPUT_DIR = Path("data") / "restricted_input"
+DEFAULT_OUTPUT_DIR = Path("data") / "public"
 
 SOURCE_FILES = {
     "surveys_public.csv": "2_surveys_results.csv",
@@ -17,137 +18,164 @@ SOURCE_FILES = {
     "stroop_trials_public.csv": "4a_stroop_trials.csv",
     "wcst_trials_public.csv": "4b_wcst_trials.csv",
 }
+PARTICIPANTS_SOURCE = "1_participants_info.csv"
 
-
-REMOVE_TOKENS = ["timestamp"]
 ID_COLUMNS = {"participantid", "participant_id"}
+REMOVE_TOKENS = {"timestamp"}
 
 
-def normalize(col: str) -> str:
-    return col.lstrip("\ufeff").strip()
+def _normalize_col(name: str) -> str:
+    return str(name).lstrip("\ufeff").strip()
 
 
-def random_id(n=12):
-    alphabet = string.ascii_uppercase + string.digits
-    return "".join(random.choice(alphabet) for _ in range(n))
+def _normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.copy()
+    df.columns = [_normalize_col(c) for c in df.columns]
+    return df
 
 
-def build_id_map(paths):
-    ids = set()
-    for path in paths:
-        with open(path, "r", newline="", encoding="utf-8-sig") as f:
-            reader = csv.reader(f)
-            header = next(reader)
-            norm_header = [normalize(h) for h in header]
-            id_idx = [i for i, h in enumerate(norm_header) if h.lower() in ID_COLUMNS]
-            if not id_idx:
-                raise ValueError(f"No participant ID column in {path}")
-            idx = id_idx[0]
-            for row in reader:
-                if len(row) <= idx:
-                    continue
-                ids.add(row[idx])
-    id_map = {}
+def _find_id_column(df: pd.DataFrame, path: Path) -> str:
+    for col in df.columns:
+        if _normalize_col(col).lower() in ID_COLUMNS:
+            return col
+    raise ValueError(f"No participant ID column in {path}")
+
+
+def _deterministic_public_id(participant_id: str, salt: int = 0) -> str:
+    key = f"{participant_id}::{salt}" if salt else participant_id
+    digest = hashlib.sha256(key.encode("utf-8")).hexdigest().upper()
+    return digest[:12]
+
+
+def _build_id_map(ids: set[str]) -> dict[str, str]:
+    id_map: dict[str, str] = {}
+    used: set[str] = set()
     for pid in sorted(ids):
-        rid = random_id()
-        while rid in id_map.values():
-            rid = random_id()
-        id_map[pid] = rid
+        salt = 0
+        public_id = _deterministic_public_id(pid, salt=salt)
+        while public_id in used:
+            salt += 1
+            public_id = _deterministic_public_id(pid, salt=salt)
+        id_map[pid] = public_id
+        used.add(public_id)
     return id_map
 
 
-def filter_header(header):
-    norm = [normalize(h) for h in header]
-    drop_idx = []
-    kept = []
-    for i, col in enumerate(norm):
-        low = col.lower()
-        if low in ID_COLUMNS:
-            drop_idx.append(i)
+def _load_csv(path: Path) -> pd.DataFrame:
+    if not path.exists():
+        raise FileNotFoundError(path)
+    return _normalize_columns(pd.read_csv(path, encoding="utf-8-sig"))
+
+
+def _normalize_gender(value: object) -> str:
+    token = "".join(ch for ch in str(value).strip().lower() if ch.isalpha() or ("\uac00" <= ch <= "\ud7a3"))
+    male_exact = {"m", "male", "man", "men", "boy", "boys", "남", "남성", "남자"}
+    female_exact = {"f", "female", "woman", "women", "girl", "girls", "여", "여성", "여자"}
+
+    if token in male_exact:
+        return "male"
+    if token in female_exact:
+        return "female"
+    if "남성" in token or "남자" in token:
+        return "male"
+    if "여성" in token or "여자" in token:
+        return "female"
+    return ""
+
+
+def _publicize_frame(df: pd.DataFrame, source_path: Path, id_map: dict[str, str]) -> pd.DataFrame:
+    id_col = _find_id_column(df, source_path)
+
+    out = df.copy()
+    out[id_col] = out[id_col].astype(str)
+    out = out[out[id_col].isin(id_map)].copy()
+
+    keep_cols = []
+    for col in out.columns:
+        col_norm = _normalize_col(col).lower()
+        if col_norm in ID_COLUMNS:
             continue
-        if any(tok in low for tok in REMOVE_TOKENS):
-            drop_idx.append(i)
+        if any(tok in col_norm for tok in REMOVE_TOKENS):
             continue
-        kept.append((i, col))
-    return drop_idx, kept
+        keep_cols.append(col)
+
+    out.insert(0, "public_id", out[id_col].map(id_map))
+    out = out[["public_id"] + keep_cols]
+    return out
 
 
-def write_public_file(src_path, dst_path, id_map):
-    with open(src_path, "r", newline="", encoding="utf-8-sig") as fin, open(
-        dst_path, "w", newline="", encoding="utf-8"
-    ) as fout:
-        reader = csv.reader(fin)
-        writer = csv.writer(fout)
-        header = next(reader)
-        norm_header = [normalize(h) for h in header]
+def _build_demographics(participants_df: pd.DataFrame, source_path: Path, id_map: dict[str, str]) -> pd.DataFrame:
+    id_col = _find_id_column(participants_df, source_path)
 
-        id_idx = [i for i, h in enumerate(norm_header) if h.lower() in ID_COLUMNS]
-        if not id_idx:
-            raise ValueError(f"No participant ID column in {src_path}")
-        id_idx = id_idx[0]
+    gender_col = None
+    age_col = None
+    for col in participants_df.columns:
+        low = _normalize_col(col).lower()
+        if low == "gender":
+            gender_col = col
+        elif low == "age":
+            age_col = col
 
-        _, kept = filter_header(header)
-        new_header = ["public_id"] + [col for _, col in kept]
-        writer.writerow(new_header)
+    if gender_col is None or age_col is None:
+        raise ValueError(f"Missing age/gender columns in {source_path}")
 
-        row_count = 0
-        for row in reader:
-            if len(row) < len(header):
-                row = row + [""] * (len(header) - len(row))
-            pid = row[id_idx]
-            public_id = id_map.get(pid)
-            if public_id is None:
-                continue
-            new_row = [public_id] + [row[i] for i, _ in kept]
-            writer.writerow(new_row)
-            row_count += 1
-    return row_count, len(new_header)
+    demo = participants_df[[id_col, gender_col, age_col]].copy()
+    demo[id_col] = demo[id_col].astype(str)
+    demo = demo[demo[id_col].isin(id_map)].copy()
+    demo = demo.drop_duplicates(subset=[id_col], keep="first")
+
+    demo.insert(0, "public_id", demo[id_col].map(id_map))
+    demo["gender"] = demo[gender_col].map(_normalize_gender)
+    demo["age"] = pd.to_numeric(demo[age_col], errors="coerce")
+
+    bad_gender = int((demo["gender"] == "").sum())
+    if bad_gender > 0:
+        raise ValueError(f"Could not normalize gender for {bad_gender} rows.")
+    if demo["age"].isna().any():
+        bad_age = int(demo["age"].isna().sum())
+        raise ValueError(f"Non-numeric age values detected: {bad_age} rows.")
+
+    demo = demo[["public_id", "gender", "age"]].copy()
+    return demo
 
 
-def main():
-    parser = argparse.ArgumentParser(description="Create de-identified public data files.")
-    parser.add_argument("--input-dir", default=DEFAULT_INPUT_DIR)
-    parser.add_argument("--output-dir", default=DEFAULT_OUTPUT_DIR)
-    parser.add_argument("--seed", type=int, default=None, help="Optional random seed.")
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Create deterministic public data bundle.")
+    parser.add_argument("--input-dir", type=Path, default=DEFAULT_INPUT_DIR)
+    parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
     args = parser.parse_args()
 
-    if args.seed is not None:
-        random.seed(args.seed)
+    input_dir: Path = args.input_dir
+    output_dir: Path = args.output_dir
+    output_dir.mkdir(parents=True, exist_ok=True)
 
-    os.makedirs(args.output_dir, exist_ok=True)
+    source_paths = [input_dir / src for src in SOURCE_FILES.values()]
+    participants_path = input_dir / PARTICIPANTS_SOURCE
+    source_paths.append(participants_path)
 
-    src_paths = []
-    for dst_name, src_name in SOURCE_FILES.items():
-        src_path = os.path.join(args.input_dir, src_name)
-        if not os.path.exists(src_path):
-            raise FileNotFoundError(src_path)
-        src_paths.append(src_path)
+    all_ids: set[str] = set()
+    frames: dict[Path, pd.DataFrame] = {}
 
-    id_map = build_id_map(src_paths)
+    for path in source_paths:
+        df = _load_csv(path)
+        id_col = _find_id_column(df, path)
+        ids = set(df[id_col].dropna().astype(str))
+        all_ids |= ids
+        frames[path] = df
 
-    metadata = {
-        "created_on": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "source_dir": args.input_dir,
-        "id_mapping": "random, not stored",
-        "removed_columns": ["participantId", "participant_id", "timestamp"],
-        "files": {},
-    }
+    id_map = _build_id_map(all_ids)
 
-    for dst_name, src_name in SOURCE_FILES.items():
-        src_path = os.path.join(args.input_dir, src_name)
-        dst_path = os.path.join(args.output_dir, dst_name)
-        rows, cols = write_public_file(src_path, dst_path, id_map)
-        metadata["files"][dst_name] = {
-            "source": src_name,
-            "rows": rows,
-            "cols": cols,
-        }
+    for out_name, src_name in SOURCE_FILES.items():
+        src_path = input_dir / src_name
+        out_path = output_dir / out_name
+        pub_df = _publicize_frame(frames[src_path], src_path, id_map)
+        pub_df.to_csv(out_path, index=False, encoding="utf-8-sig")
+        print(f"Wrote: {out_path} ({len(pub_df)} rows)")
 
-    meta_path = os.path.join(args.output_dir, "metadata.json")
-    with open(meta_path, "w", encoding="utf-8") as f:
-        json.dump(metadata, f, indent=2)
-
-    print(f"Public data written to: {args.output_dir}")
+    demo_df = _build_demographics(frames[participants_path], participants_path, id_map)
+    demo_path = output_dir / "demographics_public.csv"
+    demo_df.to_csv(demo_path, index=False, encoding="utf-8-sig")
+    print(f"Wrote: {demo_path} ({len(demo_df)} rows)")
 
 
 if __name__ == "__main__":

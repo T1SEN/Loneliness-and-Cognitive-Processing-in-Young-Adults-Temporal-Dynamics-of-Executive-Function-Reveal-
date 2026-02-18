@@ -9,7 +9,7 @@ from typing import Any, Dict
 
 import pandas as pd
 
-from ..constants import get_results_dir
+from ..constants import get_results_dir, get_wcst_trials_path
 from ..core import ensure_participant_id
 
 
@@ -23,7 +23,8 @@ def _coerce_bool_series(series: pd.Series) -> pd.Series:
 
 
 def _read_trials_csv(data_dir: Path) -> pd.DataFrame:
-    trials_path = data_dir / "4b_wcst_trials.csv"
+    _ = data_dir  # kept for API compatibility
+    trials_path = get_wcst_trials_path("overall")
     if not trials_path.exists():
         return pd.DataFrame()
     df = pd.read_csv(trials_path, encoding="utf-8-sig")

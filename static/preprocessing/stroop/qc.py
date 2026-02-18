@@ -10,7 +10,7 @@ from typing import Iterable, Set
 import numpy as np
 import pandas as pd
 
-from ..constants import STROOP_RT_MIN, STROOP_RT_MAX
+from ..constants import STROOP_RT_MIN, STROOP_RT_MAX, get_stroop_trials_path
 from ..core import ensure_participant_id
 
 STROOP_REQUIRED_TRIALS = 108
@@ -75,10 +75,8 @@ def clean_stroop_trials(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def prepare_stroop_trials(data_dir: Path) -> pd.DataFrame:
-    # Resolve both 4a/4c naming conventions.
-    trials_path = data_dir / "4a_stroop_trials.csv"
-    if not trials_path.exists():
-        trials_path = data_dir / "4c_stroop_trials.csv"
+    _ = data_dir  # kept for API compatibility
+    trials_path = get_stroop_trials_path("overall")
     if not trials_path.exists():
         return pd.DataFrame(columns=["participant_id"])
     df = pd.read_csv(trials_path, encoding="utf-8-sig")

@@ -1,7 +1,7 @@
 ﻿Measure,Column,N,Mean,SD,M_SD,r_sb,Reliability_note
-Stroop Interference RT (ms),stroop_interference,197.0,138.6802030456853,104.15904373502714,138.68 (104.16),0.6558290641661544,
-Interference RT slope,stroop_interference_slope,197.0,-0.0705920921602149,62.853763203715246,-0.07 (62.85),,Split-half reliability not estimated; each half contains too few trials per condition per segment (~9) for stable per-person slope estimates.
-WCST PE rate (%),wcst_perseverative_error_rate,197.0,10.636210713096954,6.138233550402466,10.64 (6.14),,"Split-half reliability not estimated; PE rate is a single proportion tied to rule shifts, yielding non-equivalent halves and unstable split-half estimates."
-Exploration RT (ms),wcst_exploration_rt_all,,,,NA,0.311790998799254,
-Confirmation RT (ms),wcst_confirmation_rt_all,,,,NA,0.7420259899370728,
-Exploitation RT (ms),wcst_exploitation_rt_all,,,,NA,0.8755563805906968,
+Stroop Interference RT (ms),stroop_interference,212.0,139.46616166950918,104.26386222396148,139.47 (104.26),0.6309763932054769,
+Interference RT slope,stroop_interference_slope,212.0,-0.855415690550545,63.53871403511608,-0.86 (63.54),,Split-half reliability not estimated; each half contains too few trials per condition per segment (~9) for stable per-person slope estimates.
+WCST PE rate (%),wcst_perseverative_error_rate,212.0,10.69543862806551,6.099151005418849,10.70 (6.10),,"Split-half reliability not estimated; PE rate is a single proportion tied to rule shifts, yielding non-equivalent halves and unstable split-half estimates."
+Exploration RT (ms),wcst_exploration_rt_all,208.0,2003.186023825022,941.9387194302334,2003.19 (941.94),0.313943237130527,
+Confirmation RT (ms),wcst_confirmation_rt_all,212.0,1939.7631729035131,565.6243144545451,1939.76 (565.62),0.7464373561235425,
+Exploitation RT (ms),wcst_exploitation_rt_all,212.0,1383.4807521839311,401.71613271179217,1383.48 (401.72),0.8561088849170441,

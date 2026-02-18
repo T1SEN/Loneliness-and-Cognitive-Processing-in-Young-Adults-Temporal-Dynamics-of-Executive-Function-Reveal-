@@ -8,8 +8,9 @@ from pathlib import Path
 
 import pandas as pd
 
-from .constants import get_results_dir
+from .constants import get_public_file, get_results_dir
 from .core import ensure_participant_id
+from .public_validate import get_common_public_ids
 from .stroop.qc import prepare_stroop_trials
 from .stroop.features import build_stroop_features
 from .wcst.qc import prepare_wcst_trials
@@ -17,10 +18,8 @@ from .wcst.features import build_wcst_features
 
 
 def derive_overall_features(data_dir: Path | None = None) -> pd.DataFrame:
-    if data_dir is None:
-        data_dir = get_results_dir("overall")
-
-    features_path = data_dir / "5_overall_features.csv"
+    _ = data_dir  # public-only runtime
+    features_path = get_public_file("features")
     if not features_path.exists():
         return pd.DataFrame()
 
@@ -42,11 +41,7 @@ def build_overall_features(
     wcst = prepare_wcst_trials(data_dir)
 
     if qc_ids is None:
-        ids_path = data_dir / "filtered_participant_ids.csv"
-        if ids_path.exists():
-            ids_df = pd.read_csv(ids_path, encoding="utf-8-sig")
-            ids_df = ensure_participant_id(ids_df)
-            qc_ids = set(ids_df["participant_id"].dropna().astype(str))
+        qc_ids = get_common_public_ids(validate=True)
 
     if qc_ids:
         stroop = stroop[stroop["participant_id"].isin(qc_ids)].copy()
@@ -71,7 +66,7 @@ def build_overall_features(
         features = features.merge(wcst_features, on="participant_id", how="left")
 
     if save:
-        output_path = data_dir / "5_overall_features.csv"
+        output_path = get_public_file("features")
         features.to_csv(output_path, index=False, encoding="utf-8-sig")
         if verbose:
             print(f"  [FEATURES] Saved: {output_path}")

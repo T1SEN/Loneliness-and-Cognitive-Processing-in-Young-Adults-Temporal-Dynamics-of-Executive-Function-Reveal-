@@ -1,6 +1,4 @@
-﻿"""
-Survey QC helpers.
-"""
+﻿"""Survey QC helpers for public-only runtime."""
 
 from __future__ import annotations
 
@@ -10,7 +8,8 @@ from typing import Optional, Set
 
 import pandas as pd
 
-from ..constants import RAW_DIR
+from ..constants import get_public_file
+from ..core import ensure_participant_id, normalize_gender_series
 
 
 @dataclass
@@ -18,9 +17,7 @@ class SurveyQCCriteria:
     ucla_score_required: bool = True
     dass_subscales_required: bool = True
     gender_required: bool = True
-    date_filter: Optional[pd.Timestamp] = field(
-        default_factory=lambda: pd.Timestamp("2025-09-01", tz="UTC")
-    )
+    date_filter: Optional[pd.Timestamp] = field(default=None)
 
 
 def get_survey_valid_participants(
@@ -28,78 +25,56 @@ def get_survey_valid_participants(
     criteria: Optional[SurveyQCCriteria] = None,
     verbose: bool = False,
 ) -> Set[str]:
-    if data_dir is None:
-        data_dir = RAW_DIR
+    _ = data_dir
     if criteria is None:
         criteria = SurveyQCCriteria()
 
-    valid_ids: Set[str] = set()
+    surveys_path = get_public_file("surveys")
+    demo_path = get_public_file("demographics")
 
-    surveys_path = data_dir / "2_surveys_results.csv"
-    if not surveys_path.exists():
+    if not surveys_path.exists() or not demo_path.exists():
         if verbose:
-            print(f"[WARN] surveys file not found: {surveys_path}")
-        return valid_ids
+            print("[WARN] Missing required public survey/demographics files.")
+        return set()
 
     surveys = pd.read_csv(surveys_path, encoding="utf-8-sig")
-    surveys["surveyName"] = surveys["surveyName"].str.lower()
+    surveys = ensure_participant_id(surveys)
+    if "surveyName" not in surveys.columns:
+        return set()
+
+    surveys["surveyName"] = surveys["surveyName"].astype(str).str.lower()
 
     ucla_df = surveys[surveys["surveyName"] == "ucla"]
     if criteria.ucla_score_required:
-        ucla_valid = set(ucla_df[ucla_df["score"].notna()]["participantId"].unique())
+        ucla_valid = set(ucla_df[pd.to_numeric(ucla_df.get("score"), errors="coerce").notna()]["participant_id"].astype(str))
     else:
-        ucla_valid = set(ucla_df["participantId"].unique())
+        ucla_valid = set(ucla_df["participant_id"].dropna().astype(str))
 
     dass_df = surveys[surveys["surveyName"].str.contains("dass", na=False)]
-    if criteria.dass_subscales_required:
-        dass_valid = set(
-            dass_df[
-                (dass_df["score_D"].notna())
-                & (dass_df["score_A"].notna())
-                & (dass_df["score_S"].notna())
-            ]["participantId"].unique()
+    if criteria.dass_subscales_required and all(c in dass_df.columns for c in ["score_D", "score_A", "score_S"]):
+        mask = (
+            pd.to_numeric(dass_df["score_D"], errors="coerce").notna()
+            & pd.to_numeric(dass_df["score_A"], errors="coerce").notna()
+            & pd.to_numeric(dass_df["score_S"], errors="coerce").notna()
         )
+        dass_valid = set(dass_df.loc[mask, "participant_id"].dropna().astype(str))
     else:
-        dass_valid = set(dass_df["participantId"].unique())
+        dass_valid = set(dass_df["participant_id"].dropna().astype(str))
 
     valid_ids = ucla_valid & dass_valid
 
-    if verbose:
-        print(
-            f"Survey complete: {len(valid_ids)} (UCLA: {len(ucla_valid)}, DASS: {len(dass_valid)})"
-        )
-
     if criteria.gender_required:
-        participants_path = data_dir / "1_participants_info.csv"
-        if participants_path.exists():
-            participants_df = pd.read_csv(participants_path, encoding="utf-8-sig")
-            missing_gender_ids = set(
-                participants_df[
-                    participants_df["gender"].isna()
-                    | (participants_df["gender"].astype(str).str.strip() == "")
-                ]["participantId"].dropna()
-            )
-            to_remove = valid_ids & missing_gender_ids
-            if to_remove and verbose:
-                print(f"  [INFO] excluded for missing gender: {len(to_remove)}")
-            valid_ids -= to_remove
+        demo = pd.read_csv(demo_path, encoding="utf-8-sig")
+        demo = ensure_participant_id(demo)
+        if "gender" in demo.columns:
+            gender_norm = normalize_gender_series(demo["gender"])
+            gender_valid = set(demo.loc[gender_norm.notna(), "participant_id"].dropna().astype(str))
+            valid_ids = valid_ids & gender_valid
 
-    if criteria.date_filter is not None:
-        participants_path = data_dir / "1_participants_info.csv"
-        if participants_path.exists():
-            participants_df = pd.read_csv(participants_path, encoding="utf-8-sig")
-            if "createdAt" in participants_df.columns:
-                participants_df["createdAt"] = pd.to_datetime(
-                    participants_df["createdAt"], errors="coerce", utc=True
-                )
-                recent_ids = set(
-                    participants_df[participants_df["createdAt"] >= criteria.date_filter][
-                        "participantId"
-                    ].dropna()
-                )
-                excluded = valid_ids - recent_ids
-                if excluded and verbose:
-                    print(f"  [INFO] excluded for date cutoff: {len(excluded)}")
-                valid_ids = valid_ids & recent_ids
+    if criteria.date_filter is not None and verbose:
+        print("[INFO] date_filter is ignored in public-only mode (no timestamp fields).")
+
+    if verbose:
+        print(f"Survey QC valid participants: {len(valid_ids)}")
 
     return valid_ids

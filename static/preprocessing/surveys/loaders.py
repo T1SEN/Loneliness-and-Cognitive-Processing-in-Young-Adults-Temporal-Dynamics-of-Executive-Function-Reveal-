@@ -1,5 +1,5 @@
-﻿"""
-Survey loaders.
+"""
+Survey loaders (public-only runtime).
 """
 
 from __future__ import annotations
@@ -8,18 +8,23 @@ from pathlib import Path
 
 import pandas as pd
 
+from ..constants import get_public_file
 from ..core import ensure_participant_id, normalize_gender_series
 
 
 def load_participants(data_dir: Path) -> pd.DataFrame:
-    df = pd.read_csv(data_dir / "1_participants_info.csv", encoding="utf-8")
+    _ = data_dir  # kept for API compatibility
+    df = pd.read_csv(get_public_file("demographics"), encoding="utf-8-sig")
     df = ensure_participant_id(df)
     df["gender"] = normalize_gender_series(df["gender"])
+    if "education" not in df.columns:
+        df["education"] = ""
     return df[["participant_id", "age", "gender", "education"]]
 
 
 def load_ucla_scores(data_dir: Path) -> pd.DataFrame:
-    surveys = pd.read_csv(data_dir / "2_surveys_results.csv", encoding="utf-8")
+    _ = data_dir
+    surveys = pd.read_csv(get_public_file("surveys"), encoding="utf-8-sig")
     surveys = ensure_participant_id(surveys)
 
     if "surveyName" in surveys.columns:
@@ -37,7 +42,8 @@ def load_ucla_scores(data_dir: Path) -> pd.DataFrame:
 
 
 def load_dass_scores(data_dir: Path) -> pd.DataFrame:
-    surveys = pd.read_csv(data_dir / "2_surveys_results.csv", encoding="utf-8")
+    _ = data_dir
+    surveys = pd.read_csv(get_public_file("surveys"), encoding="utf-8-sig")
     surveys = ensure_participant_id(surveys)
 
     if "surveyName" in surveys.columns:
@@ -70,9 +76,21 @@ def load_dass_scores(data_dir: Path) -> pd.DataFrame:
         dass_data = dass_data.dropna(subset=["score"])
         dass_scores = dass_data.groupby(["participant_id", "questionText"])["score"].sum().unstack(fill_value=0)
 
-        dep_items = [col for col in dass_scores.columns if any(x in str(col).lower() for x in ["meaningless", "nothing", "enthused", "worth", "positive", "initiative", "future"])]
-        anx_items = [col for col in dass_scores.columns if any(x in str(col).lower() for x in ["breathing", "trembling", "worried", "panic", "heart", "scared", "dry"])]
-        stress_items = [col for col in dass_scores.columns if any(x in str(col).lower() for x in ["wind down", "over-react", "nervous", "agitated", "relax", "intolerant", "touchy"])]
+        dep_items = [
+            col
+            for col in dass_scores.columns
+            if any(x in str(col).lower() for x in ["meaningless", "nothing", "enthused", "worth", "positive", "initiative", "future"])
+        ]
+        anx_items = [
+            col
+            for col in dass_scores.columns
+            if any(x in str(col).lower() for x in ["breathing", "trembling", "worried", "panic", "heart", "scared", "dry"])
+        ]
+        stress_items = [
+            col
+            for col in dass_scores.columns
+            if any(x in str(col).lower() for x in ["wind down", "over-react", "nervous", "agitated", "relax", "intolerant", "touchy"])
+        ]
 
         dass_summary = pd.DataFrame()
         dass_summary["participant_id"] = dass_scores.index
@@ -85,7 +103,8 @@ def load_dass_scores(data_dir: Path) -> pd.DataFrame:
 
 
 def load_survey_items(data_dir: Path) -> pd.DataFrame:
-    surveys = pd.read_csv(data_dir / "2_surveys_results.csv", encoding="utf-8")
+    _ = data_dir
+    surveys = pd.read_csv(get_public_file("surveys"), encoding="utf-8-sig")
     surveys = ensure_participant_id(surveys)
 
     def _extract_items(df: pd.DataFrame, prefix: str, n_items: int) -> pd.DataFrame:

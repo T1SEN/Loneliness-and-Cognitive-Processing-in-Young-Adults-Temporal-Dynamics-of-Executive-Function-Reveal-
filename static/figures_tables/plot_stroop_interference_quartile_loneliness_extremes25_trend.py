@@ -19,6 +19,7 @@ plt.rcParams["axes.unicode_minus"] = False
 from static.analysis.utils import get_output_dir, get_figures_dir
 from static.preprocessing.constants import STROOP_RT_MIN, STROOP_RT_MAX, get_results_dir, get_stroop_trials_path
 from static.preprocessing.core import ensure_participant_id
+from static.preprocessing.public_validate import get_common_public_ids
 from static.preprocessing.surveys import load_ucla_scores
 
 LOW_LABEL = "Low loneliness (bottom 25%)"
@@ -88,15 +89,7 @@ def _group_label(group: str, n_val: int) -> str:
 
 
 def _load_qc_ids() -> set[str]:
-    task_dir = get_results_dir("overall")
-    qc_ids_path = task_dir / "filtered_participant_ids.csv"
-    if not qc_ids_path.exists():
-        return set()
-    qc_ids = pd.read_csv(qc_ids_path, encoding="utf-8-sig")
-    qc_ids = ensure_participant_id(qc_ids)
-    if "participant_id" not in qc_ids.columns:
-        return set()
-    return set(qc_ids["participant_id"].dropna().astype(str))
+    return get_common_public_ids(validate=True)
 
 
 def _build_table(output_dir: Path) -> pd.DataFrame:

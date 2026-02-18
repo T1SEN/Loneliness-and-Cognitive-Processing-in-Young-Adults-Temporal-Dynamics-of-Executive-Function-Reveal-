@@ -1,226 +1,70 @@
-# Loneliness Article - OSF Submission
+﻿# Loneliness Article - Public Reproduction
 
-This repository contains code, data, and outputs for the loneliness and executive function study. It includes preprocessing, primary analyses, and supplementary analyses used for the manuscript and OSF submission.
+This repository is configured for **public-only reproduction** of the manuscript analyses.
+
+## Runtime data contract
+
+All analyses run from `data/public/` and require exactly these files:
+
+- `data/public/demographics_public.csv`
+- `data/public/surveys_public.csv`
+- `data/public/features_public.csv`
+- `data/public/stroop_trials_public.csv`
+- `data/public/wcst_trials_public.csv`
+
+Rules enforced at pipeline start:
+
+- every file must include `public_id`
+- `public_id` sets must match exactly across all five files
+- `demographics_public.csv` must have columns `public_id, gender, age`
+- `gender` must normalize to `male` or `female`
+- `age` must be numeric
+
+## Install
+
+```bash
+python -m pip install -r requirements.txt
+```
+
+## Run full reproduction (main + sensitivity + supplementary)
+
+```bash
+python -m static.run_overall_pipeline --expected-n 212
+```
+
+Notes:
+
+- default run is locked to manuscript common sample (`N=212`)
+- to run intentionally with a different sample size:
+
+```bash
+python -m static.run_overall_pipeline --expected-n 212 --allow-n-mismatch
+```
+
+## Key outputs
+
+- Core tables: `outputs/tables/core/overall/`
+- Core stats: `outputs/stats/core/`
+- Supplementary stats: `outputs/stats/supplementary/`
+- Figures (PNG/PDF): `outputs/figures/supplementary/`
+
+## Public data generation (deterministic)
+
+If you need to regenerate `data/public/` from restricted source files:
+
+```bash
+python -m static.preprocessing.make_public_data --input-dir <restricted_input_dir> --output-dir data/public
+```
+
+Generation rules:
+
+- deterministic `public_id` from `participantId` (SHA-256 based)
+- no `metadata.json` output
+- demographics `gender` normalized to `male/female`
 
 ## Repository structure
 
-- `data/public/` : de-identified public data bundle
-- `materials/` : task runtime code (sanitized subset for blind review)
-- `static/preprocessing/` : preprocessing and QC code
-- `static/analysis/` : core analyses and supplementary generators
-- `static/wcst_phase/` : WCST phase analyses
-- `static/stroop_lmm/` : Stroop trial-level mixed models
-- `static/stroop_supplementary/` : Stroop supplementary analyses
-- `static/figures_tables/` : figure and table scripts
-- `outputs/` : generated figures and statistics
-- `doc/` : methods and supplementary materials
-
-## Requirements
-
-- Python 3.11+ recommended
-- Install packages:
-
-```
-python -m pip install -r requirements.txt
-```
-
-## Quick start (reproduce analyses)
-
-From the repository root:
-
-```
-python -m static.run_overall_pipeline
-```
-
-By default, the pipeline enforces manuscript sample size (`N=212`) and stops on mismatch.
-
-If `data/complete_overall/` is already built, you can skip preprocessing (restricted data only):
-
-```
-python -m static.run_overall_pipeline --skip-preprocess
-```
-
-If you intentionally need to run with a non-manuscript sample size, override explicitly:
-
-```
-python -m static.run_overall_pipeline --skip-preprocess --allow-n-mismatch
-```
-
-## Key analysis conventions
-
-- All regressions use OLS (non-robust) standard errors.
-- Covariates: DASS Depression, Anxiety, Stress, age, gender.
-- WCST phase RTs are computed on all trials (errors included) using valid RTs and excluding timeouts.
-- Stroop trial-level LMMs are reported in the Supplementary Materials.
-- The PRP task is present in the dataset but is not used in the manuscript analyses.
-
-## Outputs
-
-Primary outputs are under:
-
-- `outputs/stats/core/overall/`
-- `outputs/figures/core/`
-
-Supplementary outputs are under:
-
-- `outputs/stats/supplementary/overall/`
-- `outputs/figures/supplementary/`
-
-## Documentation
-
-- `doc/methods_detailed.md` : detailed methods (English, OSF-ready)
-- `doc/supplementary_materials.md` : supplementary results (English, OSF-ready)
-
-## OSF submission (detailed guide)
-
-This section describes how to prepare a **public OSF package** for this project.
-It is written to maximize reproducibility while minimizing re-identification risk.
-
-### OSF readiness (current repo)
-
-Status checklist:
-
-- [x] Analysis pipeline and outputs reproducible (`static/run_overall_pipeline.py`)
-- [x] Methods and supplementary docs present (`doc/`)
-- [x] Raw/complete datasets removed from this public repository
-- [x] `materials/` trimmed to task-only files (no consent/IRB contact text)
-- [ ] `LICENSE` file missing
-- [ ] `CITATION.cff` file missing
-- [x] `data/public/` created (de-identified public files)
-- [ ] Data dictionary not created yet
-
-Known sensitive fields in current data (do **not** make public as-is):
-
-- Raw/complete datasets contain `participantId`/`participant_id` and are restricted (not included here)
-
-### Public vs. restricted content
-
-**Recommended public content**
-
-- `README.md`
-- `requirements.txt`
-- `doc/`
-- `static/`
-- `outputs/` (derived results only)
-- `data/public/` (de-identified; generated by script below)
-
-**Recommended restricted/private content**
-
-- `data/raw/` (restricted; not included in this repo)
-- `data/complete_overall/` (restricted; not included in this repo)
-- Any file containing direct identifiers or exact timestamps
-
-Direct identifiers to remove or mask include:
-
-- `studentId`
-- `birthDate`
-- `courseName`
-- `professorName`
-- `classSection`
-- `createdAt`
-
-### De-identification checklist (public data)
-
-- Remove all direct identifiers listed above.
-- Replace `participantId` with a random, non-reversible ID (one-way mapping stored privately).
-- Remove exact timestamps; if necessary, coarsen to date or study week.
-- Bin `age` (e.g., 18-19, 20-21, 22-24, 25+), especially for small cells.
-- Remove any free-text fields.
-- Verify that no table or output exposes very small cells (e.g., n < 5).
-
-### Suggested public data layout
-
-Public-only folder (already created):
-
-```
-data/public/
-  surveys_public.csv
-  features_public.csv
-  stroop_trials_public.csv
-  wcst_trials_public.csv
-  metadata.json                   # sources + counts + removed columns
-```
-
-Each public file contains a `public_id` column (randomized, consistent across files). The original participant IDs are not stored in the public bundle.
-
-### Codebook / data dictionary
-
-Add a data dictionary with:
-
-- column name
-- data type
-- units / scale
-- valid ranges
-- missingness codes
-- derivation notes for computed variables
-
-Recommended location:
-
-- `doc/data_dictionary.md` (or `data/public/codebook.csv`)
-
-### Reproducibility steps (public package)
-
-1. Create a clean environment and install dependencies:
-
-```
-python -m pip install -r requirements.txt
-```
-
-2. Run the full pipeline from repository root:
-
-```
-python -m static.run_overall_pipeline
-```
-
-Note: Full reproduction requires restricted datasets (`data/raw/`, `data/complete_overall/`) that are not included in the public repository.
-
-2b. (Optional) Regenerate de-identified public data:
-
-```
-python -m static.preprocessing.make_public_data
-```
-
-3. Verify that expected outputs exist:
-
-- `outputs/stats/core/overall/`
-- `outputs/figures/core/`
-- `outputs/stats/supplementary/overall/`
-- `outputs/figures/supplementary/`
-
-4. (Optional) Record file hashes for OSF integrity checks:
-
-```
-Get-FileHash outputs/stats/core/overall/* | Format-Table -AutoSize
-```
-
-### OSF component map (example)
-
-- **Code and documentation**: `README.md`, `requirements.txt`, `static/`, `doc/`
-- **Derived outputs**: `outputs/`
-- **Public data (de-identified)**: `data/public/`
-- **Restricted raw data**: `data/raw/` (private component or not uploaded)
-
-### Blind review check (current repo)
-
-- No institution- or author-identifying strings found in code/docs after sanitizing `materials/`
-- PDF metadata for figures contains only Matplotlib creator/producer fields (no author)
-- Raw/complete datasets still contain `participantId` and should remain restricted for review
-
-### Citation and license (recommended)
-
-Add the following to the repository for OSF compliance:
-
-- `LICENSE` (e.g., CC-BY 4.0 for documents, MIT for code)
-- `CITATION.cff` (preferred) or a citation block in `README.md`
-
-### Data use / ethics statement (recommended)
-
-Include a brief statement indicating:
-
-- data are de-identified
-- only de-identified data are publicly shared
-- raw data are restricted or not shared
-
-## Reproducibility note (S7 in Supplementary)
-
-S7.1 tests general within-task slowing (segment x UCLA) across conditions. The main hypothesis concerns interference drift, which is tested directly in S7.2 via trial_scaled x cond x UCLA. Therefore, a null S7.1 interaction does not contradict a significant S7.2 interaction.
+- `data/public/` public runtime inputs
+- `static/` analysis and preprocessing code
+- `outputs/` generated results
+- `doc/` manuscript support documents

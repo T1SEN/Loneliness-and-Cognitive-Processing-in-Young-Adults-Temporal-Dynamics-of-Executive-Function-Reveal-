@@ -17,6 +17,7 @@ from ..constants import (
     WCST_VALID_CARDS,
     WCST_MIN_TRIALS,
     WCST_MAX_SINGLE_CHOICE,
+    get_wcst_trials_path,
 )
 from ..core import ensure_participant_id
 
@@ -103,7 +104,8 @@ def clean_wcst_trials(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def prepare_wcst_trials(data_dir: Path) -> pd.DataFrame:
-    trials_path = data_dir / "4b_wcst_trials.csv"
+    _ = data_dir  # kept for API compatibility
+    trials_path = get_wcst_trials_path("overall")
     if not trials_path.exists():
         return pd.DataFrame(columns=["participant_id"])
     df = pd.read_csv(trials_path, encoding="utf-8-sig")

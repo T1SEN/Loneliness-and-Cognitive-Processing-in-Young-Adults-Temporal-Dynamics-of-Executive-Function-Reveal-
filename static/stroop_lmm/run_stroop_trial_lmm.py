@@ -17,10 +17,11 @@ if str(ROOT) not in sys.path:
 
 from static.preprocessing.constants import OUTPUT_STATS_SUPP_DIR, get_results_dir, get_stroop_trials_path
 from static.preprocessing.core import ensure_participant_id
+from static.preprocessing.public_validate import get_common_public_ids
 from static.preprocessing.surveys import load_dass_scores, load_participants, load_ucla_scores
 
 
-OUTPUT_DIR = OUTPUT_STATS_SUPP_DIR / "overall" / "stroop_lmm"
+OUTPUT_DIR = OUTPUT_STATS_SUPP_DIR / "stroop_lmm"
 
 
 def _read_csv(path: Path) -> pd.DataFrame:
@@ -58,15 +59,8 @@ def load_base_data() -> pd.DataFrame:
 
 
 def load_qc_ids(task: str) -> set[str]:
-    task_dir = get_results_dir(task)
-    qc_ids_path = task_dir / "filtered_participant_ids.csv"
-    if not qc_ids_path.exists():
-        return set()
-    qc_ids = _read_csv(qc_ids_path)
-    qc_ids = ensure_participant_id(qc_ids)
-    if "participant_id" not in qc_ids.columns:
-        return set()
-    return set(qc_ids["participant_id"].dropna().astype(str))
+    _ = task
+    return get_common_public_ids(validate=True)
 
 
 def prepare_stroop_trials() -> pd.DataFrame:

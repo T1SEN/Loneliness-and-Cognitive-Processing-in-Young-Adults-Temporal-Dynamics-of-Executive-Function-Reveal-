@@ -30,9 +30,8 @@ from static.preprocessing.constants import (
     OUTPUT_STATS_CORE_DIR,
     OUTPUT_STATS_SUPP_DIR,
     VALID_TASKS,
-    get_results_dir,
 )
-from static.preprocessing.core import ensure_participant_id
+from static.preprocessing.public_validate import get_common_public_ids
 
 # =============================================================================
 # VARIABLE DEFINITIONS
@@ -95,16 +94,8 @@ STANDARDIZED_PREDICTORS = [
 # =============================================================================
 
 def _load_qc_ids(task: str) -> set[str]:
-    ids_path = get_results_dir(task) / "filtered_participant_ids.csv"
-    if not ids_path.exists():
-        return set()
-    ids_df = pd.read_csv(ids_path, encoding="utf-8-sig")
-    if ids_df.empty:
-        return set()
-    ids_df = ensure_participant_id(ids_df)
-    if "participant_id" not in ids_df.columns:
-        return set()
-    return set(ids_df["participant_id"].dropna().astype(str))
+    _ = task  # overall-only public runtime
+    return get_common_public_ids(validate=True)
 
 
 def _apply_qc_filter(df: pd.DataFrame, task: str) -> pd.DataFrame:
@@ -149,13 +140,14 @@ def filter_vars(
 
 
 def get_output_dir(task: str, bucket: str = "core") -> Path:
-    """Return task-specific output directory for basic analysis."""
+    """Return stats output directory (public runtime: no task subfolder)."""
+    _ = task  # retained for API compatibility
     bucket_norm = (bucket or "core").strip().lower()
     if bucket_norm == "supplementary":
         base_dir = OUTPUT_STATS_SUPP_DIR
     else:
         base_dir = OUTPUT_STATS_CORE_DIR
-    output_dir = base_dir / task
+    output_dir = base_dir
     output_dir.mkdir(parents=True, exist_ok=True)
     return output_dir
 

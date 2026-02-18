@@ -66,7 +66,8 @@ def _format_cov_note(cov_label: str) -> str:
 
 
 def _load_hierarchical(task: str) -> pd.DataFrame:
-    hr_path = OUTPUT_STATS_CORE_DIR / task / "hierarchical_results.csv"
+    _ = task
+    hr_path = OUTPUT_STATS_CORE_DIR / "hierarchical_results.csv"
     if not hr_path.exists():
         print(f"  Warning: {hr_path} not found")
         return pd.DataFrame()
@@ -193,12 +194,12 @@ def generate_table4():
     print("=" * 60)
 
     r = pd.read_csv(
-        OUTPUT_STATS_CORE_DIR / "overall" / "correlation_matrix.csv",
+        OUTPUT_STATS_CORE_DIR / "correlation_matrix.csv",
         index_col=0,
         encoding="utf-8-sig",
     )
     p = pd.read_csv(
-        OUTPUT_STATS_CORE_DIR / "overall" / "correlation_pvalues.csv",
+        OUTPUT_STATS_CORE_DIR / "correlation_pvalues.csv",
         index_col=0,
         encoding="utf-8-sig",
     )

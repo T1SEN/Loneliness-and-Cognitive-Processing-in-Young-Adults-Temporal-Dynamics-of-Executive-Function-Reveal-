@@ -14,8 +14,7 @@ if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))
 
 from static.analysis.utils import get_output_dir
-from static.preprocessing.constants import get_results_dir
-from static.preprocessing.core import ensure_participant_id
+from static.preprocessing.public_validate import get_common_public_ids
 from static.preprocessing.wcst.phase import label_wcst_phases
 from static.preprocessing.wcst.utils import prepare_wcst_trials
 
@@ -24,15 +23,8 @@ PHASES = ["exploration", "confirmation", "exploitation"]
 
 
 def load_qc_ids(task: str) -> set[str]:
-    task_dir = get_results_dir(task)
-    qc_ids_path = task_dir / "filtered_participant_ids.csv"
-    if not qc_ids_path.exists():
-        return set()
-    qc_ids = pd.read_csv(qc_ids_path, encoding="utf-8-sig")
-    qc_ids = ensure_participant_id(qc_ids)
-    if "participant_id" not in qc_ids.columns:
-        return set()
-    return set(qc_ids["participant_id"].dropna().astype(str))
+    _ = task
+    return get_common_public_ids(validate=True)
 
 
 def _split_half_stats(df: pd.DataFrame, phase_col: str, phase_value: str) -> dict[str, float]:

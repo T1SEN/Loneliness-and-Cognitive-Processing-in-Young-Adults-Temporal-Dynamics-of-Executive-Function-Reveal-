@@ -46,9 +46,10 @@ from static.preprocessing.constants import (
     STROOP_RT_MIN,
     STROOP_RT_MAX,
     get_stroop_trials_path,
-    get_results_dir,
+    get_wcst_trials_path,
 )
 from static.preprocessing.core import ensure_participant_id
+from static.preprocessing.public_validate import get_common_public_ids
 from static.preprocessing.wcst.qc import clean_wcst_trials
 
 
@@ -65,15 +66,8 @@ def _coerce_bool(series: pd.Series) -> pd.Series:
 
 
 def _load_qc_ids(task: str) -> set[str]:
-    task_dir = get_results_dir(task)
-    ids_path = task_dir / "filtered_participant_ids.csv"
-    if not ids_path.exists():
-        return set()
-    ids_df = pd.read_csv(ids_path, encoding="utf-8-sig")
-    ids_df = ensure_participant_id(ids_df)
-    if "participant_id" not in ids_df.columns:
-        return set()
-    return set(ids_df["participant_id"].dropna().astype(str))
+    _ = task
+    return get_common_public_ids(validate=True)
 
 
 def _prepare_stroop_trials(task: str) -> pd.DataFrame:
@@ -133,8 +127,8 @@ def _load_stroop_trials_raw(task: str) -> pd.DataFrame:
 
 
 def _prepare_wcst_trials(task: str) -> pd.DataFrame:
-    data_dir = get_results_dir(task)
-    wcst_raw = _read_csv(data_dir / "4b_wcst_trials.csv")
+    _ = task
+    wcst_raw = _read_csv(get_wcst_trials_path("overall"))
     if wcst_raw.empty:
         return wcst_raw
     wcst = clean_wcst_trials(wcst_raw)

@@ -119,6 +119,7 @@ def _format_m_sd(mean: float, sd: float, decimals: int = 2) -> str:
 
 
 def _load_sd_lookup(task: str) -> dict[str, float]:
+    _ = task
     sd_lookup: dict[str, float] = {}
     try:
         df = get_analysis_data(task)
@@ -130,7 +131,7 @@ def _load_sd_lookup(task: str) -> dict[str, float]:
     except Exception:
         df = None
 
-    desc_path = OUTPUT_STATS_CORE_DIR / task / "table1_descriptives.csv"
+    desc_path = OUTPUT_STATS_CORE_DIR / "table1_descriptives.csv"
     desc = _safe_read_csv(desc_path)
     if not desc.empty and "Column" in desc.columns:
         for _, row in desc.iterrows():
@@ -160,7 +161,8 @@ def _format_p(p: float) -> str:
 
 
 def compute_table1(task: str, output_dir: Path) -> dict[str, pd.DataFrame]:
-    stats_dir = OUTPUT_STATS_CORE_DIR / task
+    _ = task
+    stats_dir = OUTPUT_STATS_CORE_DIR
     desc_by_gender = _safe_read_csv(stats_dir / "table1_descriptives_by_gender.csv")
     desc_total = _safe_read_csv(stats_dir / "table1_descriptives.csv")
     alphas = _compute_scale_alphas(task)
@@ -205,7 +207,7 @@ def compute_table1(task: str, output_dir: Path) -> dict[str, pd.DataFrame]:
         ),
     }
 
-    rel_dir = OUTPUT_STATS_SUPP_DIR / task
+    rel_dir = OUTPUT_STATS_SUPP_DIR
     stroop_rel = _safe_read_csv(rel_dir / "stroop_interference_reliability.csv")
     wcst_rel = _safe_read_csv(rel_dir / "wcst_phase_split_half_reliability.csv")
 
@@ -267,8 +269,9 @@ def compute_table1(task: str, output_dir: Path) -> dict[str, pd.DataFrame]:
 
 
 def compute_table2(task: str, output_dir: Path) -> pd.DataFrame:
-    r_path = OUTPUT_STATS_CORE_DIR / task / "correlation_matrix.csv"
-    p_path = OUTPUT_STATS_CORE_DIR / task / "correlation_pvalues.csv"
+    _ = task
+    r_path = OUTPUT_STATS_CORE_DIR / "correlation_matrix.csv"
+    p_path = OUTPUT_STATS_CORE_DIR / "correlation_pvalues.csv"
     r = _safe_read_csv(r_path)
     p = _safe_read_csv(p_path)
     if r.empty or p.empty:
@@ -319,12 +322,12 @@ def compute_table2(task: str, output_dir: Path) -> pd.DataFrame:
 
 
 def compute_table3(task: str, output_dir: Path) -> pd.DataFrame:
-    hr_path = OUTPUT_STATS_CORE_DIR / task / "hierarchical_results.csv"
+    hr_path = OUTPUT_STATS_CORE_DIR / "hierarchical_results.csv"
     hr = _safe_read_csv(hr_path)
     if hr.empty:
         return pd.DataFrame()
 
-    r_path = OUTPUT_STATS_CORE_DIR / task / "correlation_matrix.csv"
+    r_path = OUTPUT_STATS_CORE_DIR / "correlation_matrix.csv"
     r = _safe_read_csv(r_path)
     if r.empty:
         return pd.DataFrame()

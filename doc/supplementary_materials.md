@@ -1,4 +1,4 @@
-# Supplementary Materials
+﻿# Supplementary Materials
 
 ## S1. Technical Specifications
 
@@ -283,29 +283,30 @@ Current manuscript reproduction is locked to the common-sample pipeline (target 
 ---
 
 **Output files**
-- `outputs/stats/supplementary/overall/wcst_phase_rt_ols_alltrials.csv`
-- `outputs/stats/supplementary/overall/wcst_phase_pre_exploit_rt_ols_alltrials.csv`
-- `outputs/stats/supplementary/overall/wcst_phase_split_half_reliability.csv`
-- `outputs/stats/supplementary/overall/wcst_phase_pre_exploit_rt_ols_m2_alltrials.csv`
-- `outputs/stats/supplementary/overall/wcst_phase_pre_exploit_rt_ols_m4_alltrials.csv`
-- `outputs/stats/supplementary/overall/wcst_phase_split_half_reliability_m2.csv`
-- `outputs/stats/supplementary/overall/wcst_phase_split_half_reliability_m4.csv`
-- `outputs/stats/supplementary/overall/stroop_lmm/stroop_trial_level_lmm.csv`
-- `outputs/stats/supplementary/overall/stroop_lmm/stroop_interference_slope_lmm.csv`
-- `outputs/stats/supplementary/overall/stroop_lmm/stroop_interference_slope_lmm_variants.csv`
-- `outputs/stats/supplementary/overall/stroop_random_slope_variance.csv`
-- `outputs/stats/supplementary/overall/stroop_interference_reliability.csv`
-- `outputs/stats/supplementary/overall/stroop_interference_slope_segment_sensitivity_2_3_6.csv`
-- `outputs/stats/supplementary/overall/stroop_interference_ttest.csv`
-- `outputs/stats/supplementary/overall/wcst_normative_stats.csv`
-- `outputs/stats/supplementary/overall/dass_total_models.csv`
-- `outputs/stats/supplementary/overall/ucla_first_model_comparison.csv`
-- `outputs/stats/supplementary/overall/ucla_fdr_qvalues.csv`
-- `outputs/stats/supplementary/overall/stroop_condition_balance_by_segment.csv`
-- `outputs/stats/supplementary/overall/stroop_condition_balance_by_segment_pivot.csv`
-- `outputs/stats/supplementary/overall/stroop_condition_balance_by_segment_2.csv`
-- `outputs/stats/supplementary/overall/stroop_condition_balance_by_segment_2_pivot.csv`
-- `outputs/stats/supplementary/overall/stroop_condition_balance_by_segment_3.csv`
-- `outputs/stats/supplementary/overall/stroop_condition_balance_by_segment_3_pivot.csv`
-- `outputs/stats/supplementary/overall/stroop_condition_balance_by_segment_6.csv`
-- `outputs/stats/supplementary/overall/stroop_condition_balance_by_segment_6_pivot.csv`
+- `outputs/stats/supplementary/wcst_phase_rt_ols_alltrials.csv`
+- `outputs/stats/supplementary/wcst_phase_pre_exploit_rt_ols_alltrials.csv`
+- `outputs/stats/supplementary/wcst_phase_split_half_reliability.csv`
+- `outputs/stats/supplementary/wcst_phase_pre_exploit_rt_ols_m2_alltrials.csv`
+- `outputs/stats/supplementary/wcst_phase_pre_exploit_rt_ols_m4_alltrials.csv`
+- `outputs/stats/supplementary/wcst_phase_split_half_reliability_m2.csv`
+- `outputs/stats/supplementary/wcst_phase_split_half_reliability_m4.csv`
+- `outputs/stats/supplementary/stroop_lmm/stroop_trial_level_lmm.csv`
+- `outputs/stats/supplementary/stroop_lmm/stroop_interference_slope_lmm.csv`
+- `outputs/stats/supplementary/stroop_lmm/stroop_interference_slope_lmm_variants.csv`
+- `outputs/stats/supplementary/stroop_random_slope_variance.csv`
+- `outputs/stats/supplementary/stroop_interference_reliability.csv`
+- `outputs/stats/supplementary/stroop_interference_slope_segment_sensitivity_2_3_6.csv`
+- `outputs/stats/supplementary/stroop_interference_ttest.csv`
+- `outputs/stats/supplementary/wcst_normative_stats.csv`
+- `outputs/stats/supplementary/dass_total_models.csv`
+- `outputs/stats/supplementary/ucla_first_model_comparison.csv`
+- `outputs/stats/supplementary/ucla_fdr_qvalues.csv`
+- `outputs/stats/supplementary/stroop_condition_balance_by_segment.csv`
+- `outputs/stats/supplementary/stroop_condition_balance_by_segment_pivot.csv`
+- `outputs/stats/supplementary/stroop_condition_balance_by_segment_2.csv`
+- `outputs/stats/supplementary/stroop_condition_balance_by_segment_2_pivot.csv`
+- `outputs/stats/supplementary/stroop_condition_balance_by_segment_3.csv`
+- `outputs/stats/supplementary/stroop_condition_balance_by_segment_3_pivot.csv`
+- `outputs/stats/supplementary/stroop_condition_balance_by_segment_6.csv`
+- `outputs/stats/supplementary/stroop_condition_balance_by_segment_6_pivot.csv`
+
