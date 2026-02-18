@@ -67,6 +67,7 @@ python -m static.preprocessing.make_public_data --input-dir <restricted_input_di
 Generation rules:
 
 - deterministic `public_id` from `participantId` (SHA-256 based)
+- include only IDs present in **all** required source files (set intersection)
 - no `metadata.json` output
 - demographics `gender` normalized to `male/female`
 

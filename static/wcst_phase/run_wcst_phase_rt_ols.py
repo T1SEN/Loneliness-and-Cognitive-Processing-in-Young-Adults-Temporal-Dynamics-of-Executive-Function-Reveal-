@@ -51,7 +51,7 @@ def load_qc_ids(task: str) -> set[str]:
 
 def prepare_wcst_trials() -> dict[str, object]:
     """
-    Backward-compatible loader for callers that expect the legacy dict contract.
+    Loader that returns a stable dict contract for WCST trial inputs.
 
     Returns:
         {

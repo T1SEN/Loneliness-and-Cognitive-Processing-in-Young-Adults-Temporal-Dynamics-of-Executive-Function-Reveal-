@@ -570,7 +570,7 @@ class _WcstPageState extends State<WcstPage> {
           'isNPE': isNPE,
         },
         
-        // Legacy compatibility fields
+        // Compatibility fields
         'trialIndex': _totalTrialCount - 1,
         'trialIndexInBlock': _currentTrialIndex,
         'stageName': _stage.toString(),
@@ -647,7 +647,7 @@ class _WcstPageState extends State<WcstPage> {
         "end_time": _testEndTime?.toIso8601String(),
         "duration_seconds": durationSeconds,
         
-        // Legacy fields (kept for compatibility)
+        // Compatibility fields
         "startTime": _testStartTime?.toIso8601String(),
         "endTime": _testEndTime?.toIso8601String(),
         "durationSeconds": durationSeconds,
@@ -733,7 +733,7 @@ class _WcstPageState extends State<WcstPage> {
       "categoryClrPercents": _catClrPercent,
       "conceptualLevelResponses": _conceptualRespCount,
       "hasFirstCLR": hasFirstCLR,
-      "trialsToFirstConceptualResp": firstClr1Based ?? 0,  // 1-based (legacy compatibility)
+      "trialsToFirstConceptualResp": firstClr1Based ?? 0,  // 1-based
       "trialsToFirstConceptualResp0": firstClr0Based,  // 0-based for log index matching
       "conceptualLevelResponsesPercent": clrPercent,
       "perseverativeResponses": _perseverativeResponseCount,

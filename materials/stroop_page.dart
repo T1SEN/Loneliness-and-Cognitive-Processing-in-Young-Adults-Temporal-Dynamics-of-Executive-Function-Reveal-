@@ -295,7 +295,7 @@ class _StroopPageState extends State<StroopPage> {
         "userColor": sel ?? "noResp",
       },
       
-      // Legacy compatibility fields
+      // Compatibility fields
       "trial": _tIdx,
       ...tr,
       "userColor": sel ?? "noResp",
@@ -350,7 +350,7 @@ class _StroopPageState extends State<StroopPage> {
         "end_time": _mainTestEndTime?.toIso8601String(),
         "duration_seconds": durationSeconds,
         
-        // Legacy fields (kept for compatibility)
+        // Compatibility fields
         "startTime": _mainTestStartTime?.toIso8601String(),
         "endTime": _mainTestEndTime?.toIso8601String(),
         "durationSeconds": durationSeconds,

@@ -153,17 +153,32 @@ def main() -> None:
     participants_path = input_dir / PARTICIPANTS_SOURCE
     source_paths.append(participants_path)
 
-    all_ids: set[str] = set()
+    id_sets: dict[Path, set[str]] = {}
     frames: dict[Path, pd.DataFrame] = {}
 
     for path in source_paths:
         df = _load_csv(path)
         id_col = _find_id_column(df, path)
         ids = set(df[id_col].dropna().astype(str))
-        all_ids |= ids
+        id_sets[path] = ids
         frames[path] = df
 
-    id_map = _build_id_map(all_ids)
+    if not id_sets:
+        raise ValueError("No source files were loaded.")
+    common_ids = set.intersection(*id_sets.values())
+    if not common_ids:
+        raise ValueError(
+            "No common participant IDs across required source files. "
+            "Cannot build a contract-consistent public bundle."
+        )
+
+    id_map = _build_id_map(common_ids)
+    print(f"Common participant IDs across all source files: {len(common_ids)}")
+    for path in source_paths:
+        src_ids = id_sets[path]
+        dropped = len(src_ids - common_ids)
+        if dropped > 0:
+            print(f"  - {path.name}: dropping {dropped} non-common IDs")
 
     for out_name, src_name in SOURCE_FILES.items():
         src_path = input_dir / src_name

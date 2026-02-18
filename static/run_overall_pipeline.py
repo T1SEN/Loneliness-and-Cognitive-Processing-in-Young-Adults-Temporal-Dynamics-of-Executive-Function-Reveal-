@@ -51,12 +51,15 @@ def _remove_nonpaper_outputs() -> None:
         Path("outputs/stats/wcst_phase_category_weighted_ols.csv"),
         Path("outputs/stats/wcst_phase_rt_ols.csv"),
         # Canonical supplementary WCST stats are in outputs/tables/supp_table_s3.csv and supp_table_s4.csv.
-        # Remove legacy duplicate OLS exports to avoid conflicting value routes.
+        # Remove duplicate OLS exports to avoid conflicting value routes.
         Path("outputs/stats/wcst_phase_rt_ols_alltrials.csv"),
         Path("outputs/stats/wcst_phase_pre_exploit_rt_ols_alltrials.csv"),
         Path("outputs/stats/wcst_phase_pre_exploit_rt_ols_m2_alltrials.csv"),
         Path("outputs/stats/wcst_phase_pre_exploit_rt_ols_m4_alltrials.csv"),
         Path("outputs/stats/stroop_lmm/stroop_lmm_predictors.csv"),
+        Path("outputs/stats/stroop_lmm/stroop_trial_level_lmm.csv"),
+        Path("outputs/stats/stroop_lmm/stroop_interference_slope_lmm.csv"),
+        Path("outputs/stats/stroop_lmm/stroop_interference_slope_lmm_variants.csv"),
     ]
     for path in paths:
         if path.exists():
@@ -66,7 +69,6 @@ def _remove_nonpaper_outputs() -> None:
 def _run_supplementary_extras() -> None:
     from static.figures_tables import plot_stroop_interference_quartile_loneliness_extremes25_trend
     from static.figures_tables import plot_wcst_phase_loneliness_extremes25_trend
-    from static.stroop_lmm import run_stroop_trial_lmm
     from static.stroop_supplementary import run_stroop_interference_reliability
     from static.stroop_supplementary import run_stroop_random_slope_variance
     from static.supplementary_tables import run_supplementary_tables_s1_s4
@@ -76,7 +78,6 @@ def _run_supplementary_extras() -> None:
     _safe_run("wcst_phase_split_half_reliability_m2", run_wcst_phase_split_half_reliability.main, 2, False)
     _safe_run("wcst_phase_split_half_reliability_m4", run_wcst_phase_split_half_reliability.main, 4, False)
 
-    _safe_run("stroop_trial_lmm", run_stroop_trial_lmm.main)
     _safe_run("stroop_random_slope_variance", run_stroop_random_slope_variance.main)
     _safe_run("stroop_interference_reliability", run_stroop_interference_reliability.main)
 
