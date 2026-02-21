@@ -1,2 +1,2 @@
-﻿n_trials,n_participants,re_formula,method,converged,var_intercept,var_slope_trial_scaled,cov_int_slope,corr_int_slope,var_slope_se,var_slope_ci_low,var_slope_ci_high
-14986,212,1 + trial_scaled,lbfgs,True,0.03537915692112025,0.019052242907205565,-0.005075200282464075,-0.19548182762515454,0.011139058086231899,-0.002780310941808955,0.04088479675622009
+﻿n_trials,n_participants,re_formula,method,converged,var_intercept,var_slope_trial_scaled,cov_int_slope,corr_int_slope,var_slope_se,var_slope_ci_low_raw,var_slope_ci_low,var_slope_ci_high,var_slope_ci_note
+14986,212,1 + trial_scaled,lbfgs,True,0.03537915692112025,0.019052242907205565,-0.005075200282464075,-0.19548182762515454,0.011139058086231899,-0.002780310941808955,0.0,0.04088479675622009,Wald CI lower bound fell below 0; reported lower bound is truncated to 0 because variance is non-negative.

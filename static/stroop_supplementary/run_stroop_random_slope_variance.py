@@ -89,16 +89,24 @@ def main() -> None:
         corr_int_slope = cov_int_slope / np.sqrt(var_int * var_slope)
 
     var_slope_se = np.nan
+    var_slope_ci_low_raw = np.nan
     var_slope_ci_low = np.nan
     var_slope_ci_high = np.nan
+    var_slope_ci_note = ""
     if bse_re is not None:
         for idx, val in bse_re.items():
             if "trial_scaled Var" in str(idx):
                 var_slope_se = float(val)
                 break
         if np.isfinite(var_slope_se) and np.isfinite(var_slope):
-            var_slope_ci_low = var_slope - 1.96 * var_slope_se
+            var_slope_ci_low_raw = var_slope - 1.96 * var_slope_se
+            var_slope_ci_low = max(0.0, var_slope_ci_low_raw)
             var_slope_ci_high = var_slope + 1.96 * var_slope_se
+            if var_slope_ci_low_raw < 0:
+                var_slope_ci_note = (
+                    "Wald CI lower bound fell below 0; reported lower bound is truncated to 0 "
+                    "because variance is non-negative."
+                )
 
     output = pd.DataFrame(
         [
@@ -113,8 +121,10 @@ def main() -> None:
                 "cov_int_slope": cov_int_slope,
                 "corr_int_slope": corr_int_slope,
                 "var_slope_se": var_slope_se,
+                "var_slope_ci_low_raw": var_slope_ci_low_raw,
                 "var_slope_ci_low": var_slope_ci_low,
                 "var_slope_ci_high": var_slope_ci_high,
+                "var_slope_ci_note": var_slope_ci_note,
             }
         ]
     )

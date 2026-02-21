@@ -100,4 +100,4 @@ Two mixed-effects models were reported:
 - Fixed effects: trial_scaled (within-participant 0-1) x cond_code (-0.5/+0.5) x UCLA(z), plus DASS(3), age, gender
 - Random effects: preferred structure 1 + trial_scaled (convergence prioritized)
 
-All LMMs were estimated with `statsmodels` MixedLM using maximum likelihood. Detailed results are provided in the Supplementary Materials.
+All LMMs were estimated with `statsmodels` MixedLM using maximum likelihood. For random-effect variance terms, Wald-type 95% CIs were interpreted with a non-negativity boundary, so any slightly negative lower bound from normal approximation was reported as 0. Detailed results are provided in the Supplementary Materials.
